@@ -5,7 +5,7 @@
     "buildCommand": "pnpm install --frozen-lockfile && pnpm --filter mobile run export:web"
   },
   "deploy": {
-    "startCommand": "pnpm --filter mobile exec serve dist -s -l $PORT",
+    "startCommand": "node apps/mobile/serve-static.js",
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 3
   }
