@@ -381,7 +381,7 @@ components:
 
     Message:
       type: object
-      required: [id, conversationId, senderId, body, locked, createdAt]
+      required: [id, conversationId, senderId, locked, createdAt]
       properties:
         id: { type: string }
         conversationId: { type: string }
@@ -390,14 +390,36 @@ components:
           type: string
           nullable: true
           description: Null when `locked` is true — free-tier recipient, see docs §8.
+        attachments:
+          type: array
+          nullable: true
+          items:
+            type: object
+            required: [type, url]
+            properties:
+              type: { type: string, enum: [image, video] }
+              url: { type: string }
+              mimeType: { type: string }
+              width: { type: integer }
+              height: { type: integer }
         locked: { type: boolean }
         createdAt: { type: string, format: date-time }
 
     CreateMessageInput:
       type: object
-      required: [body]
       properties:
         body: { type: string, minLength: 1, maxLength: 2000 }
+        attachments:
+          type: array
+          items:
+            type: object
+            required: [type, url]
+            properties:
+              type: { type: string, enum: [image, video] }
+              url: { type: string }
+              mimeType: { type: string }
+              width: { type: integer }
+              height: { type: integer }
 
     # ── Monetization ──────────────────────────────────────
     Plan:
@@ -597,6 +619,32 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  /auth/push-token:
+    post:
+      operationId: registerPushToken
+      summary: Register a push notification token for the current user
+      tags: [auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, platform]
+              properties:
+                token: { type: string }
+                platform: { type: string, enum: [expo, apns, fcm] }
+      responses:
+        '200':
+          description: Token registered
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties: { data: { type: object, nullable: true } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
 
   /auth/reset-password:
     post:
@@ -1079,6 +1127,32 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /conversations/{conversationId}/read:
+    post:
+      operationId: markAsRead
+      summary: Mark a conversation as read by the caller
+      tags: [messaging]
+      parameters:
+        - in: path
+          name: conversationId
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Conversation marked as read
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties: 
+                  data:
+                    type: object
+                    required: [success]
+                    properties: { success: { type: boolean } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
         '404': { $ref: '#/components/responses/NotFound' }
 
   # ── Monetization ────────────────────────────────────────

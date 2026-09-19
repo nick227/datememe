@@ -1,7 +1,7 @@
 import { db, Prisma, type Entity } from '@project/db'
 import { decodeOffsetCursor, encodeOffsetCursor, normalizeLimit } from '../lib/pagination'
 import { similarity } from '../lib/levenshtein'
-import { CATEGORY_INCLUDE, serializeCategory, serializeEntity } from '../lib/serializers'
+import { CATEGORY_INCLUDE, ENTITY_SELECT, serializeCategory, serializeEntity } from '../lib/serializers'
 
 function slugify(s: string) {
   return s
@@ -13,11 +13,11 @@ function slugify(s: string) {
 
 export class TaxonomyService {
   async listEntityTypes() {
-    return db.entityType.findMany({ orderBy: { label: 'asc' } })
+    return db.entityType.findMany({ orderBy: { label: 'asc' }, take: 500 })
   }
 
   async listCategoryGroups() {
-    return db.categoryGroup.findMany({ orderBy: { sortOrder: 'asc' } })
+    return db.categoryGroup.findMany({ orderBy: { sortOrder: 'asc' }, take: 500 })
   }
 
   async listCategories(groupSlug?: string) {
@@ -25,6 +25,7 @@ export class TaxonomyService {
       where: { status: 'APPROVED', ...(groupSlug ? { group: { slug: groupSlug } } : {}) },
       include: CATEGORY_INCLUDE,
       orderBy: [{ group: { sortOrder: 'asc' } }, { shortLabel: 'asc' }],
+      take: 500,
     })
     return categories.map(serializeCategory)
   }
@@ -75,6 +76,7 @@ export class TaxonomyService {
       orderBy: [{ status: 'asc' }, { usageCount: 'desc' }, { canonicalName: 'asc' }],
       skip: offset,
       take: limit + 1,
+      select: ENTITY_SELECT,
     })
 
     const hasMore = rows.length > limit
@@ -106,7 +108,8 @@ export class TaxonomyService {
         status: 'APPROVED',
         OR: [{ canonicalName: { contains: rawText } }, { aliases: { some: { alias: { contains: rawText } } } }],
       },
-      take: 25,
+      take: 20,
+      select: ENTITY_SELECT,
     })
     let best: { entity: Entity; score: number } | null = null
     for (const candidate of candidates) {

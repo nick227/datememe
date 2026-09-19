@@ -64,6 +64,9 @@ async function main() {
   // health check — not in spec, always public
   server.get('/health', async () => ({ status: 'ok' }))
 
+  // admin debug endpoint
+  server.get('/admin/queue', handlers.getQueueMetrics)
+
   await server.listen({
     port: Number(process.env.PORT ?? 3001),
     host: '0.0.0.0',

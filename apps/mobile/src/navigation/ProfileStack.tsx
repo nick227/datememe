@@ -1,0 +1,19 @@
+import { createNativeStackNavigator } from '@react-navigation/native-stack'
+import { ProfileScreen } from '../features/profile/screens/ProfileScreen'
+import { EditProfileScreen } from '../features/profile/screens/EditProfileScreen'
+import { AccountScreen } from '../features/profile/screens/AccountScreen'
+import { PaywallScreen } from '../features/profile/screens/PaywallScreen'
+import type { ProfileStackParamList } from './types'
+
+const Stack = createNativeStackNavigator<ProfileStackParamList>()
+
+export function ProfileStack() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="Profile" component={ProfileScreen} />
+      <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+      <Stack.Screen name="Account" component={AccountScreen} />
+      <Stack.Screen name="Paywall" component={PaywallScreen} />
+    </Stack.Navigator>
+  )
+}

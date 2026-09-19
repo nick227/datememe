@@ -1,13 +1,11 @@
 import { db } from '@project/db'
-import { CATEGORY_INCLUDE, serializeListForViewer } from '../lib/serializers'
+import { LIST_PREVIEW_SELECT, serializeListForViewer } from '../lib/serializers'
 import { isPremiumUser } from '../lib/entitlements'
 import { isBlockedEitherWay } from '../lib/blocks'
 
-const LIST_INCLUDE = { category: { include: CATEGORY_INCLUDE }, items: { include: { entity: true } } } as const
-
 export class ListService {
   async getMyLists(profileId: string) {
-    const lists = await db.list.findMany({ where: { profileId }, include: LIST_INCLUDE })
+    const lists = await db.list.findMany({ where: { profileId }, select: LIST_PREVIEW_SELECT })
     return lists.map((list) => serializeListForViewer(list, profileId))
   }
 
@@ -27,7 +25,7 @@ export class ListService {
         profileId: targetProfileId,
         ...(isSelf ? {} : { visibility: viewerIsPremium ? { in: ['PUBLIC', 'PREMIUM_ONLY'] } : 'PUBLIC' }),
       },
-      include: LIST_INCLUDE,
+      select: LIST_PREVIEW_SELECT,
     })
     return lists.map((list) => serializeListForViewer(list, viewerProfileId))
   }
@@ -80,7 +78,10 @@ export class ListService {
         create: { profileId, categoryId: category.id, isComplete, completedAt: isComplete ? new Date() : null },
       })
 
-      const previousItems = await tx.listItem.findMany({ where: { listId: upserted.id } })
+      const previousItems = await tx.listItem.findMany({ 
+        where: { listId: upserted.id },
+        select: { entityId: true }
+      })
       const previousEntityIds = previousItems.map((i) => i.entityId)
 
       await tx.listItem.deleteMany({ where: { listId: upserted.id } })
@@ -95,25 +96,30 @@ export class ListService {
         })
       }
 
-      // Maintain the denormalized Entity.usageCount / Category.popularityCount counters
-      // (docs §4.5) — this transaction is the one place they're allowed to change.
+      // Delegate heavy counter updates and matching to the background worker MVP
       const previousSet = new Set(previousEntityIds)
       const currentSet = new Set(entityIds)
       const added = entityIds.filter((id) => !previousSet.has(id))
       const removed = previousEntityIds.filter((id) => !currentSet.has(id))
-      if (added.length) {
-        await tx.entity.updateMany({ where: { id: { in: added } }, data: { usageCount: { increment: 1 } } })
-      }
-      if (removed.length) {
-        await tx.entity.updateMany({ where: { id: { in: removed } }, data: { usageCount: { decrement: 1 } } })
-      }
-      if (isComplete && !wasComplete) {
-        await tx.category.update({ where: { id: category.id }, data: { popularityCount: { increment: 1 } } })
-      } else if (!isComplete && wasComplete) {
-        await tx.category.update({ where: { id: category.id }, data: { popularityCount: { decrement: 1 } } })
-      }
+      
+      let isCompleteDiff: 1 | -1 | 0 = 0
+      if (isComplete && !wasComplete) isCompleteDiff = 1
+      else if (!isComplete && wasComplete) isCompleteDiff = -1
 
-      return tx.list.findUniqueOrThrow({ where: { id: upserted.id }, include: LIST_INCLUDE })
+      await tx.jobQueue.createMany({
+        data: [
+          {
+            type: 'UPDATE_TAXONOMY',
+            payload: { addedEntities: added, removedEntities: removed, categoryId: category.id, isCompleteDiff }
+          },
+          {
+            type: 'CALCULATE_MATCHES',
+            payload: { profileId }
+          }
+        ]
+      })
+
+      return tx.list.findUniqueOrThrow({ where: { id: upserted.id }, select: LIST_PREVIEW_SELECT })
     })
 
     return serializeListForViewer(list, profileId)

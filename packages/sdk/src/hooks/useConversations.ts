@@ -49,3 +49,20 @@ export function useSendMessage(conversationId: string) {
     },
   })
 }
+
+export function useMarkAsRead(conversationId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async () => {
+      const { data, error, response } = await getApiClient().POST(
+        '/conversations/{conversationId}/read',
+        { params: { path: { conversationId } } },
+      )
+      if (error) throw new ApiError(response.status, (error as any).error, (error as any).code)
+      return data!.data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['conversations'] })
+    },
+  })
+}

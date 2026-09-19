@@ -23,6 +23,15 @@ export async function sendMessage(request: any, reply: any) {
     request.user.profile.id,
     request.params.conversationId,
     request.body.body,
+    request.body.attachments,
   )
   return reply.status(201).send({ data })
+}
+
+export async function markAsRead(request: any, reply: any) {
+  const data = await messagingService.markAsRead(
+    request.user.profile.id,
+    request.params.conversationId
+  )
+  return reply.send({ data })
 }

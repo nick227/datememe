@@ -1,15 +1,38 @@
 import { db } from '@project/db'
 import { decodeCursor, encodeCursor, normalizeLimit } from '../lib/pagination'
-import { PROFILE_INCLUDE, serializeProfile } from '../lib/serializers'
+import { PROFILE_SUMMARY_SELECT, serializeProfile } from '../lib/serializers'
 import { FREE_DAILY_MESSAGE_LIMIT, isPremiumUser, startOfUtcDay } from '../lib/entitlements'
 import { isBlockedEitherWay } from '../lib/blocks'
 
 export const CONVERSATION_INCLUDE = {
-  participants: { include: { profile: { include: PROFILE_INCLUDE } } },
+  participants: {
+    select: {
+      lastReadAt: true,
+      profile: {
+        select: PROFILE_SUMMARY_SELECT,
+      },
+    },
+  },
   messages: { orderBy: { createdAt: 'desc' as const }, take: 1 },
 }
 
 export function serializeConversation(conversation: any, viewerProfileId: string, viewerIsPremium: boolean) {
+  const lastMessage = conversation.messages[0]
+  let lastMessageBody = null
+  let hasUnread = false
+
+  const viewerParticipant = conversation.participants.find((p: any) => p.profile.id === viewerProfileId)
+
+  if (lastMessage) {
+    const isOwn = lastMessage.senderId === viewerProfileId
+    const locked = !isOwn && !viewerIsPremium
+    lastMessageBody = locked ? '🔒 New message' : lastMessage.body
+
+    if (!isOwn && viewerParticipant) {
+      hasUnread = !viewerParticipant.lastReadAt || new Date(lastMessage.createdAt) > new Date(viewerParticipant.lastReadAt)
+    }
+  }
+
   return {
     id: conversation.id,
     status: conversation.status,
@@ -18,7 +41,9 @@ export function serializeConversation(conversation: any, viewerProfileId: string
       const revealPhoto = p.profile.id === viewerProfileId || viewerIsPremium
       return serializeProfile(p.profile, { revealPhoto })
     }),
-    lastMessageAt: conversation.messages[0]?.createdAt ?? null,
+    lastMessageAt: lastMessage?.createdAt ?? null,
+    lastMessageBody,
+    hasUnread,
   }
 }
 
@@ -30,6 +55,7 @@ function serializeMessage(message: any, viewerProfileId: string, viewerIsPremium
     conversationId: message.conversationId,
     senderId: message.senderId,
     body: locked ? null : message.body,
+    attachments: locked ? null : message.attachments,
     locked,
     createdAt: message.createdAt,
   }
@@ -139,7 +165,7 @@ export class MessagingService {
    * gated at read time in listMessages) plus the block gate — blocking either party
    * disables further sends in both directions, but existing history stays readable.
    */
-  async sendMessage(viewerUserId: string, viewerProfileId: string, conversationId: string, body: string) {
+  async sendMessage(viewerUserId: string, viewerProfileId: string, conversationId: string, body?: string, attachments?: any[]) {
     await this._assertParticipant(viewerProfileId, conversationId)
 
     const otherParticipant = await db.conversationParticipant.findFirst({
@@ -159,8 +185,39 @@ export class MessagingService {
       }
     }
 
-    const message = await db.message.create({ data: { conversationId, senderId: viewerProfileId, body } })
+    const message = await db.message.create({ 
+      data: { 
+        conversationId, 
+        senderId: viewerProfileId, 
+        body: body || null,
+        attachments: attachments ?? null
+      } 
+    })
+
+    if (otherParticipant) {
+      await db.jobQueue.create({
+        data: {
+          type: 'SEND_PUSH_NOTIFICATION',
+          payload: {
+            recipientProfileId: otherParticipant.profileId,
+            title: 'New Match Message',
+            body: 'You received a new message.',
+            data: { conversationId }
+          },
+        },
+      })
+    }
+
     return serializeMessage(message, viewerProfileId, viewerIsPremium)
+  }
+
+  async markAsRead(viewerProfileId: string, conversationId: string) {
+    await this._assertParticipant(viewerProfileId, conversationId)
+    await db.conversationParticipant.update({
+      where: { conversationId_profileId: { conversationId, profileId: viewerProfileId } },
+      data: { lastReadAt: new Date() },
+    })
+    return { success: true }
   }
 
   private async _assertParticipant(profileId: string, conversationId: string) {

@@ -92,6 +92,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/auth/push-token": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Register a push notification token for the current user */
+        post: operations["registerPushToken"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/auth/reset-password": {
         parameters: {
             query?: never;
@@ -414,6 +431,23 @@ export interface paths {
          * @description A free-tier sender is capped at 3 sends per rolling day across all conversations (docs §8 sending gate); returns 403 once exhausted.
          */
         post: operations["sendMessage"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/conversations/{conversationId}/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mark a conversation as read by the caller */
+        post: operations["markAsRead"];
         delete?: never;
         options?: never;
         head?: never;
@@ -757,13 +791,29 @@ export interface components {
             conversationId: string;
             senderId: string;
             /** @description Null when `locked` is true — free-tier recipient, see docs §8. */
-            body: string | null;
+            body?: string | null;
+            attachments?: {
+                /** @enum {string} */
+                type: "image" | "video";
+                url: string;
+                mimeType?: string;
+                width?: number;
+                height?: number;
+            }[] | null;
             locked: boolean;
             /** Format: date-time */
             createdAt: string;
         };
         CreateMessageInput: {
-            body: string;
+            body?: string;
+            attachments?: {
+                /** @enum {string} */
+                type: "image" | "video";
+                url: string;
+                mimeType?: string;
+                width?: number;
+                height?: number;
+            }[];
         };
         Plan: {
             id: string;
@@ -1011,6 +1061,37 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
+        };
+    };
+    registerPushToken: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    token: string;
+                    /** @enum {string} */
+                    platform: "expo" | "apns" | "fcm";
+                };
+            };
+        };
+        responses: {
+            /** @description Token registered */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: Record<string, never> | null;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
         };
     };
     resetPassword: {
@@ -1566,6 +1647,34 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    markAsRead: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                conversationId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Conversation marked as read */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            success: boolean;
+                        };
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
             404: components["responses"]["NotFound"];
         };
     };

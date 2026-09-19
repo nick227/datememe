@@ -1,7 +1,7 @@
 import { db } from '@project/db'
 import bcrypt from 'bcryptjs'
 import { randomUUID } from 'crypto'
-import { PROFILE_INCLUDE } from '../lib/serializers'
+import { PROFILE_FULL_SELECT } from '../lib/serializers'
 import { generateOtp, sendEmail } from '../lib/email'
 
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000 // 30 days
@@ -34,7 +34,7 @@ export class AuthService {
           },
         },
       },
-      include: { profile: { include: PROFILE_INCLUDE } },
+      include: { profile: { select: PROFILE_FULL_SELECT } },
     })
     const session = await this._createSession(user.id)
     return { user, token: session.token }
@@ -43,7 +43,7 @@ export class AuthService {
   async login(data: { email: string; password: string }) {
     const user = await db.user.findUnique({
       where: { email: data.email },
-      include: { profile: { include: PROFILE_INCLUDE } },
+      include: { profile: { select: PROFILE_FULL_SELECT } },
     })
     if (!user || !user.passwordHash) throw { statusCode: 401, message: 'Invalid credentials' }
 
@@ -58,6 +58,14 @@ export class AuthService {
 
   async logout(token: string) {
     await db.session.deleteMany({ where: { token } })
+  }
+
+  async registerPushToken(userId: string, token: string, platform: string) {
+    await db.pushToken.upsert({
+      where: { token },
+      update: { userId, platform },
+      create: { userId, token, platform },
+    })
   }
 
   /** Always succeeds from the caller's perspective, even for an unknown email — see docs on the /auth/forgot-password route. */

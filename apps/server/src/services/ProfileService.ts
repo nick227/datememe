@@ -1,7 +1,7 @@
 import { db } from '@project/db'
 import { isPremiumUser } from '../lib/entitlements'
 import { isBlockedEitherWay } from '../lib/blocks'
-import { PROFILE_INCLUDE, serializeProfile } from '../lib/serializers'
+import { PROFILE_FULL_SELECT, serializeProfile } from '../lib/serializers'
 
 export class ProfileService {
   /**
@@ -12,7 +12,7 @@ export class ProfileService {
   async getProfile(viewerUserId: string, viewerProfileId: string, targetProfileId: string) {
     const profile = await db.profile.findUnique({
       where: { id: targetProfileId },
-      include: PROFILE_INCLUDE,
+      select: PROFILE_FULL_SELECT,
     })
     if (!profile) throw { statusCode: 404, message: 'Profile not found' }
 
@@ -66,7 +66,7 @@ export class ProfileService {
 
     const profile = await db.profile.findUniqueOrThrow({
       where: { id: profileId },
-      include: PROFILE_INCLUDE,
+      select: PROFILE_FULL_SELECT,
     })
     return serializeProfile(profile, { revealPhoto: true })
   }

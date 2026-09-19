@@ -1,8 +1,29 @@
 // Shared response shaping — kept here (not duplicated per service) so the Entity/Category
 // JSON shape can't drift between the taxonomy and list endpoints.
 
-/** Every query that will feed serializeProfile/serializeUser must use this include, or seekingGenders/photos silently come back empty. */
-export const PROFILE_INCLUDE = { seekingGenders: true, photos: { orderBy: { sortOrder: 'asc' as const } } }
+export const PROFILE_FULL_SELECT = {
+  id: true,
+  userId: true,
+  username: true,
+  displayName: true,
+  genderIdentity: true,
+  bio: true,
+  locationLabel: true,
+  avatarUrl: true,
+  isDiscoverable: true,
+  onboardingStep: true,
+  seekingGenders: true,
+  photos: { select: { url: true, sortOrder: true }, orderBy: { sortOrder: 'asc' as const } }
+} as const
+
+export const PROFILE_SUMMARY_SELECT = {
+  id: true,
+  userId: true,
+  username: true,
+  displayName: true,
+  avatarUrl: true,
+  isDiscoverable: true,
+} as const
 
 export function serializeProfile(profile: any, opts: { revealPhoto: boolean }) {
   return {
@@ -31,6 +52,18 @@ export function serializeUser(user: any) {
     profile: user.profile ? serializeProfile(user.profile, { revealPhoto: true }) : undefined,
   }
 }
+
+export const ENTITY_SELECT = {
+  id: true,
+  entityTypeId: true,
+  canonicalName: true,
+  slug: true,
+  imageUrl: true,
+  metadata: true,
+  status: true,
+  usageCount: true,
+  submittedByProfileId: true,
+} as const
 
 export function serializeEntity(entity: any) {
   return {
@@ -62,7 +95,20 @@ export function serializeCategory(category: any) {
   }
 }
 
-export const CATEGORY_INCLUDE = { requiredTags: { include: { tag: true } } } as const
+export const CATEGORY_SELECT = {
+  id: true,
+  slug: true,
+  groupId: true,
+  entityTypeId: true,
+  prompt: true,
+  shortLabel: true,
+  minItems: true,
+  maxItems: true,
+  orderingMode: true,
+  isPremiumOnly: true,
+  popularityCount: true,
+  requiredTags: { select: { tag: true } }
+} as const
 
 export function serializeListItem(item: any) {
   return {
@@ -96,3 +142,24 @@ export function serializeListForViewer(list: any, viewerProfileId: string) {
       .map(serializeListItem),
   }
 }
+
+export const LIST_PREVIEW_SELECT = {
+  id: true,
+  categoryId: true,
+  profileId: true,
+  title: true,
+  visibility: true,
+  isComplete: true,
+  completedAt: true,
+  category: { select: CATEGORY_SELECT },
+  items: {
+    select: {
+      id: true,
+      rank: true,
+      note: true,
+      entityId: true,
+      listId: true,
+      entity: { select: ENTITY_SELECT }
+    }
+  }
+} as const

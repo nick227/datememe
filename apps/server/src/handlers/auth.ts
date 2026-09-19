@@ -55,3 +55,8 @@ export async function verifyEmail(request: any, reply: any) {
   await authService.verifyEmail(request.user.id, request.body.token)
   return reply.send({ data: null })
 }
+
+export async function registerPushToken(request: any, reply: any) {
+  await authService.registerPushToken(request.user.id, request.body.token, request.body.platform)
+  return reply.send({ data: null })
+}
