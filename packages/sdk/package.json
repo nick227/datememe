@@ -1,0 +1,25 @@
+{
+  "name": "@project/sdk",
+  "version": "0.0.1",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "generate": "tsx scripts/generate.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "echo 'no lint configured for @project/sdk'",
+    "test": "echo 'no tests for @project/sdk'"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "^5.59.0",
+    "openapi-fetch": "^0.12.0"
+  },
+  "devDependencies": {
+    "openapi-typescript": "^7.4.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0 || ^19.0.0"
+  }
+}

@@ -1,0 +1,24 @@
+node_modules/
+dist/
+build/
+.env
+*.log
+
+# Prisma
+packages/db/prisma/dev.db
+
+# Local file uploads (file-upload plugin, STORAGE_PROVIDER=local)
+apps/server/uploads/
+
+# Expo / React Native
+apps/mobile/.expo/
+apps/mobile/.expo-shared/
+apps/mobile/web-build/
+apps/mobile/*.jks
+apps/mobile/*.p8
+apps/mobile/*.p12
+apps/mobile/*.key
+apps/mobile/*.mobileprovision
+
+# macOS
+.DS_Store

@@ -1,0 +1,1311 @@
+openapi: 3.0.3
+info:
+  title: Datememe API
+  version: 0.0.1
+  description: >
+    MVP contract for the favorites-based match-making app. See
+    /docs/data-schema-proposal.md and /docs/project-requirements.md for the
+    product and data-model rationale behind these routes.
+  license:
+    name: UNLICENSED
+
+servers:
+  - url: http://localhost:3001
+    description: Local dev
+
+security:
+  - bearerAuth: []
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: >
+        Cookie-first (web), Bearer-header fallback (native apps via
+        expo-secure-store). See packages/sdk/src/client.ts.
+
+  parameters:
+    Cursor:
+      in: query
+      name: cursor
+      schema: { type: string }
+      description: Opaque cursor returned by the previous page.
+    Limit:
+      in: query
+      name: limit
+      schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+    SearchQuery:
+      in: query
+      name: q
+      schema: { type: string, minLength: 0, maxLength: 200 }
+      description: Prefix/fulltext search within this resource (MySQL LIKE/FULLTEXT — see docs §6).
+
+  responses:
+    Unauthorized:
+      description: Not authenticated
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    Forbidden:
+      description: Not permitted
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  schemas:
+    PaginatedMeta:
+      type: object
+      required: [hasMore, nextCursor]
+      properties:
+        hasMore: { type: boolean }
+        nextCursor: { type: string, nullable: true }
+
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error: { type: string }
+        code: { type: string }
+
+    # ── Identity ──────────────────────────────────────────
+    Profile:
+      type: object
+      required:
+        [
+          id,
+          userId,
+          username,
+          displayName,
+          genderIdentity,
+          bio,
+          seekingGenders,
+          locationLabel,
+          avatarUrl,
+          photos,
+          isDiscoverable,
+          onboardingStep,
+        ]
+      properties:
+        id: { type: string }
+        userId: { type: string }
+        username: { type: string }
+        displayName: { type: string }
+        genderIdentity: { type: string, nullable: true }
+        bio:
+          type: string
+          nullable: true
+          maxLength: 150
+          description: Short optional tagline — not a bio essay, see docs §1/§3.
+        seekingGenders:
+          type: array
+          items: { type: string }
+        locationLabel: { type: string, nullable: true }
+        avatarUrl:
+          type: string
+          nullable: true
+          description: Null for a free-tier viewer looking at someone else's profile — see docs §8 photo gate.
+        photos:
+          type: array
+          items: { type: string }
+          description: Gallery beyond the primary avatarUrl; empty for a free-tier viewer looking at someone else's profile (docs §8).
+        isDiscoverable: { type: boolean }
+        onboardingStep: { type: integer }
+
+    User:
+      type: object
+      required: [id, email, isVerified, createdAt]
+      properties:
+        id: { type: string }
+        email: { type: string }
+        isVerified: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        profile: { $ref: '#/components/schemas/Profile' }
+
+    RegisterInput:
+      type: object
+      required: [email, password, username, displayName, birthdate]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, minLength: 8 }
+        username: { type: string, minLength: 3, maxLength: 30 }
+        displayName: { type: string, minLength: 1, maxLength: 50 }
+        birthdate: { type: string, format: date }
+
+    LoginInput:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string }
+
+    AuthResponse:
+      type: object
+      required: [data, token]
+      properties:
+        data: { $ref: '#/components/schemas/User' }
+        token:
+          type: string
+          description: >
+            Also delivered via Set-Cookie (httpOnly) for web. Native clients
+            (no usable cookie jar) read this field and store it in secure
+            storage, then send it as a Bearer header — see packages/sdk.
+
+    UpdateProfileInput:
+      type: object
+      properties:
+        displayName: { type: string, minLength: 1, maxLength: 50 }
+        genderIdentity: { type: string, nullable: true }
+        bio: { type: string, nullable: true, maxLength: 150 }
+        seekingGenders:
+          type: array
+          items: { type: string }
+        locationLat: { type: number, nullable: true }
+        locationLng: { type: number, nullable: true }
+        locationLabel: { type: string, nullable: true }
+        avatarUrl: { type: string, nullable: true }
+        photos:
+          type: array
+          items: { type: string }
+          maxItems: 6
+          description: Whole-array replace — no per-photo upload endpoint in this pass (URLs only, see docs requirements §"out of scope").
+        isDiscoverable: { type: boolean }
+
+    # ── Taxonomy ──────────────────────────────────────────
+    EntityType:
+      type: object
+      required: [id, slug, label, pluralLabel]
+      properties:
+        id: { type: string }
+        slug: { type: string }
+        label: { type: string }
+        pluralLabel: { type: string }
+        icon: { type: string, nullable: true }
+
+    Tag:
+      type: object
+      required: [id, slug, label, kind]
+      properties:
+        id: { type: string }
+        slug: { type: string }
+        label: { type: string }
+        kind: { type: string, enum: [DECADE, GENRE, PLATFORM, REGION, ERA, CUSTOM] }
+
+    CategoryGroup:
+      type: object
+      required: [id, slug, label, sortOrder]
+      properties:
+        id: { type: string }
+        slug: { type: string }
+        label: { type: string }
+        sortOrder: { type: integer }
+
+    Category:
+      type: object
+      required:
+        [
+          id,
+          slug,
+          groupId,
+          entityTypeId,
+          prompt,
+          shortLabel,
+          minItems,
+          maxItems,
+          orderingMode,
+          isPremiumOnly,
+          popularityCount,
+          requiredTags,
+        ]
+      properties:
+        id: { type: string }
+        slug: { type: string }
+        groupId: { type: string }
+        entityTypeId: { type: string }
+        prompt: { type: string }
+        shortLabel: { type: string }
+        minItems: { type: integer }
+        maxItems: { type: integer }
+        orderingMode: { type: string, enum: [RANKED, UNRANKED] }
+        isPremiumOnly: { type: boolean }
+        popularityCount: { type: integer }
+        requiredTags:
+          type: array
+          items: { $ref: '#/components/schemas/Tag' }
+
+    Entity:
+      type: object
+      required: [id, entityTypeId, canonicalName, slug, imageUrl, metadata, status, usageCount]
+      properties:
+        id: { type: string }
+        entityTypeId: { type: string }
+        canonicalName: { type: string }
+        slug: { type: string }
+        imageUrl: { type: string, nullable: true }
+        metadata: { type: object, nullable: true }
+        status: { type: string, enum: [PENDING, APPROVED, REJECTED, MERGED] }
+        usageCount: { type: integer }
+
+    EntitySubmissionInput:
+      type: object
+      required: [entityTypeId, rawText]
+      properties:
+        entityTypeId: { type: string }
+        rawText: { type: string, minLength: 1, maxLength: 200 }
+
+    EntitySubmission:
+      type: object
+      required: [id, status, submittedEntity, suggestedMatch]
+      properties:
+        id: { type: string }
+        status: { type: string, enum: [PENDING, APPROVED, REJECTED, MERGED] }
+        submittedEntity: { $ref: '#/components/schemas/Entity' }
+        suggestedMatch:
+          type: object
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/Entity'
+
+    # ── Lists ─────────────────────────────────────────────
+    ListItem:
+      type: object
+      required: [id, entityId, rank, note, entity]
+      properties:
+        id: { type: string }
+        entityId: { type: string }
+        rank: { type: integer }
+        note: { type: string, nullable: true }
+        entity: { $ref: '#/components/schemas/Entity' }
+
+    List:
+      type: object
+      required: [id, categoryId, category, title, visibility, isComplete, items]
+      properties:
+        id: { type: string }
+        categoryId: { type: string }
+        category: { $ref: '#/components/schemas/Category' }
+        title: { type: string, nullable: true }
+        visibility: { type: string, enum: [PUBLIC, PREMIUM_ONLY, PRIVATE] }
+        isComplete: { type: boolean }
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/ListItem' }
+
+    ListItemInput:
+      type: object
+      required: [entityId, rank]
+      properties:
+        entityId: { type: string }
+        rank: { type: integer, minimum: 1 }
+        note: { type: string, nullable: true, maxLength: 280 }
+
+    UpsertListInput:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/ListItemInput' }
+        isComplete: { type: boolean }
+
+    # ── Discovery / Swipe / Match ───────────────────────────
+    SharedFavorite:
+      type: object
+      required: [categoryShortLabel, entityName]
+      properties:
+        categoryShortLabel: { type: string }
+        entityName: { type: string }
+
+    MatchInsight:
+      type: object
+      required: [icon, title, description]
+      properties:
+        icon:
+          type: string
+          description: >
+            A short symbolic key (e.g. "shared-taste", "rare-overlap") — the
+            client owns the actual glyph/emoji.
+        title: { type: string }
+        description: { type: string }
+
+    DiscoveryCandidate:
+      type: object
+      required: [profile, sharedItemsCount, sharedFavorites, matchPercentage, insights]
+      properties:
+        profile: { $ref: '#/components/schemas/Profile' }
+        sharedItemsCount: { type: integer }
+        sharedFavorites:
+          type: array
+          items: { $ref: '#/components/schemas/SharedFavorite' }
+        matchPercentage:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: Derived display value from the same rarity-weighted overlap score — not a stored fact, see docs §7.
+        insights:
+          type: array
+          items: { $ref: '#/components/schemas/MatchInsight' }
+          description: Heuristic qualitative highlights, at most a handful — see docs §7.
+
+    SwipeInput:
+      type: object
+      required: [targetProfileId, action]
+      properties:
+        targetProfileId: { type: string }
+        action: { type: string, enum: [LIKE, PASS] }
+
+    SwipeResult:
+      type: object
+      required: [matched]
+      properties:
+        matched: { type: boolean }
+        conversation: { $ref: '#/components/schemas/Conversation' }
+
+    # ── Messaging ─────────────────────────────────────────
+    Conversation:
+      type: object
+      required: [id, status, initiatedById, participants, lastMessageAt]
+      properties:
+        id: { type: string }
+        status: { type: string, enum: [PENDING, ACCEPTED, DECLINED, BLOCKED] }
+        initiatedById: { type: string }
+        participants:
+          type: array
+          items: { $ref: '#/components/schemas/Profile' }
+        lastMessageAt: { type: string, format: date-time, nullable: true }
+
+    Message:
+      type: object
+      required: [id, conversationId, senderId, body, locked, createdAt]
+      properties:
+        id: { type: string }
+        conversationId: { type: string }
+        senderId: { type: string }
+        body:
+          type: string
+          nullable: true
+          description: Null when `locked` is true — free-tier recipient, see docs §8.
+        locked: { type: boolean }
+        createdAt: { type: string, format: date-time }
+
+    CreateMessageInput:
+      type: object
+      required: [body]
+      properties:
+        body: { type: string, minLength: 1, maxLength: 2000 }
+
+    # ── Monetization ──────────────────────────────────────
+    Plan:
+      type: object
+      required: [id, slug, label, interval, priceCents, currency]
+      properties:
+        id: { type: string }
+        slug: { type: string }
+        label: { type: string }
+        interval: { type: string, enum: [MONTHLY, ANNUAL, LIFETIME] }
+        priceCents: { type: integer }
+        currency: { type: string }
+
+    Subscription:
+      type: object
+      required: [id, planId, provider, status, currentPeriodEnd, isActive]
+      properties:
+        id: { type: string }
+        planId: { type: string }
+        provider: { type: string, enum: [APPLE_APP_STORE, GOOGLE_PLAY, STRIPE] }
+        status: { type: string, enum: [ACTIVE, TRIALING, PAST_DUE, CANCELED, EXPIRED] }
+        currentPeriodEnd: { type: string, format: date-time }
+        isActive: { type: boolean }
+
+    DevPurchaseInput:
+      type: object
+      required: [planSlug]
+      properties:
+        planSlug: { type: string }
+      description: >
+        Dev/staging only — simulates a completed purchase without a real
+        Apple/Google receipt, so the paywall flow is testable before native
+        IAP wiring lands. Disabled by NODE_ENV=production at the handler.
+
+    # ── Safety ──────────────────────────────────────────────
+    BlockInput:
+      type: object
+      required: [blockedProfileId]
+      properties:
+        blockedProfileId: { type: string }
+
+    ReportInput:
+      type: object
+      required: [targetType, reason]
+      properties:
+        targetType: { type: string, enum: [PROFILE, MESSAGE] }
+        targetProfileId: { type: string, description: Required when targetType is PROFILE. }
+        targetMessageId: { type: string, description: Required when targetType is MESSAGE. }
+        reason: { type: string, minLength: 1, maxLength: 100 }
+        details: { type: string, nullable: true, maxLength: 2000 }
+
+    Report:
+      type: object
+      required: [id, status]
+      properties:
+        id: { type: string }
+        status: { type: string, enum: [PENDING, REVIEWED, ACTIONED] }
+
+    # ── Media ───────────────────────────────────────────────
+    MediaResult:
+      type: object
+      required: [url, key, mimeType, size]
+      properties:
+        url: { type: string }
+        key: { type: string }
+        mimeType: { type: string }
+        size: { type: integer, description: File size in bytes }
+
+    # ── Auth completion ─────────────────────────────────────
+    ForgotPasswordInput:
+      type: object
+      required: [email]
+      properties:
+        email: { type: string, format: email }
+
+    ResetPasswordInput:
+      type: object
+      required: [email, token, newPassword]
+      properties:
+        email: { type: string, format: email }
+        token:
+          type: string
+          description: The 6-digit code emailed by /auth/forgot-password.
+        newPassword: { type: string, minLength: 8 }
+
+    VerifyEmailInput:
+      type: object
+      required: [token]
+      properties:
+        token: { type: string, description: The 6-digit code emailed by /auth/send-verification. }
+
+paths:
+  # ── Auth ────────────────────────────────────────────────
+  /auth/register:
+    post:
+      operationId: register
+      summary: Create an account
+      security: []
+      tags: [auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RegisterInput' }
+      responses:
+        '201':
+          description: Registered
+          headers:
+            Set-Cookie: { schema: { type: string } }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuthResponse' }
+        '400':
+          description: Validation failed (e.g. under the minimum age)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  /auth/login:
+    post:
+      operationId: login
+      summary: Log in with email and password
+      security: []
+      tags: [auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LoginInput' }
+      responses:
+        '200':
+          description: Authenticated
+          headers:
+            Set-Cookie: { schema: { type: string } }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuthResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /auth/logout:
+    post:
+      operationId: logout
+      summary: Log out and clear the session
+      tags: [auth]
+      responses:
+        '200':
+          description: Logged out
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties: { data: { type: object, nullable: true } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /auth/me:
+    get:
+      operationId: getCurrentUser
+      summary: Get the current user
+      tags: [auth]
+      responses:
+        '200':
+          description: Current user
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties: { data: { $ref: '#/components/schemas/User' } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /auth/forgot-password:
+    post:
+      operationId: forgotPassword
+      summary: Request a password reset email
+      security: []
+      tags: [auth]
+      description: >
+        Always returns 200 regardless of whether the email exists, to avoid
+        leaking which addresses have accounts.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ForgotPasswordInput' }
+      responses:
+        '200':
+          description: If an account exists for this email, a reset link was sent
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties: { data: { type: object, nullable: true } }
+        '400':
+          description: Malformed email
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  /auth/reset-password:
+    post:
+      operationId: resetPassword
+      summary: Complete a password reset with a token
+      security: []
+      tags: [auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ResetPasswordInput' }
+      responses:
+        '200':
+          description: Password updated
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties: { data: { type: object, nullable: true } }
+        '400':
+          description: Token invalid, expired, or already used
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  /auth/send-verification:
+    post:
+      operationId: sendVerificationEmail
+      summary: Send (or resend) an email verification link to the caller
+      tags: [auth]
+      responses:
+        '200':
+          description: Verification email sent
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties: { data: { type: object, nullable: true } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /auth/verify-email:
+    post:
+      operationId: verifyEmail
+      summary: Complete email verification with the code sent to the caller's email
+      tags: [auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/VerifyEmailInput' }
+      responses:
+        '200':
+          description: Email verified
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties: { data: { type: object, nullable: true } }
+        '400':
+          description: Code invalid, expired, or already used
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  # ── Profiles ────────────────────────────────────────────
+  /profiles/me:
+    patch:
+      operationId: updateMyProfile
+      summary: Update the caller's own profile
+      tags: [profiles]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UpdateProfileInput' }
+      responses:
+        '200':
+          description: Updated profile
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties: { data: { $ref: '#/components/schemas/Profile' } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /profiles/{profileId}:
+    get:
+      operationId: getProfile
+      summary: Get a profile by id
+      tags: [profiles]
+      parameters:
+        - in: path
+          name: profileId
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: >
+            A profile as visible to the requester. avatarUrl is null unless
+            the requester has an active premium subscription (docs §8).
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties: { data: { $ref: '#/components/schemas/Profile' } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # ── Taxonomy ────────────────────────────────────────────
+  /entity-types:
+    get:
+      operationId: listEntityTypes
+      summary: List all entity types
+      tags: [taxonomy]
+      responses:
+        '200':
+          description: All entity types
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/EntityType' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /category-groups:
+    get:
+      operationId: listCategoryGroups
+      summary: List category groups (section headers for browsing categories)
+      tags: [taxonomy]
+      responses:
+        '200':
+          description: All category groups, sorted for display
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/CategoryGroup' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /categories:
+    get:
+      operationId: listCategories
+      summary: List categories, optionally scoped to a group
+      tags: [taxonomy]
+      parameters:
+        - in: query
+          name: groupSlug
+          schema: { type: string }
+      responses:
+        '200':
+          description: Categories, optionally scoped to a CategoryGroup
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/Category' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /categories/{categorySlug}:
+    get:
+      operationId: getCategory
+      summary: Get a single category definition
+      tags: [taxonomy]
+      parameters:
+        - in: path
+          name: categorySlug
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: A single category definition
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties: { data: { $ref: '#/components/schemas/Category' } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /categories/{categorySlug}/entities:
+    get:
+      operationId: searchCategoryEntities
+      summary: Autocomplete entities eligible for a category
+      tags: [taxonomy]
+      description: >
+        Autocomplete/search entities eligible for this category: same
+        EntityType, all of the category's requiredTags (AND-only, see docs
+        §4.4), APPROVED status (plus the caller's own PENDING submissions).
+      parameters:
+        - in: path
+          name: categorySlug
+          required: true
+          schema: { type: string }
+        - $ref: '#/components/parameters/SearchQuery'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Ranked entity matches
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/Entity' }
+                  meta: { $ref: '#/components/schemas/PaginatedMeta' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /entity-submissions:
+    post:
+      operationId: submitEntity
+      summary: Submit a new entity for a type (autocomplete "can't find it" fallback)
+      tags: [taxonomy]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/EntitySubmissionInput' }
+      responses:
+        '201':
+          description: >
+            Submission created; a PENDING Entity is created in the same
+            transaction and returned so the caller can add it to their list
+            immediately (docs §5.3).
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties: { data: { $ref: '#/components/schemas/EntitySubmission' } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # ── Lists ───────────────────────────────────────────────
+  /me/lists:
+    get:
+      operationId: getMyLists
+      summary: Get all of the caller's own lists
+      tags: [lists]
+      responses:
+        '200':
+          description: All of the caller's lists
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/List' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /profiles/{profileId}/lists:
+    get:
+      operationId: getProfileLists
+      summary: Get another profile's visible lists
+      tags: [lists]
+      description: >
+        Another profile's lists, filtered per the visibility rule in docs
+        §5.3: PENDING/REJECTED entities are hidden unless the viewer is the
+        submitter.
+      parameters:
+        - in: path
+          name: profileId
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: The target profile's visible lists
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/List' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /lists/{categorySlug}:
+    put:
+      operationId: upsertMyList
+      summary: Replace the caller's list for a category
+      tags: [lists]
+      description: Whole-list replace for the caller's List in this Category.
+      parameters:
+        - in: path
+          name: categorySlug
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UpsertListInput' }
+      responses:
+        '200':
+          description: The saved list
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties: { data: { $ref: '#/components/schemas/List' } }
+        '400':
+          description: Invalid items (too many, duplicate ranks, or not eligible for this category)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # ── Discovery ───────────────────────────────────────────
+  /discovery:
+    get:
+      operationId: getDiscoveryFeed
+      summary: Browse candidate profiles
+      tags: [discovery]
+      description: Unlimited for every member regardless of tier (docs §4.1).
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Candidate profiles ranked by rarity-weighted favorites overlap
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/DiscoveryCandidate' }
+                  meta: { $ref: '#/components/schemas/PaginatedMeta' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  # ── Messaging ───────────────────────────────────────────
+  /conversations:
+    get:
+      operationId: listConversations
+      summary: List the caller's conversations
+      tags: [messaging]
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: The caller's conversations
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/Conversation' }
+                  meta: { $ref: '#/components/schemas/PaginatedMeta' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /swipes:
+    post:
+      operationId: submitSwipe
+      summary: Like or Pass on a candidate profile; a mutual Like creates a Match + Conversation
+      tags: [matching]
+      description: >
+        The only way a Conversation comes to exist (docs §7/§8) — there is no
+        direct "message anyone" endpoint. Re-swiping the same target is a
+        no-op at the DB level (`@@unique([actorProfileId, targetProfileId])`);
+        the service treats it as idempotent rather than erroring.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SwipeInput' }
+      responses:
+        '201':
+          description: Swipe recorded; `matched` is true (with `conversation` present) iff this Like completed a mutual match
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties: { data: { $ref: '#/components/schemas/SwipeResult' } }
+        '400':
+          description: Cannot swipe on yourself
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /conversations/{conversationId}/messages:
+    get:
+      operationId: listMessages
+      summary: List messages in a conversation
+      tags: [messaging]
+      description: >
+        A free-tier caller sees every Message row with `body: null,
+        locked: true` for messages they didn't send (docs §8 receiving gate).
+      parameters:
+        - in: path
+          name: conversationId
+          required: true
+          schema: { type: string }
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Messages, oldest-cursor paginated
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/Message' }
+                  meta: { $ref: '#/components/schemas/PaginatedMeta' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    post:
+      operationId: sendMessage
+      summary: Send a message in a conversation
+      tags: [messaging]
+      description: >
+        A free-tier sender is capped at 3 sends per rolling day across all
+        conversations (docs §8 sending gate); returns 403 once exhausted.
+      parameters:
+        - in: path
+          name: conversationId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateMessageInput' }
+      responses:
+        '201':
+          description: Message sent
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties: { data: { $ref: '#/components/schemas/Message' } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403':
+          description: Free-tier daily send cap reached
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # ── Monetization ────────────────────────────────────────
+  /plans:
+    get:
+      operationId: listPlans
+      summary: List active subscription plans
+      tags: [monetization]
+      security: []
+      responses:
+        '200':
+          description: Active plans
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/Plan' }
+        '400':
+          description: Unexpected error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  /subscriptions/me:
+    get:
+      operationId: getMySubscription
+      summary: Get the caller's current subscription
+      tags: [monetization]
+      responses:
+        '200':
+          description: The caller's current subscription, if any
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: object
+                    nullable: true
+                    allOf:
+                      - $ref: '#/components/schemas/Subscription'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /subscriptions/dev-purchase:
+    post:
+      operationId: devPurchaseSubscription
+      summary: Simulate a completed purchase (dev/staging only)
+      tags: [monetization]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DevPurchaseInput' }
+      responses:
+        '201':
+          description: Simulated subscription activated
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties: { data: { $ref: '#/components/schemas/Subscription' } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # ── Safety ──────────────────────────────────────────────
+  /blocks:
+    get:
+      operationId: listBlockedProfiles
+      summary: List profiles the caller has blocked
+      tags: [safety]
+      responses:
+        '200':
+          description: Blocked profiles
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/Profile' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    post:
+      operationId: blockProfile
+      summary: Block a profile
+      tags: [safety]
+      description: >
+        Mutually hides both profiles from each other's discovery feed and
+        profile view, and disables further messaging between them (docs
+        §"Safety baseline"). Existing message history is left intact.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/BlockInput' }
+      responses:
+        '201':
+          description: Blocked
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties: { data: { type: object, nullable: true } }
+        '400':
+          description: Cannot block yourself
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /blocks/{profileId}:
+    delete:
+      operationId: unblockProfile
+      summary: Remove a block
+      tags: [safety]
+      parameters:
+        - in: path
+          name: profileId
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Unblocked (idempotent — 200 even if no block existed)
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties: { data: { type: object, nullable: true } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /reports:
+    post:
+      operationId: submitReport
+      summary: Report a profile or a message
+      tags: [safety]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ReportInput' }
+      responses:
+        '201':
+          description: >
+            Report filed — lands in the moderation queue (reviewed manually
+            for now, same as EntitySubmission; no admin UI yet)
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties: { data: { $ref: '#/components/schemas/Report' } }
+        '400':
+          description: Invalid target for the given targetType
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # ── Media ───────────────────────────────────────────────
+  /media/upload:
+    post:
+      operationId: uploadMedia
+      summary: Upload an image (profile photos)
+      tags: [media]
+      description: >
+        Multipart body, one `file` field (image/jpeg, png, gif, webp, or svg+xml).
+        No `requestBody` schema is declared here on purpose: `@fastify/multipart`
+        never populates `request.body` (files are consumed via the streaming
+        `request.file()` API instead), so any body schema here — even an empty one —
+        gets validated against `request.body` and rejects every real request as
+        "must be object". `MediaService` does the actual file-type and size
+        validation instead.
+      responses:
+        '201':
+          description: Uploaded
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties: { data: { $ref: '#/components/schemas/MediaResult' } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '413':
+          description: File too large
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '415':
+          description: Unsupported file type
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  /media/{key}:
+    delete:
+      operationId: deleteMedia
+      summary: Delete an uploaded file
+      tags: [media]
+      parameters:
+        - in: path
+          name: key
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Deleted (idempotent)
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties: { data: { type: object, nullable: true } }
+        '400':
+          description: Invalid key
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }

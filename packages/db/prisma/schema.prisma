@@ -1,0 +1,535 @@
+// Source of truth for the DB. See docs/data-schema-proposal.md for full design rationale
+// (§13 is the authoritative MVP appendix this file mirrors; §14 is Phase 2, not applied here).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ── Identity ──────────────────────────────────────────────
+model User {
+  id           String      @id @default(cuid())
+  email        String      @unique
+  phone        String?     @unique
+  passwordHash String?
+  role         AccountRole @default(USER)
+  isVerified   Boolean     @default(false)
+  suspendedAt  DateTime?
+  deletedAt    DateTime?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  profile             Profile?
+  subscriptions       Subscription[]
+  sessions            Session[]
+  reviewedSubmissions EntitySubmission[]
+  reviewedReports     Report[]
+  passwordResetTokens PasswordResetToken[]
+  emailVerificationTokens EmailVerificationToken[]
+}
+
+enum AccountRole {
+  USER
+  MODERATOR
+  ADMIN
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([userId])
+}
+
+// token is a short numeric code (mailed/emailed, entered by hand in-app — this is a
+// mobile-only product with no web page to host a clickable reset link), scoped by
+// userId rather than globally unique, so lookups are always `WHERE userId = X AND
+// token = Y`. See AuthService for the actual comparison + expiry/used-once logic.
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  token     String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model EmailVerificationToken {
+  id        String    @id @default(cuid())
+  userId    String
+  token     String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Profile {
+  id             String   @id @default(cuid())
+  userId         String   @unique
+  username       String   @unique
+  displayName    String
+  birthdate      DateTime
+  genderIdentity String?
+  bio            String?  @db.VarChar(150)
+  locationLat    Float?
+  locationLng    Float?
+  locationLabel  String?
+  avatarUrl      String?
+  isDiscoverable Boolean  @default(true)
+  onboardingStep Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user                   User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  seekingGenders         ProfileSeekingGender[]
+  photos                 ProfilePhoto[]
+  lists                  List[]
+  submittedEntities      Entity[]
+  submissions            EntitySubmission[]         @relation("SubmissionSubmitter")
+  swipesMade             Swipe[]                    @relation("SwipeActor")
+  swipesReceived         Swipe[]                    @relation("SwipeTarget")
+  conversations          ConversationParticipant[]
+  initiatedConversations Conversation[]             @relation("ConversationInitiator")
+  sentMessages           Message[]                  @relation("MessageSender")
+  blocksMade             Block[]                    @relation("BlockBlocker")
+  blocksReceived         Block[]                    @relation("BlockBlocked")
+  reportsFiled           Report[]                   @relation("ReportReporter")
+  reportsReceived        Report[]                   @relation("ReportTargetProfile")
+
+  @@index([locationLat, locationLng])
+}
+
+// ── Safety ────────────────────────────────────────────────
+model Block {
+  id               String   @id @default(cuid())
+  blockerProfileId String
+  blockedProfileId String
+  createdAt        DateTime @default(now())
+
+  blocker Profile @relation("BlockBlocker", fields: [blockerProfileId], references: [id], onDelete: Cascade)
+  blocked Profile @relation("BlockBlocked", fields: [blockedProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([blockerProfileId, blockedProfileId])
+  @@index([blockedProfileId])
+}
+
+enum ReportTargetType {
+  PROFILE
+  MESSAGE
+}
+
+enum ReportStatus {
+  PENDING
+  REVIEWED
+  ACTIONED
+}
+
+model Report {
+  id                String           @id @default(cuid())
+  reporterProfileId String
+  targetType        ReportTargetType
+  targetProfileId   String?
+  targetMessageId   String?
+  reason            String
+  details           String?          @db.Text
+  status            ReportStatus     @default(PENDING)
+  createdAt         DateTime         @default(now())
+  reviewedAt        DateTime?
+  reviewedByUserId  String?
+
+  reporter       Profile  @relation("ReportReporter", fields: [reporterProfileId], references: [id], onDelete: Restrict)
+  targetProfile  Profile? @relation("ReportTargetProfile", fields: [targetProfileId], references: [id], onDelete: Restrict)
+  targetMessage  Message? @relation("ReportTargetMessage", fields: [targetMessageId], references: [id], onDelete: Restrict)
+  reviewedByUser User?    @relation(fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([status])
+  @@index([targetProfileId])
+}
+
+model ProfileSeekingGender {
+  profileId String
+  gender    String
+
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@id([profileId, gender])
+}
+
+model ProfilePhoto {
+  id        String   @id @default(cuid())
+  profileId String
+  url       String
+  sortOrder Int
+  createdAt DateTime @default(now())
+
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@unique([profileId, sortOrder])
+}
+
+// ── Matching ──────────────────────────────────────────────
+model Swipe {
+  id              String      @id @default(cuid())
+  actorProfileId  String
+  targetProfileId String
+  action          SwipeAction
+  createdAt       DateTime    @default(now())
+
+  actor  Profile @relation("SwipeActor", fields: [actorProfileId], references: [id], onDelete: Cascade)
+  target Profile @relation("SwipeTarget", fields: [targetProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([actorProfileId, targetProfileId])
+  @@index([targetProfileId])
+}
+
+enum SwipeAction {
+  LIKE
+  PASS
+}
+
+// ── Taxonomy ──────────────────────────────────────────────
+model EntityType {
+  id             String   @id @default(cuid())
+  slug           String   @unique
+  label          String
+  pluralLabel    String
+  icon           String?
+  metadataSchema Json?
+  createdAt      DateTime @default(now())
+
+  entities          Entity[]
+  categories        Category[]
+  entitySubmissions EntitySubmission[]
+}
+
+model Entity {
+  id                   String           @id @default(cuid())
+  entityTypeId         String
+  canonicalName        String
+  slug                 String
+  imageUrl             String?
+  metadata             Json?
+  externalIds          Json?
+  sourceType           EntitySourceType @default(SEEDED)
+  status               SubmissionStatus @default(APPROVED)
+  mergedIntoId         String?
+  usageCount           Int              @default(0)
+  submittedByProfileId String?
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+
+  entityType         EntityType         @relation(fields: [entityTypeId], references: [id], onDelete: Restrict)
+  mergedInto         Entity?            @relation("EntityMerge", fields: [mergedIntoId], references: [id], onDelete: SetNull)
+  mergedFrom         Entity[]           @relation("EntityMerge")
+  submittedByProfile Profile?           @relation(fields: [submittedByProfileId], references: [id], onDelete: SetNull)
+  aliases            EntityAlias[]
+  tags               EntityTag[]
+  listItems          ListItem[]
+  submittedEntityFor EntitySubmission?  @relation("SubmissionSubmittedEntity")
+  suggestedMatchFor  EntitySubmission[] @relation("SubmissionSuggestedMatch")
+  resolvedFor        EntitySubmission[] @relation("SubmissionResolvedEntity")
+
+  @@unique([entityTypeId, slug])
+  @@index([entityTypeId, status])
+  @@index([entityTypeId, usageCount])
+  @@index([canonicalName])
+}
+
+enum EntitySourceType {
+  SEEDED
+  IMPORTED
+  USER_SUBMITTED
+}
+
+enum SubmissionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  MERGED
+}
+
+model EntityAlias {
+  id        String   @id @default(cuid())
+  entityId  String
+  alias     String
+  locale    String   @default("en")
+  createdAt DateTime @default(now())
+
+  entity Entity @relation(fields: [entityId], references: [id], onDelete: Cascade)
+
+  @@unique([entityId, alias])
+  @@index([alias])
+}
+
+model Tag {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  label     String
+  kind      TagKind  @default(CUSTOM)
+  createdAt DateTime @default(now())
+
+  entityTags   EntityTag[]
+  categoryTags CategoryTag[]
+}
+
+enum TagKind {
+  DECADE
+  GENRE
+  PLATFORM
+  REGION
+  ERA
+  CUSTOM
+}
+
+model EntityTag {
+  entityId String
+  tagId    String
+
+  entity Entity @relation(fields: [entityId], references: [id], onDelete: Cascade)
+  tag    Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([entityId, tagId])
+}
+
+model EntitySubmission {
+  id                   String           @id @default(cuid())
+  entityTypeId         String
+  rawText              String
+  submittedByProfileId String
+  submittedEntityId    String           @unique
+  suggestedMatchId     String?
+  resolvedEntityId     String?
+  status               SubmissionStatus @default(PENDING)
+  reviewedByUserId     String?
+  reviewNotes          String?
+  createdAt            DateTime         @default(now())
+  reviewedAt           DateTime?
+
+  entityType         EntityType @relation(fields: [entityTypeId], references: [id], onDelete: Restrict)
+  submittedByProfile Profile    @relation("SubmissionSubmitter", fields: [submittedByProfileId], references: [id], onDelete: Restrict)
+  submittedEntity    Entity     @relation("SubmissionSubmittedEntity", fields: [submittedEntityId], references: [id], onDelete: Restrict)
+  suggestedMatch     Entity?    @relation("SubmissionSuggestedMatch", fields: [suggestedMatchId], references: [id], onDelete: SetNull)
+  resolvedEntity     Entity?    @relation("SubmissionResolvedEntity", fields: [resolvedEntityId], references: [id], onDelete: SetNull)
+  reviewedByUser     User?      @relation(fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([status, entityTypeId])
+}
+
+// ── Categories & Lists ────────────────────────────────────
+model CategoryGroup {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  label     String
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  categories Category[]
+}
+
+model Category {
+  id              String           @id @default(cuid())
+  groupId         String
+  entityTypeId    String
+  slug            String           @unique
+  prompt          String
+  shortLabel      String
+  minItems        Int              @default(1)
+  maxItems        Int              @default(5)
+  orderingMode    OrderingMode     @default(RANKED)
+  isMatchSignal   Boolean          @default(true)
+  isPremiumOnly   Boolean          @default(false)
+  status          SubmissionStatus @default(APPROVED)
+  popularityCount Int              @default(0)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  group        CategoryGroup @relation(fields: [groupId], references: [id], onDelete: Restrict)
+  entityType   EntityType    @relation(fields: [entityTypeId], references: [id], onDelete: Restrict)
+  requiredTags CategoryTag[]
+  lists        List[]
+
+  @@index([groupId, status])
+  @@index([entityTypeId])
+}
+
+enum OrderingMode {
+  RANKED
+  UNRANKED
+}
+
+model CategoryTag {
+  categoryId String
+  tagId      String
+
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  tag      Tag      @relation(fields: [tagId], references: [id], onDelete: Restrict)
+
+  @@id([categoryId, tagId])
+}
+
+model List {
+  id          String         @id @default(cuid())
+  profileId   String
+  categoryId  String
+  title       String?
+  visibility  ListVisibility @default(PUBLIC)
+  isComplete  Boolean        @default(false)
+  completedAt DateTime?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  profile  Profile    @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  category Category   @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  items    ListItem[]
+
+  @@unique([profileId, categoryId])
+  @@index([profileId])
+  @@index([categoryId])
+}
+
+enum ListVisibility {
+  PUBLIC
+  PREMIUM_ONLY
+  PRIVATE
+}
+
+model ListItem {
+  id        String   @id @default(cuid())
+  listId    String
+  entityId  String
+  rank      Int
+  note      String?
+  createdAt DateTime @default(now())
+
+  list   List   @relation(fields: [listId], references: [id], onDelete: Cascade)
+  entity Entity @relation(fields: [entityId], references: [id], onDelete: Restrict)
+
+  @@unique([listId, rank])
+  @@unique([listId, entityId])
+  @@index([entityId])
+}
+
+// ── Messaging ─────────────────────────────────────────────
+model Conversation {
+  id            String             @id @default(cuid())
+  status        ConversationStatus @default(ACCEPTED)
+  initiatedById String
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  initiator    Profile                   @relation("ConversationInitiator", fields: [initiatedById], references: [id], onDelete: Restrict)
+  participants ConversationParticipant[]
+  messages     Message[]
+}
+
+enum ConversationStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  BLOCKED
+}
+
+model ConversationParticipant {
+  conversationId String
+  profileId      String
+  lastReadAt     DateTime?
+  isArchived     Boolean   @default(false)
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  profile      Profile      @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@id([conversationId, profileId])
+}
+
+model Message {
+  id             String    @id @default(cuid())
+  conversationId String
+  senderId       String
+  body           String    @db.Text
+  createdAt      DateTime  @default(now())
+  deletedAt      DateTime?
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       Profile      @relation("MessageSender", fields: [senderId], references: [id], onDelete: Restrict)
+  reports      Report[]     @relation("ReportTargetMessage")
+
+  @@index([conversationId, createdAt])
+  @@index([senderId, createdAt])
+}
+
+// ── Monetization ──────────────────────────────────────────
+model Plan {
+  id         String       @id @default(cuid())
+  slug       String       @unique
+  label      String
+  interval   PlanInterval
+  priceCents Int
+  currency   String       @default("USD")
+  isActive   Boolean      @default(true)
+
+  subscriptions Subscription[]
+}
+
+enum PlanInterval {
+  MONTHLY
+  ANNUAL
+  LIFETIME
+}
+
+model Subscription {
+  id                     String             @id @default(cuid())
+  userId                 String
+  planId                 String
+  provider               PaymentProvider
+  providerSubscriptionId String             @unique
+  status                 SubscriptionStatus
+  currentPeriodEnd       DateTime
+  cancelAtPeriodEnd      Boolean            @default(false)
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+  plan Plan @relation(fields: [planId], references: [id], onDelete: Restrict)
+
+  @@index([userId, status])
+}
+
+enum PaymentProvider {
+  APPLE_APP_STORE
+  GOOGLE_PLAY
+  STRIPE
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  TRIALING
+  PAST_DUE
+  CANCELED
+  EXPIRED
+}
+
+// ── Supporting site ───────────────────────────────────────
+model WaitlistSignup {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  source    String?
+  createdAt DateTime @default(now())
+}
