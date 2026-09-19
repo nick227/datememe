@@ -34,7 +34,7 @@ export function CategoriesScreen({ navigation }: Props) {
   const isLoading = groups.isLoading || categories.isLoading
 
   return (
-    <ScreenContainer padded={false}>
+    <ScreenContainer padded={false} width="wide">
       <TopNavigation
         title="Your favorites"
         subtitle={`${completedCategoryIds.size} completed — pick a category and build your list`}

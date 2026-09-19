@@ -16,6 +16,7 @@ import { MatchFeedCard } from '../components/MatchFeedCard'
 import { MatchFeedCardSkeleton } from '../components/MatchFeedCardSkeleton'
 import { Button } from '../../../ui/Button'
 import { colors, radius, spacing } from '../../../theme'
+import { useIsDesktop } from '../../../lib/useResponsive'
 import { hapticSuccess, hapticMedium, hapticHeavy } from '../../../lib/haptics'
 import type { DiscoveryStackParamList } from '../../../navigation/types'
 import { Typography } from '../../../ui/Typography'
@@ -28,6 +29,7 @@ type Props = NativeStackScreenProps<DiscoveryStackParamList, 'Discovery'>
 export function DiscoveryScreen({ navigation }: Props) {
   const feed = useDiscoveryFeed()
   const swipe = useSwipe()
+  const isDesktop = useIsDesktop()
   const candidates = feed.data?.pages.flatMap((p) => p.data) ?? []
 
   const [currentIndex, setCurrentIndex] = useState(0)
@@ -127,7 +129,7 @@ export function DiscoveryScreen({ navigation }: Props) {
           />
         </View>
 
-        <View style={styles.deckContainer}>
+        <View style={[styles.deckContainer, isDesktop && styles.deckContainerDesktop]}>
           {feed.isLoading ? (
             <MatchFeedCardSkeleton />
           ) : visibleCards.length === 0 ? (
@@ -207,7 +209,7 @@ export function DiscoveryScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   headerWrapper: {
     zIndex: 10,
-    backgroundColor: 'rgba(22, 24, 50, 0.8)', // Semi-transparent to blend with card
+    backgroundColor: colors.overlay,
   },
   deckContainer: {
     flex: 1,
@@ -215,9 +217,14 @@ const styles = StyleSheet.create({
     margin: spacing.md,
     marginBottom: spacing.xxl,
   },
+  deckContainerDesktop: {
+    alignSelf: 'center',
+    width: '100%',
+    maxWidth: 460,
+  },
   modalOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(22, 24, 50, 0.6)',
+    backgroundColor: colors.overlay,
     alignItems: 'center',
     justifyContent: 'center',
     padding: spacing.xl,

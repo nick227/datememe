@@ -3,6 +3,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { useConversations, useCurrentUser } from '@project/sdk'
 import Swipeable from 'react-native-gesture-handler/Swipeable'
 import { ScreenContainer } from '../../../ui/ScreenContainer'
+import { TopNavigation } from '../../../ui/TopNavigation'
 import { Skeleton } from '../../../ui/Skeleton'
 import { EmptyState } from '../../../ui/EmptyState'
 import { colors, radius, spacing, type } from '../../../theme'
@@ -51,10 +52,8 @@ export function ConversationsScreen({ navigation }: Props) {
   }
 
   return (
-    <ScreenContainer padded={false}>
-      <View style={styles.header}>
-        <Typography variant="title">Messages</Typography>
-      </View>
+    <ScreenContainer padded={false} width="wide">
+      <TopNavigation title="Messages" alignment="left" />
       <FlatList
         data={(conversations.isLoading ? [1, 2, 3, 4, 5] : rows) as any[]}
         keyExtractor={(item) => (typeof item === 'number' ? String(item) : item.id)}
@@ -127,7 +126,6 @@ export function ConversationsScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  header: { paddingHorizontal: spacing.lg, paddingTop: spacing.sm, paddingBottom: spacing.md },
   listContent: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xxl },
   row: { 
     flexDirection: 'row', 

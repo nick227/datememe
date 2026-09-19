@@ -1,7 +1,8 @@
-import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from 'react-native'
+import { ActivityIndicator, Alert, StyleSheet, Text, View } from 'react-native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { useDevPurchase, useMySubscription, usePlans } from '@project/sdk'
 import { ScreenContainer } from '../../../ui/ScreenContainer'
+import { TopNavigation } from '../../../ui/TopNavigation'
 import { Button } from '../../../ui/Button'
 import { colors, radius, spacing, type } from '../../../theme'
 import type { ProfileStackParamList } from '../../../navigation/types'
@@ -33,13 +34,8 @@ export function PaywallScreen({ navigation }: Props) {
   const isPremium = !!subscription.data?.isActive
 
   return (
-    <ScreenContainer>
-      <View style={styles.headerRow}>
-        <Pressable onPress={() => navigation.goBack()} hitSlop={12}>
-          <Text style={styles.back}>{'‹'}</Text>
-        </Pressable>
-      </View>
-      <Typography variant="title">Go Premium</Typography>
+    <ScreenContainer width="narrow">
+      <TopNavigation alignment="left" leftAction="back" onLeftAction={() => navigation.goBack()} title="Go Premium" />
       <View style={styles.perks}>
         {PERKS.map((perk) => (
           <Text key={perk} style={styles.perk}>
@@ -83,8 +79,6 @@ export function PaywallScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  headerRow: { height: 32, justifyContent: 'center' },
-  back: { fontSize: 28, color: colors.ink },
   perks: { marginTop: spacing.md },
   perk: { ...type.body, marginBottom: spacing.xs },
   activeBadge: {

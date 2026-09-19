@@ -64,7 +64,7 @@ const styles = StyleSheet.create({
   base: { backgroundColor: colors.surfaceMuted, overflow: 'hidden', position: 'relative' },
   placeholder: { alignItems: 'center', justifyContent: 'center', backgroundColor: colors.primarySoft },
   placeholderText: { fontSize: 28, color: colors.primary, fontWeight: '700' },
-  overlay: { backgroundColor: 'rgba(22,24,50,0.45)', alignItems: 'center', justifyContent: 'center' },
+  overlay: { backgroundColor: colors.overlay, alignItems: 'center', justifyContent: 'center' },
   editBadge: {
     position: 'absolute',
     right: -2,

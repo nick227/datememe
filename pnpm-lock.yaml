@@ -27,6 +27,9 @@ importers:
 
   apps/mobile:
     dependencies:
+      '@expo-google-fonts/baloo-2':
+        specifier: ^0.4.2
+        version: 0.4.2
       '@expo-google-fonts/plus-jakarta-sans':
         specifier: ^0.4.2
         version: 0.4.2
@@ -972,6 +975,9 @@ packages:
   '@eslint/js@8.57.1':
     resolution: {integrity: sha512-d9zaMRSTIKDLhctzH12MtXvJKSSUhaHcjV+2Z+GK+EEY7XKpP5yR4x+N3TAcHTcu963nIr+TMcCb4DBCYX1z6Q==}
     engines: {node: ^12.22.0 || ^14.17.0 || >=16.0.0}
+
+  '@expo-google-fonts/baloo-2@0.4.2':
+    resolution: {integrity: sha512-uvrw1I+sP72PY8xROJQ6CMiGHu9+WJCdi72Q+OiWpQ3sKsIRyIEXimDfgUnkk2vpWVej0JX9fLc87iDmjKE86A==}
 
   '@expo-google-fonts/plus-jakarta-sans@0.4.2':
     resolution: {integrity: sha512-6LYVmVGwjQvH+uzzWlVc9+oMj4lkNQ41aymVDjO+x8aFk8kCye20wOyLomYMZaMezA++Uf1mZRCw3W3Fy/hxEA==}
@@ -5551,6 +5557,8 @@ snapshots:
       - supports-color
 
   '@eslint/js@8.57.1': {}
+
+  '@expo-google-fonts/baloo-2@0.4.2': {}
 
   '@expo-google-fonts/plus-jakarta-sans@0.4.2': {}
 

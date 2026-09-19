@@ -106,7 +106,7 @@ export function ConversationScreen({ route, navigation }: Props) {
   }
 
   return (
-    <ScreenContainer padded={false}>
+    <ScreenContainer padded={false} width="wide">
       {/* Interactive Header */}
       <View style={styles.header}>
         <Pressable onPress={() => navigation.goBack()} style={styles.headerBtn}>
@@ -159,7 +159,7 @@ export function ConversationScreen({ route, navigation }: Props) {
                   onPress={() => (navigation.getParent()?.navigate as any)('Profile', { screen: 'Paywall' })}
                 >
                   <LinearGradient
-                    colors={['rgba(255, 126, 179, 0.1)', 'rgba(255, 117, 140, 0.15)']}
+                    colors={[colors.primarySoft, colors.lavenderSoft]}
                     style={[styles.bubble, styles.bubbleLocked]}
                   >
                     <Icon name="Lock" size={16} color={colors.primary} />
@@ -315,7 +315,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.xs,
     borderWidth: 1,
-    borderColor: 'rgba(255, 117, 140, 0.3)',
+    borderColor: 'rgba(140, 124, 240, 0.3)', // lavender @ 30% — matches colors.lavender
   },
   lockedText: { color: colors.primary, fontSize: 15, fontWeight: '600' },
   unlockBtn: {

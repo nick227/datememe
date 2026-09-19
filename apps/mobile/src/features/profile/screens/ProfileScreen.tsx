@@ -8,7 +8,9 @@ import { EmptyState } from '../../../ui/EmptyState'
 import { PreviewListCard } from '../../lists/components/PreviewListCard'
 import { PreviewListCardSkeleton } from '../../lists/components/PreviewListCardSkeleton'
 import { Skeleton } from '../../../ui/Skeleton'
+import { Icon } from '../../../ui/Icon'
 import { colors, radius, spacing, type } from '../../../theme'
+import { useIsDesktop } from '../../../lib/useResponsive'
 import type { ProfileStackParamList } from '../../../navigation/types'
 import { Typography } from '../../../ui/Typography'
 
@@ -19,15 +21,16 @@ export function ProfileScreen({ navigation }: Props) {
   const lists = useMyLists()
 
   const profile = me.data?.profile
+  const numColumns = useIsDesktop() ? 3 : 2
 
   return (
-    <ScreenContainer padded={false}>
+    <ScreenContainer padded={false} width="wide">
       <TopNavigation
         leftAction="close"
         onLeftAction={() => navigation.goBack()}
         rightElement={
           <Pressable onPress={() => navigation.navigate('Account')} hitSlop={12} style={{ padding: spacing.xs }}>
-            <Text style={type.iconButton}>⚙</Text>
+            <Icon name="Settings" />
           </Pressable>
         }
       />
@@ -59,9 +62,10 @@ export function ProfileScreen({ navigation }: Props) {
       </View>
 
       <FlatList
+        key={numColumns}
         data={(lists.isLoading ? [1, 2] : (lists.data ?? []).filter((l) => l.isComplete)) as any[]}
         keyExtractor={(item) => (typeof item === 'number' ? String(item) : item.id)}
-        numColumns={2}
+        numColumns={numColumns}
         columnWrapperStyle={{ gap: spacing.sm }}
         contentContainerStyle={styles.listContent}
         ListHeaderComponent={<Typography variant="label" style={styles.sectionLabel}>YOUR LISTS</Typography>}
@@ -76,7 +80,7 @@ const styles = StyleSheet.create({
   header: { alignItems: 'center', paddingHorizontal: spacing.lg, paddingTop: spacing.sm, paddingBottom: spacing.md },
   avatar: { width: 88, height: 88, borderRadius: radius.pill, marginBottom: spacing.sm },
   avatarFallback: { backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center' },
-  avatarFallbackText: { fontFamily: 'PlusJakartaSans_800ExtraBold', fontSize: 30, color: colors.primary },
+  avatarFallbackText: { ...type.title, fontSize: 30, color: colors.primary },
   listContent: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xxl },
   sectionLabel: { marginBottom: spacing.sm },
 })

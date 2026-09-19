@@ -1,4 +1,3 @@
-import { Text, View } from 'react-native'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import { useEffect } from 'react'
 import * as Notifications from 'expo-notifications'
@@ -6,15 +5,16 @@ import { useQueryClient } from '@tanstack/react-query'
 import { CategoriesStack } from './CategoriesStack'
 import { DiscoveryStack } from './DiscoveryStack'
 import { MessagesStack } from './MessagesStack'
+import { Icon, type IconName } from '../ui/Icon'
 import { colors } from '../theme'
 import { useConversations } from '@project/sdk'
 
 const Tab = createBottomTabNavigator()
 
-const ICONS: Record<string, string> = {
-  Favorites: '★',
-  Discover: '👀',
-  Messages: '💬',
+const ICONS: Record<string, IconName> = {
+  Favorites: 'Heart',
+  Discover: 'Flame',
+  Messages: 'MessageCircle',
 }
 
 export function AppTabs() {
@@ -39,7 +39,7 @@ export function AppTabs() {
         headerShown: false,
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.inkMuted,
-        tabBarIcon: () => <Text style={{ fontSize: 18 }}>{ICONS[route.name]}</Text>,
+        tabBarIcon: ({ color, size }) => <Icon name={ICONS[route.name]} color={color} size={size} />,
       })}
     >
       <Tab.Screen name="Favorites" component={CategoriesStack} />

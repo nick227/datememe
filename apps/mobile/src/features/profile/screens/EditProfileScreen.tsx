@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react'
-import { Alert, Pressable, ScrollView, Text, View } from 'react-native'
+import { Alert, ScrollView, View } from 'react-native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { useCurrentUser, useUpdateMyProfile } from '@project/sdk'
 import { ScreenContainer } from '../../../ui/ScreenContainer'
+import { TopNavigation } from '../../../ui/TopNavigation'
 import { TextField } from '../../../ui/TextField'
 import { Button } from '../../../ui/Button'
 import { PhotoPicker } from '../../../ui/PhotoPicker'
-import { colors, spacing } from '../../../theme'
+import { spacing } from '../../../theme'
 import type { ProfileStackParamList } from '../../../navigation/types'
 import { Typography } from '../../../ui/Typography'
 
@@ -56,17 +57,9 @@ export function EditProfileScreen({ navigation }: Props) {
   }
 
   return (
-    <ScreenContainer>
-      <View style={{ height: 32, justifyContent: 'center' }}>
-        <Pressable onPress={() => navigation.goBack()} hitSlop={12}>
-          <Text style={{ fontSize: 28, color: colors.ink }}>{'‹'}</Text>
-        </Pressable>
-      </View>
+    <ScreenContainer width="narrow">
+      <TopNavigation alignment="left" leftAction="back" onLeftAction={() => navigation.goBack()} title="Edit profile" />
       <ScrollView keyboardShouldPersistTaps="handled">
-        <Typography variant="title" style={{ marginBottom: spacing.lg }}>
-          Edit profile
-        </Typography>
-
         <View style={{ alignItems: 'center', marginBottom: spacing.lg }}>
           <PhotoPicker
             uri={avatarUrl}

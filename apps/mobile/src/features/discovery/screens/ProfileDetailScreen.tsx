@@ -10,7 +10,8 @@ import { MatchDimensionsBreakdown } from '../components/MatchDimensionsBreakdown
 import { SwipeActions } from '../components/SwipeActions'
 import { PreviewListCard } from '../../lists/components/PreviewListCard'
 import { PreviewListCardSkeleton } from '../../lists/components/PreviewListCardSkeleton'
-import { colors, radius, spacing } from '../../../theme'
+import { colors, radius, spacing, type } from '../../../theme'
+import { useIsDesktop } from '../../../lib/useResponsive'
 import type { DiscoveryStackParamList } from '../../../navigation/types'
 import { Typography } from '../../../ui/Typography'
 
@@ -22,6 +23,7 @@ export function ProfileDetailScreen({ route, navigation }: Props) {
   const lists = useProfileLists(profileId)
   const swipe = useSwipe()
   const [decided, setDecided] = useState(false)
+  const numColumns = useIsDesktop() ? 3 : 2
 
   const avatarUrl = profile.data?.avatarUrl
 
@@ -50,16 +52,17 @@ export function ProfileDetailScreen({ route, navigation }: Props) {
   }
 
   return (
-    <ScreenContainer padded={false}>
+    <ScreenContainer padded={false} width="wide">
       <TopNavigation
         leftAction="back"
         onLeftAction={() => navigation.goBack()}
       />
 
       <FlatList
+        key={numColumns}
         data={(lists.isLoading ? [1, 2, 3, 4] : (lists.data ?? [])) as any[]}
         keyExtractor={(item) => (typeof item === 'number' ? String(item) : item.id)}
-        numColumns={2}
+        numColumns={numColumns}
         columnWrapperStyle={{ gap: spacing.sm }}
         contentContainerStyle={styles.listContent}
         ListHeaderComponent={
@@ -108,7 +111,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing.xs,
   },
-  photoLockedText: { fontFamily: 'PlusJakartaSans_800ExtraBold', fontSize: 40, color: colors.primary },
+  photoLockedText: { ...type.title, fontSize: 40, color: colors.primary },
   infoRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',

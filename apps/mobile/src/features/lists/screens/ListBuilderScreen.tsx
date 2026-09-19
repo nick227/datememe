@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
-import { Alert, FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
+import { Alert, FlatList, Pressable, ScrollView, StyleSheet, View } from 'react-native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { useCategory, useCategoryEntities, useMyLists, useSubmitEntity, useUpsertList } from '@project/sdk'
 import { ScreenContainer } from '../../../ui/ScreenContainer'
+import { TopNavigation } from '../../../ui/TopNavigation'
 import { SearchBar } from '../components/SearchBar'
 import { PickedChip } from '../components/PickedChip'
 import { EntityRow } from '../components/EntityRow'
 import { Button } from '../../../ui/Button'
-import { colors, radius, spacing, type } from '../../../theme'
+import { colors, radius, spacing } from '../../../theme'
 import type { CategoriesStackParamList } from '../../../navigation/types'
 import { Typography } from '../../../ui/Typography'
 
@@ -95,13 +96,13 @@ export function ListBuilderScreen({ route, navigation }: Props) {
   }
 
   return (
-    <ScreenContainer>
-      <View style={styles.headerRow}>
-        <Pressable onPress={() => navigation.goBack()} hitSlop={12}>
-          <Text style={styles.back}>{'‹'}</Text>
-        </Pressable>
-      </View>
-      <Typography variant="title" style={styles.title}>{category.data?.prompt ?? shortLabel}</Typography>
+    <ScreenContainer width="narrow">
+      <TopNavigation
+        alignment="left"
+        leftAction="back"
+        onLeftAction={() => navigation.goBack()}
+        title={category.data?.prompt ?? shortLabel}
+      />
 
       <SearchBar value={query} onChangeText={setQuery} placeholder={`Search ${shortLabel.toLowerCase()}`} />
 
@@ -160,9 +161,6 @@ export function ListBuilderScreen({ route, navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  headerRow: { height: 32, justifyContent: 'center' },
-  back: { fontSize: 28, color: colors.ink },
-  title: { ...type.title, fontSize: 24, marginBottom: spacing.md },
   filterRow: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: spacing.sm },
   filterChip: {
     backgroundColor: colors.surfaceMuted,

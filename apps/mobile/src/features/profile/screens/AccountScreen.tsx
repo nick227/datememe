@@ -2,6 +2,7 @@ import { ActivityIndicator, StyleSheet, Text, View } from 'react-native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { useCurrentUser, useLogout, useMySubscription } from '@project/sdk'
 import { ScreenContainer } from '../../../ui/ScreenContainer'
+import { TopNavigation } from '../../../ui/TopNavigation'
 import { Button } from '../../../ui/Button'
 import { clearToken } from '../../../lib/authToken'
 import { colors, radius, spacing, type } from '../../../theme'
@@ -24,15 +25,16 @@ export function AccountScreen({ navigation }: Props) {
 
   if (me.isLoading) {
     return (
-      <ScreenContainer>
+      <ScreenContainer width="narrow">
+        <TopNavigation alignment="left" leftAction="back" onLeftAction={() => navigation.goBack()} title="Account" />
         <ActivityIndicator style={{ marginTop: spacing.xl }} color={colors.primary} />
       </ScreenContainer>
     )
   }
 
   return (
-    <ScreenContainer>
-      <Typography variant="title" style={styles.title}>Account</Typography>
+    <ScreenContainer width="narrow">
+      <TopNavigation alignment="left" leftAction="back" onLeftAction={() => navigation.goBack()} title="Account" />
 
       <View style={styles.card}>
         <View style={styles.row}>
@@ -61,7 +63,6 @@ export function AccountScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  title: { marginBottom: spacing.lg },
   card: {
     backgroundColor: colors.surfaceMuted,
     borderRadius: radius.lg,
