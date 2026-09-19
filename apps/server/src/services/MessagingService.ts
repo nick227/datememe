@@ -1,4 +1,4 @@
-import { db } from '@project/db'
+import { db, Prisma } from '@project/db'
 import { decodeCursor, encodeCursor, normalizeLimit } from '../lib/pagination'
 import { PROFILE_SUMMARY_SELECT, serializeProfile } from '../lib/serializers'
 import { FREE_DAILY_MESSAGE_LIMIT, isPremiumUser, startOfUtcDay } from '../lib/entitlements'
@@ -190,7 +190,7 @@ export class MessagingService {
         conversationId, 
         senderId: viewerProfileId, 
         body: body || null,
-        attachments: attachments ?? null
+        attachments: attachments ?? Prisma.JsonNull
       } 
     })
 

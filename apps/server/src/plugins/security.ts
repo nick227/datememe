@@ -1,5 +1,5 @@
 import { db } from '@project/db'
-import { PROFILE_INCLUDE } from '../lib/serializers'
+import { PROFILE_FULL_SELECT } from '../lib/serializers'
 
 export async function bearerAuth(request: any, _reply: any, _params: any) {
   // cookie-first (web); Bearer header fallback (native apps — see packages/sdk/src/client.ts)
@@ -11,7 +11,7 @@ export async function bearerAuth(request: any, _reply: any, _params: any) {
 
   const session = await db.session.findUnique({
     where: { token },
-    include: { user: { include: { profile: { include: PROFILE_INCLUDE } } } },
+    include: { user: { include: { profile: { select: PROFILE_FULL_SELECT } } } },
   })
 
   if (!session || session.expiresAt < new Date()) {

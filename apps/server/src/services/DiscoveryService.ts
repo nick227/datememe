@@ -1,5 +1,5 @@
 import { db } from '@project/db'
-import { decodeCursor, encodeCursor, normalizeLimit } from '../lib/pagination'
+import { encodeOffsetCursor, normalizeLimit } from '../lib/pagination'
 import { PROFILE_FULL_SELECT, serializeProfile } from '../lib/serializers'
 import { isPremiumUser } from '../lib/entitlements'
 
@@ -72,7 +72,7 @@ export class DiscoveryService {
     })
 
     // MVP simplified cursor (needs full cursor logic in prod)
-    const nextCursor = hasMore ? encodeCursor({ score: pageScores[pageScores.length - 1].score }) : null
+    const nextCursor = hasMore ? encodeOffsetCursor(pageScores.length) : null
 
     return { data, meta: { hasMore, nextCursor } }
   }

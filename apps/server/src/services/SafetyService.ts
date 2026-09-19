@@ -1,5 +1,5 @@
 import { db } from '@project/db'
-import { PROFILE_INCLUDE, serializeProfile } from '../lib/serializers'
+import { PROFILE_FULL_SELECT, serializeProfile } from '../lib/serializers'
 
 export class SafetyService {
   /** Idempotent — blocking twice is a no-op, not an error. */
@@ -24,7 +24,7 @@ export class SafetyService {
   async listBlockedProfiles(blockerProfileId: string) {
     const blocks = await db.block.findMany({
       where: { blockerProfileId },
-      include: { blocked: { include: PROFILE_INCLUDE } },
+      include: { blocked: { select: PROFILE_FULL_SELECT } },
       orderBy: { createdAt: 'desc' },
     })
     // Their photo doesn't matter on a "manage blocked users" screen — never reveal it here.

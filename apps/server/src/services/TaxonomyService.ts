@@ -1,7 +1,7 @@
-import { db, Prisma, type Entity } from '@project/db'
+import { db, Prisma } from '@project/db'
 import { decodeOffsetCursor, encodeOffsetCursor, normalizeLimit } from '../lib/pagination'
 import { similarity } from '../lib/levenshtein'
-import { CATEGORY_INCLUDE, ENTITY_SELECT, serializeCategory, serializeEntity } from '../lib/serializers'
+import { CATEGORY_SELECT, ENTITY_SELECT, serializeCategory, serializeEntity } from '../lib/serializers'
 
 function slugify(s: string) {
   return s
@@ -23,7 +23,7 @@ export class TaxonomyService {
   async listCategories(groupSlug?: string) {
     const categories = await db.category.findMany({
       where: { status: 'APPROVED', ...(groupSlug ? { group: { slug: groupSlug } } : {}) },
-      include: CATEGORY_INCLUDE,
+      select: CATEGORY_SELECT,
       orderBy: [{ group: { sortOrder: 'asc' } }, { shortLabel: 'asc' }],
       take: 500,
     })
@@ -31,7 +31,7 @@ export class TaxonomyService {
   }
 
   async getCategory(slug: string) {
-    const category = await db.category.findUnique({ where: { slug }, include: CATEGORY_INCLUDE })
+    const category = await db.category.findUnique({ where: { slug }, select: CATEGORY_SELECT })
     if (!category) throw { statusCode: 404, message: 'Category not found' }
     return serializeCategory(category)
   }
@@ -111,7 +111,7 @@ export class TaxonomyService {
       take: 20,
       select: ENTITY_SELECT,
     })
-    let best: { entity: Entity; score: number } | null = null
+    let best: { entity: (typeof candidates)[number]; score: number } | null = null
     for (const candidate of candidates) {
       const score = similarity(rawText, candidate.canonicalName)
       if (!best || score > best.score) best = { entity: candidate, score }
