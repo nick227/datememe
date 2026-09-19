@@ -1,8 +1,10 @@
 {
   "name": "@project/db",
   "version": "0.0.1",
-  "main": "./src/client.ts",
+  "main": "./dist/client.js",
+  "types": "./dist/client.d.ts",
   "scripts": {
+    "build": "tsc",
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio",
