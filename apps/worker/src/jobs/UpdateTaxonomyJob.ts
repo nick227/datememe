@@ -23,10 +23,19 @@ export async function updateTaxonomyJob(payload: {
   const completedListCount = await db.list.count({
     where: { categoryId, isComplete: true }
   })
-  
+
+  // "Most common #1 pick" — the entity most often ranked first within this category.
+  const [topPick] = await db.listItem.groupBy({
+    by: ['entityId'],
+    where: { rank: 1, list: { categoryId } },
+    _count: { entityId: true },
+    orderBy: { _count: { entityId: 'desc' } },
+    take: 1,
+  })
+
   await db.category.update({
     where: { id: categoryId },
-    data: { popularityCount: completedListCount }
+    data: { popularityCount: completedListCount, topPickEntityId: topPick?.entityId ?? null }
   })
 }
 

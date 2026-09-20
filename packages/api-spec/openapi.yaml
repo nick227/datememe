@@ -220,6 +220,8 @@ components:
           orderingMode,
           isPremiumOnly,
           popularityCount,
+          topPick,
+          matchAnswerMultiplier,
           requiredTags,
         ]
       properties:
@@ -234,6 +236,16 @@ components:
         orderingMode: { type: string, enum: [RANKED, UNRANKED] }
         isPremiumOnly: { type: boolean }
         popularityCount: { type: integer }
+        topPick:
+          description: The entity most often ranked #1 within this category, or null if nobody has yet.
+          type: object
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/Entity'
+        matchAnswerMultiplier:
+          description: How many times more often the viewer's matches complete this category vs. the overall rate. Null when there isn't enough signal (no matches yet, or nobody's completed it).
+          type: number
+          nullable: true
         requiredTags:
           type: array
           items: { $ref: '#/components/schemas/Tag' }
@@ -284,7 +296,7 @@ components:
 
     List:
       type: object
-      required: [id, categoryId, category, title, visibility, isComplete, items]
+      required: [id, categoryId, category, title, visibility, isComplete, completedAt, items]
       properties:
         id: { type: string }
         categoryId: { type: string }
@@ -292,6 +304,7 @@ components:
         title: { type: string, nullable: true }
         visibility: { type: string, enum: [PUBLIC, PREMIUM_ONLY, PRIVATE] }
         isComplete: { type: boolean }
+        completedAt: { type: string, format: date-time, nullable: true }
         items:
           type: array
           items: { $ref: '#/components/schemas/ListItem' }

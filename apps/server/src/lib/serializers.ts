@@ -91,6 +91,10 @@ export function serializeCategory(category: any) {
     orderingMode: category.orderingMode,
     isPremiumOnly: category.isPremiumOnly,
     popularityCount: category.popularityCount,
+    topPick: category.topPickEntity ? serializeEntity(category.topPickEntity) : null,
+    // Viewer-specific — not a DB column. TaxonomyService attaches this to the row
+    // before serializing; defaults to null for any caller that doesn't.
+    matchAnswerMultiplier: category.matchAnswerMultiplier ?? null,
     requiredTags: (category.requiredTags ?? []).map((rt: any) => rt.tag),
   }
 }
@@ -107,6 +111,7 @@ export const CATEGORY_SELECT = {
   orderingMode: true,
   isPremiumOnly: true,
   popularityCount: true,
+  topPickEntity: { select: ENTITY_SELECT },
   requiredTags: { select: { tag: true } }
 } as const
 
@@ -136,6 +141,7 @@ export function serializeListForViewer(list: any, viewerProfileId: string) {
     title: list.title,
     visibility: list.visibility,
     isComplete: list.isComplete,
+    completedAt: list.completedAt ? list.completedAt.toISOString() : null,
     items: visibleItems
       .slice()
       .sort((a: any, b: any) => a.rank - b.rank)

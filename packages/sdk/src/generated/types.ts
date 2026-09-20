@@ -699,6 +699,10 @@ export interface components {
             orderingMode: "RANKED" | "UNRANKED";
             isPremiumOnly: boolean;
             popularityCount: number;
+            /** @description The entity most often ranked */
+            topPick: components["schemas"]["Entity"] | null;
+            /** @description How many times more often the viewer's matches complete this category vs. the overall rate. Null when there isn't enough signal (no matches yet, or nobody's completed it). */
+            matchAnswerMultiplier: number | null;
             requiredTags: components["schemas"]["Tag"][];
         };
         Entity: {
@@ -738,6 +742,8 @@ export interface components {
             /** @enum {string} */
             visibility: "PUBLIC" | "PREMIUM_ONLY" | "PRIVATE";
             isComplete: boolean;
+            /** Format: date-time */
+            completedAt: string | null;
             items: components["schemas"]["ListItem"][];
         };
         ListItemInput: {

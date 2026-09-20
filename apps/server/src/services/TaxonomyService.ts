@@ -20,14 +20,67 @@ export class TaxonomyService {
     return db.categoryGroup.findMany({ orderBy: { sortOrder: 'asc' }, take: 500 })
   }
 
-  async listCategories(groupSlug?: string) {
+  async listCategories(viewerProfileId: string, groupSlug?: string) {
     const categories = await db.category.findMany({
       where: { status: 'APPROVED', ...(groupSlug ? { group: { slug: groupSlug } } : {}) },
       select: CATEGORY_SELECT,
       orderBy: [{ group: { sortOrder: 'asc' } }, { shortLabel: 'asc' }],
       take: 500,
     })
-    return categories.map(serializeCategory)
+
+    const multipliers = await this.getMatchAnswerMultipliers(viewerProfileId)
+    return categories.map((category) =>
+      serializeCategory({ ...category, matchAnswerMultiplier: multipliers.get(category.id) ?? null }),
+    )
+  }
+
+  /**
+   * "Your matches answer this N.N× more often" — compares the completion rate
+   * among the viewer's matches (profiles sharing a Conversation — there's no
+   * separate Match model, a Conversation only ever gets created at match time,
+   * see SwipeService) against the category's overall completion rate. Returns
+   * no entry for a category when there isn't enough signal to say anything
+   * (viewer has no matches yet, or nobody's completed that category yet).
+   */
+  private async getMatchAnswerMultipliers(viewerProfileId: string): Promise<Map<string, number>> {
+    const myConversations = await db.conversationParticipant.findMany({
+      where: { profileId: viewerProfileId },
+      select: { conversationId: true },
+    })
+    const conversationIds = myConversations.map((c) => c.conversationId)
+    if (conversationIds.length === 0) return new Map()
+
+    const matchedParticipants = await db.conversationParticipant.findMany({
+      where: { conversationId: { in: conversationIds }, profileId: { not: viewerProfileId } },
+      select: { profileId: true },
+    })
+    const matchedProfileIds = Array.from(new Set(matchedParticipants.map((p) => p.profileId)))
+    if (matchedProfileIds.length === 0) return new Map()
+
+    const [matchCompletions, totalProfiles] = await Promise.all([
+      db.list.groupBy({
+        by: ['categoryId'],
+        where: { isComplete: true, profileId: { in: matchedProfileIds } },
+        _count: { categoryId: true },
+      }),
+      db.profile.count(),
+    ])
+    if (totalProfiles === 0 || matchCompletions.length === 0) return new Map()
+
+    const categoryPopularity = await db.category.findMany({
+      where: { id: { in: matchCompletions.map((m) => m.categoryId) } },
+      select: { id: true, popularityCount: true },
+    })
+    const popularityById = new Map(categoryPopularity.map((c) => [c.id, c.popularityCount]))
+
+    const multipliers = new Map<string, number>()
+    for (const row of matchCompletions) {
+      const overallRate = (popularityById.get(row.categoryId) ?? 0) / totalProfiles
+      if (overallRate <= 0) continue
+      const matchRate = row._count.categoryId / matchedProfileIds.length
+      multipliers.set(row.categoryId, matchRate / overallRate)
+    }
+    return multipliers
   }
 
   async getCategory(slug: string) {

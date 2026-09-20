@@ -9,7 +9,7 @@ type Props = {
 export function PreviewListCard({ list }: Props) {
   // Sort items 1 to 5
   const sortedItems = list.items.slice().sort((a: any, b: any) => a.rank - b.rank)
-  const categoryTitle = list.category?.shortLabel ?? 'Favorites'
+  const categoryTitle = list.category?.shortLabel ?? 'List'
   
   // Try to find a thumbnail from the first item
   const thumbnail = sortedItems[0]?.entity?.imageUrl

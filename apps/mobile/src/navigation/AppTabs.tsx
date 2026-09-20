@@ -12,7 +12,7 @@ import { useConversations } from '@project/sdk'
 const Tab = createBottomTabNavigator()
 
 const ICONS: Record<string, IconName> = {
-  Favorites: 'Heart',
+  Lists: 'ListChecks',
   Discover: 'Flame',
   Messages: 'MessageCircle',
 }
@@ -42,7 +42,7 @@ export function AppTabs() {
         tabBarIcon: ({ color, size }) => <Icon name={ICONS[route.name]} color={color} size={size} />,
       })}
     >
-      <Tab.Screen name="Favorites" component={CategoriesStack} />
+      <Tab.Screen name="Lists" component={CategoriesStack} />
       <Tab.Screen name="Discover" component={DiscoveryStack} />
       <Tab.Screen
         name="Messages"

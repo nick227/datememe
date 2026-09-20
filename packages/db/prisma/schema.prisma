@@ -259,6 +259,7 @@ model Entity {
   submittedEntityFor EntitySubmission?  @relation("SubmissionSubmittedEntity")
   suggestedMatchFor  EntitySubmission[] @relation("SubmissionSuggestedMatch")
   resolvedFor        EntitySubmission[] @relation("SubmissionResolvedEntity")
+  topPickForCategories Category[]       @relation("CategoryTopPick")
 
   @@unique([entityTypeId, slug])
   @@index([entityTypeId, status])
@@ -371,13 +372,16 @@ model Category {
   isPremiumOnly   Boolean          @default(false)
   status          SubmissionStatus @default(APPROVED)
   popularityCount Int              @default(0)
+  topPickEntityId String?
+  metadata        Json?
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
 
-  group        CategoryGroup @relation(fields: [groupId], references: [id], onDelete: Restrict)
-  entityType   EntityType    @relation(fields: [entityTypeId], references: [id], onDelete: Restrict)
-  requiredTags CategoryTag[]
-  lists        List[]
+  group         CategoryGroup @relation(fields: [groupId], references: [id], onDelete: Restrict)
+  entityType    EntityType    @relation(fields: [entityTypeId], references: [id], onDelete: Restrict)
+  topPickEntity Entity?       @relation("CategoryTopPick", fields: [topPickEntityId], references: [id], onDelete: SetNull)
+  requiredTags  CategoryTag[]
+  lists         List[]
 
   @@index([groupId, status])
   @@index([entityTypeId])

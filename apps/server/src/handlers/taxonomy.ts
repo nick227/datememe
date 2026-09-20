@@ -13,7 +13,7 @@ export async function listCategoryGroups(_request: any, reply: any) {
 }
 
 export async function listCategories(request: any, reply: any) {
-  const data = await taxonomyService.listCategories(request.query.groupSlug)
+  const data = await taxonomyService.listCategories(request.user.profile.id, request.query.groupSlug)
   return reply.send({ data })
 }
 

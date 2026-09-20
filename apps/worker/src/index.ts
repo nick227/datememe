@@ -22,22 +22,27 @@ async function poll() {
   let job: any = null
   try {
     job = await db.$transaction(async (tx) => {
+      // UTC_TIMESTAMP(), not NOW() — Prisma stores every DateTime column in UTC,
+      // but NOW() returns the MySQL server's local system time. Whenever the DB
+      // host's local timezone lags UTC (the default on most dev machines), that
+      // mismatch made every job created after ~7pm local look scheduled hours in
+      // the future and it would never get claimed until local time caught up.
       const rows = await tx.$queryRawUnsafe<any[]>(`
-        SELECT id FROM JobQueue 
-        WHERE (status = 'PENDING' AND availableAt <= NOW()) 
-           OR (status = 'RUNNING' AND lockedAt < NOW() - INTERVAL ${STALE_LOCK_MINUTES} MINUTE)
+        SELECT id FROM JobQueue
+        WHERE (status = 'PENDING' AND availableAt <= UTC_TIMESTAMP())
+           OR (status = 'RUNNING' AND lockedAt < UTC_TIMESTAMP() - INTERVAL ${STALE_LOCK_MINUTES} MINUTE)
         ORDER BY availableAt ASC
-        LIMIT 1 
+        LIMIT 1
         FOR UPDATE SKIP LOCKED
       `)
-      
+
       if (!rows || rows.length === 0) return null
-      
+
       const jobId = rows[0].id
-      
+
       await tx.$queryRawUnsafe(`
-        UPDATE JobQueue 
-        SET status = 'RUNNING', lockedAt = NOW(), lockedBy = ?, attempts = attempts + 1
+        UPDATE JobQueue
+        SET status = 'RUNNING', lockedAt = UTC_TIMESTAMP(), lockedBy = ?, attempts = attempts + 1
         WHERE id = ?
       `, WORKER_ID, jobId)
       
