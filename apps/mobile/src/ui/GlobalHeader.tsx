@@ -2,7 +2,7 @@ import { StyleSheet, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Logo } from './Logo'
 import { HeaderAvatar } from './HeaderAvatar'
-import { colors, spacing } from '../theme'
+import { borderWidth, colors, spacing } from '../theme'
 
 // The one persistent piece of chrome in the whole app — mounted once inside
 // each stack (Auth/Main) so it survives every screen underneath it. Owns the
@@ -26,7 +26,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
-    borderBottomWidth: 1,
+    borderBottomWidth: borderWidth.thick,
     borderBottomColor: colors.border,
   },
 })

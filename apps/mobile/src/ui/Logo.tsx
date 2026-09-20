@@ -11,8 +11,8 @@ export function Logo({ size = 'md' }: { size?: keyof typeof SIZES }) {
   const fontSize = SIZES[size]
   return (
     <View style={{ flexDirection: 'row' }}>
-      <Text style={[type.wordmark, { fontSize, color: colors.primary }]}>date</Text>
-      <Text style={[type.wordmark, { fontSize, color: colors.lavender }]}>meme</Text>
+      <Text style={[type.wordmark, { fontSize, color: colors.accent }]}>date</Text>
+      <Text style={[type.wordmark, { fontSize, color: colors.ink }]}>meme</Text>
     </View>
   )
 }

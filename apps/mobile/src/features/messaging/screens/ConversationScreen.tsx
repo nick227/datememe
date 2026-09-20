@@ -4,12 +4,11 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { useHeaderHeight } from '@react-navigation/elements'
 import { ApiError, useCurrentUser, useMessages, useSendMessage, useConversations, useMarkAsRead, useUploadMedia } from '@project/sdk'
 import Animated, { FadeIn, FadeOut, ZoomIn, ZoomOut } from 'react-native-reanimated'
-import { LinearGradient } from 'expo-linear-gradient'
 import * as ImagePicker from 'expo-image-picker'
 import { ScreenContainer } from '../../../ui/ScreenContainer'
 import { TextField } from '../../../ui/TextField'
 import { Icon } from '../../../ui/Icon'
-import { colors, radius, spacing } from '../../../theme'
+import { borderWidth, colors, radius, spacing } from '../../../theme'
 import type { MessagesStackParamList } from '../../../navigation/types'
 import { Typography } from '../../../ui/Typography'
 import { hapticLight, hapticSuccess } from '../../../lib/haptics'
@@ -158,13 +157,10 @@ export function ConversationScreen({ route, navigation }: Props) {
                   style={styles.lockedContainer}
                   onPress={() => (navigation.getParent()?.navigate as any)('Profile', { screen: 'Paywall' })}
                 >
-                  <LinearGradient
-                    colors={[colors.primarySoft, colors.lavenderSoft]}
-                    style={[styles.bubble, styles.bubbleLocked]}
-                  >
+                  <View style={[styles.bubble, styles.bubbleLocked]}>
                     <Icon name="Lock" size={16} color={colors.primary} />
                     <Text style={styles.lockedText}>Premium message</Text>
-                  </LinearGradient>
+                  </View>
                   <View style={styles.unlockBtn}>
                     <Text style={styles.unlockBtnText}>Unlock</Text>
                   </View>
@@ -314,8 +310,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
-    borderWidth: 1,
-    borderColor: 'rgba(140, 124, 240, 0.3)', // lavender @ 30% — matches colors.lavender
+    borderWidth: borderWidth.thin,
+    borderColor: colors.ink,
   },
   lockedText: { color: colors.primary, fontSize: 15, fontWeight: '600' },
   unlockBtn: {

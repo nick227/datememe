@@ -14,7 +14,7 @@ import { EmptyState } from '../../../ui/EmptyState'
 import { MatchFeedCard } from '../components/MatchFeedCard'
 import { MatchFeedCardSkeleton } from '../components/MatchFeedCardSkeleton'
 import { Button } from '../../../ui/Button'
-import { colors, radius, spacing } from '../../../theme'
+import { borderWidth, colors, radius, spacing } from '../../../theme'
 import { useIsDesktop } from '../../../lib/useResponsive'
 import { hapticSuccess, hapticMedium, hapticHeavy } from '../../../lib/haptics'
 import type { DiscoveryStackParamList } from '../../../navigation/types'
@@ -231,14 +231,11 @@ const styles = StyleSheet.create({
   modalContent: {
     backgroundColor: colors.surface,
     borderRadius: radius.lg,
+    borderWidth: borderWidth.thick,
+    borderColor: colors.ink,
     padding: spacing.xxl,
     width: '100%',
     alignItems: 'stretch',
-    shadowColor: colors.ink,
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.1,
-    shadowRadius: 20,
-    elevation: 10,
   },
   modalEmoji: {
     fontSize: 64,

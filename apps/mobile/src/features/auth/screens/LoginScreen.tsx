@@ -7,7 +7,7 @@ import { TextField } from '../../../ui/TextField'
 import { Button } from '../../../ui/Button'
 import { setToken } from '../../../lib/authToken'
 import { queryClient } from '../../../lib/queryClient'
-import { colors, radius, spacing } from '../../../theme'
+import { borderWidth, colors, spacing } from '../../../theme'
 import type { AuthStackParamList } from '../../../navigation/types'
 import { Typography } from '../../../ui/Typography'
 
@@ -32,7 +32,7 @@ export function LoginScreen({ navigation }: Props) {
   }
 
   return (
-    <ScreenContainer width="narrow" decorated>
+    <ScreenContainer width="narrow">
       <View style={{ flex: 1, justifyContent: 'center' }}>
         <View style={styles.card}>
           <Typography variant="display" style={{ marginBottom: spacing.xs }}>
@@ -69,12 +69,8 @@ export function LoginScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.surface,
-    borderRadius: radius.lg,
+    borderWidth: borderWidth.thick,
+    borderColor: colors.ink,
     padding: spacing.xl,
-    shadowColor: colors.ink,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.08,
-    shadowRadius: 24,
-    elevation: 4,
   },
 })

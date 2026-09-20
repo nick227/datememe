@@ -4,7 +4,7 @@ import { useDevPurchase, useMySubscription, usePlans } from '@project/sdk'
 import { ScreenContainer } from '../../../ui/ScreenContainer'
 import { TopNavigation } from '../../../ui/TopNavigation'
 import { Button } from '../../../ui/Button'
-import { colors, radius, spacing, type } from '../../../theme'
+import { borderWidth, colors, radius, spacing, type } from '../../../theme'
 import type { ProfileStackParamList } from '../../../navigation/types'
 import { Typography } from '../../../ui/Typography'
 
@@ -83,8 +83,10 @@ const styles = StyleSheet.create({
   perk: { ...type.body, marginBottom: spacing.xs },
   activeBadge: {
     marginTop: spacing.lg,
-    backgroundColor: colors.primarySoft,
+    backgroundColor: colors.surface,
     borderRadius: radius.lg,
+    borderWidth: borderWidth.thick,
+    borderColor: colors.ink,
     padding: spacing.lg,
     alignItems: 'center',
   },
@@ -92,8 +94,10 @@ const styles = StyleSheet.create({
   planCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.surfaceMuted,
+    backgroundColor: colors.surface,
     borderRadius: radius.lg,
+    borderWidth: borderWidth.thick,
+    borderColor: colors.ink,
     padding: spacing.md,
     marginBottom: spacing.sm,
     gap: spacing.md,

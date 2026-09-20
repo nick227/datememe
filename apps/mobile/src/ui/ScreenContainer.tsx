@@ -2,7 +2,6 @@ import type { ReactNode } from 'react'
 import { StyleSheet, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { colors, spacing } from '../theme'
-import { DecorativeBackground } from './DecorativeBackground'
 
 const MAX_WIDTH = { narrow: 440, wide: 960 }
 
@@ -10,15 +9,13 @@ type Props = {
   children: ReactNode
   padded?: boolean
   width?: 'narrow' | 'wide' | 'full'
-  decorated?: boolean
 }
 
-export function ScreenContainer({ children, padded = true, width = 'full', decorated = false }: Props) {
+export function ScreenContainer({ children, padded = true, width = 'full' }: Props) {
   return (
     // 'top' is deliberately excluded — GlobalHeader (mounted once per stack,
     // above every screen) already owns the top safe-area inset.
     <SafeAreaView style={styles.safe} edges={['left', 'right']}>
-      {decorated && <DecorativeBackground />}
       <View
         style={[
           styles.container,

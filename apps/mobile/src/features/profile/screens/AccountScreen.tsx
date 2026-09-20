@@ -5,7 +5,7 @@ import { ScreenContainer } from '../../../ui/ScreenContainer'
 import { TopNavigation } from '../../../ui/TopNavigation'
 import { Button } from '../../../ui/Button'
 import { clearToken } from '../../../lib/authToken'
-import { colors, radius, spacing, type } from '../../../theme'
+import { borderWidth, colors, radius, spacing, type } from '../../../theme'
 import type { ProfileStackParamList } from '../../../navigation/types'
 import { Typography } from '../../../ui/Typography'
 
@@ -64,8 +64,10 @@ export function AccountScreen({ navigation }: Props) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colors.surfaceMuted,
+    backgroundColor: colors.surface,
     borderRadius: radius.lg,
+    borderWidth: borderWidth.thick,
+    borderColor: colors.ink,
     padding: spacing.lg,
     marginBottom: spacing.md,
   },

@@ -7,7 +7,7 @@ import { TopNavigation } from '../../../ui/TopNavigation'
 import { EmptyState } from '../../../ui/EmptyState'
 import { CategoryCarousel } from '../components/CategoryCarousel'
 import { CategoryCarouselSkeleton } from '../components/CategoryCarouselSkeleton'
-import { colors, radius, spacing, type } from '../../../theme'
+import { borderWidth, colors, radius, spacing, type } from '../../../theme'
 import type { CategoriesStackParamList } from '../../../navigation/types'
 import { Typography } from '../../../ui/Typography'
 
@@ -93,8 +93,10 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.surfaceMuted,
+    backgroundColor: colors.surface,
     borderRadius: radius.lg,
+    borderWidth: borderWidth.thick,
+    borderColor: colors.ink,
     padding: spacing.md,
     marginBottom: spacing.sm,
   },
@@ -103,6 +105,8 @@ const styles = StyleSheet.create({
     height: 32,
     borderRadius: radius.pill,
     backgroundColor: colors.surface,
+    borderWidth: borderWidth.thin,
+    borderColor: colors.ink,
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: spacing.sm,

@@ -5,7 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient'
 import { MatchPercentageBadge } from './MatchPercentageBadge'
 import { Typography } from '../../../ui/Typography'
 import { Icon } from '../../../ui/Icon'
-import { colors, radius, spacing } from '../../../theme'
+import { borderWidth, colors, radius, spacing } from '../../../theme'
 import { hapticMedium, hapticHeavy, hapticLight } from '../../../lib/haptics'
 import type { MatchInsight } from '../../../navigation/types'
 
@@ -156,7 +156,9 @@ export function MatchFeedCard({ displayName, avatarUrl, photos = [], matchPercen
 const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.ink,
-    borderRadius: radius.xl,
+    borderRadius: radius.lg,
+    borderWidth: borderWidth.thick,
+    borderColor: colors.ink,
     overflow: 'hidden',
     ...StyleSheet.absoluteFillObject,
   },

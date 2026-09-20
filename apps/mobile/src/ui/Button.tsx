@@ -1,6 +1,6 @@
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native'
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated'
-import { colors, radius, spacing, type } from '../theme'
+import { borderWidth, colors, radius, spacing, type } from '../theme'
 import { hapticLight } from '../lib/haptics'
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable)
@@ -70,12 +70,14 @@ const styles = StyleSheet.create({
   base: {
     backgroundColor: colors.primary,
     borderRadius: radius.pill,
+    borderWidth: borderWidth.thick,
+    borderColor: colors.ink,
     paddingVertical: spacing.md + 2,
     alignItems: 'center',
     justifyContent: 'center',
   },
   secondary: {
-    backgroundColor: colors.primarySoft,
+    backgroundColor: colors.surface,
   },
   danger: {
     backgroundColor: colors.danger,

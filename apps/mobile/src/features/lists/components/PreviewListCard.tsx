@@ -1,6 +1,6 @@
 import { Image, StyleSheet, View } from 'react-native'
 import { Typography } from '../../../ui/Typography'
-import { colors, radius, spacing } from '../../../theme'
+import { borderWidth, colors, radius, spacing } from '../../../theme'
 
 type Props = {
   list: any
@@ -50,13 +50,7 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     marginBottom: spacing.sm,
     flex: 1, // fill column
-    // Add subtle shadow matching mockups
-    shadowColor: colors.ink,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-    borderWidth: 1,
+    borderWidth: borderWidth.thick,
     borderColor: colors.border,
   },
   header: {
