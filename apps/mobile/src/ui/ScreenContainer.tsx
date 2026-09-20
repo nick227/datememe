@@ -15,7 +15,9 @@ type Props = {
 
 export function ScreenContainer({ children, padded = true, width = 'full', decorated = false }: Props) {
   return (
-    <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
+    // 'top' is deliberately excluded — GlobalHeader (mounted once per stack,
+    // above every screen) already owns the top safe-area inset.
+    <SafeAreaView style={styles.safe} edges={['left', 'right']}>
       {decorated && <DecorativeBackground />}
       <View
         style={[

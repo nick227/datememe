@@ -1,21 +1,16 @@
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native'
-import { useNavigation } from '@react-navigation/native'
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { useCurrentUser } from '@project/sdk'
 import { colors, radius } from '../theme'
-import type { MainStackParamList } from '../navigation/types'
-
-type NavigationProp = NativeStackNavigationProp<MainStackParamList>
+import { navigationRef } from '../navigation/navigationRef'
 
 export function HeaderAvatar() {
   const me = useCurrentUser()
-  const navigation = useNavigation<NavigationProp>()
 
   const profile = me.data?.profile
   if (!profile) return <View style={styles.placeholder} />
 
   return (
-    <Pressable onPress={() => navigation.navigate('ProfileModal')} hitSlop={12}>
+    <Pressable onPress={() => navigationRef.isReady() && navigationRef.navigate('ProfileModal' as never)} hitSlop={12}>
       {profile.avatarUrl ? (
         <Image source={{ uri: profile.avatarUrl }} style={styles.avatar} />
       ) : (

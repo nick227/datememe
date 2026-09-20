@@ -3,6 +3,7 @@ import { DefaultTheme, NavigationContainer, type Theme } from '@react-navigation
 import { useCurrentUser } from '@project/sdk'
 import { AuthStack } from './AuthStack'
 import { MainStack } from './MainStack'
+import { navigationRef } from './navigationRef'
 import { colors } from '../theme'
 
 // Keeps stack-transition backgrounds on-brand instead of React Navigation's
@@ -23,5 +24,9 @@ export function RootNavigator() {
     )
   }
 
-  return <NavigationContainer theme={navigationTheme}>{me.data ? <MainStack /> : <AuthStack />}</NavigationContainer>
+  return (
+    <NavigationContainer ref={navigationRef} theme={navigationTheme}>
+      {me.data ? <MainStack /> : <AuthStack />}
+    </NavigationContainer>
+  )
 }

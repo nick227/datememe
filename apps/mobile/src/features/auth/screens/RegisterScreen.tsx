@@ -5,7 +5,6 @@ import { useRegister } from '@project/sdk'
 import { ScreenContainer } from '../../../ui/ScreenContainer'
 import { TextField } from '../../../ui/TextField'
 import { Button } from '../../../ui/Button'
-import { Logo } from '../../../ui/Logo'
 import { setToken } from '../../../lib/authToken'
 import { queryClient } from '../../../lib/queryClient'
 import { colors, radius, spacing } from '../../../theme'
@@ -39,12 +38,6 @@ export function RegisterScreen({ navigation }: Props) {
   return (
     <ScreenContainer width="narrow" decorated>
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}>
-        <View style={styles.brand}>
-          <Logo size="lg" />
-          <Typography variant="bodyMuted" style={{ marginTop: spacing.xs }}>
-            Same weird, same wavelength.
-          </Typography>
-        </View>
         <View style={styles.card}>
           <Typography variant="display" style={{ marginBottom: spacing.xs }}>
             Let's find your people
@@ -76,7 +69,6 @@ export function RegisterScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  brand: { alignItems: 'center', marginBottom: spacing.xl },
   card: {
     backgroundColor: colors.surface,
     borderRadius: radius.lg,

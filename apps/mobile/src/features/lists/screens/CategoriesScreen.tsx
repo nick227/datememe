@@ -4,7 +4,6 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { useCategories, useCategoryGroups, useMyLists } from '@project/sdk'
 import { ScreenContainer } from '../../../ui/ScreenContainer'
 import { TopNavigation } from '../../../ui/TopNavigation'
-import { HeaderAvatar } from '../../../ui/HeaderAvatar'
 import { EmptyState } from '../../../ui/EmptyState'
 import { CategoryCarousel } from '../components/CategoryCarousel'
 import { CategoryCarouselSkeleton } from '../components/CategoryCarouselSkeleton'
@@ -39,7 +38,6 @@ export function CategoriesScreen({ navigation }: Props) {
         title="Your favorites"
         subtitle={`${completedCategoryIds.size} completed — pick a category and build your list`}
         alignment="left"
-        rightElement={<HeaderAvatar />}
       />
       {isLoading ? (
         <ScrollView style={styles.listContent}>

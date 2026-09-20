@@ -10,7 +10,6 @@ import Animated, {
 import { GestureDetector, Gesture, GestureHandlerRootView } from 'react-native-gesture-handler'
 import { ScreenContainer } from '../../../ui/ScreenContainer'
 import { TopNavigation } from '../../../ui/TopNavigation'
-import { HeaderAvatar } from '../../../ui/HeaderAvatar'
 import { EmptyState } from '../../../ui/EmptyState'
 import { MatchFeedCard } from '../components/MatchFeedCard'
 import { MatchFeedCardSkeleton } from '../components/MatchFeedCardSkeleton'
@@ -125,7 +124,6 @@ export function DiscoveryScreen({ navigation }: Props) {
             title="Discover"
             subtitle="Browse is unlimited, on every plan"
             alignment="left"
-            rightElement={<HeaderAvatar />}
           />
         </View>
 

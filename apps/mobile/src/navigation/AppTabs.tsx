@@ -44,12 +44,12 @@ export function AppTabs() {
     >
       <Tab.Screen name="Favorites" component={CategoriesStack} />
       <Tab.Screen name="Discover" component={DiscoveryStack} />
-      <Tab.Screen 
-        name="Messages" 
-        component={MessagesStack} 
+      <Tab.Screen
+        name="Messages"
+        component={MessagesStack}
         options={{
           tabBarBadge: unreadCount > 0 ? unreadCount : undefined,
-          tabBarBadgeStyle: { backgroundColor: colors.primary }
+          tabBarBadgeStyle: { backgroundColor: colors.primary },
         }}
       />
     </Tab.Navigator>
