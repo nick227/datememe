@@ -47,6 +47,7 @@ export function serializeUser(user: any) {
   return {
     id: user.id,
     email: user.email,
+    role: user.role,
     isVerified: user.isVerified,
     createdAt: user.createdAt,
     profile: user.profile ? serializeProfile(user.profile, { revealPhoto: true }) : undefined,
@@ -63,15 +64,22 @@ export const ENTITY_SELECT = {
   status: true,
   usageCount: true,
   submittedByProfileId: true,
+  mediaAssets: { where: { isPrimary: true }, orderBy: { createdAt: 'desc' }, take: 1 },
 } as const
 
+export function serializeImageCredit(asset: any) {
+  return asset ? { attribution: asset.attribution ?? asset.creator ?? asset.license, landingUrl: asset.landingUrl, licenseUrl: asset.licenseUrl, provider: asset.provider } : null
+}
+
 export function serializeEntity(entity: any) {
+  const primaryImage = entity.mediaAssets?.find((asset: any) => asset.isPrimary)?.publicUrl
   return {
     id: entity.id,
     entityTypeId: entity.entityTypeId,
     canonicalName: entity.canonicalName,
     slug: entity.slug,
-    imageUrl: entity.imageUrl,
+    imageUrl: primaryImage ?? entity.imageUrl,
+    imageCredit: serializeImageCredit(entity.mediaAssets?.[0]),
     metadata: entity.metadata,
     status: entity.status,
     usageCount: entity.usageCount,
@@ -79,6 +87,8 @@ export function serializeEntity(entity: any) {
 }
 
 export function serializeCategory(category: any) {
+  const asset = category.mediaAssets?.find((asset: any) => asset.isPrimary) ?? category.entityType?.mediaAssets?.[0]
+  const primaryImage = asset?.publicUrl ?? null
   return {
     id: category.id,
     slug: category.slug,
@@ -96,11 +106,14 @@ export function serializeCategory(category: any) {
     // before serializing; defaults to null for any caller that doesn't.
     matchAnswerMultiplier: category.matchAnswerMultiplier ?? null,
     requiredTags: (category.requiredTags ?? []).map((rt: any) => rt.tag),
+    imageUrl: primaryImage,
+    imageCredit: serializeImageCredit(asset),
   }
 }
 
 export const CATEGORY_SELECT = {
   id: true,
+  entityType: { select: { mediaAssets: { where: { isPrimary: true }, orderBy: { createdAt: 'desc' as const }, take: 1 } } },
   slug: true,
   groupId: true,
   entityTypeId: true,
@@ -112,7 +125,8 @@ export const CATEGORY_SELECT = {
   isPremiumOnly: true,
   popularityCount: true,
   topPickEntity: { select: ENTITY_SELECT },
-  requiredTags: { select: { tag: true } }
+  requiredTags: { select: { tag: true } },
+  mediaAssets: { where: { isPrimary: true }, orderBy: { createdAt: 'desc' }, take: 1 },
 } as const
 
 export function serializeListItem(item: any) {

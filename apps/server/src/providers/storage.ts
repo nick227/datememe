@@ -16,6 +16,8 @@ export interface StorageProvider {
 
 // Factory — reads STORAGE_PROVIDER env var, defaults to local.
 // Cloud provider files are installed by their respective plugins.
+import { LocalStorageProvider } from './LocalStorageProvider'
+
 export function createStorageProvider(): StorageProvider {
   const provider = process.env.STORAGE_PROVIDER ?? 'local'
 
@@ -39,8 +41,6 @@ export function createStorageProvider(): StorageProvider {
       }
     }
     default: {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const { LocalStorageProvider } = require('./LocalStorageProvider')
       return new LocalStorageProvider()
     }
   }

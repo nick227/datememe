@@ -35,6 +35,7 @@ export function useDevPurchase() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['mySubscription'] })
+      queryClient.invalidateQueries({ queryKey: ['me'] })
     },
   })
 }

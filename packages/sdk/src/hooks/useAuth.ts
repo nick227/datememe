@@ -15,21 +15,16 @@ export function useCurrentUser() {
 }
 
 export function useLogin() {
-  const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async (body: { email: string; password: string }) => {
       const { data, error, response } = await getApiClient().POST('/auth/login', { body })
       if (error) throw new ApiError(response.status, (error as any).error)
       return data!
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['me'] })
-    },
   })
 }
 
 export function useRegister() {
-  const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async (body: {
       email: string
@@ -41,9 +36,6 @@ export function useRegister() {
       const { data, error, response } = await getApiClient().POST('/auth/register', { body })
       if (error) throw new ApiError(response.status, (error as any).error)
       return data!
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['me'] })
     },
   })
 }

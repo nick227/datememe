@@ -160,7 +160,7 @@ const styles = StyleSheet.create({
     borderWidth: borderWidth.thick,
     borderColor: colors.ink,
     overflow: 'hidden',
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
   photoLocked: {
     alignItems: 'center',
@@ -173,7 +173,7 @@ const styles = StyleSheet.create({
     color: colors.primary,
   },
   tapZones: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     flexDirection: 'row',
     bottom: '40%', // leave bottom 40% for buttons/scrolling
   },

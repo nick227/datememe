@@ -38,7 +38,16 @@ export const spacing = {
   lg: 16,
   xl: 24,
   xxl: 32,
+  // Major-section rhythm on a browse feed (Lists/Discover) — deliberately a
+  // step above xxl: modules need room to read as distinct beats, not just
+  // another card in the same stack.
+  section: 64,
 }
+
+// The browse canvas for feed pages (Lists/Discover) — wider than the 960px
+// `wide` ScreenContainer tier so Rails/Grids/Rivers have room to establish
+// scale contrast; text content still aligns to this same left/right edge.
+export const CANVAS_WIDTH = 1280
 
 export const borderWidth = {
   thin: 1,

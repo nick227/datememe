@@ -1,7 +1,7 @@
 import { db, Prisma } from '@project/db'
 import { decodeOffsetCursor, encodeOffsetCursor, normalizeLimit } from '../lib/pagination'
 import { similarity } from '../lib/levenshtein'
-import { CATEGORY_SELECT, ENTITY_SELECT, serializeCategory, serializeEntity } from '../lib/serializers'
+import { CATEGORY_SELECT, ENTITY_SELECT, serializeCategory, serializeEntity, serializeImageCredit } from '../lib/serializers'
 
 function slugify(s: string) {
   return s
@@ -13,19 +13,27 @@ function slugify(s: string) {
 
 export class TaxonomyService {
   async listEntityTypes() {
-    return db.entityType.findMany({ orderBy: { label: 'asc' }, take: 500 })
+    const rows = await db.entityType.findMany({
+      orderBy: { label: 'asc' },
+      take: 500,
+      include: { mediaAssets: { where: { isPrimary: true }, orderBy: { createdAt: 'desc' }, take: 1 } },
+    })
+    return rows.map(({ mediaAssets, ...entityType }) => ({
+      ...entityType,
+      imageUrl: mediaAssets[0]?.publicUrl ?? null,
+      imageCredit: serializeImageCredit(mediaAssets[0]),
+    }))
   }
 
   async listCategoryGroups() {
-    return db.categoryGroup.findMany({ orderBy: { sortOrder: 'asc' }, take: 500 })
+    return db.categoryGroup.findMany({ orderBy: { sortOrder: 'asc' } })
   }
 
   async listCategories(viewerProfileId: string, groupSlug?: string) {
     const categories = await db.category.findMany({
-      where: { status: 'APPROVED', ...(groupSlug ? { group: { slug: groupSlug } } : {}) },
+      where: { isActive: true, ...(groupSlug ? { group: { slug: groupSlug } } : {}) },
       select: CATEGORY_SELECT,
-      orderBy: [{ group: { sortOrder: 'asc' } }, { shortLabel: 'asc' }],
-      take: 500,
+      orderBy: [{ group: { sortOrder: 'asc' } }, { shortLabel: 'asc' }, { id: 'asc' }],
     })
 
     const multipliers = await this.getMatchAnswerMultipliers(viewerProfileId)
@@ -195,7 +203,7 @@ export class TaxonomyService {
           canonicalName: rawText.trim(),
           slug,
           sourceType: 'USER_SUBMITTED',
-          status: 'PENDING',
+          status: 'APPROVED',
           submittedByProfileId: submitterProfileId,
         },
       })
@@ -206,7 +214,7 @@ export class TaxonomyService {
           submittedByProfileId: submitterProfileId,
           submittedEntityId: entity.id,
           suggestedMatchId,
-          status: 'PENDING',
+          status: 'APPROVED',
         },
         include: { submittedEntity: true, suggestedMatch: true },
       })

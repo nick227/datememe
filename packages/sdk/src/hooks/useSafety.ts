@@ -24,7 +24,9 @@ export function useBlockProfile() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['blockedProfiles'] })
+      // Both Discover query keys — see useMatching.ts's useSwipe for why.
       queryClient.invalidateQueries({ queryKey: ['discovery'] })
+      queryClient.invalidateQueries({ queryKey: ['discoverFeed'] })
       queryClient.invalidateQueries({ queryKey: ['conversations'] })
     },
   })
@@ -42,6 +44,7 @@ export function useUnblockProfile() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['blockedProfiles'] })
       queryClient.invalidateQueries({ queryKey: ['discovery'] })
+      queryClient.invalidateQueries({ queryKey: ['discoverFeed'] })
     },
   })
 }

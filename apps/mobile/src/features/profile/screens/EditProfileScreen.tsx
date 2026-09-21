@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Alert, ScrollView, View } from 'react-native'
+import { ScrollView, View } from 'react-native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { useCurrentUser, useUpdateMyProfile } from '@project/sdk'
 import { ScreenContainer } from '../../../ui/ScreenContainer'
@@ -7,6 +7,7 @@ import { TopNavigation } from '../../../ui/TopNavigation'
 import { TextField } from '../../../ui/TextField'
 import { Button } from '../../../ui/Button'
 import { PhotoPicker } from '../../../ui/PhotoPicker'
+import { ActionSheet, useActionSheet } from '../../../ui/ActionSheet'
 import { spacing } from '../../../theme'
 import type { ProfileStackParamList } from '../../../navigation/types'
 import { Typography } from '../../../ui/Typography'
@@ -18,6 +19,7 @@ const MAX_GALLERY_PHOTOS = 6
 export function EditProfileScreen({ navigation }: Props) {
   const me = useCurrentUser()
   const update = useUpdateMyProfile()
+  const sheet = useActionSheet()
 
   const [displayName, setDisplayName] = useState('')
   const [bio, setBio] = useState('')
@@ -52,7 +54,7 @@ export function EditProfileScreen({ navigation }: Props) {
       })
       navigation.goBack()
     } catch (err: any) {
-      Alert.alert('Could not save', err?.message ?? 'Try again in a moment')
+      sheet.show({ title: 'Could not save', message: err?.message ?? 'Try again in a moment', buttons: [{ text: 'OK' }] })
     }
   }
 
@@ -109,6 +111,7 @@ export function EditProfileScreen({ navigation }: Props) {
 
         <Button label="Save" onPress={handleSave} loading={update.isPending} />
       </ScrollView>
+      <ActionSheet config={sheet.config} onDismiss={sheet.dismiss} />
     </ScreenContainer>
   )
 }

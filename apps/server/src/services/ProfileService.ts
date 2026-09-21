@@ -1,5 +1,5 @@
 import { db } from '@project/db'
-import { isPremiumUser } from '../lib/entitlements'
+import { resolveEntitlements } from '../lib/entitlements'
 import { isBlockedEitherWay } from '../lib/blocks'
 import { PROFILE_FULL_SELECT, serializeProfile } from '../lib/serializers'
 
@@ -21,7 +21,7 @@ export class ProfileService {
       throw { statusCode: 404, message: 'Profile not found' }
     }
 
-    const revealPhoto = isSelf || (await isPremiumUser(viewerUserId))
+    const revealPhoto = isSelf || ((await resolveEntitlements(viewerUserId))['profile.fullPhotoAccess'])
     return serializeProfile(profile, { revealPhoto })
   }
 

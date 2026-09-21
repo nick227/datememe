@@ -1,0 +1,86 @@
+import { useState } from 'react'
+import { Modal, Pressable, StyleSheet, Text, View } from 'react-native'
+import { borderWidth, colors, radius, spacing, type } from '../theme'
+
+export type ActionSheetButton = {
+  text: string
+  style?: 'default' | 'cancel' | 'destructive'
+  onPress?: () => void
+}
+
+export type ActionSheetConfig = { title: string; message?: string; buttons: ActionSheetButton[] } | null
+
+/**
+ * A real, cross-platform stand-in for `Alert.alert`. This project's
+ * `react-native-web` ships `Alert.alert` as a literal no-op on web — every
+ * call site silently does nothing in a browser, which is the only platform
+ * this app has actually been verified against so far (confirmed live: the
+ * messaging options menu, unmatch confirmation, and send-error feedback all
+ * rendered nothing at all before this). Built as a bottom sheet using the
+ * same `Modal` pattern already established in `SelectField.tsx`, which does
+ * render correctly on web.
+ */
+export function useActionSheet() {
+  const [config, setConfig] = useState<ActionSheetConfig>(null)
+  return { config, show: setConfig, dismiss: () => setConfig(null) }
+}
+
+export function ActionSheet({ config, onDismiss }: { config: ActionSheetConfig; onDismiss: () => void }) {
+  function handlePress(button: ActionSheetButton) {
+    onDismiss()
+    button.onPress?.()
+  }
+
+  return (
+    <Modal visible={!!config} animationType="slide" transparent onRequestClose={onDismiss}>
+      <View style={styles.overlay}>
+        <View style={styles.sheet}>
+          {config ? (
+            <>
+              <Text style={styles.title}>{config.title}</Text>
+              {config.message ? <Text style={styles.message}>{config.message}</Text> : null}
+              {config.buttons.map((button, i) => (
+                <Pressable key={i} style={[styles.button, i > 0 && styles.buttonDivider]} onPress={() => handlePress(button)}>
+                  <Text
+                    style={[
+                      styles.buttonText,
+                      button.style === 'destructive' && styles.buttonTextDestructive,
+                      button.style === 'cancel' && styles.buttonTextCancel,
+                    ]}
+                  >
+                    {button.text}
+                  </Text>
+                </Pressable>
+              ))}
+            </>
+          ) : null}
+        </View>
+      </View>
+    </Modal>
+  )
+}
+
+const styles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  sheet: {
+    backgroundColor: colors.surface,
+    borderTopWidth: borderWidth.thick,
+    borderColor: colors.ink,
+    borderTopLeftRadius: radius.lg,
+    borderTopRightRadius: radius.lg,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.xxl,
+  },
+  title: { ...type.heading, marginBottom: spacing.xs },
+  message: { ...type.body, color: colors.inkMuted, marginBottom: spacing.md },
+  button: { paddingVertical: spacing.md },
+  buttonDivider: { borderTopWidth: 1, borderTopColor: colors.border },
+  buttonText: { ...type.body, fontWeight: '600', color: colors.ink },
+  buttonTextDestructive: { color: colors.danger },
+  buttonTextCancel: { color: colors.inkMuted, fontWeight: '400' },
+})

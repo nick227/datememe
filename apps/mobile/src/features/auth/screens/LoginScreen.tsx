@@ -1,10 +1,11 @@
 import { useState } from 'react'
-import { Alert, StyleSheet, View } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { useLogin } from '@project/sdk'
 import { ScreenContainer } from '../../../ui/ScreenContainer'
 import { TextField } from '../../../ui/TextField'
 import { Button } from '../../../ui/Button'
+import { ActionSheet, useActionSheet } from '../../../ui/ActionSheet'
 import { setToken } from '../../../lib/authToken'
 import { queryClient } from '../../../lib/queryClient'
 import { borderWidth, colors, spacing } from '../../../theme'
@@ -17,17 +18,16 @@ export function LoginScreen({ navigation }: Props) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const login = useLogin()
+  const sheet = useActionSheet()
 
   async function handleSubmit() {
     try {
       const result = await login.mutateAsync({ email, password })
-      // Store the token before re-triggering the /auth/me refetch the hook's own
-      // onSuccess already fired — that first one raced ahead of the token write
-      // and would have gone out unauthenticated.
+      // Persist credentials before fetching the canonical bootstrap.
       await setToken(result.token)
       await queryClient.invalidateQueries({ queryKey: ['me'] })
     } catch (err: any) {
-      Alert.alert('Login failed', err?.message ?? 'Check your email and password')
+      sheet.show({ title: 'Login failed', message: err?.message ?? 'Check your email and password', buttons: [{ text: 'OK' }] })
     }
   }
 
@@ -60,8 +60,12 @@ export function LoginScreen({ navigation }: Props) {
           <View style={{ marginTop: spacing.md }}>
             <Button label="Create an account" variant="secondary" onPress={() => navigation.navigate('Register')} />
           </View>
+          <View style={{ marginTop: spacing.md, alignItems: 'center' }}>
+            <Button label="Forgot password?" variant="secondary" onPress={() => navigation.navigate('ForgotPassword')} />
+          </View>
         </View>
       </View>
+      <ActionSheet config={sheet.config} onDismiss={sheet.dismiss} />
     </ScreenContainer>
   )
 }

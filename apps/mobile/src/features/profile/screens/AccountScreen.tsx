@@ -1,9 +1,10 @@
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native'
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { useCurrentUser, useLogout, useMySubscription } from '@project/sdk'
+import { useCurrentUser, useLogout, useSendVerificationEmail } from '@project/sdk'
 import { ScreenContainer } from '../../../ui/ScreenContainer'
 import { TopNavigation } from '../../../ui/TopNavigation'
 import { Button } from '../../../ui/Button'
+import { Icon } from '../../../ui/Icon'
 import { clearToken } from '../../../lib/authToken'
 import { borderWidth, colors, radius, spacing, type } from '../../../theme'
 import type { ProfileStackParamList } from '../../../navigation/types'
@@ -13,10 +14,10 @@ type Props = NativeStackScreenProps<ProfileStackParamList, 'Account'>
 
 export function AccountScreen({ navigation }: Props) {
   const me = useCurrentUser()
-  const subscription = useMySubscription()
   const logout = useLogout()
+  const sendVerification = useSendVerificationEmail()
 
-  const isPremium = !!subscription.data?.isActive
+  const isPremium = me.data?.membership.state === 'MEMBER'
 
   async function handleLogout() {
     await logout.mutateAsync()
@@ -55,6 +56,45 @@ export function AccountScreen({ navigation }: Props) {
       </View>
 
       <View style={styles.card}>
+        <View style={styles.row}>
+          <Typography variant="heading">Email</Typography>
+          <View style={[styles.tierBadge, !me.data?.isVerified && styles.tierBadgeWarning]}>
+            <Text style={[styles.tierBadgeText, !me.data?.isVerified && styles.tierBadgeTextWarning]}>
+              {me.data?.isVerified ? 'Verified' : 'Not verified'}
+            </Text>
+          </View>
+        </View>
+
+        {!me.data?.isVerified ? (
+          <View style={{ marginTop: spacing.md }}>
+            <Typography variant="bodyMuted" style={{ marginBottom: spacing.md }}>
+              Verify {me.data?.email} to keep your account secure.
+            </Typography>
+            <Button
+              label="Send verification code"
+              onPress={async () => {
+                await sendVerification.mutateAsync()
+                navigation.navigate('VerifyEmail')
+              }}
+              loading={sendVerification.isPending}
+            />
+          </View>
+        ) : null}
+      </View>
+
+      {me.data?.role === 'ADMIN' ? (
+        <Pressable style={styles.card} onPress={() => navigation.navigate('Admin')}>
+          <View style={styles.row}>
+            <View style={styles.adminRowLeft}>
+              <Icon name="Shield" size={20} color={colors.ink} />
+              <Typography variant="heading">Admin</Typography>
+            </View>
+            <Icon name="ChevronRight" size={20} color={colors.inkMuted} />
+          </View>
+        </Pressable>
+      ) : null}
+
+      <View style={styles.card}>
         <Typography variant="heading" style={{ marginBottom: spacing.md }}>Actions</Typography>
         <Button label="Log out" variant="secondary" onPress={handleLogout} loading={logout.isPending} />
       </View>
@@ -76,6 +116,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
+  adminRowLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
   tierBadge: {
     backgroundColor: colors.primarySoft,
     borderRadius: radius.pill,
@@ -83,4 +128,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
   },
   tierBadgeText: { ...type.label, color: colors.primary },
+  tierBadgeWarning: { backgroundColor: colors.surfaceMuted },
+  tierBadgeTextWarning: { color: colors.danger },
 })

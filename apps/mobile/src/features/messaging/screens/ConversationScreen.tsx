@@ -1,13 +1,27 @@
 import { useState, useRef, useEffect } from 'react'
-import { Text, Alert, FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet, View, Image } from 'react-native'
+import { Text, FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet, View, Image } from 'react-native'
+import { useIsFocused } from '@react-navigation/native'
+import { ActionSheet, useActionSheet } from '../../../ui/ActionSheet'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { useHeaderHeight } from '@react-navigation/elements'
-import { ApiError, useCurrentUser, useMessages, useSendMessage, useConversations, useMarkAsRead, useUploadMedia } from '@project/sdk'
+import {
+  ApiError,
+  useCurrentUser,
+  useMessages,
+  useSendMessage,
+  useConversations,
+  useMarkAsRead,
+  useUploadMedia,
+  useUnmatchConversation,
+  useSubmitReport,
+} from '@project/sdk'
 import Animated, { FadeIn, FadeOut, ZoomIn, ZoomOut } from 'react-native-reanimated'
 import * as ImagePicker from 'expo-image-picker'
 import { ScreenContainer } from '../../../ui/ScreenContainer'
 import { TextField } from '../../../ui/TextField'
 import { Icon } from '../../../ui/Icon'
+import { Skeleton } from '../../../ui/Skeleton'
+import { ErrorState } from '../../../ui/ErrorState'
 import { borderWidth, colors, radius, spacing } from '../../../theme'
 import type { MessagesStackParamList } from '../../../navigation/types'
 import { Typography } from '../../../ui/Typography'
@@ -17,13 +31,17 @@ type Props = NativeStackScreenProps<MessagesStackParamList, 'Conversation'>
 
 export function ConversationScreen({ route, navigation }: Props) {
   const { conversationId, displayName } = route.params
+  const isFocused = useIsFocused()
   const me = useCurrentUser()
   const myProfileId = me.data?.profile?.id
-  const messages = useMessages(conversationId)
+  const messages = useMessages(conversationId, { poll: isFocused })
   const sendMessage = useSendMessage(conversationId)
   const uploadMedia = useUploadMedia()
   const markAsRead = useMarkAsRead(conversationId)
   const conversations = useConversations()
+  const unmatchConversation = useUnmatchConversation()
+  const submitReport = useSubmitReport()
+  const sheet = useActionSheet()
   const [draft, setDraft] = useState('')
   const [attachment, setAttachment] = useState<ImagePicker.ImagePickerAsset | null>(null)
 
@@ -37,6 +55,13 @@ export function ConversationScreen({ route, navigation }: Props) {
   const otherParticipant = conversation?.participants.find((p: any) => p.id !== myProfileId) ?? conversation?.participants[0]
 
   const rows = messages.data?.pages.flatMap((p) => p.data) ?? []
+
+  // "Seen" derives from the existing per-participant lastReadAt (no per-message
+  // read model): the other participant has seen my latest message once their
+  // lastReadAt catches up to it. Only ever shown under that one message.
+  const otherReadAt = conversation?.participantReadState?.find((p: any) => p.profileId === otherParticipant?.id)?.lastReadAt
+  const myLastMessage = rows.find((m) => m.senderId === myProfileId)
+  const isSeen = !!(myLastMessage && otherReadAt && new Date(otherReadAt) >= new Date(myLastMessage.createdAt))
 
   async function handleSend() {
     const body = draft.trim()
@@ -57,7 +82,7 @@ export function ConversationScreen({ route, navigation }: Props) {
           type: currentAttachment.mimeType || 'image/jpeg',
         })
         attachmentsPayload = [{
-          type: currentAttachment.type === 'video' ? 'video' : 'image',
+          type: 'image',
           url: upload.url,
           mimeType: upload.mimeType,
           width: currentAttachment.width,
@@ -69,16 +94,16 @@ export function ConversationScreen({ route, navigation }: Props) {
       hapticSuccess()
     } catch (err) {
       if (err instanceof ApiError && err.status === 403) {
-        Alert.alert(
-          'Daily limit reached',
-          'Free members can send up to 3 messages a day. Go premium for unlimited messaging.',
-          [
+        sheet.show({
+          title: 'Daily limit reached',
+          message: err?.message ?? 'Your daily message allowance has been reached.',
+          buttons: [
             { text: 'Not now', style: 'cancel' },
             { text: 'Go Premium', onPress: () => (navigation.getParent()?.navigate as any)('Profile', { screen: 'Paywall' }) },
           ],
-        )
+        })
       } else {
-        Alert.alert('Could not send', 'Try again in a moment.')
+        sheet.show({ title: 'Could not send', message: 'Try again in a moment.', buttons: [{ text: 'OK' }] })
       }
       setDraft(body)
       setAttachment(currentAttachment)
@@ -87,7 +112,7 @@ export function ConversationScreen({ route, navigation }: Props) {
 
   async function pickImage() {
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.All,
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       quality: 0.8,
     })
@@ -96,12 +121,75 @@ export function ConversationScreen({ route, navigation }: Props) {
     }
   }
 
+  function fileReport(reason: string, targetMessageId?: string) {
+    if (!otherParticipant) return
+    submitReport.mutate(
+      targetMessageId
+        ? { targetType: 'MESSAGE', targetMessageId, reason }
+        : { targetType: 'PROFILE', targetProfileId: otherParticipant.id, reason },
+      {
+        onSuccess: () => sheet.show({ title: 'Reported', message: "Thanks — we'll review this.", buttons: [{ text: 'OK' }] }),
+        onError: () => sheet.show({ title: 'Could not send report', message: 'Try again in a moment.', buttons: [{ text: 'OK' }] }),
+      },
+    )
+  }
+
+  function handleReport() {
+    sheet.show({
+      title: `Report ${displayName}`,
+      message: "What's the issue?",
+      buttons: [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Inappropriate content', onPress: () => fileReport('Inappropriate content') },
+        { text: 'Harassment', onPress: () => fileReport('Harassment') },
+        { text: 'Fake profile', onPress: () => fileReport('Fake profile') },
+        { text: 'Spam', onPress: () => fileReport('Spam') },
+      ],
+    })
+  }
+
+  function handleReportMessage(messageId: string) {
+    sheet.show({
+      title: 'Report this message',
+      message: "What's the issue?",
+      buttons: [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Inappropriate content', onPress: () => fileReport('Inappropriate content', messageId) },
+        { text: 'Harassment', onPress: () => fileReport('Harassment', messageId) },
+        { text: 'Spam', onPress: () => fileReport('Spam', messageId) },
+      ],
+    })
+  }
+
+  function handleUnmatch() {
+    sheet.show({
+      title: 'Unmatch',
+      message: `Unmatch with ${displayName}? This can't be undone — you'll stop seeing each other's messages, and either of you could be shown to the other again in Discover.`,
+      buttons: [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Unmatch',
+          style: 'destructive',
+          onPress: () =>
+            unmatchConversation.mutate(conversationId, {
+              onSuccess: () => navigation.goBack(),
+              onError: () => sheet.show({ title: 'Could not unmatch', message: 'Try again in a moment.', buttons: [{ text: 'OK' }] }),
+            }),
+        },
+      ],
+    })
+  }
+
   function handleOptions() {
-    Alert.alert('Options', 'What would you like to do?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Report', style: 'destructive', onPress: () => console.log('Report') },
-      { text: 'Unmatch', style: 'destructive', onPress: () => console.log('Unmatch') }
-    ])
+    sheet.show({
+      title: 'Options',
+      message: 'What would you like to do?',
+      buttons: [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Report', style: 'destructive', onPress: handleReport },
+        { text: 'Unmatch', style: 'destructive', onPress: handleUnmatch },
+      ],
+    })
   }
 
   return (
@@ -114,7 +202,13 @@ export function ConversationScreen({ route, navigation }: Props) {
         
         <Pressable 
           style={styles.headerProfile}
-          onPress={() => otherParticipant && navigation.navigate('ProfileDetail', { profileId: otherParticipant.id, displayName: otherParticipant.displayName })}
+          onPress={() =>
+            otherParticipant &&
+            (navigation.getParent()?.navigate as any)('Discover', {
+              screen: 'ProfileDetail',
+              params: { profileId: otherParticipant.id, displayName: otherParticipant.displayName },
+            })
+          }
         >
           {otherParticipant?.avatarUrl ? (
             <Image source={{ uri: otherParticipant.avatarUrl }} style={styles.headerAvatar} />
@@ -132,95 +226,88 @@ export function ConversationScreen({ route, navigation }: Props) {
       </View>
       <View style={styles.headerDivider} />
 
-      <FlatList
-        data={rows}
-        keyExtractor={(item) => item.id}
-        inverted
-        contentContainerStyle={styles.messages}
-        onEndReached={() => messages.hasNextPage && messages.fetchNextPage()}
-        renderItem={({ item, index }) => {
-          const isOwn = item.senderId === myProfileId
-          const nextItem = rows[index + 1] // Older message (rendered above this one)
-          const prevItem = rows[index - 1] // Newer message (rendered below this one)
-          
-          const isFirstInGroup = !nextItem || nextItem.senderId !== item.senderId
-          const isLastInGroup = !prevItem || prevItem.senderId !== item.senderId
-
-          return (
-            <View style={[
-              styles.bubbleRow, 
-              isOwn && styles.bubbleRowOwn,
-              !isLastInGroup && { marginBottom: 2 }
-            ]}>
-              {item.locked ? (
-                <Pressable 
-                  style={styles.lockedContainer}
-                  onPress={() => (navigation.getParent()?.navigate as any)('Profile', { screen: 'Paywall' })}
-                >
-                  <View style={[styles.bubble, styles.bubbleLocked]}>
-                    <Icon name="Lock" size={16} color={colors.primary} />
-                    <Text style={styles.lockedText}>Premium message</Text>
-                  </View>
-                  <View style={styles.unlockBtn}>
-                    <Text style={styles.unlockBtnText}>Unlock</Text>
-                  </View>
-                </Pressable>
-              ) : (
-                <View style={[
-                  styles.bubble, 
-                  isOwn ? styles.bubbleOwn : styles.bubbleOther,
-                  isOwn && isLastInGroup && { borderBottomRightRadius: 4 },
-                  isOwn && isFirstInGroup && { borderTopRightRadius: radius.lg },
-                  !isOwn && isLastInGroup && { borderBottomLeftRadius: 4 },
-                  !isOwn && isFirstInGroup && { borderTopLeftRadius: radius.lg },
-                ]}>
-                  {item.attachments?.map((att: any, i: number) => (
-                    <View key={i} style={styles.bubbleAttachmentContainer}>
-                      {att.type === 'image' || att.type === 'video' ? (
-                        <Image 
-                          source={{ uri: att.url }} 
-                          style={styles.bubbleImage} 
-                          resizeMode="cover"
-                        />
-                      ) : null}
-                    </View>
-                  ))}
-                  
-                  {item.body ? (
-                    <Text style={isOwn ? styles.bodyOwn : styles.bodyOther}>{item.body}</Text>
-                  ) : null}
-
-                  {/* YouTube Link Detection */}
-                  {item.body && (() => {
-                    const ytMatch = item.body.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i)
-                    if (ytMatch && ytMatch[1]) {
-                      const ytId = ytMatch[1]
-                      return (
-                        <Pressable style={styles.ytContainer} onPress={() => Alert.alert('YouTube', 'Opens YouTube video: ' + ytId)}>
-                          <Image 
-                            source={{ uri: `https://img.youtube.com/vi/${ytId}/mqdefault.jpg` }} 
-                            style={styles.ytThumbnail} 
-                          />
-                          <View style={styles.ytPlayButton}>
-                            <Icon name="Play" size={24} color={colors.white} />
-                          </View>
-                        </Pressable>
-                      )
-                    }
-                    return null
-                  })()}
-
-                  {isLastInGroup && (
-                    <Text style={isOwn ? styles.timeOwn : styles.timeOther}>
-                      {new Date(item.createdAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
-                    </Text>
-                  )}
-                </View>
-              )}
+      {messages.isLoading ? (
+        <View style={[styles.messages, { flex: 1 }]}>
+          {[0, 1, 2, 3, 4].map((i) => (
+            <View key={i} style={[styles.bubbleRow, i % 2 === 0 && styles.bubbleRowOwn]}>
+              <Skeleton width={140 + (i % 3) * 30} height={40} style={{ borderRadius: radius.lg }} />
             </View>
-          )
-        }}
-      />
+          ))}
+        </View>
+      ) : messages.isError ? (
+        <View style={{ flex: 1 }}>
+          <ErrorState subtitle="Couldn't load this conversation." onRetry={() => messages.refetch()} />
+        </View>
+      ) : (
+        <FlatList
+          data={rows}
+          keyExtractor={(item) => item.id}
+          inverted
+          contentContainerStyle={styles.messages}
+          onEndReached={() => messages.hasNextPage && messages.fetchNextPage()}
+          renderItem={({ item, index }) => {
+            const isOwn = item.senderId === myProfileId
+            const prevItem = rows[index - 1] // Newer message (rendered below this one)
+
+            const isLastInGroup = !prevItem || prevItem.senderId !== item.senderId
+
+            return (
+              <View style={[
+                styles.bubbleRow,
+                isOwn && styles.bubbleRowOwn,
+                !isLastInGroup && { marginBottom: 2 }
+              ]}>
+              <View style={isOwn ? styles.bubbleColumnOwn : styles.bubbleColumn}>
+                {item.locked ? (
+                  <Pressable
+                    style={styles.lockedContainer}
+                    onPress={() => (navigation.getParent()?.navigate as any)('Profile', { screen: 'Paywall' })}
+                  >
+                    <View style={[styles.bubble, styles.bubbleLocked]}>
+                      <Icon name="Lock" size={16} color={colors.primary} />
+                      <Text style={styles.lockedText}>Premium message</Text>
+                    </View>
+                    <View style={styles.unlockBtn}>
+                      <Text style={styles.unlockBtnText}>Unlock</Text>
+                    </View>
+                  </Pressable>
+                ) : (
+                  <Pressable
+                    style={[styles.bubble, isOwn ? styles.bubbleOwn : styles.bubbleOther]}
+                    onLongPress={() => !isOwn && handleReportMessage(item.id)}
+                  >
+                    {item.attachments?.map((att: any, i: number) => (
+                      <View key={i} style={styles.bubbleAttachmentContainer}>
+                        {att.type === 'image' ? (
+                          <Image
+                            source={{ uri: att.url }}
+                            style={styles.bubbleImage}
+                            resizeMode="cover"
+                          />
+                        ) : null}
+                      </View>
+                    ))}
+
+                    {item.body ? (
+                      <Text style={isOwn ? styles.bodyOwn : styles.bodyOther}>{item.body}</Text>
+                    ) : null}
+
+                    {isLastInGroup && (
+                      <Text style={isOwn ? styles.timeOwn : styles.timeOther}>
+                        {new Date(item.createdAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+                      </Text>
+                    )}
+                  </Pressable>
+                )}
+                {isOwn && isSeen && item.id === myLastMessage?.id && (
+                  <Text style={styles.seenText}>Seen</Text>
+                )}
+              </View>
+              </View>
+            )
+          }}
+        />
+      )}
 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={headerHeight}>
         <View style={styles.composerWrapper}>
@@ -257,6 +344,7 @@ export function ConversationScreen({ route, navigation }: Props) {
           </View>
         </View>
       </KeyboardAvoidingView>
+      <ActionSheet config={sheet.config} onDismiss={sheet.dismiss} />
     </ScreenContainer>
   )
 }
@@ -283,7 +371,7 @@ const styles = StyleSheet.create({
   headerAvatar: {
     width: 32,
     height: 32,
-    borderRadius: 16,
+    borderRadius: radius.pill,
   },
   headerDivider: {
     height: 1,
@@ -292,11 +380,16 @@ const styles = StyleSheet.create({
   messages: { paddingHorizontal: spacing.md, paddingVertical: spacing.md, flexGrow: 1 },
   bubbleRow: { flexDirection: 'row', marginBottom: spacing.md },
   bubbleRowOwn: { justifyContent: 'flex-end' },
-  bubble: { 
-    maxWidth: '80%', 
-    borderRadius: radius.lg, 
-    paddingVertical: 10, 
+  bubbleColumn: { alignItems: 'flex-start' },
+  bubbleColumnOwn: { alignItems: 'flex-end' },
+  seenText: { color: colors.inkMuted, fontSize: 11, marginTop: 2 },
+  bubble: {
+    maxWidth: '80%',
+    borderRadius: radius.lg,
+    paddingVertical: 10,
     paddingHorizontal: 14,
+    borderWidth: borderWidth.thick,
+    borderColor: colors.ink,
   },
   bubbleOwn: { backgroundColor: colors.primary },
   bubbleOther: { backgroundColor: colors.surfaceMuted },
@@ -344,6 +437,8 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     backgroundColor: colors.surfaceMuted,
     borderRadius: radius.lg,
+    borderWidth: borderWidth.thin,
+    borderColor: colors.ink,
     paddingRight: spacing.xs,
     paddingVertical: 2, // inner padding
   },
@@ -356,10 +451,10 @@ const styles = StyleSheet.create({
     maxHeight: 120,
     paddingTop: 12, // override textfield padding if needed to center
   },
-  sendButton: { 
+  sendButton: {
     width: 36,
     height: 36,
-    borderRadius: 18,
+    borderRadius: radius.pill,
     backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
@@ -385,7 +480,7 @@ const styles = StyleSheet.create({
     top: -6,
     right: -6,
     backgroundColor: colors.ink,
-    borderRadius: 12,
+    borderRadius: radius.pill,
     width: 20,
     height: 20,
     alignItems: 'center',
@@ -401,27 +496,4 @@ const styles = StyleSheet.create({
     height: 220,
     borderRadius: radius.md,
   },
-  ytContainer: {
-    marginTop: spacing.xs,
-    width: 220,
-    height: 120,
-    borderRadius: radius.md,
-    overflow: 'hidden',
-    position: 'relative',
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: colors.ink,
-  },
-  ytThumbnail: {
-    ...StyleSheet.absoluteFillObject,
-    opacity: 0.8,
-  },
-  ytPlayButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  }
 })

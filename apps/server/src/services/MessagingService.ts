@@ -1,22 +1,28 @@
 import { db, Prisma } from '@project/db'
 import { decodeCursor, encodeCursor, normalizeLimit } from '../lib/pagination'
-import { PROFILE_SUMMARY_SELECT, serializeProfile } from '../lib/serializers'
-import { FREE_DAILY_MESSAGE_LIMIT, isPremiumUser, startOfUtcDay } from '../lib/entitlements'
+import { PROFILE_FULL_SELECT, serializeProfile } from '../lib/serializers'
+import { enforceLimit, resolveEntitlements, Entitlements, startOfUtcDay } from '../lib/entitlements'
 import { isBlockedEitherWay } from '../lib/blocks'
 
+// serializeProfile (below) always reads genderIdentity/bio/seekingGenders/
+// locationLabel/onboardingStep/photos — PROFILE_SUMMARY_SELECT omits most of
+// these, so those fields serialize as `undefined`, and the OpenAPI Profile
+// schema marks them required (nullable is fine, missing isn't): every
+// /conversations response 500'd on this before the fix. A conversation only
+// ever has 2 participants, so there's no real cost to using the full select here.
 export const CONVERSATION_INCLUDE = {
   participants: {
     select: {
       lastReadAt: true,
       profile: {
-        select: PROFILE_SUMMARY_SELECT,
+        select: PROFILE_FULL_SELECT,
       },
     },
   },
   messages: { orderBy: { createdAt: 'desc' as const }, take: 1 },
 }
 
-export function serializeConversation(conversation: any, viewerProfileId: string, viewerIsPremium: boolean) {
+export function serializeConversation(conversation: any, viewerProfileId: string, entitlements: Entitlements) {
   const lastMessage = conversation.messages[0]
   let lastMessageBody = null
   let hasUnread = false
@@ -25,7 +31,7 @@ export function serializeConversation(conversation: any, viewerProfileId: string
 
   if (lastMessage) {
     const isOwn = lastMessage.senderId === viewerProfileId
-    const locked = !isOwn && !viewerIsPremium
+    const locked = !isOwn && !entitlements['messaging.readIncoming']
     lastMessageBody = locked ? '🔒 New message' : lastMessage.body
 
     if (!isOwn && viewerParticipant) {
@@ -38,18 +44,22 @@ export function serializeConversation(conversation: any, viewerProfileId: string
     status: conversation.status,
     initiatedById: conversation.initiatedById,
     participants: conversation.participants.map((p: any) => {
-      const revealPhoto = p.profile.id === viewerProfileId || viewerIsPremium
+      const revealPhoto = p.profile.id === viewerProfileId || entitlements['profile.fullPhotoAccess']
       return serializeProfile(p.profile, { revealPhoto })
     }),
+    participantReadState: conversation.participants.map((p: any) => ({
+      profileId: p.profile.id,
+      lastReadAt: p.lastReadAt ?? null,
+    })),
     lastMessageAt: lastMessage?.createdAt ?? null,
     lastMessageBody,
     hasUnread,
   }
 }
 
-function serializeMessage(message: any, viewerProfileId: string, viewerIsPremium: boolean) {
+function serializeMessage(message: any, viewerProfileId: string, entitlements: Entitlements) {
   const isOwn = message.senderId === viewerProfileId
-  const locked = !isOwn && !viewerIsPremium
+  const locked = !isOwn && !entitlements['messaging.readIncoming']
   return {
     id: message.id,
     conversationId: message.conversationId,
@@ -65,7 +75,7 @@ export class MessagingService {
   async listConversations(viewerUserId: string, viewerProfileId: string, opts: { cursor?: string; limit?: number }) {
     const limit = normalizeLimit(opts.limit)
     const cursor = decodeCursor(opts.cursor)
-    const viewerIsPremium = await isPremiumUser(viewerUserId)
+    const entitlements = await resolveEntitlements(viewerUserId)
 
     const conversations = await db.conversation.findMany({
       where: {
@@ -89,7 +99,7 @@ export class MessagingService {
     const last = page[page.length - 1]
     const nextCursor = hasMore && last ? encodeCursor({ createdAt: last.createdAt.toISOString(), id: last.id }) : null
 
-    return { data: page.map((c) => serializeConversation(c, viewerProfileId, viewerIsPremium)), meta: { hasMore, nextCursor } }
+    return { data: page.map((c) => serializeConversation(c, viewerProfileId, entitlements)), meta: { hasMore, nextCursor } }
   }
 
   /**
@@ -99,7 +109,7 @@ export class MessagingService {
    * returned participant list.
    */
   async getOrCreateConversation(initiatorUserId: string, initiatorProfileId: string, otherProfileId: string) {
-    const viewerIsPremium = await isPremiumUser(initiatorUserId)
+    const entitlements = await resolveEntitlements(initiatorUserId)
 
     const existing = await db.conversation.findFirst({
       where: {
@@ -110,7 +120,7 @@ export class MessagingService {
       },
       include: CONVERSATION_INCLUDE,
     })
-    if (existing) return serializeConversation(existing, initiatorProfileId, viewerIsPremium)
+    if (existing) return serializeConversation(existing, initiatorProfileId, entitlements)
 
     const created = await db.conversation.create({
       data: {
@@ -119,7 +129,7 @@ export class MessagingService {
       },
       include: CONVERSATION_INCLUDE,
     })
-    return serializeConversation(created, initiatorProfileId, viewerIsPremium)
+    return serializeConversation(created, initiatorProfileId, entitlements)
   }
 
   async listMessages(
@@ -131,7 +141,7 @@ export class MessagingService {
     await this._assertParticipant(viewerProfileId, conversationId)
     const limit = normalizeLimit(opts.limit)
     const cursor = decodeCursor(opts.cursor)
-    const viewerIsPremium = await isPremiumUser(viewerUserId)
+    const entitlements = await resolveEntitlements(viewerUserId)
 
     const messages = await db.message.findMany({
       where: {
@@ -155,7 +165,7 @@ export class MessagingService {
     const nextCursor = hasMore && last ? encodeCursor({ createdAt: last.createdAt.toISOString(), id: last.id }) : null
 
     return {
-      data: page.map((m) => serializeMessage(m, viewerProfileId, viewerIsPremium)),
+      data: page.map((m) => serializeMessage(m, viewerProfileId, entitlements)),
       meta: { hasMore, nextCursor },
     }
   }
@@ -175,14 +185,13 @@ export class MessagingService {
       throw { statusCode: 403, message: 'Cannot message this conversation' }
     }
 
-    const viewerIsPremium = await isPremiumUser(viewerUserId)
-    if (!viewerIsPremium) {
+    const entitlements = await resolveEntitlements(viewerUserId)
+    const limit = entitlements['messaging.dailySendLimit']
+    if (limit !== 'UNLIMITED') {
       const sentToday = await db.message.count({
         where: { senderId: viewerProfileId, createdAt: { gte: startOfUtcDay() } },
       })
-      if (sentToday >= FREE_DAILY_MESSAGE_LIMIT) {
-        throw { statusCode: 403, message: `Free members can send up to ${FREE_DAILY_MESSAGE_LIMIT} messages per day` }
-      }
+      enforceLimit(limit, sentToday, `Free members can send up to ${limit} messages per day`)
     }
 
     const message = await db.message.create({ 
@@ -208,7 +217,37 @@ export class MessagingService {
       })
     }
 
-    return serializeMessage(message, viewerProfileId, viewerIsPremium)
+    return serializeMessage(message, viewerProfileId, entitlements)
+  }
+
+  /**
+   * Undoes the match entirely — deletes the Swipe rows in both directions
+   * (so the two profiles become eligible for Discover again, unlike a Block)
+   * and deletes the Conversation itself (cascades to its Messages).
+   */
+  async unmatchConversation(viewerProfileId: string, conversationId: string) {
+    await this._assertParticipant(viewerProfileId, conversationId)
+    const otherParticipant = await db.conversationParticipant.findFirst({
+      where: { conversationId, profileId: { not: viewerProfileId } },
+    })
+
+    await db.$transaction([
+      ...(otherParticipant
+        ? [
+            db.swipe.deleteMany({
+              where: {
+                OR: [
+                  { actorProfileId: viewerProfileId, targetProfileId: otherParticipant.profileId },
+                  { actorProfileId: otherParticipant.profileId, targetProfileId: viewerProfileId },
+                ],
+              },
+            }),
+          ]
+        : []),
+      db.conversation.delete({ where: { id: conversationId } }),
+    ])
+
+    return { success: true }
   }
 
   async markAsRead(viewerProfileId: string, conversationId: string) {

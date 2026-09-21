@@ -1,34 +1,24 @@
 import { db } from '@project/db'
-import { PROFILE_FULL_SELECT } from '../lib/serializers'
+import { requireAccountAccess, requireRole, sessionToken } from '../lib/userContext'
 
-export async function bearerAuth(request: any, _reply: any, _params: any) {
-  // cookie-first (web); Bearer header fallback (native apps — see packages/sdk/src/client.ts)
-  const token =
-    request.cookies?.token ??
-    request.headers.authorization?.replace('Bearer ', '')
-
+// Two parameters work with both native Fastify and OpenAPI glue hooks.
+export async function bearerAuth(request: any, _reply: any) {
+  const token = sessionToken(request)
   if (!token) throw { statusCode: 401, message: 'Unauthorized' }
-
   const session = await db.session.findUnique({
     where: { token },
-    include: { user: { include: { profile: { select: PROFILE_FULL_SELECT } } } },
+    select: { expiresAt: true, user: { select: {
+      id: true, role: true, isVerified: true, suspendedAt: true, deletedAt: true,
+      profile: { select: { id: true } },
+    } } },
   })
-
-  if (!session || session.expiresAt < new Date()) {
-    throw { statusCode: 401, message: 'Session expired' }
-  }
-
-  if (session.user.suspendedAt) {
-    throw { statusCode: 403, message: 'Account suspended' }
-  }
-
-  request.user = session.user
+  if (!session || session.expiresAt <= new Date()) throw { statusCode: 401, message: 'Session expired' }
+  requireAccountAccess(session.user)
+  const { profile, ...identity } = session.user
+  request.user = { ...identity, profileId: profile?.id ?? null }
 }
 
-// extend bearerAuth with role check — used for admin routes
-export async function adminAuth(request: any, reply: any, params: any) {
-  await bearerAuth(request, reply, params)
-  if (request.user.role !== 'ADMIN') {
-    throw { statusCode: 403, message: 'Forbidden' }
-  }
+export async function adminAuth(request: any, reply: any) {
+  await bearerAuth(request, reply)
+  requireRole(request.user, 'ADMIN')
 }

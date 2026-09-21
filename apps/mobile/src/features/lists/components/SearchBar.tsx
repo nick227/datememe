@@ -10,15 +10,23 @@ export function SearchBar({
   onChangeText: (text: string) => void
   placeholder: string
 }) {
+  const handleChangeText = (text: string) => {
+    const capitalized = text
+      .split(' ')
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ')
+    onChangeText(capitalized)
+  }
+
   return (
     <View style={styles.container}>
       <TextInput
         value={value}
-        onChangeText={onChangeText}
+        onChangeText={handleChangeText}
         placeholder={placeholder}
         placeholderTextColor={colors.inkMuted}
         style={styles.input}
-        autoCapitalize="none"
+        autoCapitalize="words"
         autoCorrect={false}
       />
     </View>

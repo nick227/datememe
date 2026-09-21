@@ -1,11 +1,15 @@
-import { FlatList, Image, Pressable, StyleSheet, Text, View, Alert } from 'react-native'
+import { useState } from 'react'
+import { FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { useConversations, useCurrentUser } from '@project/sdk'
+import { useConversations, useCurrentUser, useUnmatchConversation } from '@project/sdk'
 import Swipeable from 'react-native-gesture-handler/Swipeable'
 import { ScreenContainer } from '../../../ui/ScreenContainer'
 import { TopNavigation } from '../../../ui/TopNavigation'
 import { Skeleton } from '../../../ui/Skeleton'
 import { EmptyState } from '../../../ui/EmptyState'
+import { ErrorState } from '../../../ui/ErrorState'
+import { TextField } from '../../../ui/TextField'
+import { ActionSheet, useActionSheet } from '../../../ui/ActionSheet'
 import { colors, radius, spacing, type } from '../../../theme'
 import type { MessagesStackParamList } from '../../../navigation/types'
 import { Typography } from '../../../ui/Typography'
@@ -31,36 +35,84 @@ export function ConversationsScreen({ navigation }: Props) {
   const me = useCurrentUser()
   const myProfileId = me.data?.profile?.id
   const conversations = useConversations()
-  const rows = conversations.data?.pages.flatMap((p) => p.data) ?? []
+  const unmatchConversation = useUnmatchConversation()
+  const sheet = useActionSheet()
+  const [search, setSearch] = useState('')
+  const allRows = conversations.data?.pages.flatMap((p) => p.data) ?? []
+  const query = search.trim().toLowerCase()
+  const rows = query
+    ? allRows.filter((item) => {
+        const other = item.participants.find((p: any) => p.id !== myProfileId) ?? item.participants[0]
+        return (
+          other?.displayName?.toLowerCase().includes(query) ||
+          item.lastMessageBody?.toLowerCase().includes(query)
+        )
+      })
+    : allRows
 
-  function renderRightActions() {
+  function confirmUnmatch(conversationId: string, otherDisplayName: string) {
+    hapticMedium()
+    sheet.show({
+      title: 'Unmatch',
+      message: `Unmatch with ${otherDisplayName}? This can't be undone — you'll stop seeing each other's messages, and either of you could be shown to the other again in Discover.`,
+      buttons: [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Unmatch',
+          style: 'destructive',
+          onPress: () =>
+            unmatchConversation.mutate(conversationId, {
+              onError: () => sheet.show({ title: 'Could not unmatch', message: 'Try again in a moment.', buttons: [{ text: 'OK' }] }),
+            }),
+        },
+      ],
+    })
+  }
+
+  function renderRightActions(conversationId: string, otherDisplayName: string) {
     return (
-      <Pressable 
-        style={styles.unmatchAction} 
-        onPress={() => {
-          hapticMedium()
-          Alert.alert('Unmatch', 'Are you sure you want to unmatch? This cannot be undone.', [
-            { text: 'Cancel', style: 'cancel' },
-            { text: 'Unmatch', style: 'destructive', onPress: () => console.log('Unmatch logic here') }
-          ])
-        }}
-      >
+      <Pressable style={styles.unmatchAction} onPress={() => confirmUnmatch(conversationId, otherDisplayName)}>
         <Icon name="X" size={24} color={colors.white} />
         <Text style={styles.unmatchText}>Unmatch</Text>
       </Pressable>
     )
   }
 
+  if (conversations.isError) {
+    return (
+      <ScreenContainer width="full">
+        <ErrorState subtitle="Couldn't load your messages." onRetry={() => conversations.refetch()} />
+      </ScreenContainer>
+    )
+  }
+
   return (
-    <ScreenContainer padded={false} width="wide">
+    <ScreenContainer padded={false} width="full">
       <TopNavigation title="Messages" alignment="left" />
+      {!conversations.isLoading && allRows.length > 0 && (
+        <View style={{ paddingHorizontal: spacing.lg, width: '100%', maxWidth: 960, alignSelf: 'center' }}>
+          <TextField
+            value={search}
+            onChangeText={setSearch}
+            placeholder="Search conversations"
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+        </View>
+      )}
       <FlatList
         data={(conversations.isLoading ? [1, 2, 3, 4, 5] : rows) as any[]}
         keyExtractor={(item) => (typeof item === 'number' ? String(item) : item.id)}
-        contentContainerStyle={styles.listContent}
+        // Full-bleed scroll box (native scrollbar at the true browser edge);
+        // width/centering applied to content instead — see CategoriesScreen.
+        contentContainerStyle={[styles.listContent, { width: '100%', maxWidth: 960, alignSelf: 'center' }]}
         onEndReached={() => conversations.hasNextPage && conversations.fetchNextPage()}
         ListEmptyComponent={
-          <EmptyState title="No conversations yet" subtitle="Message someone from Discover to start one." />
+          query ? (
+            <EmptyState title="No matches" subtitle={`No conversations match "${search.trim()}".`} />
+          ) : (
+            <EmptyState title="No conversations yet" subtitle="Match with someone in Discover to start a conversation." />
+          )
         }
         ItemSeparatorComponent={() => <View style={styles.separator} />}
         renderItem={({ item }) => {
@@ -82,7 +134,7 @@ export function ConversationsScreen({ navigation }: Props) {
           const isUnread = item.hasUnread
 
           return (
-            <Swipeable renderRightActions={renderRightActions} overshootRight={false}>
+            <Swipeable renderRightActions={() => renderRightActions(item.id, other.displayName)} overshootRight={false}>
               <Pressable
                 style={styles.row}
                 onPress={() => navigation.navigate('Conversation', { conversationId: item.id, displayName: other.displayName })}
@@ -121,6 +173,7 @@ export function ConversationsScreen({ navigation }: Props) {
           )
         }}
       />
+      <ActionSheet config={sheet.config} onDismiss={sheet.dismiss} />
     </ScreenContainer>
   )
 }
@@ -158,7 +211,7 @@ const styles = StyleSheet.create({
   unreadDot: {
     width: 10,
     height: 10,
-    borderRadius: 5,
+    borderRadius: radius.pill,
     backgroundColor: colors.primary,
   },
   unmatchAction: {

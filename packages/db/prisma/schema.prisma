@@ -23,14 +23,15 @@ model User {
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
 
-  profile             Profile?
-  subscriptions       Subscription[]
-  sessions            Session[]
-  reviewedSubmissions EntitySubmission[]
-  reviewedReports     Report[]
-  passwordResetTokens PasswordResetToken[]
+  profile                 Profile?
+  subscriptions           Subscription[]
+  sessions                Session[]
+  reviewedSubmissions     EntitySubmission[]
+  reviewedReports         Report[]
+  passwordResetTokens     PasswordResetToken[]
   emailVerificationTokens EmailVerificationToken[]
-  pushTokens          PushToken[]
+  pushTokens              PushToken[]
+  adminAuditEvents        AdminAuditEvent[]
 }
 
 enum AccountRole {
@@ -64,6 +65,24 @@ model Session {
   @@index([userId])
 }
 
+model AdminAuditEvent {
+  id            String   @id @default(cuid())
+  actorUserId   String
+  actorRole     AccountRole
+  action        String
+  targetType    String
+  targetId      String?
+  beforeValue   Json?
+  afterValue    Json?
+  metadata      Json?
+  createdAt     DateTime @default(now())
+
+  actor User @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@index([actorUserId, createdAt])
+  @@index([action, createdAt])
+}
+
 // token is a short numeric code (mailed/emailed, entered by hand in-app — this is a
 // mobile-only product with no web page to host a clickable reset link), scoped by
 // userId rather than globally unique, so lookups are always `WHERE userId = X AND
@@ -95,37 +114,44 @@ model EmailVerificationToken {
 }
 
 model Profile {
-  id             String   @id @default(cuid())
-  userId         String   @unique
-  username       String   @unique
-  displayName    String
-  birthdate      DateTime
-  genderIdentity String?
-  bio            String?  @db.VarChar(150)
-  locationLat    Float?
-  locationLng    Float?
-  locationLabel  String?
-  avatarUrl      String?
-  isDiscoverable Boolean  @default(true)
-  onboardingStep Int      @default(0)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  username        String   @unique
+  displayName     String
+  birthdate       DateTime
+  genderIdentity  String?
+  // Baseline candidate-age eligibility (mutual, applied in both directions by
+  // DiscoveryService) — not the same thing as the "20s/30s" Discover chips,
+  // which only *narrow* this range, never replace it. No settings UI writes
+  // these yet; the defaults are a deliberately wide no-op until one exists.
+  preferredMinAge Int      @default(18)
+  preferredMaxAge Int      @default(99)
+  bio             String?  @db.VarChar(150)
+  locationLat     Float?
+  locationLng     Float?
+  locationLabel   String?
+  avatarUrl       String?
+  isDiscoverable  Boolean  @default(true)
+  onboardingStep  Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
-  user                   User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user                   User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
   seekingGenders         ProfileSeekingGender[]
   photos                 ProfilePhoto[]
   lists                  List[]
   submittedEntities      Entity[]
-  submissions            EntitySubmission[]         @relation("SubmissionSubmitter")
-  swipesMade             Swipe[]                    @relation("SwipeActor")
-  swipesReceived         Swipe[]                    @relation("SwipeTarget")
+  submissions            EntitySubmission[]        @relation("SubmissionSubmitter")
+  swipesMade             Swipe[]                   @relation("SwipeActor")
+  swipesReceived         Swipe[]                   @relation("SwipeTarget")
   conversations          ConversationParticipant[]
-  initiatedConversations Conversation[]             @relation("ConversationInitiator")
-  sentMessages           Message[]                  @relation("MessageSender")
-  blocksMade             Block[]                    @relation("BlockBlocker")
-  blocksReceived         Block[]                    @relation("BlockBlocked")
-  reportsFiled           Report[]                   @relation("ReportReporter")
-  reportsReceived        Report[]                   @relation("ReportTargetProfile")
+  initiatedConversations Conversation[]            @relation("ConversationInitiator")
+  sentMessages           Message[]                 @relation("MessageSender")
+  blocksMade             Block[]                   @relation("BlockBlocker")
+  blocksReceived         Block[]                   @relation("BlockBlocked")
+  reportsFiled           Report[]                  @relation("ReportReporter")
+  reportsReceived        Report[]                  @relation("ReportTargetProfile")
+  quickPickSignals       QuickPickSignal[]
 
   @@index([locationLat, locationLng])
 }
@@ -167,6 +193,7 @@ model Report {
   createdAt         DateTime         @default(now())
   reviewedAt        DateTime?
   reviewedByUserId  String?
+  reviewNotes       String?          @db.Text
 
   reporter       Profile  @relation("ReportReporter", fields: [reporterProfileId], references: [id], onDelete: Restrict)
   targetProfile  Profile? @relation("ReportTargetProfile", fields: [targetProfileId], references: [id], onDelete: Restrict)
@@ -226,11 +253,17 @@ model EntityType {
   pluralLabel    String
   icon           String?
   metadataSchema Json?
+  isActive       Boolean  @default(true)
   createdAt      DateTime @default(now())
 
   entities          Entity[]
   categories        Category[]
   entitySubmissions EntitySubmission[]
+  mediaAssets       MediaAsset[]
+
+  parentId String?
+  parent   EntityType?  @relation("TypeHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children EntityType[] @relation("TypeHierarchy")
 }
 
 model Entity {
@@ -249,17 +282,29 @@ model Entity {
   createdAt            DateTime         @default(now())
   updatedAt            DateTime         @updatedAt
 
-  entityType         EntityType         @relation(fields: [entityTypeId], references: [id], onDelete: Restrict)
-  mergedInto         Entity?            @relation("EntityMerge", fields: [mergedIntoId], references: [id], onDelete: SetNull)
-  mergedFrom         Entity[]           @relation("EntityMerge")
-  submittedByProfile Profile?           @relation(fields: [submittedByProfileId], references: [id], onDelete: SetNull)
-  aliases            EntityAlias[]
-  tags               EntityTag[]
-  listItems          ListItem[]
-  submittedEntityFor EntitySubmission?  @relation("SubmissionSubmittedEntity")
-  suggestedMatchFor  EntitySubmission[] @relation("SubmissionSuggestedMatch")
-  resolvedFor        EntitySubmission[] @relation("SubmissionResolvedEntity")
-  topPickForCategories Category[]       @relation("CategoryTopPick")
+  entityType           EntityType         @relation(fields: [entityTypeId], references: [id], onDelete: Restrict)
+  mergedInto           Entity?            @relation("EntityMerge", fields: [mergedIntoId], references: [id], onDelete: SetNull)
+  mergedFrom           Entity[]           @relation("EntityMerge")
+  submittedByProfile   Profile?           @relation(fields: [submittedByProfileId], references: [id], onDelete: SetNull)
+  aliases              EntityAlias[]
+  tags                 EntityTag[]
+  listItems            ListItem[]
+  submittedEntityFor   EntitySubmission?  @relation("SubmissionSubmittedEntity")
+  suggestedMatchFor    EntitySubmission[] @relation("SubmissionSuggestedMatch")
+  resolvedFor          EntitySubmission[] @relation("SubmissionResolvedEntity")
+  topPickForCategories Category[]         @relation("CategoryTopPick")
+  quickPickSignal1     QuickPickSignal[]  @relation("QuickPickEntity1")
+  quickPickSignal2     QuickPickSignal[]  @relation("QuickPickEntity2")
+  quickPickWins        QuickPickSignal[]  @relation("QuickPickWinnerSignal")
+  quickPickLosses      QuickPickSignal[]  @relation("QuickPickLoserSignal")
+  parentCategories     Category[]         @relation("CategoryParentEntity")
+  curatedForCategories CategoryEntity[]
+  mediaAssets          MediaAsset[]
+  externalRefs         EntityExternalRef[]
+
+  parentId String?
+  parent   Entity?  @relation("EntityHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children Entity[] @relation("EntityHierarchy")
 
   @@unique([entityTypeId, slug])
   @@index([entityTypeId, status])
@@ -267,10 +312,64 @@ model Entity {
   @@index([canonicalName])
 }
 
+model EntityExternalRef {
+  id         String   @id @default(cuid())
+  entityId   String
+  provider   String
+  externalId String
+  metadata   Json?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  entity Entity @relation(fields: [entityId], references: [id], onDelete: Cascade)
+
+  @@unique([entityId, provider])
+  @@index([provider, externalId])
+}
+
+model MediaAsset {
+  id              String   @id @default(cuid())
+  entityId        String?
+  entityTypeId    String?
+  categoryId      String?
+  sourceType      String
+  provider        String?
+  sourceId        String?
+  sourceUrl       String?  @db.Text
+  landingUrl      String?  @db.Text
+  creator         String?
+  license         String?
+  licenseUrl      String?  @db.Text
+  attribution     String?  @db.Text
+  importRule      String   @default("REVIEW_REQUIRED")
+  originalWidth   Int?
+  originalHeight  Int?
+  crop            Json?
+  storageKey      String?
+  publicUrl       String?
+  mimeType        String?
+  byteSize        Int?
+  sha256          String?
+  metadata        Json?
+  isPrimary       Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  entity     Entity?     @relation(fields: [entityId], references: [id], onDelete: Cascade)
+  entityType EntityType? @relation(fields: [entityTypeId], references: [id], onDelete: Cascade)
+  category   Category?   @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@index([entityId, isPrimary])
+  @@index([entityTypeId, isPrimary])
+  @@index([categoryId, isPrimary])
+  @@index([provider, sourceId])
+}
+
 enum EntitySourceType {
   SEEDED
   IMPORTED
   USER_SUBMITTED
+  AI_GENERATED
 }
 
 enum SubmissionStatus {
@@ -327,7 +426,7 @@ model EntitySubmission {
   id                   String           @id @default(cuid())
   entityTypeId         String
   rawText              String
-  submittedByProfileId String
+  submittedByProfileId String?
   submittedEntityId    String           @unique
   suggestedMatchId     String?
   resolvedEntityId     String?
@@ -338,7 +437,7 @@ model EntitySubmission {
   reviewedAt           DateTime?
 
   entityType         EntityType @relation(fields: [entityTypeId], references: [id], onDelete: Restrict)
-  submittedByProfile Profile    @relation("SubmissionSubmitter", fields: [submittedByProfileId], references: [id], onDelete: Restrict)
+  submittedByProfile Profile?   @relation("SubmissionSubmitter", fields: [submittedByProfileId], references: [id], onDelete: Restrict)
   submittedEntity    Entity     @relation("SubmissionSubmittedEntity", fields: [submittedEntityId], references: [id], onDelete: Restrict)
   suggestedMatch     Entity?    @relation("SubmissionSuggestedMatch", fields: [suggestedMatchId], references: [id], onDelete: SetNull)
   resolvedEntity     Entity?    @relation("SubmissionResolvedEntity", fields: [resolvedEntityId], references: [id], onDelete: SetNull)
@@ -370,21 +469,27 @@ model Category {
   orderingMode    OrderingMode     @default(RANKED)
   isMatchSignal   Boolean          @default(true)
   isPremiumOnly   Boolean          @default(false)
-  status          SubmissionStatus @default(APPROVED)
+  isActive        Boolean          @default(true)
   popularityCount Int              @default(0)
+  parentEntityId  String?
   topPickEntityId String?
   metadata        Json?
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
 
-  group         CategoryGroup @relation(fields: [groupId], references: [id], onDelete: Restrict)
-  entityType    EntityType    @relation(fields: [entityTypeId], references: [id], onDelete: Restrict)
-  topPickEntity Entity?       @relation("CategoryTopPick", fields: [topPickEntityId], references: [id], onDelete: SetNull)
-  requiredTags  CategoryTag[]
-  lists         List[]
+  group            CategoryGroup @relation(fields: [groupId], references: [id], onDelete: Restrict)
+  entityType       EntityType    @relation(fields: [entityTypeId], references: [id], onDelete: Restrict)
+  parentEntity     Entity?       @relation("CategoryParentEntity", fields: [parentEntityId], references: [id], onDelete: SetNull)
+  topPickEntity    Entity?       @relation("CategoryTopPick", fields: [topPickEntityId], references: [id], onDelete: SetNull)
+  requiredTags     CategoryTag[]
+  curatedEntities  CategoryEntity[]
+  lists            List[]
+  mediaAssets      MediaAsset[]
 
-  @@index([groupId, status])
+  @@index([groupId])
+  @@index([isActive])
   @@index([entityTypeId])
+  @@index([parentEntityId])
 }
 
 enum OrderingMode {
@@ -400,6 +505,17 @@ model CategoryTag {
   tag      Tag      @relation(fields: [tagId], references: [id], onDelete: Restrict)
 
   @@id([categoryId, tagId])
+}
+
+model CategoryEntity {
+  categoryId String
+  entityId   String
+  sortOrder  Int      @default(0)
+
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  entity   Entity   @relation(fields: [entityId], references: [id], onDelete: Restrict)
+
+  @@id([categoryId, entityId])
 }
 
 model List {
@@ -442,6 +558,38 @@ model ListItem {
   @@unique([listId, rank])
   @@unique([listId, entityId])
   @@index([entityId])
+}
+
+enum QuickPickContextType {
+  CATEGORY
+  ENTITY_TYPE
+  PARENT_ENTITY
+  TAG
+}
+
+model QuickPickSignal {
+  id        String @id @default(cuid())
+  profileId String
+
+  contextType QuickPickContextType
+  contextId   String
+
+  entity1Id String
+  entity2Id String
+
+  winnerId String
+  loserId  String
+
+  createdAt DateTime @default(now())
+
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  entity1 Entity  @relation("QuickPickEntity1", fields: [entity1Id], references: [id], onDelete: Cascade)
+  entity2 Entity  @relation("QuickPickEntity2", fields: [entity2Id], references: [id], onDelete: Cascade)
+  winner  Entity  @relation("QuickPickWinnerSignal", fields: [winnerId], references: [id], onDelete: Cascade)
+  loser   Entity  @relation("QuickPickLoserSignal", fields: [loserId], references: [id], onDelete: Cascade)
+
+  @@index([profileId, contextType, contextId])
+  @@index([profileId, entity1Id, entity2Id])
 }
 
 // ── Messaging ─────────────────────────────────────────────
@@ -502,6 +650,7 @@ model Plan {
   priceCents Int
   currency   String       @default("USD")
   isActive   Boolean      @default(true)
+  features   Json         @default("{}")
 
   subscriptions Subscription[]
 }
@@ -534,6 +683,7 @@ enum PaymentProvider {
   APPLE_APP_STORE
   GOOGLE_PLAY
   STRIPE
+  MANUAL
 }
 
 enum SubscriptionStatus {
@@ -579,15 +729,15 @@ enum JobStatus {
 }
 
 model CompatibilityScore {
-  id                 String   @id @default(cuid())
-  profileIdA         String
-  profileIdB         String
-  score              Float
-  sharedItemsCount   Int
-  sharedFavorites    Json
-  insights           Json
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  id               String   @id @default(cuid())
+  profileIdA       String
+  profileIdB       String
+  score            Float
+  sharedItemsCount Int
+  sharedFavorites  Json
+  insights         Json
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   @@unique([profileIdA, profileIdB])
   @@index([profileIdA, score(sort: Desc)])

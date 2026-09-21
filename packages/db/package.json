@@ -7,6 +7,7 @@
     "build": "tsc",
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
+    "db:seed:users": "tsx prisma/seed-users.ts",
     "db:studio": "prisma studio",
     "typecheck": "tsc --noEmit",
     "lint": "echo 'no lint configured for @project/db'",

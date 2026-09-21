@@ -22,3 +22,9 @@ apps/mobile/*.mobileprovision
 
 # macOS
 .DS_Store
+
+# Windows/WSL zone-identifier metadata left on files downloaded in-browser
+*:Zone.Identifier
+
+# Claude Code local session state
+.claude/

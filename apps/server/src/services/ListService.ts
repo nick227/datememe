@@ -1,6 +1,6 @@
 import { db } from '@project/db'
 import { LIST_PREVIEW_SELECT, serializeListForViewer } from '../lib/serializers'
-import { isPremiumUser } from '../lib/entitlements'
+import { resolveEntitlements } from '../lib/entitlements'
 import { isBlockedEitherWay } from '../lib/blocks'
 
 export class ListService {
@@ -18,12 +18,12 @@ export class ListService {
     if (!isSelf && (await isBlockedEitherWay(viewerProfileId, targetProfileId))) {
       throw { statusCode: 404, message: 'Profile not found' }
     }
-    const viewerIsPremium = isSelf || (await isPremiumUser(viewerUserId))
+    const canReadMemberLists = isSelf || ((await resolveEntitlements(viewerUserId))['lists.memberOnly'])
 
     const lists = await db.list.findMany({
       where: {
         profileId: targetProfileId,
-        ...(isSelf ? {} : { visibility: viewerIsPremium ? { in: ['PUBLIC', 'PREMIUM_ONLY'] } : 'PUBLIC' }),
+        ...(isSelf ? {} : { visibility: canReadMemberLists ? { in: ['PUBLIC', 'PREMIUM_ONLY'] } : 'PUBLIC' }),
       },
       select: LIST_PREVIEW_SELECT,
     })

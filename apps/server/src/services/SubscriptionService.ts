@@ -1,5 +1,5 @@
 import { db } from '@project/db'
-import { isPremiumUser } from '../lib/entitlements'
+import { resolveMembership } from '../lib/entitlements'
 
 function serializePlan(plan: any) {
   return {
@@ -35,7 +35,7 @@ export class SubscriptionService {
       orderBy: { currentPeriodEnd: 'desc' },
     })
     if (!sub) return null
-    return serializeSubscription(sub, await isPremiumUser(userId))
+    return serializeSubscription(sub, (await resolveMembership(userId)).state === 'MEMBER')
   }
 
   /**

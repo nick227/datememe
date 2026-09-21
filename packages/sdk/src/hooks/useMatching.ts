@@ -15,7 +15,14 @@ export function useSwipe() {
       return data!.data
     },
     onSuccess: (result) => {
+      // Two parallel Discover query keys exist: the legacy swipe-deck
+      // (`useDiscoveryFeed`, key 'discovery') and the current Grid/Rail/
+      // Spotlight/River feed (`useDiscoverFeed`, key 'discoverFeed') — a
+      // swipe made from either screen must invalidate both, or the one not
+      // matching the invalidated key silently keeps showing the
+      // just-swiped person until something else happens to refetch it.
       queryClient.invalidateQueries({ queryKey: ['discovery'] })
+      queryClient.invalidateQueries({ queryKey: ['discoverFeed'] })
       if (result.matched) {
         queryClient.invalidateQueries({ queryKey: ['conversations'] })
       }

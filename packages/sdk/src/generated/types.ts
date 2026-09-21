@@ -376,6 +376,123 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/lists/feed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The Lists page as a PageSummary + FeedModule stream, grouped by topic
+         * @description Backend adapter over the existing Lists/Taxonomy data (TaxonomyService, ListService), reshaped per docs/shared-content-system-proposal.md. One ContentCollection per non-empty CategoryGroup ("Music", "Movies & TV", ...), each mixing answered and unanswered categories — completion is a fact carried by the unit (`relationship.completed`), not a separate section. `chips` mirror the same groups for jump-navigation (the frontend treats them as scroll anchors, not filters — there is nothing left to filter server-side). The whole feed is small enough to return in one page; `cursor` is accepted for forward-compatibility but `hasMore` is always false today.
+         */
+        get: operations["getListsFeed"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/lists/feed/collections/{collectionId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Paginate a single Lists-feed collection ("View all a topic's lists")
+         * @description collectionId is a CategoryGroup slug (e.g. "music") — see GET /lists/feed.
+         */
+        get: operations["getListsFeedCollection"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/discover/feed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The Discover page as a People-grid feed with contextual interruptions
+         * @description Wraps the existing rarity-weighted overlap feed (GET /discovery) as the baseline Grid, adding a "similar taste" Rail keyed off the viewer's own #1 pick, one embedded Quick Picks interactive module, and a conditional Spotlight for an exceptional match — all optional/sparse per docs §1. Mutual gender compatibility is always applied as a baseline correctness rule, not an optional filter.
+         */
+        get: operations["getDiscoverFeed"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/discover/feed/collections/{collectionId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Paginate a single Discover-feed collection ("View all") */
+        get: operations["getDiscoverFeedCollection"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/quick-picks/next": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get the next Quick Picks quiz prompt
+         * @description A rapid A-vs-B taxonomy choice, drawn from whatever Categories exist (never a hard-coded topic list — see QuickPicksService). Call again after every choice; the quiz has no defined end.
+         */
+        get: operations["getNextQuickPick"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/quick-picks/choice": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Persist a Quick Picks choice and return how it compares to the rest of the site
+         * @description Never alters a ranked List — this is a separate, additional taste signal. One comparison in, one result back — the client does not need a second request to show "X% of people also picked this."
+         */
+        post: operations["submitQuickPickChoice"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/conversations": {
         parameters: {
             query?: never;
@@ -432,6 +549,26 @@ export interface paths {
          */
         post: operations["sendMessage"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/conversations/{conversationId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Unmatch — permanently end a match and delete the conversation
+         * @description Deletes the Swipe rows between the two participants (both directions) so they become eligible for Discover again, then deletes the Conversation itself (cascades to its Messages). Irreversible — unlike a Block, this does not prevent the other person from re-liking the caller in the future.
+         */
+        delete: operations["unmatchConversation"];
         options?: never;
         head?: never;
         patch?: never;
@@ -597,6 +734,473 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/queue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Job queue health — counts by status, oldest pending, most recent failures */
+        get: operations["getQueueMetrics"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/moderation/submissions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List entity submissions awaiting (or already given) moderation review */
+        get: operations["getEntitySubmissions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/moderation/submissions/{id}/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Approve, reject, or merge a pending entity submission */
+        post: operations["reviewEntitySubmission"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/moderation/reports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List safety reports (profile or message) awaiting (or already given) moderation review */
+        get: operations["getReports"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/moderation/reports/{id}/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mark a report reviewed, or actioned once real enforcement (e.g. a ban) has been taken */
+        post: operations["reviewReport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/taxonomy/entities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List entities, optionally filtered by type or parent — used for the taxonomy tree browser and the Moderation merge-target picker */
+        get: operations["getEntities"];
+        put?: never;
+        /** Create a new entity value under a type (and optional parent entity) */
+        post: operations["createEntity"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/taxonomy/entities/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Update an entity's name, slug, parent, or status */
+        put: operations["updateEntity"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/taxonomy/entities/generate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** AI-generate candidate entity names for a category (review-and-save via the bulk endpoint, nothing is persisted here) */
+        post: operations["generateEntities"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/taxonomy/entities/bulk": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Save a batch of reviewed candidate names as real entities (idempotent per name — upserts on slug) */
+        post: operations["bulkSaveEntities"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/taxonomy/types": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List all entity types (flat — types are hierarchical via parentId, not nested in the response) */
+        get: operations["getEntityTypes"];
+        put?: never;
+        /** Create a new entity type */
+        post: operations["createEntityType"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/taxonomy/types/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Update an entity type's label, slug, parent, icon, or active status */
+        put: operations["updateEntityType"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/lists/definitions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List every List Definition (Category row) for the admin Lists browser */
+        get: operations["getListDefinitions"];
+        put?: never;
+        /** Create a new List Definition (Category) */
+        post: operations["createListDefinition"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/lists/definitions/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Update a List Definition's configuration (scope, prompt, item counts, flags) */
+        put: operations["updateListDefinition"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/lists/definitions/{id}/entities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The entities explicitly curated into this List Definition, in display order */
+        get: operations["getListDefinitionCuratedEntities"];
+        /** Replace this List Definition's curated entities and their order (full replace, not a merge) */
+        put: operations["updateListDefinitionCuratedEntities"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/media/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Search trusted image providers (wikimedia, tmdb, openverse, unsplash, pexels, pixabay) for candidate thumbnails */
+        post: operations["searchTaxonomyImages"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/media/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Copy an IMPORT_ALLOWED provider candidate's bytes onto our own storage and attach it as the target's primary image */
+        post: operations["importTaxonomyImage"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/media/reference": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Attach a HOTLINK_ONLY/REVIEW_REQUIRED candidate by provenance and public URL only — we never copy the bytes (falls back to a real import for an IMPORT_ALLOWED candidate) */
+        post: operations["referenceTaxonomyImage"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/media/upload": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Upload a local image file (multipart) and attach it as the target's primary image — normalized server-side (rotated, bounded to 1000px, re-encoded to WebP)
+         * @description Multipart request — fields `entityId`/`entityTypeId`/`categoryId` (exactly one), an optional `crop` JSON field, and the `file` itself. No requestBody schema is declared here on purpose: `@fastify/multipart` never populates `request.body`, so any declared schema (even `{}`) makes every real upload fail ajv's "must be object" check — see MediaService's own /media/upload for the same fix. `MediaAssetPicker` already does real file-type/size validation.
+         */
+        post: operations["uploadTaxonomyImage"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/media/assets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List every image ever attached to a taxonomy target, most recent first (the current one is the isPrimary row) */
+        get: operations["listTaxonomyImages"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/users": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List users, optionally filtered by search term or active plan */
+        get: operations["getUsers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/users/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A single user's full account state, membership, and admin audit history */
+        get: operations["getUser"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/users/ban": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Suspend or restore a user account */
+        post: operations["banUser"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/users/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Manually mark a user's email verified or unverified */
+        post: operations["verifyUser"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/users/membership": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Grant or change a user's active plan manually (support/comp access) */
+        post: operations["overrideUserMembership"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/users/membership/revoke": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancel a user's active membership immediately */
+        post: operations["revokeUserMembership"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/plans": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List all plans (active and archived) with their active-subscriber counts */
+        get: operations["getPlans"];
+        put?: never;
+        /** Create a new membership plan */
+        post: operations["createPlan"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/plans/update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Update a plan's price, active status, or entitlements */
+        post: operations["updatePlan"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -629,10 +1233,35 @@ export interface components {
         User: {
             id: string;
             email: string;
+            /** @enum {string} */
+            role: "USER" | "MODERATOR" | "ADMIN";
             isVerified: boolean;
             /** Format: date-time */
             createdAt: string;
             profile?: components["schemas"]["Profile"];
+        };
+        UserContext: components["schemas"]["User"] & {
+            account: {
+                suspended: boolean;
+                deleted: boolean;
+            };
+            membership: {
+                /** @enum {string} */
+                state: "FREE" | "MEMBER";
+                sources: {
+                    /** @enum {string} */
+                    kind: "SUBSCRIPTION" | "MANUAL_SUBSCRIPTION";
+                    id: string;
+                    /** Format: date-time */
+                    expiresAt: string;
+                }[];
+            };
+            entitlements: {
+                "profile.fullPhotoAccess": boolean;
+                "messaging.readIncoming": boolean;
+                "messaging.dailySendLimit": number | "UNLIMITED";
+                "lists.memberOnly": boolean;
+            };
         };
         RegisterInput: {
             /** Format: email */
@@ -649,7 +1278,7 @@ export interface components {
             password: string;
         };
         AuthResponse: {
-            data: components["schemas"]["User"];
+            data: components["schemas"]["UserContext"];
             /** @description Also delivered via Set-Cookie (httpOnly) for web. Native clients (no usable cookie jar) read this field and store it in secure storage, then send it as a Bearer header — see packages/sdk. */
             token: string;
         };
@@ -666,12 +1295,20 @@ export interface components {
             photos?: string[];
             isDiscoverable?: boolean;
         };
+        ImageCredit: {
+            attribution?: string | null;
+            landingUrl?: string | null;
+            licenseUrl?: string | null;
+            provider?: string | null;
+        } | null;
         EntityType: {
             id: string;
             slug: string;
             label: string;
             pluralLabel: string;
             icon?: string | null;
+            imageUrl?: string | null;
+            imageCredit?: components["schemas"]["ImageCredit"];
         };
         Tag: {
             id: string;
@@ -704,6 +1341,8 @@ export interface components {
             /** @description How many times more often the viewer's matches complete this category vs. the overall rate. Null when there isn't enough signal (no matches yet, or nobody's completed it). */
             matchAnswerMultiplier: number | null;
             requiredTags: components["schemas"]["Tag"][];
+            imageUrl?: string | null;
+            imageCredit?: components["schemas"]["ImageCredit"];
         };
         Entity: {
             id: string;
@@ -711,6 +1350,7 @@ export interface components {
             canonicalName: string;
             slug: string;
             imageUrl: string | null;
+            imageCredit?: components["schemas"]["ImageCredit"];
             metadata: Record<string, never> | null;
             /** @enum {string} */
             status: "PENDING" | "APPROVED" | "REJECTED" | "MERGED";
@@ -767,6 +1407,8 @@ export interface components {
         };
         DiscoveryCandidate: {
             profile: components["schemas"]["Profile"];
+            /** @description Computed server-side from the profile's birthdate at request time. The birthdate itself is never serialized anywhere. */
+            age: number;
             sharedItemsCount: number;
             sharedFavorites: components["schemas"]["SharedFavorite"][];
             /** @description Derived display value from the same rarity-weighted overlap score — not a stored fact, see docs §7. */
@@ -789,8 +1431,17 @@ export interface components {
             status: "PENDING" | "ACCEPTED" | "DECLINED" | "BLOCKED";
             initiatedById: string;
             participants: components["schemas"]["Profile"][];
+            /** @description Per-participant last-read timestamp, used to derive "Seen" state on the client without a per-message read model. */
+            participantReadState: {
+                profileId: string;
+                /** Format: date-time */
+                lastReadAt: string | null;
+            }[];
             /** Format: date-time */
             lastMessageAt: string | null;
+            /** @description "🔒 New message" when the caller is free-tier and didn't send the last message (docs §8 receiving gate); null when there are no messages yet. */
+            lastMessageBody: string | null;
+            hasUnread: boolean;
         };
         Message: {
             id: string;
@@ -884,6 +1535,634 @@ export interface components {
         VerifyEmailInput: {
             /** @description The 6-digit code emailed by /auth/send-verification. */
             token: string;
+        };
+        /** @enum {string} */
+        AgeBucket: "20s" | "30s" | "40s" | "50plus";
+        /** @description A real person from the viewer's current Discover pool who prefers this option — lets Discover's Quick Picks compare people's preferences, not bare things. */
+        QuickPickRepresentative: {
+            profileId: string;
+            displayName: string;
+            avatarUrl: string | null;
+        };
+        QuickPickPrompt: {
+            /** @enum {string} */
+            contextType: "CATEGORY" | "ENTITY_TYPE" | "PARENT_ENTITY" | "TAG";
+            contextId: string;
+            contextLabel: string;
+            prompt: string;
+            optionA: components["schemas"]["Entity"];
+            optionB: components["schemas"]["Entity"];
+            /** @description Present when ?context=discover found a real candidate who prefers optionA. */
+            optionARepresentative?: components["schemas"]["QuickPickRepresentative"] | null;
+            optionBRepresentative?: components["schemas"]["QuickPickRepresentative"] | null;
+        };
+        QuickPickChoiceInput: {
+            /** @enum {string} */
+            contextType: "CATEGORY" | "ENTITY_TYPE" | "PARENT_ENTITY" | "TAG";
+            contextId: string;
+            winnerEntityId: string;
+            loserEntityId: string;
+        };
+        /** @description How this exact choice compares to the rest of the site — returned immediately on submission. */
+        QuickPickResult: {
+            /** @enum {string} */
+            contextType: "CATEGORY" | "ENTITY_TYPE" | "PARENT_ENTITY" | "TAG";
+            contextId: string;
+            winnerEntityId: string;
+            loserEntityId: string;
+            /** @description % of everyone who has compared these exact two entities in this category who picked the same one you did. */
+            winnerPercent: number;
+            loserPercent: number;
+            /** @description Sample size behind winnerPercent/loserPercent — context for how confident the stat is. */
+            totalComparisons: number;
+            /** @description This entity's win rate across every comparison it's been part of in this category (not just this one pairing). */
+            winnerOverallWinRate: number | null;
+            loserOverallWinRate: number | null;
+        };
+        /** @enum {string} */
+        MetricType: "popularity" | "community-position" | "viewer-position" | "percentile" | "overlap" | "rarity" | "trend" | "completion";
+        Metric: {
+            type: components["schemas"]["MetricType"];
+            label: string;
+            /** @description Already display-formatted ("82%", "3.4×") or a raw number — renderer's choice. */
+            value: string | number;
+            /**
+             * @description Render-priority hint, not a domain fact — structures pick which metrics to show under their render budget (proposal §5) using this field; it never changes what the metric means.
+             * @enum {string}
+             */
+            importance?: "primary" | "secondary" | "tertiary";
+        };
+        Capabilities: {
+            canFavorite?: boolean;
+            canRank?: boolean;
+            canMessage?: boolean;
+            canOpenProfile?: boolean;
+        };
+        ContentUnitRelationship: {
+            favorited?: boolean;
+            completed?: boolean;
+        };
+        /** @enum {string} */
+        ContentUnitKind: "poll" | "person" | "category" | "entity" | "insight";
+        ContentUnit: {
+            /** @description Stable within its collection. For kind='category' this is the Category slug (routable); for kind='person' the Profile id. */
+            id: string;
+            kind: components["schemas"]["ContentUnitKind"];
+            title: string;
+            subtitle?: string | null;
+            imageUrl?: string | null;
+            imageCredit?: components["schemas"]["ImageCredit"];
+            metrics?: components["schemas"]["Metric"][];
+            capabilities?: components["schemas"]["Capabilities"];
+            /** @description Order of this unit *within its collection* only — not a comparative rank. Comparative standing is a fact about the unit and belongs under `metrics` as community-position / viewer-position / percentile (proposal §4). */
+            position?: number | null;
+            relationship?: components["schemas"]["ContentUnitRelationship"];
+            /** @description Present for kind='category' (the top pick, if any) and kind='entity'. */
+            entity?: components["schemas"]["Entity"] | null;
+            /** @description Present for kind='person' — the full candidate, so the renderer needs no second fetch to navigate to ProfileDetail. */
+            profile?: components["schemas"]["Profile"] | null;
+            /** @description Present for kind='person' only — mirrors DiscoveryCandidate.age. */
+            age?: number;
+            /** @description Present for kind='person' only — the actual overlapping picks ("You both ranked"), not just a count. This is the taste content that explains the match; render it more prominently than `alsoInto` (proposal correction: shared taste is the reason the match is relevant, independent interests are supporting texture). */
+            sharedFavorites?: components["schemas"]["SharedFavorite"][];
+            /** @description Present for kind='person' only — a few of the candidate's own top-ranked picks outside the overlap with the viewer ("Also into"). Supporting texture, not the headline. */
+            alsoInto?: components["schemas"]["Entity"][];
+            /** @description Present for kind='person' only — mirrors DiscoveryCandidate.insights. */
+            insights?: components["schemas"]["MatchInsight"][];
+            /** @description Top-ranked entities for a completed list (kind='category' with relationship.completed=true) — lets the Grid's completed-list variant show a multi-item preview instead of one thumbnail. */
+            previewEntities?: components["schemas"]["Entity"][];
+        };
+        /** @enum {string} */
+        CollectionType: "favorites" | "lists" | "recommendations" | "comparison" | "trending" | "prompt" | "quiz";
+        ContentCollectionContext: {
+            reason?: string;
+            sourceEntityId?: string;
+            sourceEntityType?: string;
+        };
+        FeedModule: {
+            /** @enum {string} */
+            moduleKind: "collection" | "interactive";
+            id: string;
+            type?: components["schemas"]["CollectionType"];
+            title?: string | null;
+            context?: components["schemas"]["ContentCollectionContext"];
+            /**
+             * @description Advisory only — the frontend has final say per viewport/context (proposal §1).
+             * @enum {string}
+             */
+            suggestedStructure?: "grid" | "rail" | "spotlight" | "river";
+            options?: {
+                /** @enum {string} */
+                gridShape?: "square" | "dense";
+                /** @description Advisory column count for a Grid structure at desktop width (mobile always collapses to 1) — lets the backend request "large, few-per-row" cards without a rigid gridShape enum. */
+                columns?: number;
+            };
+            items?: components["schemas"]["ContentUnit"][];
+            /** @enum {string} */
+            kind?: "quick-picks";
+        };
+        SummaryStat: {
+            label: string;
+            value: string | number;
+        };
+        PageSummary: {
+            title: string;
+            subtitle?: string | null;
+            stats?: components["schemas"]["SummaryStat"][];
+            featuredEntity?: components["schemas"]["Entity"] | null;
+        };
+        FilterChip: {
+            id: string;
+            label: string;
+        };
+        ContentFeedPageResponse: {
+            filterNotice?: string;
+            /** @description Page chrome — only ever populated on the first page (cursor omitted). */
+            summary?: components["schemas"]["PageSummary"];
+            chips?: components["schemas"]["FilterChip"][];
+            data: components["schemas"]["FeedModule"][];
+            meta: components["schemas"]["PaginatedMeta"];
+        };
+        ContentUnitPageResponse: {
+            data: components["schemas"]["ContentUnit"][];
+            meta: components["schemas"]["PaginatedMeta"];
+        };
+        AdminJobSummary: {
+            id: string;
+            type: string;
+            /** @enum {string} */
+            status: "PENDING" | "RUNNING" | "DONE" | "FAILED";
+            attempts: number;
+            lastError?: string | null;
+            /** Format: date-time */
+            availableAt: string;
+            /** Format: date-time */
+            finishedAt?: string | null;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        AdminQueueMetrics: {
+            /** @description Job count by JobStatus, e.g. { PENDING: 3, FAILED: 1 }. Only statuses with at least one job are present. */
+            metrics: {
+                [key: string]: number;
+            };
+            oldestPending: components["schemas"]["AdminJobSummary"][];
+            latestFailed: components["schemas"]["AdminJobSummary"][];
+        };
+        AdminUserRef: {
+            id: string;
+            username: string;
+            displayName: string;
+        };
+        AdminReviewerRef: {
+            id: string;
+            email: string;
+        };
+        AdminEntitySubmission: {
+            id: string;
+            entityTypeId: string;
+            rawText: string;
+            /** @enum {string} */
+            status: "PENDING" | "APPROVED" | "REJECTED" | "MERGED";
+            entityType: components["schemas"]["EntityType"];
+            submittedEntity: components["schemas"]["Entity"];
+            submittedByProfile: components["schemas"]["AdminUserRef"] | null;
+            suggestedMatch: components["schemas"]["Entity"] | null;
+            resolvedEntity: components["schemas"]["Entity"] | null;
+            reviewedByUser: components["schemas"]["AdminReviewerRef"] | null;
+            reviewNotes: string | null;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            reviewedAt: string | null;
+        };
+        AdminEntitySubmissionScalar: {
+            id: string;
+            entityTypeId: string;
+            rawText: string;
+            /** @enum {string} */
+            status: "PENDING" | "APPROVED" | "REJECTED" | "MERGED";
+            submittedEntityId: string;
+            suggestedMatchId: string | null;
+            resolvedEntityId: string | null;
+            submittedByProfileId: string | null;
+            reviewedByUserId: string | null;
+            reviewNotes: string | null;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            reviewedAt: string | null;
+        };
+        AdminEntitySubmissionReviewInput: {
+            /** @enum {string} */
+            action: "APPROVE" | "REJECT" | "MERGE";
+            /** @description Required when action is MERGE. */
+            mergeIntoEntityId?: string;
+            reviewNotes?: string | null;
+        };
+        AdminReport: {
+            id: string;
+            reporterProfileId: string;
+            /** @enum {string} */
+            targetType: "PROFILE" | "MESSAGE";
+            targetProfileId: string | null;
+            targetMessageId: string | null;
+            reason: string;
+            details: string | null;
+            /** @enum {string} */
+            status: "PENDING" | "REVIEWED" | "ACTIONED";
+            reporter: components["schemas"]["AdminUserRef"];
+            targetProfile: components["schemas"]["AdminUserRef"] | null;
+            targetMessage: {
+                id?: string;
+                body?: string | null;
+                senderId?: string;
+                conversationId?: string;
+            } | null;
+            reviewedByUser: components["schemas"]["AdminReviewerRef"] | null;
+            reviewNotes: string | null;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            reviewedAt: string | null;
+        };
+        AdminReportScalar: {
+            id: string;
+            reporterProfileId: string;
+            /** @enum {string} */
+            targetType: "PROFILE" | "MESSAGE";
+            targetProfileId: string | null;
+            targetMessageId: string | null;
+            reason: string;
+            details: string | null;
+            /** @enum {string} */
+            status: "PENDING" | "REVIEWED" | "ACTIONED";
+            reviewedByUserId: string | null;
+            reviewNotes: string | null;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            reviewedAt: string | null;
+        };
+        AdminReportReviewInput: {
+            /** @enum {string} */
+            status: "REVIEWED" | "ACTIONED";
+            reviewNotes?: string | null;
+        };
+        AdminUserSummary: {
+            id: string;
+            email: string;
+            /** @enum {string} */
+            role: "USER" | "MODERATOR" | "ADMIN";
+            isVerified: boolean;
+            /** Format: date-time */
+            suspendedAt: string | null;
+            /** Format: date-time */
+            createdAt: string;
+            profile: components["schemas"]["AdminUserRef"] | null;
+        };
+        AdminUserScalar: {
+            id: string;
+            email: string;
+            /** @enum {string} */
+            role: "USER" | "MODERATOR" | "ADMIN";
+            isVerified: boolean;
+            /** Format: date-time */
+            suspendedAt: string | null;
+            /** Format: date-time */
+            deletedAt: string | null;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        AdminPlanScalar: {
+            id: string;
+            slug: string;
+            label: string;
+            /** @enum {string} */
+            interval: "MONTHLY" | "ANNUAL" | "LIFETIME";
+            priceCents: number;
+            currency: string;
+            isActive: boolean;
+            features: {
+                [key: string]: unknown;
+            };
+        };
+        AdminPlan: components["schemas"]["AdminPlanScalar"] & {
+            _count: {
+                /** @description Active subscriber count. */
+                subscriptions: number;
+            };
+        };
+        AdminSubscriptionScalar: {
+            id: string;
+            userId: string;
+            planId: string;
+            /** @enum {string} */
+            provider: "APPLE_APP_STORE" | "GOOGLE_PLAY" | "STRIPE" | "MANUAL";
+            providerSubscriptionId: string;
+            /** @enum {string} */
+            status: "ACTIVE" | "TRIALING" | "PAST_DUE" | "CANCELED" | "EXPIRED";
+            /** Format: date-time */
+            currentPeriodEnd: string;
+            cancelAtPeriodEnd: boolean;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        AdminSubscriptionWithPlan: components["schemas"]["AdminSubscriptionScalar"] & {
+            plan: components["schemas"]["AdminPlanScalar"];
+        };
+        AdminUserProfileDetail: {
+            id: string;
+            userId: string;
+            username: string;
+            displayName: string;
+            /** Format: date-time */
+            birthdate: string;
+            genderIdentity: string | null;
+            bio: string | null;
+            locationLabel: string | null;
+            avatarUrl: string | null;
+            isDiscoverable: boolean;
+            onboardingStep: number;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        AdminUserDetail: {
+            id: string;
+            email: string;
+            /** @enum {string} */
+            role: "USER" | "MODERATOR" | "ADMIN";
+            isVerified: boolean;
+            /** Format: date-time */
+            suspendedAt: string | null;
+            /** Format: date-time */
+            deletedAt: string | null;
+            /** Format: date-time */
+            createdAt: string;
+            profile: components["schemas"]["AdminUserProfileDetail"] | null;
+            /** @description At most one — the caller's current ACTIVE subscription, if any (getUser only ever fetches status:ACTIVE, take:1). */
+            subscriptions: components["schemas"]["AdminSubscriptionWithPlan"][];
+        };
+        AdminAuditEvent: {
+            id: string;
+            action: string;
+            targetType: string;
+            targetId: string | null;
+            /** @enum {string} */
+            actorRole: "USER" | "MODERATOR" | "ADMIN";
+            beforeValue: {
+                [key: string]: unknown;
+            } | null;
+            afterValue: {
+                [key: string]: unknown;
+            } | null;
+            metadata: {
+                [key: string]: unknown;
+            } | null;
+            /** Format: date-time */
+            createdAt: string;
+            actor: components["schemas"]["AdminReviewerRef"];
+        };
+        AdminBanUserInput: {
+            userId: string;
+            ban: boolean;
+        };
+        AdminVerifyUserInput: {
+            userId: string;
+            verify: boolean;
+        };
+        AdminOverrideMembershipInput: {
+            userId: string;
+            planId: string;
+        };
+        AdminRevokeMembershipInput: {
+            userId: string;
+        };
+        AdminCreatePlanInput: {
+            label: string;
+            slug: string;
+            /** @enum {string} */
+            interval: "MONTHLY" | "ANNUAL" | "LIFETIME";
+            priceCents: number;
+            isActive?: boolean;
+            /** @description Arbitrary entitlement flags — free-form, no fixed key set. */
+            features?: {
+                [key: string]: unknown;
+            };
+        };
+        AdminUpdatePlanInput: {
+            planId: string;
+            /** @description Must equal the plan's current price once it has active subscriptions (grandfathering — archive and recreate instead of repricing a live plan). */
+            priceCents: number;
+            isActive?: boolean;
+            /** @description Arbitrary entitlement flags — free-form, no fixed key set. */
+            features?: {
+                [key: string]: unknown;
+            };
+        };
+        /** @description One search result from an image provider (wikimedia, tmdb, openverse, unsplash, pexels, pixabay) — not yet attached to anything. */
+        AdminImageCandidate: {
+            provider: string;
+            externalId: string;
+            title: string;
+            previewUrl: string;
+            sourceUrl?: string;
+            landingUrl?: string;
+            creator?: string;
+            license?: string;
+            licenseUrl?: string;
+            attribution?: string;
+            width?: number;
+            height?: number;
+            /**
+             * @description IMPORT_ALLOWED — safe to copy the bytes onto our own storage. HOTLINK_ONLY/REVIEW_REQUIRED — attach as a reference (we store provenance + a public URL, not the bytes).
+             * @enum {string}
+             */
+            importRule: "IMPORT_ALLOWED" | "HOTLINK_ONLY" | "REVIEW_REQUIRED";
+            metadata?: {
+                [key: string]: unknown;
+            };
+        };
+        /** @description A thumbnail image attached to an Entity, EntityType, or Category, with its provenance. `isPrimary` marks the one currently shown. */
+        AdminMediaAsset: {
+            id: string;
+            /** @enum {string} */
+            sourceType: "UPLOAD" | "PROVIDER_IMPORT" | "PROVIDER_REFERENCE";
+            provider?: string | null;
+            sourceId?: string | null;
+            sourceUrl?: string | null;
+            landingUrl?: string | null;
+            creator?: string | null;
+            license?: string | null;
+            licenseUrl?: string | null;
+            attribution?: string | null;
+            /** @enum {string} */
+            importRule: "IMPORT_ALLOWED" | "HOTLINK_ONLY" | "REVIEW_REQUIRED";
+            publicUrl: string | null;
+            mimeType?: string | null;
+            byteSize?: number | null;
+            originalWidth?: number | null;
+            originalHeight?: number | null;
+            isPrimary: boolean;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        /** @description Attach an already-found provider candidate to exactly one taxonomy target (entityId, entityTypeId, or categoryId). */
+        AdminAttachImageInput: {
+            entityId?: string;
+            entityTypeId?: string;
+            categoryId?: string;
+            candidate: components["schemas"]["AdminImageCandidate"];
+        };
+        AdminSearchImagesInput: {
+            query: string;
+            entityTypeLabel?: string;
+            parentPath?: string;
+        };
+        AdminEntityTypeScalar: {
+            id: string;
+            slug: string;
+            label: string;
+            pluralLabel: string;
+            parentId: string | null;
+            icon: string | null;
+            isActive: boolean;
+        };
+        AdminEntityType: components["schemas"]["AdminEntityTypeScalar"] & {
+            mediaAssets: components["schemas"]["AdminMediaAsset"][];
+        };
+        AdminEntityScalar: {
+            id: string;
+            entityTypeId: string;
+            canonicalName: string;
+            slug: string;
+            parentId: string | null;
+            imageUrl: string | null;
+            metadata: {
+                [key: string]: unknown;
+            } | null;
+            /** @enum {string} */
+            sourceType: "SEEDED" | "IMPORTED" | "USER_SUBMITTED" | "AI_GENERATED";
+            /** @enum {string} */
+            status: "PENDING" | "APPROVED" | "REJECTED" | "MERGED";
+            mergedIntoId: string | null;
+            usageCount: number;
+        };
+        AdminEntity: components["schemas"]["AdminEntityScalar"] & {
+            mediaAssets: components["schemas"]["AdminMediaAsset"][];
+            externalRefs: {
+                [key: string]: unknown;
+            }[];
+        };
+        AdminCategoryScalar: {
+            id: string;
+            groupId: string;
+            entityTypeId: string;
+            parentEntityId: string | null;
+            slug: string;
+            prompt: string;
+            shortLabel: string;
+            minItems: number;
+            maxItems: number;
+            /** @enum {string} */
+            orderingMode: "RANKED" | "UNRANKED";
+            isMatchSignal: boolean;
+            isPremiumOnly: boolean;
+            isActive: boolean;
+        };
+        /** @description A List Definition (Category row) as seen by the admin Lists browser/editor — includes denormalized group/type/parent info the plain Category schema doesn't need. */
+        AdminCategory: components["schemas"]["AdminCategoryScalar"] & {
+            group: components["schemas"]["CategoryGroup"];
+            entityType: components["schemas"]["AdminEntityTypeScalar"];
+            parentEntity: components["schemas"]["AdminEntityScalar"] | null;
+            mediaAssets: components["schemas"]["AdminMediaAsset"][];
+        };
+        AdminCreateListDefinitionInput: {
+            groupId: string;
+            entityTypeId: string;
+            parentEntityId?: string | null;
+            slug: string;
+            prompt: string;
+            shortLabel: string;
+            minItems?: number;
+            maxItems?: number;
+            /** @enum {string} */
+            orderingMode?: "RANKED" | "UNRANKED";
+            isMatchSignal?: boolean;
+            isPremiumOnly?: boolean;
+            isActive?: boolean;
+            /** @description Tag ids this list requires a search to match. Not currently editable from the admin Lists screen (kept for forward compatibility with apps/admin's field, which also never wired up a tags editor here). */
+            tags?: string[];
+        };
+        AdminUpdateListDefinitionInput: {
+            groupId: string;
+            entityTypeId: string;
+            parentEntityId?: string | null;
+            slug: string;
+            prompt: string;
+            shortLabel: string;
+            minItems?: number;
+            maxItems?: number;
+            /** @enum {string} */
+            orderingMode?: "RANKED" | "UNRANKED";
+            isMatchSignal?: boolean;
+            isPremiumOnly?: boolean;
+            isActive?: boolean;
+            /** @description Tag ids this list requires a search to match. Not currently editable from the admin Lists screen (kept for forward compatibility with apps/admin's field, which also never wired up a tags editor here). */
+            tags?: string[];
+        };
+        /** @description One entity explicitly curated into a List Definition, in display order. Has no `id` of its own — CategoryEntity is a (categoryId, entityId) composite key in the schema. */
+        AdminCuratedEntity: {
+            categoryId: string;
+            entityId: string;
+            sortOrder: number;
+            entity: components["schemas"]["AdminEntityScalar"];
+        };
+        AdminCuratedEntityInput: {
+            entityId: string;
+            sortOrder: number;
+        };
+        AdminUpdateCuratedEntitiesInput: {
+            entities: components["schemas"]["AdminCuratedEntityInput"][];
+        };
+        AdminCreateEntityTypeInput: {
+            slug: string;
+            label: string;
+            pluralLabel: string;
+            parentId?: string | null;
+            icon?: string | null;
+        };
+        AdminUpdateEntityTypeInput: {
+            slug: string;
+            label: string;
+            pluralLabel: string;
+            parentId?: string | null;
+            icon?: string | null;
+            isActive?: boolean;
+        };
+        AdminCreateEntityInput: {
+            entityTypeId: string;
+            canonicalName: string;
+            slug: string;
+            parentId?: string | null;
+        };
+        AdminUpdateEntityInput: {
+            canonicalName: string;
+            slug: string;
+            parentId?: string | null;
+            /** @enum {string} */
+            status?: "PENDING" | "APPROVED" | "REJECTED" | "MERGED";
+        };
+        AdminGenerateEntitiesInput: {
+            categoryName: string;
+            prompt: string;
+            /** @default 10 */
+            count: number;
+        };
+        AdminBulkSaveEntitiesInput: {
+            entityTypeId: string;
+            parentId?: string | null;
+            entities: string[];
         };
     };
     responses: {
@@ -1027,7 +2306,7 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        data: components["schemas"]["User"];
+                        data: components["schemas"]["UserContext"];
                     };
                 };
             };
@@ -1521,6 +2800,180 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
         };
     };
+    getListsFeed: {
+        parameters: {
+            query?: {
+                /** @description Opaque cursor returned by the previous page. */
+                cursor?: components["parameters"]["Cursor"];
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Page summary, chips, and one feed module per topic */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContentFeedPageResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    getListsFeedCollection: {
+        parameters: {
+            query?: {
+                /** @description Opaque cursor returned by the previous page. */
+                cursor?: components["parameters"]["Cursor"];
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path: {
+                collectionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Units within the collection */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContentUnitPageResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    getDiscoverFeed: {
+        parameters: {
+            query?: {
+                /** @description Opaque cursor returned by the previous page. */
+                cursor?: components["parameters"]["Cursor"];
+                limit?: components["parameters"]["Limit"];
+                /** @description A CategoryGroup slug — the *taste* filter axis: restricts to people with real engagement (a started or completed list) in that group, not people tagged with it. This is the ~70% of Discover's categorization that isn't demographic. */
+                groupSlug?: string;
+                /** @description Requires the viewer to have their own location set — returns nobody outside the radius rather than silently ignoring the filter. */
+                nearMe?: boolean;
+                ageBucket?: components["schemas"]["AgeBucket"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Feed modules (no PageSummary — Discover has no viewer-aggregate header) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContentFeedPageResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    getDiscoverFeedCollection: {
+        parameters: {
+            query?: {
+                /** @description Opaque cursor returned by the previous page. */
+                cursor?: components["parameters"]["Cursor"];
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path: {
+                collectionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Units within the collection */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContentUnitPageResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    getNextQuickPick: {
+        parameters: {
+            query?: {
+                /** @description "discover" tries to ground both options in a real person from the viewer's current Discover pool (optionA/BRepresentative) instead of two bare things — falls back to the plain prompt if no pair of candidates can be found. */
+                context?: "discover";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A pairwise choice prompt */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["QuickPickPrompt"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    submitQuickPickChoice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QuickPickChoiceInput"];
+            };
+        };
+        responses: {
+            /** @description Recorded, with the comparison result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["QuickPickResult"];
+                    };
+                };
+            };
+            /** @description Winner and loser must differ */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
     listConversations: {
         parameters: {
             query?: {
@@ -1653,6 +3106,34 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    unmatchConversation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                conversationId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Unmatched */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            success: boolean;
+                        };
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
             404: components["responses"]["NotFound"];
         };
     };
@@ -1962,6 +3443,1142 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+        };
+    };
+    getQueueMetrics: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Job queue metrics */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminQueueMetrics"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    getEntitySubmissions: {
+        parameters: {
+            query?: {
+                /** @description Opaque cursor returned by the previous page. */
+                cursor?: components["parameters"]["Cursor"];
+                limit?: components["parameters"]["Limit"];
+                status?: "PENDING" | "APPROVED" | "REJECTED" | "MERGED";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A page of entity submissions */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        submissions: components["schemas"]["AdminEntitySubmission"][];
+                        hasMore: boolean;
+                        nextCursor: string | null;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    reviewEntitySubmission: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminEntitySubmissionReviewInput"];
+            };
+        };
+        responses: {
+            /** @description The reviewed submission */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        submission: components["schemas"]["AdminEntitySubmissionScalar"];
+                    };
+                };
+            };
+            /** @description Invalid action, or the submission was already reviewed */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    getReports: {
+        parameters: {
+            query?: {
+                /** @description Opaque cursor returned by the previous page. */
+                cursor?: components["parameters"]["Cursor"];
+                limit?: components["parameters"]["Limit"];
+                status?: "PENDING" | "REVIEWED" | "ACTIONED";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A page of reports */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        reports: components["schemas"]["AdminReport"][];
+                        hasMore: boolean;
+                        nextCursor: string | null;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    reviewReport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminReportReviewInput"];
+            };
+        };
+        responses: {
+            /** @description The reviewed report */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        report: components["schemas"]["AdminReportScalar"];
+                    };
+                };
+            };
+            /** @description Invalid status */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    getEntities: {
+        parameters: {
+            query?: {
+                entityTypeId?: string;
+                /** @description Pass the literal string "null" to fetch root-level entities of a type. */
+                parentId?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Matching entities */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        entities: components["schemas"]["AdminEntity"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    createEntity: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminCreateEntityInput"];
+            };
+        };
+        responses: {
+            /** @description The created entity */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        entity: components["schemas"]["AdminEntityScalar"];
+                    };
+                };
+            };
+            /** @description Missing field, or parent entity's type does not match the expected hierarchy */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    updateEntity: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminUpdateEntityInput"];
+            };
+        };
+        responses: {
+            /** @description The updated entity */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        entity: components["schemas"]["AdminEntityScalar"];
+                    };
+                };
+            };
+            /** @description Missing field, reparent cycle detected, or new parent's type does not match the expected hierarchy */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    generateEntities: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminGenerateEntitiesInput"];
+            };
+        };
+        responses: {
+            /** @description Candidate names */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        candidates: string[];
+                    };
+                };
+            };
+            /** @description Invalid input */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            /** @description The AI generation call failed */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    bulkSaveEntities: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminBulkSaveEntitiesInput"];
+            };
+        };
+        responses: {
+            /** @description Save result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        success: boolean;
+                        count: number;
+                        entities: components["schemas"]["AdminEntityScalar"][];
+                    };
+                };
+            };
+            /** @description Invalid input, or parent entity's type does not match the expected hierarchy */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    getEntityTypes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description All entity types */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        entityTypes: components["schemas"]["AdminEntityType"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    createEntityType: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminCreateEntityTypeInput"];
+            };
+        };
+        responses: {
+            /** @description The created entity type */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        entityType: components["schemas"]["AdminEntityTypeScalar"];
+                    };
+                };
+            };
+            /** @description Missing field, or parent type not found */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    updateEntityType: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminUpdateEntityTypeInput"];
+            };
+        };
+        responses: {
+            /** @description The updated entity type */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        entityType: components["schemas"]["AdminEntityTypeScalar"];
+                    };
+                };
+            };
+            /** @description Missing field, or reparent cycle detected */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    getListDefinitions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description All list definitions */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        categories: components["schemas"]["AdminCategory"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    createListDefinition: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminCreateListDefinitionInput"];
+            };
+        };
+        responses: {
+            /** @description The created list definition */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        category: components["schemas"]["AdminCategoryScalar"];
+                    };
+                };
+            };
+            /** @description Missing field */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    updateListDefinition: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminUpdateListDefinitionInput"];
+            };
+        };
+        responses: {
+            /** @description The updated list definition */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        category: components["schemas"]["AdminCategoryScalar"];
+                    };
+                };
+            };
+            /** @description Missing field */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    getListDefinitionCuratedEntities: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Curated entities */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        curatedEntities: components["schemas"]["AdminCuratedEntity"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    updateListDefinitionCuratedEntities: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminUpdateCuratedEntitiesInput"];
+            };
+        };
+        responses: {
+            /** @description The list's curated entities after the replace */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        curatedEntities: components["schemas"]["AdminCuratedEntity"][];
+                    };
+                };
+            };
+            /** @description entities must be an array */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    searchTaxonomyImages: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminSearchImagesInput"];
+            };
+        };
+        responses: {
+            /** @description Candidate images, ranked and capped at 60 total across all providers */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        candidates: components["schemas"]["AdminImageCandidate"][];
+                    };
+                };
+            };
+            /** @description query is required */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    importTaxonomyImage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminAttachImageInput"];
+            };
+        };
+        responses: {
+            /** @description The attached image */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        asset: components["schemas"]["AdminMediaAsset"];
+                    };
+                };
+            };
+            /** @description Missing/invalid candidate, or the source host isn't an approved provider host */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            /** @description The candidate isn't approved for import (use /admin/media/reference instead) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Remote image exceeds the import size limit */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The provider's image host did not return the image */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    referenceTaxonomyImage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminAttachImageInput"];
+            };
+        };
+        responses: {
+            /** @description The attached image */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        asset: components["schemas"]["AdminMediaAsset"];
+                    };
+                };
+            };
+            /** @description Missing/invalid candidate */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    uploadTaxonomyImage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The attached image */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        asset: components["schemas"]["AdminMediaAsset"];
+                    };
+                };
+            };
+            /** @description No file uploaded, or no taxonomy target given */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            /** @description Unsupported or undecodable image format */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    listTaxonomyImages: {
+        parameters: {
+            query?: {
+                entityId?: string;
+                entityTypeId?: string;
+                categoryId?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description This target's image history */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        assets: components["schemas"]["AdminMediaAsset"][];
+                    };
+                };
+            };
+            /** @description A taxonomy target is required */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    getUsers: {
+        parameters: {
+            query?: {
+                /** @description Opaque cursor returned by the previous page. */
+                cursor?: components["parameters"]["Cursor"];
+                limit?: components["parameters"]["Limit"];
+                /** @description Matches email, exact user id, display name, or username. */
+                search?: string;
+                /** @description Only users with an ACTIVE subscription to this plan. */
+                planId?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A page of users */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        users: components["schemas"]["AdminUserSummary"][];
+                        hasMore: boolean;
+                        nextCursor: string | null;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    getUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description User detail */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        user: components["schemas"]["AdminUserDetail"];
+                        auditEvents: components["schemas"]["AdminAuditEvent"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    banUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminBanUserInput"];
+            };
+        };
+        responses: {
+            /** @description The updated user */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        user: components["schemas"]["AdminUserScalar"];
+                    };
+                };
+            };
+            /** @description Cannot ban your own account */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    verifyUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminVerifyUserInput"];
+            };
+        };
+        responses: {
+            /** @description The updated user */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        user: components["schemas"]["AdminUserScalar"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    overrideUserMembership: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminOverrideMembershipInput"];
+            };
+        };
+        responses: {
+            /** @description The resulting subscription */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        subscription: components["schemas"]["AdminSubscriptionScalar"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    revokeUserMembership: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminRevokeMembershipInput"];
+            };
+        };
+        responses: {
+            /** @description The canceled subscription */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        subscription: components["schemas"]["AdminSubscriptionScalar"];
+                    };
+                };
+            };
+            /** @description User has no active membership to revoke */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    getPlans: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description All plans */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        plans: components["schemas"]["AdminPlan"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    createPlan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminCreatePlanInput"];
+            };
+        };
+        responses: {
+            /** @description The created plan */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        plan: components["schemas"]["AdminPlanScalar"];
+                    };
+                };
+            };
+            /** @description Invalid input */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    updatePlan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminUpdatePlanInput"];
+            };
+        };
+        responses: {
+            /** @description The updated plan */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        plan: components["schemas"]["AdminPlanScalar"];
+                    };
+                };
+            };
+            /** @description Price or entitlements changed on a plan with active subscriptions */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
         };
     };
 }

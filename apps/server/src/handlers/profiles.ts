@@ -1,16 +1,18 @@
+import type { AuthenticatedRequest } from '../lib/userContext'
+import { requireProfileId } from '../lib/userContext'
 import { ProfileService } from '../services/ProfileService'
 
 const profileService = new ProfileService()
 
-export async function updateMyProfile(request: any, reply: any) {
-  const profile = await profileService.updateMyProfile(request.user.profile.id, request.body)
+export async function updateMyProfile(request: AuthenticatedRequest, reply: any) {
+  const profile = await profileService.updateMyProfile(requireProfileId(request.user), request.body)
   return reply.send({ data: profile })
 }
 
-export async function getProfile(request: any, reply: any) {
+export async function getProfile(request: AuthenticatedRequest, reply: any) {
   const profile = await profileService.getProfile(
     request.user.id,
-    request.user.profile.id,
+    requireProfileId(request.user),
     request.params.profileId,
   )
   return reply.send({ data: profile })

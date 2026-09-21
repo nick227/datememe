@@ -1,5 +1,6 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import { useEffect } from 'react'
+import { Platform } from 'react-native'
 import * as Notifications from 'expo-notifications'
 import { useQueryClient } from '@tanstack/react-query'
 import { CategoriesStack } from './CategoriesStack'
@@ -40,6 +41,10 @@ export function AppTabs() {
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.inkMuted,
         tabBarIcon: ({ color, size }) => <Icon name={ICONS[route.name]} color={color} size={size} />,
+        // Web: the page can now grow past one viewport (App.tsx) — pin the
+        // tab bar to the browser viewport instead of letting it scroll away
+        // with the page content, matching native's fixed-bottom behavior.
+        tabBarStyle: Platform.OS === 'web' ? ({ position: 'sticky', bottom: 0, zIndex: 10 } as any) : undefined,
       })}
     >
       <Tab.Screen name="Lists" component={CategoriesStack} />

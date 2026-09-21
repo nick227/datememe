@@ -1,10 +1,11 @@
 import { useState } from 'react'
-import { Alert, ScrollView, StyleSheet, View } from 'react-native'
+import { ScrollView, StyleSheet, View } from 'react-native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { useRegister } from '@project/sdk'
 import { ScreenContainer } from '../../../ui/ScreenContainer'
 import { TextField } from '../../../ui/TextField'
 import { Button } from '../../../ui/Button'
+import { ActionSheet, useActionSheet } from '../../../ui/ActionSheet'
 import { setToken } from '../../../lib/authToken'
 import { queryClient } from '../../../lib/queryClient'
 import { borderWidth, colors, spacing } from '../../../theme'
@@ -41,6 +42,7 @@ export function RegisterScreen({ navigation }: Props) {
   const [day, setDay] = useState('')
   const [year, setYear] = useState('')
   const register = useRegister()
+  const sheet = useActionSheet()
 
   const birthdate = month && day && year ? `${year}-${month}-${day}` : ''
   const canSubmit = email && password.length >= 8 && username.length >= 3 && displayName && DATE_RE.test(birthdate)
@@ -51,7 +53,7 @@ export function RegisterScreen({ navigation }: Props) {
       await setToken(result.token)
       await queryClient.invalidateQueries({ queryKey: ['me'] })
     } catch (err: any) {
-      Alert.alert('Could not create account', err?.message ?? 'Please check your details')
+      sheet.show({ title: 'Could not create account', message: err?.message ?? 'Please check your details', buttons: [{ text: 'OK' }] })
     }
   }
 
@@ -103,6 +105,7 @@ export function RegisterScreen({ navigation }: Props) {
           </View>
         </View>
       </ScrollView>
+      <ActionSheet config={sheet.config} onDismiss={sheet.dismiss} />
     </ScreenContainer>
   )
 }

@@ -1,9 +1,10 @@
-import { ActivityIndicator, Alert, StyleSheet, Text, View } from 'react-native'
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { useDevPurchase, useMySubscription, usePlans } from '@project/sdk'
+import { useCurrentUser, useDevPurchase, usePlans } from '@project/sdk'
 import { ScreenContainer } from '../../../ui/ScreenContainer'
 import { TopNavigation } from '../../../ui/TopNavigation'
 import { Button } from '../../../ui/Button'
+import { ActionSheet, useActionSheet } from '../../../ui/ActionSheet'
 import { borderWidth, colors, radius, spacing, type } from '../../../theme'
 import type { ProfileStackParamList } from '../../../navigation/types'
 import { Typography } from '../../../ui/Typography'
@@ -12,26 +13,30 @@ type Props = NativeStackScreenProps<ProfileStackParamList, 'Paywall'>
 
 const PERKS = [
   'Read every message you receive',
-  'Send unlimited messages (free is capped at 3/day)',
+  'Send unlimited messages',
   "See other members' photos",
 ]
 
 export function PaywallScreen({ navigation }: Props) {
+  const me = useCurrentUser()
   const plans = usePlans()
-  const subscription = useMySubscription()
   const devPurchase = useDevPurchase()
+  const sheet = useActionSheet()
 
   async function handleSubscribe(planSlug: string) {
     try {
       await devPurchase.mutateAsync({ planSlug })
-      Alert.alert('You’re premium!', 'This used the dev-purchase simulation — real Apple/Google IAP wiring is a follow-up.')
-      navigation.goBack()
+      sheet.show({
+        title: 'You’re premium!',
+        message: 'This used the dev-purchase simulation — real Apple/Google IAP wiring is a follow-up.',
+        buttons: [{ text: 'OK', onPress: () => navigation.goBack() }],
+      })
     } catch (err: any) {
-      Alert.alert('Purchase failed', err?.message ?? 'Try again in a moment')
+      sheet.show({ title: 'Purchase failed', message: err?.message ?? 'Try again in a moment', buttons: [{ text: 'OK' }] })
     }
   }
 
-  const isPremium = !!subscription.data?.isActive
+  const isPremium = me.data?.membership.state === 'MEMBER'
 
   return (
     <ScreenContainer width="narrow">
@@ -74,6 +79,7 @@ export function PaywallScreen({ navigation }: Props) {
         Dev build: subscribing here uses a simulated purchase endpoint, not a real App
         Store/Play Store charge.
       </Text>
+      <ActionSheet config={sheet.config} onDismiss={sheet.dismiss} />
     </ScreenContainer>
   )
 }

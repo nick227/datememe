@@ -1,39 +1,41 @@
+import type { AuthenticatedRequest } from '../lib/userContext'
+import { requireProfileId } from '../lib/userContext'
 import { TaxonomyService } from '../services/TaxonomyService'
 
 const taxonomyService = new TaxonomyService()
 
-export async function listEntityTypes(_request: any, reply: any) {
+export async function listEntityTypes(_request: AuthenticatedRequest, reply: any) {
   const data = await taxonomyService.listEntityTypes()
   return reply.send({ data })
 }
 
-export async function listCategoryGroups(_request: any, reply: any) {
+export async function listCategoryGroups(_request: AuthenticatedRequest, reply: any) {
   const data = await taxonomyService.listCategoryGroups()
   return reply.send({ data })
 }
 
-export async function listCategories(request: any, reply: any) {
-  const data = await taxonomyService.listCategories(request.user.profile.id, request.query.groupSlug)
+export async function listCategories(request: AuthenticatedRequest, reply: any) {
+  const data = await taxonomyService.listCategories(requireProfileId(request.user), request.query.groupSlug)
   return reply.send({ data })
 }
 
-export async function getCategory(request: any, reply: any) {
+export async function getCategory(request: AuthenticatedRequest, reply: any) {
   const data = await taxonomyService.getCategory(request.params.categorySlug)
   return reply.send({ data })
 }
 
-export async function searchCategoryEntities(request: any, reply: any) {
+export async function searchCategoryEntities(request: AuthenticatedRequest, reply: any) {
   const result = await taxonomyService.searchCategoryEntities(
     request.params.categorySlug,
-    request.user.profile.id,
+    requireProfileId(request.user),
     request.query,
   )
   return reply.send(result)
 }
 
-export async function submitEntity(request: any, reply: any) {
+export async function submitEntity(request: AuthenticatedRequest, reply: any) {
   const data = await taxonomyService.submitEntity(
-    request.user.profile.id,
+    requireProfileId(request.user),
     request.body.entityTypeId,
     request.body.rawText,
   )

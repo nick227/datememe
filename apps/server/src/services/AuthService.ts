@@ -1,3 +1,4 @@
+import { requireAccountAccess } from '../lib/userContext'
 import { db } from '@project/db'
 import bcrypt from 'bcryptjs'
 import { randomUUID } from 'crypto'
@@ -50,7 +51,7 @@ export class AuthService {
     const valid = await bcrypt.compare(data.password, user.passwordHash)
     if (!valid) throw { statusCode: 401, message: 'Invalid credentials' }
 
-    if (user.suspendedAt) throw { statusCode: 403, message: 'Account suspended' }
+    requireAccountAccess(user)
 
     const session = await this._createSession(user.id)
     return { user, token: session.token }

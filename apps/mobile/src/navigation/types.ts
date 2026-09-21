@@ -1,6 +1,8 @@
 export type AuthStackParamList = {
   Login: undefined
   Register: undefined
+  ForgotPassword: undefined
+  ResetPassword: { email: string }
 }
 
 export type MainStackParamList = {
@@ -16,7 +18,8 @@ export type CategoriesStackParamList = {
 export type MatchInsight = { icon: string; title: string; description: string }
 
 export type DiscoveryStackParamList = {
-  Discovery: undefined
+  Discover: undefined
+  QuickPicks: undefined
   ProfileDetail: {
     profileId: string
     displayName: string
@@ -35,4 +38,30 @@ export type ProfileStackParamList = {
   EditProfile: undefined
   Account: undefined
   Paywall: undefined
+  VerifyEmail: undefined
+  Admin: undefined
+}
+
+// Nested inside ProfileStack's "Admin" screen (see MainStack's own
+// Tabs -> AppTabs nesting for the same pattern). One entry per migrated
+// apps/admin page — see CLAUDE.md's migration batches.
+export type AdminStackParamList = {
+  AdminDashboard: undefined
+  AdminModeration: undefined
+  AdminUsers: undefined
+  AdminUserDetail: { userId: string }
+  AdminMemberships: undefined
+  AdminTaxonomy: undefined
+  AdminTaxonomyType: { typeId: string }
+  AdminTaxonomyEntity: {
+    id: string
+    entityTypeId: string
+    canonicalName: string
+    slug: string
+    parentId: string | null
+    status: string
+  }
+  AdminTaxonomyGenerate: { parentEntityId: string; parentEntityName: string; parentEntityTypeId: string }
+  AdminLists: undefined
+  AdminListDetail: { listId: string } | undefined
 }

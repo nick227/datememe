@@ -1,90 +1,93 @@
-# Datememe
+# Datememe 💘
 
-A favorites-based match-making app: profiles are ranked "favorites" lists (bands, movies, jobs, fruits, IDEs, games, streamers, authors...) instead of just bio/photos, then matched via a swipe (Like/Pass) flow with a computed compatibility score. See `docs/project-requirements.md` and `docs/data-schema-proposal.md` for the product and data-model rationale — this monorepo implements them (v2/v3 per those docs' changelogs).
+Welcome to **Datememe**! We're rethinking match-making by focusing on what you actually care about. Instead of endless bios and generic photos, profiles here are built entirely out of your **ranked favorites**—from your top 90s bands to your essential streaming services. 
 
-## Stack
+Match with people who share your vibe, get a computed compatibility score, and start conversations that actually matter.
 
-- **Database:** MySQL via Prisma (`packages/db`)
-- **API contract:** OpenAPI 3.0 (`packages/api-spec/openapi.yaml`) — the single source of truth for every route
-- **API client + hooks:** framework-agnostic React Query hooks (`packages/sdk`) — consumed by both the server's tests and the mobile app
-- **Server:** Fastify + `fastify-openapi-glue` (`apps/server`) — spec-driven routing, no hand-registered routes
-- **Background worker:** polling job processor (`apps/worker`) — claims rows from a `JobQueue` MySQL table (`FOR UPDATE SKIP LOCKED`) and runs match-calculation, taxonomy-update, and push-notification jobs
-- **Mobile app:** Expo (React Native + TypeScript) (`apps/mobile`) — the primary frontend, also exportable as a static web SPA via `react-native-web` (`expo export --platform web`)
+## 🏗️ What's Under the Hood
 
-## Repo layout
+This is a modern, full-stack monorepo built for speed and type safety:
 
-```
+- **Database:** MySQL powered by Prisma (`packages/db`)
+- **API Contract:** OpenAPI 3.0 (`packages/api-spec/openapi.yaml`) — our single source of truth.
+- **API Client:** Generated React Query hooks (`packages/sdk`) for seamless frontend integration.
+- **Backend:** Fastify API (`apps/server`) and a robust background worker (`apps/worker`) for crunching compatibility scores and handling notifications.
+- **Frontend:** Expo (React Native + TypeScript) (`apps/mobile`) for iOS, Android, and Web — the sole DATEMEME UI, including the Admin surface (gated to `role === ADMIN`).
+
+## 📂 Project Structure
+
+```text
 apps/
-  server/   Fastify API
-  worker/   background job processor
-  mobile/   Expo app (native + web export)
+  server/   → Fastify API
+  worker/   → Background job processor
+  mobile/   → Expo app (native + web export)
 packages/
-  db/       Prisma schema + client
-  api-spec/ OpenAPI spec (source of truth)
-  sdk/      generated API types + React Query hooks
-docs/       product requirements & data-schema proposal
+  db/       → Prisma schema, client, and seed logic
+  api-spec/ → OpenAPI spec
+  sdk/      → Generated API types + React Query hooks
 ```
 
-## Setup
+## 🚀 Getting Started
 
-1. You need a MySQL (or MariaDB) server reachable locally. Create a database and user, e.g.:
-   ```sql
-   CREATE DATABASE datememe_dev;
-   CREATE USER 'datememe'@'localhost' IDENTIFIED BY '<password>';
-   GRANT ALL PRIVILEGES ON datememe_dev.* TO 'datememe'@'localhost';
+Want to spin this up locally? It's super easy.
+
+1. **Database Setup:** You'll need a local MySQL or MariaDB instance. Create a database (e.g., `datememe_dev`).
+2. **Environment Variables:** 
+   - Run `cp .env.example .env` in the root and fill in your `DATABASE_URL`.
+   - Run `cp apps/mobile/.env.example apps/mobile/.env` for your frontend config.
+3. **Bootstrap Everything:**
+   ```bash
+   pnpm bootstrap
    ```
-2. `cp .env.example .env` and fill in `DATABASE_URL` with those credentials.
-3. `cp apps/mobile/.env.example apps/mobile/.env` — the default `EXPO_PUBLIC_API_URL` works for iOS simulator / Expo web; see the comments in that file for Android emulator / physical device.
-4. `pnpm bootstrap` — installs dependencies, generates the Prisma client, pushes the schema, generates SDK types, seeds demo data (users `alice@example.com` / `bob@example.com` / `carol@example.com`, password `password123`).
+   *This magic command installs dependencies, pushes the database schema, generates the SDK, and seeds the core taxonomy data.*
 
-## Dev
+### 🧪 Test Users
+Want to test out the matching flow right away? Run our dedicated user seed script:
+```bash
+pnpm --filter db run db:seed:users
+```
+This populates the database with three ready-to-use personas (all use the password `password123`):
+- `admin@datememe.com` (Admin features)
+- `premium@example.com` (Active subscription + fitness/foodie insights)
+- `free@example.com` (Standard user + pop-culture insights)
+
+## 💻 Development
+
+You don't need to start each app manually. To fire up the API, background worker, and mobile bundler all at once, just run:
 
 ```bash
-pnpm dev                       # server + worker + mobile dev servers, in parallel
-pnpm --filter server dev       # API only, at http://localhost:3002 (Swagger UI at /docs)
-pnpm --filter worker dev       # background job processor only
-pnpm --filter mobile start     # Expo dev server — press i/a/w for simulator/emulator/web
-pnpm --filter mobile run web   # Expo dev server, web target directly
+pnpm dev
 ```
 
-Port 3002, not 3001 — 3001 is occupied by an unrelated project on this machine; see `PORT` in `.env`.
+*(Note: The API usually defaults to port `3000` or `3001` depending on your `.env` config. The Swagger UI will be available at `/docs`!)*
 
-## Commands
+### Useful Commands
 
-| Command | Description |
+| Command | What it does |
 |---|---|
-| `pnpm bootstrap` | First-run: install, push schema, generate SDK, seed |
-| `pnpm dev` | Run every app's dev server in parallel |
-| `pnpm typecheck` | TypeScript check across every package |
-| `pnpm test` | Run all tests |
-| `pnpm sdk:generate` | Regenerate SDK types from the OpenAPI spec |
-| `pnpm sdk:check` | Fail if committed SDK types have drifted from the spec |
-| `pnpm db:push` | Push the Prisma schema to the database |
-| `pnpm db:seed` | Re-run the seed script |
-| `pnpm db:studio` | Open Prisma Studio |
-| `pnpm --filter mobile run export:web` | Build the static web bundle to `apps/mobile/dist` |
+| `pnpm dev` | Starts **all** development servers in parallel. |
+| `pnpm typecheck` | Runs TypeScript checks across the entire monorepo. |
+| `pnpm db:push` | Syncs your Prisma schema to your local database. |
+| `pnpm db:studio` | Opens Prisma Studio to easily view your local data. |
+| `pnpm sdk:generate`| Regenerates frontend hooks if you change the OpenAPI spec. |
 
-## Deployment
+## 🚢 Deployment
 
-Configured for Railway as three services sharing one MySQL plugin, each pinned to its own committed config-as-code file at the repo root (all three build from the full monorepo tree, not an isolated subfolder, since `apps/server` resolves `packages/api-spec/openapi.yaml` by relative path and everything shares pnpm workspace deps):
+Datememe is built to be easily deployed on modern PaaS providers like **Railway** or **Render**. 
 
-| Service | Config | Runs |
-|---|---|---|
-| `server` | `railway.server.json` | Fastify API, `node apps/server/dist/index.js` |
-| `web` | `railway.web.json` | static Expo-web export, served via `serve -s` |
-| `worker` | `railway.worker.json` | background job processor, no HTTP/port |
+It runs as three separate services:
+1. **API Server:** `node apps/server/dist/index.js`
+2. **Background Worker:** Runs headless to process the `JobQueue`.
+3. **Web Frontend:** A static Expo-web export (`apps/mobile/dist`) served via your preferred static host.
 
-`EXPO_PUBLIC_API_URL` on the `web` service is a **build-time** var (Expo inlines it into the bundle) — point it at the `server` service's public domain and redeploy `web` whenever that domain changes. Uploaded media (`STORAGE_PROVIDER=local`) needs a Railway Volume mounted at `apps/server/uploads` or it won't survive a redeploy.
+*Make sure your API URL is correctly set in your frontend's environment variables at build time!*
 
-## What's implemented
+## 🛣️ Roadmap
 
-The full MVP loop from `docs/project-requirements.md` §5: register (with email verification + password reset, both OTP-style) → onboarding (categories/lists) → build a list with autocomplete → swipe (Like/Pass, with a compatibility percentage + insight highlights) → match → message (with the free/premium gates from §4.1) → subscribe (simulated, no real Apple/Google IAP yet). Also: rarity-weighted discovery, a safety baseline (block/report, backend-only), real photo upload, and a background worker for match calculation, taxonomy updates, and push notifications.
+We've got the core MVP loop nailed down (registration, onboarding, building lists, swiping, compatibility matching, and messaging). Up next:
 
-See `CLAUDE.md` for full phase status and session-by-session history.
+- Integrating real Apple/Google In-App Purchases for subscriptions.
+- Wiring up native Mobile UI screens for safety flows (report/block buttons).
 
-## Known follow-ups
-
-- Admin / moderation panel and the `JobQueue`-backed worker are mid-implementation — `apps/server` won't currently pass `pnpm typecheck` until that work lands (a few exports/types the new code references don't exist yet).
-- Safety (block/report), media upload, and auth-completion flows are backend-only — no mobile screens wired up yet.
-- No real Apple/Google IAP, no drag-to-reorder in the list builder, no search-engine sync (MVP autocomplete is MySQL prefix/FULLTEXT + in-process Levenshtein).
-- No iOS/Android simulator verification yet in this environment — verified via live HTTP testing and a headless-Chromium (`react-native-web`) pass instead.
+---
+*Built with ❤️ for better connections.*

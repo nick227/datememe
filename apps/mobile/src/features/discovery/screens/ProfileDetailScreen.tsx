@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Text, ActivityIndicator, Alert, FlatList, Image, Pressable, StyleSheet, View } from 'react-native'
+import { Text, ActivityIndicator, FlatList, Image, Pressable, StyleSheet, View } from 'react-native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { useProfile, useProfileLists, useSwipe } from '@project/sdk'
 import { ScreenContainer } from '../../../ui/ScreenContainer'
@@ -10,6 +10,7 @@ import { MatchDimensionsBreakdown } from '../components/MatchDimensionsBreakdown
 import { SwipeActions } from '../components/SwipeActions'
 import { PreviewListCard } from '../../lists/components/PreviewListCard'
 import { PreviewListCardSkeleton } from '../../lists/components/PreviewListCardSkeleton'
+import { ActionSheet, useActionSheet } from '../../../ui/ActionSheet'
 import { colors, radius, spacing, type } from '../../../theme'
 import { useIsDesktop } from '../../../lib/useResponsive'
 import type { DiscoveryStackParamList } from '../../../navigation/types'
@@ -24,6 +25,7 @@ export function ProfileDetailScreen({ route, navigation }: Props) {
   const swipe = useSwipe()
   const [decided, setDecided] = useState(false)
   const numColumns = useIsDesktop() ? 3 : 2
+  const sheet = useActionSheet()
 
   const avatarUrl = profile.data?.avatarUrl
 
@@ -32,17 +34,21 @@ export function ProfileDetailScreen({ route, navigation }: Props) {
     try {
       const result = await swipe.mutateAsync({ targetProfileId: profileId, action })
       if (result.matched) {
-        Alert.alert('It’s a match! 🎉', `You and ${displayName} liked each other.`, [
-          { text: 'Keep browsing', style: 'cancel', onPress: () => navigation.goBack() },
-          {
-            text: 'Say hi',
-            onPress: () =>
-              (navigation.getParent()?.navigate as any)('Messages', {
-                screen: 'Conversation',
-                params: { conversationId: result.conversation!.id, displayName },
-              }),
-          },
-        ])
+        sheet.show({
+          title: 'It’s a match! 🎉',
+          message: `You and ${displayName} liked each other.`,
+          buttons: [
+            { text: 'Keep browsing', style: 'cancel', onPress: () => navigation.goBack() },
+            {
+              text: 'Say hi',
+              onPress: () =>
+                (navigation.getParent()?.navigate as any)('Messages', {
+                  screen: 'Conversation',
+                  params: { conversationId: result.conversation!.id, displayName },
+                }),
+            },
+          ],
+        })
       } else {
         navigation.goBack()
       }
@@ -95,6 +101,7 @@ export function ProfileDetailScreen({ route, navigation }: Props) {
       />
 
       <SwipeActions onPass={() => handleSwipe('PASS')} onLike={() => handleSwipe('LIKE')} disabled={decided} />
+      <ActionSheet config={sheet.config} onDismiss={sheet.dismiss} />
     </ScreenContainer>
   )
 }

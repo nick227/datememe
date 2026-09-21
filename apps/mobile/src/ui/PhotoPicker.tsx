@@ -1,5 +1,6 @@
-import { ActivityIndicator, Alert, Image, Pressable, StyleSheet, Text, View } from 'react-native'
+import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native'
 import { usePhotoPicker } from '../lib/usePhotoPicker'
+import { ActionSheet, useActionSheet } from './ActionSheet'
 import { colors, radius } from '../theme'
 
 type Props = {
@@ -18,13 +19,14 @@ type Props = {
  */
 export function PhotoPicker({ uri, onChange, onRemove, size = 96, shape = 'circle', placeholder }: Props) {
   const { pick, isUploading } = usePhotoPicker()
+  const sheet = useActionSheet()
 
   async function handlePress() {
     try {
       const url = await pick()
       if (url) onChange(url)
     } catch (err: any) {
-      Alert.alert('Could not upload photo', err?.message ?? 'Try again in a moment')
+      sheet.show({ title: 'Could not upload photo', message: err?.message ?? 'Try again in a moment', buttons: [{ text: 'OK' }] })
     }
   }
 
@@ -56,6 +58,7 @@ export function PhotoPicker({ uri, onChange, onRemove, size = 96, shape = 'circl
           <Text style={styles.removeBadgeText}>✕</Text>
         </Pressable>
       ) : null}
+      <ActionSheet config={sheet.config} onDismiss={sheet.dismiss} />
     </View>
   )
 }

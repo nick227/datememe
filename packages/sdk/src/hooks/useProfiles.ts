@@ -28,6 +28,13 @@ export function useUpdateMyProfile() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['me'] })
+      // seekingGenders/genderIdentity/isDiscoverable are all editable here and
+      // directly change the viewer's own Discover candidate pool — without
+      // this, changing who you're seeking wouldn't visibly change Discover
+      // until something else happened to refetch it. Both keys, per
+      // useMatching.ts's useSwipe for why both exist.
+      queryClient.invalidateQueries({ queryKey: ['discovery'] })
+      queryClient.invalidateQueries({ queryKey: ['discoverFeed'] })
     },
   })
 }

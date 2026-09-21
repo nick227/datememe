@@ -42,7 +42,18 @@ export function useUpsertList(categorySlug: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['myLists'] })
+      // The actual Lists tab (CategoriesScreen) reads `listsFeed`, not
+      // `myLists` — confirmed live: saving a list updated the DB correctly
+      // but the Lists tab kept showing "0 lists completed" and the
+      // just-ranked category still prompting "Rank yours" until something
+      // else happened to refetch it. `listsFeedCollection` (the "view all"
+      // per-topic-group pagination) reads the same underlying data and has
+      // the same staleness risk.
+      queryClient.invalidateQueries({ queryKey: ['listsFeed'] })
+      queryClient.invalidateQueries({ queryKey: ['listsFeedCollection'] })
+      // Both Discover query keys — see useMatching.ts's useSwipe for why.
       queryClient.invalidateQueries({ queryKey: ['discovery'] })
+      queryClient.invalidateQueries({ queryKey: ['discoverFeed'] })
     },
   })
 }

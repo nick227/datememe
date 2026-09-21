@@ -4,6 +4,12 @@
 
 Nick's default stack, with one substitution: **Expo (React Native) instead of Vite/React for the frontend** — this is a mobile-first product, no web app was built in this pass. Everything below the frontend (Prisma/MySQL, OpenAPI, Fastify, the SDK) follows the standard `nick-webapp-factory` architecture unmodified; the SDK's hooks are framework-agnostic React Query hooks exactly as documented, which is what let the mobile app consume them with zero changes to `packages/sdk`'s core pattern.
 
+## Admin Surface
+
+`apps/mobile` is the sole DATEMEME UI — there is no separate web app. The Admin surface (dashboard, moderation queues, users, memberships/plans, taxonomy types/entities, list definitions, and media/image management — upload, provider search-and-import, and reference-by-provenance) lives inside `apps/mobile` itself, reachable from the Profile tab and gated to `User.role === 'ADMIN'` by the same session auth every other screen uses — not a separate login or a separate app.
+
+A standalone Vite/React admin app (`apps/admin`) existed earlier in this project's history as a faster-to-build interim tool while the native Admin screens were still being ported over. It has since reached full capability parity with `apps/mobile`'s Admin screens and been removed from the repo — there is nothing it did that the native Admin surface doesn't now do.
+
 ## Phase Completed
 
 Phase 3 (Frontend Shell), adapted for Expo — built bottom-up through the full stack: Prisma schema → OpenAPI spec → SDK → Fastify server → Expo app shell with working auth, navigation, and every MVP screen wired to real endpoints (not stubs). Phase 4 (Feature Pages) is effectively done for the MVP feature set already; Phase 5 (Polish) and Phase 6 (Documentation) have not been run.

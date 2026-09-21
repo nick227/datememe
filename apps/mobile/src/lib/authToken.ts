@@ -1,3 +1,4 @@
+import { Platform } from 'react-native'
 import * as SecureStore from 'expo-secure-store'
 
 const TOKEN_KEY = 'datememe.authToken'
@@ -7,7 +8,11 @@ const TOKEN_KEY = 'datememe.authToken'
 let cachedToken: string | null = null
 
 export async function loadToken() {
-  cachedToken = await SecureStore.getItemAsync(TOKEN_KEY)
+  if (Platform.OS === 'web') {
+    cachedToken = localStorage.getItem(TOKEN_KEY)
+  } else {
+    cachedToken = await SecureStore.getItemAsync(TOKEN_KEY)
+  }
   return cachedToken
 }
 
@@ -17,10 +22,18 @@ export function getToken() {
 
 export async function setToken(token: string) {
   cachedToken = token
-  await SecureStore.setItemAsync(TOKEN_KEY, token)
+  if (Platform.OS === 'web') {
+    localStorage.setItem(TOKEN_KEY, token)
+  } else {
+    await SecureStore.setItemAsync(TOKEN_KEY, token)
+  }
 }
 
 export async function clearToken() {
   cachedToken = null
-  await SecureStore.deleteItemAsync(TOKEN_KEY)
+  if (Platform.OS === 'web') {
+    localStorage.removeItem(TOKEN_KEY)
+  } else {
+    await SecureStore.deleteItemAsync(TOKEN_KEY)
+  }
 }

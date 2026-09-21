@@ -24,6 +24,13 @@ components:
       description: >
         Cookie-first (web), Bearer-header fallback (native apps via
         expo-secure-store). See packages/sdk/src/client.ts.
+    adminAuth:
+      type: http
+      scheme: bearer
+      description: >
+        Same token as bearerAuth, plus a role check (User.role === ADMIN) —
+        see plugins/security.ts's adminAuth. Used on operations restricted to
+        the DATEMEME admin area.
 
   parameters:
     Cursor:
@@ -119,13 +126,52 @@ components:
 
     User:
       type: object
-      required: [id, email, isVerified, createdAt]
+      required: [id, email, role, isVerified, createdAt]
       properties:
         id: { type: string }
         email: { type: string }
+        role: { type: string, enum: [USER, MODERATOR, ADMIN] }
         isVerified: { type: boolean }
         createdAt: { type: string, format: date-time }
         profile: { $ref: '#/components/schemas/Profile' }
+
+    UserContext:
+      allOf:
+        - $ref: '#/components/schemas/User'
+        - type: object
+          required: [account, membership, entitlements]
+          properties:
+            account:
+              type: object
+              required: [suspended, deleted]
+              properties:
+                suspended: { type: boolean }
+                deleted: { type: boolean }
+            membership:
+              type: object
+              required: [state, sources]
+              properties:
+                state: { type: string, enum: [FREE, MEMBER] }
+                sources:
+                  type: array
+                  items:
+                    type: object
+                    required: [kind, id, expiresAt]
+                    properties:
+                      kind: { type: string, enum: [SUBSCRIPTION, MANUAL_SUBSCRIPTION] }
+                      id: { type: string }
+                      expiresAt: { type: string, format: date-time }
+            entitlements:
+              type: object
+              required: [profile.fullPhotoAccess, messaging.readIncoming, messaging.dailySendLimit, lists.memberOnly]
+              properties:
+                profile.fullPhotoAccess: { type: boolean }
+                messaging.readIncoming: { type: boolean }
+                messaging.dailySendLimit:
+                  oneOf:
+                    - { type: integer, minimum: 0 }
+                    - { type: string, enum: [UNLIMITED] }
+                lists.memberOnly: { type: boolean }
 
     RegisterInput:
       type: object
@@ -148,7 +194,7 @@ components:
       type: object
       required: [data, token]
       properties:
-        data: { $ref: '#/components/schemas/User' }
+        data: { $ref: '#/components/schemas/UserContext' }
         token:
           type: string
           description: >
@@ -177,6 +223,15 @@ components:
         isDiscoverable: { type: boolean }
 
     # ── Taxonomy ──────────────────────────────────────────
+    ImageCredit:
+      type: object
+      nullable: true
+      properties:
+        attribution: { type: string, nullable: true }
+        landingUrl: { type: string, nullable: true }
+        licenseUrl: { type: string, nullable: true }
+        provider: { type: string, nullable: true }
+
     EntityType:
       type: object
       required: [id, slug, label, pluralLabel]
@@ -186,6 +241,8 @@ components:
         label: { type: string }
         pluralLabel: { type: string }
         icon: { type: string, nullable: true }
+        imageUrl: { type: string, nullable: true }
+        imageCredit: { $ref: '#/components/schemas/ImageCredit' }
 
     Tag:
       type: object
@@ -249,6 +306,8 @@ components:
         requiredTags:
           type: array
           items: { $ref: '#/components/schemas/Tag' }
+        imageUrl: { type: string, nullable: true }
+        imageCredit: { $ref: '#/components/schemas/ImageCredit' }
 
     Entity:
       type: object
@@ -259,6 +318,7 @@ components:
         canonicalName: { type: string }
         slug: { type: string }
         imageUrl: { type: string, nullable: true }
+        imageCredit: { $ref: '#/components/schemas/ImageCredit' }
         metadata: { type: object, nullable: true }
         status: { type: string, enum: [PENDING, APPROVED, REJECTED, MERGED] }
         usageCount: { type: integer }
@@ -348,9 +408,12 @@ components:
 
     DiscoveryCandidate:
       type: object
-      required: [profile, sharedItemsCount, sharedFavorites, matchPercentage, insights]
+      required: [profile, age, sharedItemsCount, sharedFavorites, matchPercentage, insights]
       properties:
         profile: { $ref: '#/components/schemas/Profile' }
+        age:
+          type: integer
+          description: Computed server-side from the profile's birthdate at request time. The birthdate itself is never serialized anywhere.
         sharedItemsCount: { type: integer }
         sharedFavorites:
           type: array
@@ -382,7 +445,7 @@ components:
     # ── Messaging ─────────────────────────────────────────
     Conversation:
       type: object
-      required: [id, status, initiatedById, participants, lastMessageAt]
+      required: [id, status, initiatedById, participants, participantReadState, lastMessageAt, lastMessageBody, hasUnread]
       properties:
         id: { type: string }
         status: { type: string, enum: [PENDING, ACCEPTED, DECLINED, BLOCKED] }
@@ -390,7 +453,21 @@ components:
         participants:
           type: array
           items: { $ref: '#/components/schemas/Profile' }
+        participantReadState:
+          type: array
+          description: Per-participant last-read timestamp, used to derive "Seen" state on the client without a per-message read model.
+          items:
+            type: object
+            required: [profileId, lastReadAt]
+            properties:
+              profileId: { type: string }
+              lastReadAt: { type: string, format: date-time, nullable: true }
         lastMessageAt: { type: string, format: date-time, nullable: true }
+        lastMessageBody:
+          type: string
+          nullable: true
+          description: '"🔒 New message" when the caller is free-tier and didn''t send the last message (docs §8 receiving gate); null when there are no messages yet.'
+        hasUnread: { type: boolean }
 
     Message:
       type: object
@@ -524,6 +601,928 @@ components:
       properties:
         token: { type: string, description: The 6-digit code emailed by /auth/send-verification. }
 
+    # ── Discover filters ──────────────────────────────────────
+    AgeBucket:
+      type: string
+      enum: [20s, 30s, 40s, 50plus]
+
+    # ── Quick Picks (taste-graph preference signals) ─────────
+    QuickPickRepresentative:
+      description: A real person from the viewer's current Discover pool who prefers this option — lets Discover's Quick Picks compare people's preferences, not bare things.
+      type: object
+      required: [profileId, displayName, avatarUrl]
+      properties:
+        profileId: { type: string }
+        displayName: { type: string }
+        avatarUrl: { type: string, nullable: true }
+
+    QuickPickPrompt:
+      type: object
+      required: [contextType, contextId, contextLabel, prompt, optionA, optionB]
+      properties:
+        contextType: { type: string, enum: [CATEGORY, ENTITY_TYPE, PARENT_ENTITY, TAG] }
+        contextId: { type: string }
+        contextLabel: { type: string }
+        prompt: { type: string }
+        optionA: { $ref: '#/components/schemas/Entity' }
+        optionB: { $ref: '#/components/schemas/Entity' }
+        optionARepresentative:
+          description: Present when ?context=discover found a real candidate who prefers optionA.
+          type: object
+          nullable: true
+          allOf: [{ $ref: '#/components/schemas/QuickPickRepresentative' }]
+        optionBRepresentative:
+          type: object
+          nullable: true
+          allOf: [{ $ref: '#/components/schemas/QuickPickRepresentative' }]
+
+    QuickPickChoiceInput:
+      type: object
+      required: [contextType, contextId, winnerEntityId, loserEntityId]
+      properties:
+        contextType: { type: string, enum: [CATEGORY, ENTITY_TYPE, PARENT_ENTITY, TAG] }
+        contextId: { type: string }
+        winnerEntityId: { type: string }
+        loserEntityId: { type: string }
+
+    QuickPickResult:
+      description: >
+        How this exact choice compares to the rest of the site — returned
+        immediately on submission.
+      type: object
+      required: [contextType, contextId, winnerEntityId, loserEntityId, winnerPercent, loserPercent, totalComparisons, winnerOverallWinRate, loserOverallWinRate]
+      properties:
+        contextType: { type: string, enum: [CATEGORY, ENTITY_TYPE, PARENT_ENTITY, TAG] }
+        contextId: { type: string }
+        winnerEntityId: { type: string }
+        loserEntityId: { type: string }
+        winnerPercent:
+          type: integer
+          description: "% of everyone who has compared these exact two entities in this category who picked the same one you did."
+        loserPercent: { type: integer }
+        totalComparisons:
+          type: integer
+          description: Sample size behind winnerPercent/loserPercent — context for how confident the stat is.
+        winnerOverallWinRate:
+          type: integer
+          nullable: true
+          description: This entity's win rate across every comparison it's been part of in this category (not just this one pairing).
+        loserOverallWinRate:
+          type: integer
+          nullable: true
+
+    # ── Shared Content System (docs/shared-content-system-proposal.md) ──
+    MetricType:
+      type: string
+      enum: [popularity, community-position, viewer-position, percentile, overlap, rarity, trend, completion]
+
+    Metric:
+      type: object
+      required: [type, label, value]
+      properties:
+        type: { $ref: '#/components/schemas/MetricType' }
+        label: { type: string }
+        value:
+          description: Already display-formatted ("82%", "3.4×") or a raw number — renderer's choice.
+          oneOf: [{ type: string }, { type: number }]
+        importance:
+          type: string
+          enum: [primary, secondary, tertiary]
+          description: >
+            Render-priority hint, not a domain fact — structures pick which
+            metrics to show under their render budget (proposal §5) using
+            this field; it never changes what the metric means.
+
+    Capabilities:
+      type: object
+      properties:
+        canFavorite: { type: boolean }
+        canRank: { type: boolean }
+        canMessage: { type: boolean }
+        canOpenProfile: { type: boolean }
+
+    ContentUnitRelationship:
+      type: object
+      properties:
+        favorited: { type: boolean }
+        completed: { type: boolean }
+
+    ContentUnitKind:
+      type: string
+      enum: [poll, person, category, entity, insight]
+
+    ContentUnit:
+      type: object
+      required: [id, kind, title]
+      properties:
+        id:
+          type: string
+          description: Stable within its collection. For kind='category' this is the Category slug (routable); for kind='person' the Profile id.
+        kind: { $ref: '#/components/schemas/ContentUnitKind' }
+        title: { type: string }
+        subtitle: { type: string, nullable: true }
+        imageUrl: { type: string, nullable: true }
+        imageCredit: { $ref: '#/components/schemas/ImageCredit' }
+        metrics:
+          type: array
+          items: { $ref: '#/components/schemas/Metric' }
+        capabilities: { $ref: '#/components/schemas/Capabilities' }
+        position:
+          type: integer
+          nullable: true
+          description: >
+            Order of this unit *within its collection* only — not a
+            comparative rank. Comparative standing is a fact about the unit
+            and belongs under `metrics` as community-position /
+            viewer-position / percentile (proposal §4).
+        relationship: { $ref: '#/components/schemas/ContentUnitRelationship' }
+        entity:
+          description: Present for kind='category' (the top pick, if any) and kind='entity'.
+          type: object
+          nullable: true
+          allOf: [{ $ref: '#/components/schemas/Entity' }]
+        profile:
+          description: Present for kind='person' — the full candidate, so the renderer needs no second fetch to navigate to ProfileDetail.
+          type: object
+          nullable: true
+          allOf: [{ $ref: '#/components/schemas/Profile' }]
+        age:
+          description: Present for kind='person' only — mirrors DiscoveryCandidate.age.
+          type: integer
+        sharedFavorites:
+          description: >
+            Present for kind='person' only — the actual overlapping picks
+            ("You both ranked"), not just a count. This is the taste content
+            that explains the match; render it more prominently than
+            `alsoInto` (proposal correction: shared taste is the reason the
+            match is relevant, independent interests are supporting texture).
+          type: array
+          items: { $ref: '#/components/schemas/SharedFavorite' }
+        alsoInto:
+          description: >
+            Present for kind='person' only — a few of the candidate's own
+            top-ranked picks outside the overlap with the viewer ("Also
+            into"). Supporting texture, not the headline.
+          type: array
+          items: { $ref: '#/components/schemas/Entity' }
+        insights:
+          description: Present for kind='person' only — mirrors DiscoveryCandidate.insights.
+          type: array
+          items: { $ref: '#/components/schemas/MatchInsight' }
+        previewEntities:
+          description: >
+            Top-ranked entities for a completed list (kind='category' with
+            relationship.completed=true) — lets the Grid's completed-list
+            variant show a multi-item preview instead of one thumbnail.
+          type: array
+          items: { $ref: '#/components/schemas/Entity' }
+
+    CollectionType:
+      type: string
+      enum: [favorites, lists, recommendations, comparison, trending, prompt, quiz]
+
+    ContentCollectionContext:
+      type: object
+      properties:
+        reason: { type: string }
+        sourceEntityId: { type: string }
+        sourceEntityType: { type: string }
+
+    # ContentCollection and InteractiveModule are documented here as the two
+    # logical shapes a FeedModule takes, but the wire schema below (FeedModule)
+    # is deliberately ONE flat object rather than a oneOf of these two: fast-json-stringify
+    # (Fastify's response serializer) can't reliably disambiguate a oneOf of
+    # structurally-similar objects — it needs exactly one branch to match and
+    # throws "does not match schema definition" otherwise. moduleKind is what
+    # actually discriminates the two on the wire; TypeScript narrows on it
+    # client-side (see apps/mobile/src/ui/content/types.ts).
+    FeedModule:
+      type: object
+      required: [moduleKind, id]
+      properties:
+        moduleKind: { type: string, enum: [collection, interactive] }
+        id: { type: string }
+        # Populated when moduleKind='collection' (a ContentCollection):
+        type: { $ref: '#/components/schemas/CollectionType' }
+        title: { type: string, nullable: true }
+        context: { $ref: '#/components/schemas/ContentCollectionContext' }
+        suggestedStructure:
+          type: string
+          enum: [grid, rail, spotlight, river]
+          description: Advisory only — the frontend has final say per viewport/context (proposal §1).
+        options:
+          type: object
+          properties:
+            gridShape: { type: string, enum: [square, dense] }
+            columns:
+              type: integer
+              description: >
+                Advisory column count for a Grid structure at desktop width
+                (mobile always collapses to 1) — lets the backend request
+                "large, few-per-row" cards without a rigid gridShape enum.
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/ContentUnit' }
+        # Populated when moduleKind='interactive' (an InteractiveModule):
+        kind: { type: string, enum: [quick-picks] }
+
+    SummaryStat:
+      type: object
+      required: [label, value]
+      properties:
+        label: { type: string }
+        value:
+          oneOf: [{ type: string }, { type: number }]
+
+    PageSummary:
+      type: object
+      required: [title]
+      properties:
+        title: { type: string }
+        subtitle: { type: string, nullable: true }
+        stats:
+          type: array
+          items: { $ref: '#/components/schemas/SummaryStat' }
+        featuredEntity:
+          type: object
+          nullable: true
+          allOf: [{ $ref: '#/components/schemas/Entity' }]
+
+    FilterChip:
+      type: object
+      required: [id, label]
+      properties:
+        id: { type: string }
+        label: { type: string }
+
+    ContentFeedPageResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        filterNotice: { type: string }
+        summary:
+          description: Page chrome — only ever populated on the first page (cursor omitted).
+          allOf: [{ $ref: '#/components/schemas/PageSummary' }]
+        chips:
+          type: array
+          items: { $ref: '#/components/schemas/FilterChip' }
+        data:
+          type: array
+          items: { $ref: '#/components/schemas/FeedModule' }
+        meta: { $ref: '#/components/schemas/PaginatedMeta' }
+
+    ContentUnitPageResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: array
+          items: { $ref: '#/components/schemas/ContentUnit' }
+        meta: { $ref: '#/components/schemas/PaginatedMeta' }
+
+    # ── Admin ───────────────────────────────────────────────
+    # apps/admin (Vite) -> apps/mobile Admin migration — see CLAUDE.md.
+    # Migrated so far: Dashboard (/admin/queue), Moderation (this batch).
+    # The remaining ~20 /admin/* routes stay hand-registered on the Fastify
+    # instance until their own migration batch.
+    AdminJobSummary:
+      type: object
+      required: [id, type, status, attempts, availableAt, createdAt]
+      properties:
+        id: { type: string }
+        type: { type: string }
+        status: { type: string, enum: [PENDING, RUNNING, DONE, FAILED] }
+        attempts: { type: integer }
+        lastError: { type: string, nullable: true }
+        availableAt: { type: string, format: date-time }
+        finishedAt: { type: string, format: date-time, nullable: true }
+        createdAt: { type: string, format: date-time }
+
+    AdminQueueMetrics:
+      type: object
+      required: [metrics, oldestPending, latestFailed]
+      properties:
+        metrics:
+          type: object
+          description: 'Job count by JobStatus, e.g. { PENDING: 3, FAILED: 1 }. Only statuses with at least one job are present.'
+          additionalProperties: { type: integer }
+        oldestPending:
+          type: array
+          items: { $ref: '#/components/schemas/AdminJobSummary' }
+        latestFailed:
+          type: array
+          items: { $ref: '#/components/schemas/AdminJobSummary' }
+
+    AdminUserRef:
+      type: object
+      required: [id, username, displayName]
+      properties:
+        id: { type: string }
+        username: { type: string }
+        displayName: { type: string }
+
+    AdminReviewerRef:
+      type: object
+      required: [id, email]
+      properties:
+        id: { type: string }
+        email: { type: string }
+
+    # getEntitySubmissions's includes — richer than the consumer-facing
+    # EntitySubmission schema (which never exposes rawText/reviewer identity
+    # to non-admins).
+    AdminEntitySubmission:
+      type: object
+      required: [id, entityTypeId, rawText, status, entityType, submittedEntity, submittedByProfile, suggestedMatch, resolvedEntity, reviewedByUser, reviewNotes, createdAt, reviewedAt]
+      properties:
+        id: { type: string }
+        entityTypeId: { type: string }
+        rawText: { type: string }
+        status: { type: string, enum: [PENDING, APPROVED, REJECTED, MERGED] }
+        entityType: { $ref: '#/components/schemas/EntityType' }
+        submittedEntity: { $ref: '#/components/schemas/Entity' }
+        submittedByProfile: { type: object, nullable: true, allOf: [{ $ref: '#/components/schemas/AdminUserRef' }] }
+        suggestedMatch: { type: object, nullable: true, allOf: [{ $ref: '#/components/schemas/Entity' }] }
+        resolvedEntity: { type: object, nullable: true, allOf: [{ $ref: '#/components/schemas/Entity' }] }
+        reviewedByUser: { type: object, nullable: true, allOf: [{ $ref: '#/components/schemas/AdminReviewerRef' }] }
+        reviewNotes: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+        reviewedAt: { type: string, format: date-time, nullable: true }
+
+    # reviewEntitySubmission returns the bare updated row (no includes) —
+    # deliberately a separate, leaner schema from AdminEntitySubmission
+    # above rather than reusing it, since the actual object shapes differ.
+    AdminEntitySubmissionScalar:
+      type: object
+      required: [id, entityTypeId, rawText, status, submittedEntityId, suggestedMatchId, resolvedEntityId, submittedByProfileId, reviewedByUserId, reviewNotes, createdAt, reviewedAt]
+      properties:
+        id: { type: string }
+        entityTypeId: { type: string }
+        rawText: { type: string }
+        status: { type: string, enum: [PENDING, APPROVED, REJECTED, MERGED] }
+        submittedEntityId: { type: string }
+        suggestedMatchId: { type: string, nullable: true }
+        resolvedEntityId: { type: string, nullable: true }
+        submittedByProfileId: { type: string, nullable: true }
+        reviewedByUserId: { type: string, nullable: true }
+        reviewNotes: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+        reviewedAt: { type: string, format: date-time, nullable: true }
+
+    AdminEntitySubmissionReviewInput:
+      type: object
+      required: [action]
+      properties:
+        action: { type: string, enum: [APPROVE, REJECT, MERGE] }
+        mergeIntoEntityId: { type: string, description: Required when action is MERGE. }
+        reviewNotes: { type: string, nullable: true }
+
+    # getReports's includes — richer than a bare Report row.
+    AdminReport:
+      type: object
+      required: [id, reporterProfileId, targetType, targetProfileId, targetMessageId, reason, details, status, reporter, targetProfile, targetMessage, reviewedByUser, reviewNotes, createdAt, reviewedAt]
+      properties:
+        id: { type: string }
+        reporterProfileId: { type: string }
+        targetType: { type: string, enum: [PROFILE, MESSAGE] }
+        targetProfileId: { type: string, nullable: true }
+        targetMessageId: { type: string, nullable: true }
+        reason: { type: string }
+        details: { type: string, nullable: true }
+        status: { type: string, enum: [PENDING, REVIEWED, ACTIONED] }
+        reporter: { $ref: '#/components/schemas/AdminUserRef' }
+        targetProfile: { type: object, nullable: true, allOf: [{ $ref: '#/components/schemas/AdminUserRef' }] }
+        targetMessage:
+          type: object
+          nullable: true
+          properties:
+            id: { type: string }
+            body: { type: string, nullable: true }
+            senderId: { type: string }
+            conversationId: { type: string }
+        reviewedByUser: { type: object, nullable: true, allOf: [{ $ref: '#/components/schemas/AdminReviewerRef' }] }
+        reviewNotes: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+        reviewedAt: { type: string, format: date-time, nullable: true }
+
+    # reviewReport returns the bare updated row — see AdminEntitySubmissionScalar's note.
+    AdminReportScalar:
+      type: object
+      required: [id, reporterProfileId, targetType, targetProfileId, targetMessageId, reason, details, status, reviewedByUserId, reviewNotes, createdAt, reviewedAt]
+      properties:
+        id: { type: string }
+        reporterProfileId: { type: string }
+        targetType: { type: string, enum: [PROFILE, MESSAGE] }
+        targetProfileId: { type: string, nullable: true }
+        targetMessageId: { type: string, nullable: true }
+        reason: { type: string }
+        details: { type: string, nullable: true }
+        status: { type: string, enum: [PENDING, REVIEWED, ACTIONED] }
+        reviewedByUserId: { type: string, nullable: true }
+        reviewNotes: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+        reviewedAt: { type: string, format: date-time, nullable: true }
+
+    AdminReportReviewInput:
+      type: object
+      required: [status]
+      properties:
+        status: { type: string, enum: [REVIEWED, ACTIONED] }
+        reviewNotes: { type: string, nullable: true }
+
+    # ── Admin: Users (batch 3) ────────────────────────────────
+    AdminUserSummary:
+      type: object
+      required: [id, email, role, isVerified, suspendedAt, createdAt, profile]
+      properties:
+        id: { type: string }
+        email: { type: string }
+        role: { type: string, enum: [USER, MODERATOR, ADMIN] }
+        isVerified: { type: boolean }
+        suspendedAt: { type: string, format: date-time, nullable: true }
+        createdAt: { type: string, format: date-time }
+        profile: { type: object, nullable: true, allOf: [{ $ref: '#/components/schemas/AdminUserRef' }] }
+
+    # getUsers/getUser never expose passwordHash — noted deliberately because
+    # the route this replaced (GET /admin/users/:id) had NO response schema
+    # at all, so fast-json-stringify never had a chance to strip it: every
+    # admin user-detail view was sending the bcrypt hash to the browser. This
+    # schema is the fix, not just a migration side effect.
+    AdminUserScalar:
+      type: object
+      required: [id, email, role, isVerified, suspendedAt, deletedAt, createdAt]
+      properties:
+        id: { type: string }
+        email: { type: string }
+        role: { type: string, enum: [USER, MODERATOR, ADMIN] }
+        isVerified: { type: boolean }
+        suspendedAt: { type: string, format: date-time, nullable: true }
+        deletedAt: { type: string, format: date-time, nullable: true }
+        createdAt: { type: string, format: date-time }
+
+    AdminPlanScalar:
+      type: object
+      required: [id, slug, label, interval, priceCents, currency, isActive, features]
+      properties:
+        id: { type: string }
+        slug: { type: string }
+        label: { type: string }
+        interval: { type: string, enum: [MONTHLY, ANNUAL, LIFETIME] }
+        priceCents: { type: integer }
+        currency: { type: string }
+        isActive: { type: boolean }
+        # additionalProperties: true is load-bearing, not decorative — fast-json-stringify
+        # serializes a bare `type: object` with no declared properties as `{}`
+        # regardless of the real value, silently dropping every key. Caught
+        # live: a plan created with real features came back as `features: {}`.
+        features: { type: object, additionalProperties: true }
+
+    # getPlans additionally includes the active-subscriber count; getUser's
+    # subscriptions.plan include does not — AdminPlanScalar above is what
+    # getUser's nested plan actually is (same "match the schema to the real
+    # include, not the richest possible shape" fix as AdminUserProfileDetail).
+    AdminPlan:
+      allOf:
+        - $ref: '#/components/schemas/AdminPlanScalar'
+        - type: object
+          required: [_count]
+          properties:
+            _count:
+              type: object
+              required: [subscriptions]
+              properties:
+                subscriptions: { type: integer, description: Active subscriber count. }
+
+    AdminSubscriptionScalar:
+      type: object
+      required: [id, userId, planId, provider, providerSubscriptionId, status, currentPeriodEnd, cancelAtPeriodEnd, createdAt]
+      properties:
+        id: { type: string }
+        userId: { type: string }
+        planId: { type: string }
+        provider: { type: string, enum: [APPLE_APP_STORE, GOOGLE_PLAY, STRIPE, MANUAL] }
+        providerSubscriptionId: { type: string }
+        status: { type: string, enum: [ACTIVE, TRIALING, PAST_DUE, CANCELED, EXPIRED] }
+        currentPeriodEnd: { type: string, format: date-time }
+        cancelAtPeriodEnd: { type: boolean }
+        createdAt: { type: string, format: date-time }
+
+    AdminSubscriptionWithPlan:
+      allOf:
+        - $ref: '#/components/schemas/AdminSubscriptionScalar'
+        - type: object
+          required: [plan]
+          properties:
+            plan: { $ref: '#/components/schemas/AdminPlanScalar' }
+
+    # NOT the consumer-facing Profile schema — getUser's `include: { profile:
+    # true }` is a bare Prisma include, which does NOT pull in Profile's own
+    # nested relations (seekingGenders, photos) the way PROFILE_FULL_SELECT
+    # does elsewhere. Reusing $ref Profile here (which requires
+    # seekingGenders) threw "seekingGenders is required!" on every real user
+    # — caught live testing this batch, fixed by matching the schema to what
+    # the handler actually returns instead of changing the handler's query.
+    AdminUserProfileDetail:
+      type: object
+      required: [id, userId, username, displayName, birthdate, genderIdentity, bio, locationLabel, avatarUrl, isDiscoverable, onboardingStep, createdAt]
+      properties:
+        id: { type: string }
+        userId: { type: string }
+        username: { type: string }
+        displayName: { type: string }
+        birthdate: { type: string, format: date-time }
+        genderIdentity: { type: string, nullable: true }
+        bio: { type: string, nullable: true }
+        locationLabel: { type: string, nullable: true }
+        avatarUrl: { type: string, nullable: true }
+        isDiscoverable: { type: boolean }
+        onboardingStep: { type: integer }
+        createdAt: { type: string, format: date-time }
+
+    AdminUserDetail:
+      type: object
+      required: [id, email, role, isVerified, suspendedAt, deletedAt, createdAt, profile, subscriptions]
+      properties:
+        id: { type: string }
+        email: { type: string }
+        role: { type: string, enum: [USER, MODERATOR, ADMIN] }
+        isVerified: { type: boolean }
+        suspendedAt: { type: string, format: date-time, nullable: true }
+        deletedAt: { type: string, format: date-time, nullable: true }
+        createdAt: { type: string, format: date-time }
+        profile: { type: object, nullable: true, allOf: [{ $ref: '#/components/schemas/AdminUserProfileDetail' }] }
+        subscriptions:
+          type: array
+          description: At most one — the caller's current ACTIVE subscription, if any (getUser only ever fetches status:ACTIVE, take:1).
+          items: { $ref: '#/components/schemas/AdminSubscriptionWithPlan' }
+
+    AdminAuditEvent:
+      type: object
+      required: [id, action, targetType, targetId, actorRole, beforeValue, afterValue, metadata, createdAt, actor]
+      properties:
+        id: { type: string }
+        action: { type: string }
+        targetType: { type: string }
+        targetId: { type: string, nullable: true }
+        actorRole: { type: string, enum: [USER, MODERATOR, ADMIN] }
+        # additionalProperties: true is load-bearing — see AdminPlanScalar's
+        # features comment. Without it, every audit event's real before/
+        # after diff serializes as `{}`, silently defeating the audit trail.
+        beforeValue: { type: object, nullable: true, additionalProperties: true }
+        afterValue: { type: object, nullable: true, additionalProperties: true }
+        metadata: { type: object, nullable: true, additionalProperties: true }
+        createdAt: { type: string, format: date-time }
+        actor: { $ref: '#/components/schemas/AdminReviewerRef' }
+
+    AdminBanUserInput:
+      type: object
+      required: [userId, ban]
+      properties:
+        userId: { type: string }
+        ban: { type: boolean }
+
+    AdminVerifyUserInput:
+      type: object
+      required: [userId, verify]
+      properties:
+        userId: { type: string }
+        verify: { type: boolean }
+
+    AdminOverrideMembershipInput:
+      type: object
+      required: [userId, planId]
+      properties:
+        userId: { type: string }
+        planId: { type: string }
+
+    AdminRevokeMembershipInput:
+      type: object
+      required: [userId]
+      properties:
+        userId: { type: string }
+
+    # ── Admin: Memberships (batch 4) ───────────────────────────
+    AdminCreatePlanInput:
+      type: object
+      required: [label, slug, interval, priceCents]
+      properties:
+        label: { type: string }
+        slug: { type: string }
+        interval: { type: string, enum: [MONTHLY, ANNUAL, LIFETIME] }
+        priceCents: { type: integer, minimum: 0, maximum: 1000000 }
+        isActive: { type: boolean }
+        features: { type: object, additionalProperties: true, description: 'Arbitrary entitlement flags — free-form, no fixed key set.' }
+
+    AdminUpdatePlanInput:
+      type: object
+      required: [planId, priceCents]
+      properties:
+        planId: { type: string }
+        priceCents:
+          type: integer
+          minimum: 0
+          maximum: 1000000
+          description: 'Must equal the plan''s current price once it has active subscriptions (grandfathering — archive and recreate instead of repricing a live plan).'
+        isActive: { type: boolean }
+        features: { type: object, additionalProperties: true, description: 'Arbitrary entitlement flags — free-form, no fixed key set.' }
+
+    # ── Admin: Media (batch 7) ──────────────────────────────────
+    # The MediaAssetPicker migration mediaAssets/externalRefs above were
+    # deferred to — attaching a thumbnail image (upload, or search-and-import
+    # from a trusted provider) to an Entity, EntityType, or Category.
+    AdminImageCandidate:
+      description: One search result from an image provider (wikimedia, tmdb, openverse, unsplash, pexels, pixabay) — not yet attached to anything.
+      type: object
+      required: [provider, externalId, title, previewUrl, importRule]
+      properties:
+        provider: { type: string }
+        externalId: { type: string }
+        title: { type: string }
+        previewUrl: { type: string }
+        sourceUrl: { type: string }
+        landingUrl: { type: string }
+        creator: { type: string }
+        license: { type: string }
+        licenseUrl: { type: string }
+        attribution: { type: string }
+        width: { type: integer }
+        height: { type: integer }
+        importRule:
+          description: IMPORT_ALLOWED — safe to copy the bytes onto our own storage. HOTLINK_ONLY/REVIEW_REQUIRED — attach as a reference (we store provenance + a public URL, not the bytes).
+          type: string
+          enum: [IMPORT_ALLOWED, HOTLINK_ONLY, REVIEW_REQUIRED]
+        metadata: { type: object, additionalProperties: true }
+
+    AdminMediaAsset:
+      description: A thumbnail image attached to an Entity, EntityType, or Category, with its provenance. `isPrimary` marks the one currently shown.
+      type: object
+      required: [id, sourceType, importRule, publicUrl, isPrimary, createdAt]
+      properties:
+        id: { type: string }
+        sourceType: { type: string, enum: [UPLOAD, PROVIDER_IMPORT, PROVIDER_REFERENCE] }
+        provider: { type: string, nullable: true }
+        sourceId: { type: string, nullable: true }
+        sourceUrl: { type: string, nullable: true }
+        landingUrl: { type: string, nullable: true }
+        creator: { type: string, nullable: true }
+        license: { type: string, nullable: true }
+        licenseUrl: { type: string, nullable: true }
+        attribution: { type: string, nullable: true }
+        importRule: { type: string, enum: [IMPORT_ALLOWED, HOTLINK_ONLY, REVIEW_REQUIRED] }
+        publicUrl: { type: string, nullable: true }
+        mimeType: { type: string, nullable: true }
+        byteSize: { type: integer, nullable: true }
+        originalWidth: { type: integer, nullable: true }
+        originalHeight: { type: integer, nullable: true }
+        isPrimary: { type: boolean }
+        createdAt: { type: string, format: date-time }
+
+    AdminAttachImageInput:
+      description: Attach an already-found provider candidate to exactly one taxonomy target (entityId, entityTypeId, or categoryId).
+      type: object
+      required: [candidate]
+      properties:
+        entityId: { type: string }
+        entityTypeId: { type: string }
+        categoryId: { type: string }
+        candidate: { $ref: '#/components/schemas/AdminImageCandidate' }
+
+    AdminSearchImagesInput:
+      type: object
+      required: [query]
+      properties:
+        query: { type: string, minLength: 1, maxLength: 200 }
+        entityTypeLabel: { type: string, maxLength: 150 }
+        parentPath: { type: string, maxLength: 500 }
+
+    # ── Admin: Taxonomy (batch 5) ───────────────────────────────
+    AdminEntityTypeScalar:
+      type: object
+      required: [id, slug, label, pluralLabel, parentId, icon, isActive]
+      properties:
+        id: { type: string }
+        slug: { type: string }
+        label: { type: string }
+        pluralLabel: { type: string }
+        parentId: { type: string, nullable: true }
+        icon: { type: string, nullable: true }
+        isActive: { type: boolean }
+
+    AdminEntityType:
+      allOf:
+        - $ref: '#/components/schemas/AdminEntityTypeScalar'
+        - type: object
+          required: [mediaAssets]
+          properties:
+            mediaAssets:
+              type: array
+              items: { $ref: '#/components/schemas/AdminMediaAsset' }
+
+    AdminEntityScalar:
+      type: object
+      required: [id, entityTypeId, canonicalName, slug, parentId, imageUrl, metadata, sourceType, status, mergedIntoId, usageCount]
+      properties:
+        id: { type: string }
+        entityTypeId: { type: string }
+        canonicalName: { type: string }
+        slug: { type: string }
+        parentId: { type: string, nullable: true }
+        imageUrl: { type: string, nullable: true }
+        metadata: { type: object, nullable: true, additionalProperties: true }
+        sourceType: { type: string, enum: [SEEDED, IMPORTED, USER_SUBMITTED, AI_GENERATED] }
+        status: { type: string, enum: [PENDING, APPROVED, REJECTED, MERGED] }
+        mergedIntoId: { type: string, nullable: true }
+        usageCount: { type: integer }
+
+    AdminEntity:
+      allOf:
+        - $ref: '#/components/schemas/AdminEntityScalar'
+        - type: object
+          required: [mediaAssets, externalRefs]
+          properties:
+            mediaAssets:
+              type: array
+              items: { $ref: '#/components/schemas/AdminMediaAsset' }
+            externalRefs:
+              type: array
+              items: { type: object, additionalProperties: true }
+
+    AdminCategoryScalar:
+      type: object
+      required:
+        [
+          id,
+          groupId,
+          entityTypeId,
+          parentEntityId,
+          slug,
+          prompt,
+          shortLabel,
+          minItems,
+          maxItems,
+          orderingMode,
+          isMatchSignal,
+          isPremiumOnly,
+          isActive,
+        ]
+      properties:
+        id: { type: string }
+        groupId: { type: string }
+        entityTypeId: { type: string }
+        parentEntityId: { type: string, nullable: true }
+        slug: { type: string }
+        prompt: { type: string }
+        shortLabel: { type: string }
+        minItems: { type: integer }
+        maxItems: { type: integer }
+        orderingMode: { type: string, enum: [RANKED, UNRANKED] }
+        isMatchSignal: { type: boolean }
+        isPremiumOnly: { type: boolean }
+        isActive: { type: boolean }
+
+    AdminCategory:
+      description: A List Definition (Category row) as seen by the admin Lists browser/editor — includes denormalized group/type/parent info the plain Category schema doesn't need.
+      allOf:
+        - $ref: '#/components/schemas/AdminCategoryScalar'
+        - type: object
+          required: [group, entityType, parentEntity, mediaAssets]
+          properties:
+            group: { $ref: '#/components/schemas/CategoryGroup' }
+            entityType: { $ref: '#/components/schemas/AdminEntityTypeScalar' }
+            parentEntity:
+              type: object
+              nullable: true
+              allOf:
+                - $ref: '#/components/schemas/AdminEntityScalar'
+            mediaAssets:
+              type: array
+              items: { $ref: '#/components/schemas/AdminMediaAsset' }
+
+    AdminCreateListDefinitionInput:
+      type: object
+      required: [groupId, entityTypeId, slug, prompt, shortLabel]
+      properties:
+        groupId: { type: string }
+        entityTypeId: { type: string }
+        parentEntityId: { type: string, nullable: true }
+        slug: { type: string }
+        prompt: { type: string }
+        shortLabel: { type: string }
+        minItems: { type: integer, minimum: 1 }
+        maxItems: { type: integer, minimum: 1 }
+        orderingMode: { type: string, enum: [RANKED, UNRANKED] }
+        isMatchSignal: { type: boolean }
+        isPremiumOnly: { type: boolean }
+        isActive: { type: boolean }
+        tags:
+          description: Tag ids this list requires a search to match. Not currently editable from the admin Lists screen (kept for forward compatibility with apps/admin's field, which also never wired up a tags editor here).
+          type: array
+          items: { type: string }
+
+    AdminUpdateListDefinitionInput:
+      type: object
+      required: [groupId, entityTypeId, slug, prompt, shortLabel]
+      properties:
+        groupId: { type: string }
+        entityTypeId: { type: string }
+        parentEntityId: { type: string, nullable: true }
+        slug: { type: string }
+        prompt: { type: string }
+        shortLabel: { type: string }
+        minItems: { type: integer, minimum: 1 }
+        maxItems: { type: integer, minimum: 1 }
+        orderingMode: { type: string, enum: [RANKED, UNRANKED] }
+        isMatchSignal: { type: boolean }
+        isPremiumOnly: { type: boolean }
+        isActive: { type: boolean }
+        tags:
+          description: Tag ids this list requires a search to match. Not currently editable from the admin Lists screen (kept for forward compatibility with apps/admin's field, which also never wired up a tags editor here).
+          type: array
+          items: { type: string }
+
+    AdminCuratedEntity:
+      description: One entity explicitly curated into a List Definition, in display order. Has no `id` of its own — CategoryEntity is a (categoryId, entityId) composite key in the schema.
+      type: object
+      required: [categoryId, entityId, sortOrder, entity]
+      properties:
+        categoryId: { type: string }
+        entityId: { type: string }
+        sortOrder: { type: integer }
+        entity: { $ref: '#/components/schemas/AdminEntityScalar' }
+
+    AdminCuratedEntityInput:
+      type: object
+      required: [entityId, sortOrder]
+      properties:
+        entityId: { type: string }
+        sortOrder: { type: integer }
+
+    AdminUpdateCuratedEntitiesInput:
+      type: object
+      required: [entities]
+      properties:
+        entities:
+          type: array
+          items: { $ref: '#/components/schemas/AdminCuratedEntityInput' }
+
+    AdminCreateEntityTypeInput:
+      type: object
+      required: [slug, label, pluralLabel]
+      properties:
+        slug: { type: string }
+        label: { type: string }
+        pluralLabel: { type: string }
+        parentId: { type: string, nullable: true }
+        icon: { type: string, nullable: true }
+
+    AdminUpdateEntityTypeInput:
+      type: object
+      required: [slug, label, pluralLabel]
+      properties:
+        slug: { type: string }
+        label: { type: string }
+        pluralLabel: { type: string }
+        parentId: { type: string, nullable: true }
+        icon: { type: string, nullable: true }
+        isActive: { type: boolean }
+
+    AdminCreateEntityInput:
+      type: object
+      required: [entityTypeId, canonicalName, slug]
+      properties:
+        entityTypeId: { type: string }
+        canonicalName: { type: string }
+        slug: { type: string }
+        parentId: { type: string, nullable: true }
+
+    AdminUpdateEntityInput:
+      type: object
+      required: [canonicalName, slug]
+      properties:
+        canonicalName: { type: string }
+        slug: { type: string }
+        parentId: { type: string, nullable: true }
+        status: { type: string, enum: [PENDING, APPROVED, REJECTED, MERGED] }
+
+    AdminGenerateEntitiesInput:
+      type: object
+      required: [categoryName, prompt]
+      properties:
+        categoryName: { type: string }
+        prompt: { type: string }
+        count: { type: integer, minimum: 1, maximum: 50, default: 10 }
+
+    AdminBulkSaveEntitiesInput:
+      type: object
+      required: [entityTypeId, entities]
+      properties:
+        entityTypeId: { type: string }
+        parentId: { type: string, nullable: true }
+        entities:
+          type: array
+          items: { type: string }
+          minItems: 1
+
 paths:
   # ── Auth ────────────────────────────────────────────────
   /auth/register:
@@ -601,7 +1600,7 @@ paths:
               schema:
                 type: object
                 required: [data]
-                properties: { data: { $ref: '#/components/schemas/User' } }
+                properties: { data: { $ref: '#/components/schemas/UserContext' } }
         '401': { $ref: '#/components/responses/Unauthorized' }
 
   /auth/forgot-password:
@@ -1022,6 +2021,176 @@ paths:
                   meta: { $ref: '#/components/schemas/PaginatedMeta' }
         '401': { $ref: '#/components/responses/Unauthorized' }
 
+  # ── Content Feed (docs/shared-content-system-proposal.md) ─
+  /lists/feed:
+    get:
+      operationId: getListsFeed
+      summary: The Lists page as a PageSummary + FeedModule stream, grouped by topic
+      tags: [content-feed]
+      description: >
+        Backend adapter over the existing Lists/Taxonomy data (TaxonomyService,
+        ListService), reshaped per docs/shared-content-system-proposal.md. One
+        ContentCollection per non-empty CategoryGroup ("Music", "Movies & TV",
+        ...), each mixing answered and unanswered categories — completion is
+        a fact carried by the unit (`relationship.completed`), not a separate
+        section. `chips` mirror the same groups for jump-navigation (the
+        frontend treats them as scroll anchors, not filters — there is
+        nothing left to filter server-side). The whole feed is small enough
+        to return in one page; `cursor` is accepted for forward-compatibility
+        but `hasMore` is always false today.
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Page summary, chips, and one feed module per topic
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ContentFeedPageResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /lists/feed/collections/{collectionId}:
+    get:
+      operationId: getListsFeedCollection
+      summary: Paginate a single Lists-feed collection ("View all a topic's lists")
+      tags: [content-feed]
+      description: collectionId is a CategoryGroup slug (e.g. "music") — see GET /lists/feed.
+      parameters:
+        - in: path
+          name: collectionId
+          required: true
+          schema: { type: string }
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Units within the collection
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ContentUnitPageResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /discover/feed:
+    get:
+      operationId: getDiscoverFeed
+      summary: The Discover page as a People-grid feed with contextual interruptions
+      tags: [content-feed]
+      description: >
+        Wraps the existing rarity-weighted overlap feed (GET /discovery) as
+        the baseline Grid, adding a "similar taste" Rail keyed off the
+        viewer's own #1 pick, one embedded Quick Picks interactive module,
+        and a conditional Spotlight for an exceptional match — all
+        optional/sparse per docs §1. Mutual gender compatibility is always
+        applied as a baseline correctness rule, not an optional filter.
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+        - in: query
+          name: groupSlug
+          description: >
+            A CategoryGroup slug — the *taste* filter axis: restricts to
+            people with real engagement (a started or completed list) in
+            that group, not people tagged with it. This is the ~70% of
+            Discover's categorization that isn't demographic.
+          schema: { type: string }
+        - in: query
+          name: nearMe
+          description: Requires the viewer to have their own location set — returns nobody outside the radius rather than silently ignoring the filter.
+          schema: { type: boolean }
+        - in: query
+          name: ageBucket
+          schema: { $ref: '#/components/schemas/AgeBucket' }
+      responses:
+        '200':
+          description: Feed modules (no PageSummary — Discover has no viewer-aggregate header)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ContentFeedPageResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /discover/feed/collections/{collectionId}:
+    get:
+      operationId: getDiscoverFeedCollection
+      summary: Paginate a single Discover-feed collection ("View all")
+      tags: [content-feed]
+      parameters:
+        - in: path
+          name: collectionId
+          required: true
+          schema: { type: string }
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Units within the collection
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ContentUnitPageResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # ── Quick Picks ─────────────────────────────────────────
+  /quick-picks/next:
+    get:
+      operationId: getNextQuickPick
+      summary: Get the next Quick Picks quiz prompt
+      tags: [quick-picks]
+      description: >
+        A rapid A-vs-B taxonomy choice, drawn from whatever Categories exist
+        (never a hard-coded topic list — see QuickPicksService). Call again
+        after every choice; the quiz has no defined end.
+      parameters:
+        - in: query
+          name: context
+          description: >
+            "discover" tries to ground both options in a real person from the
+            viewer's current Discover pool (optionA/BRepresentative) instead
+            of two bare things — falls back to the plain prompt if no pair
+            of candidates can be found.
+          schema: { type: string, enum: [discover] }
+      responses:
+        '200':
+          description: A pairwise choice prompt
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties: { data: { $ref: '#/components/schemas/QuickPickPrompt' } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /quick-picks/choice:
+    post:
+      operationId: submitQuickPickChoice
+      summary: Persist a Quick Picks choice and return how it compares to the rest of the site
+      tags: [quick-picks]
+      description: >
+        Never alters a ranked List — this is a separate, additional taste
+        signal. One comparison in, one result back — the client does not
+        need a second request to show "X% of people also picked this."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/QuickPickChoiceInput' }
+      responses:
+        '200':
+          description: Recorded, with the comparison result
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties: { data: { $ref: '#/components/schemas/QuickPickResult' } }
+        '400':
+          description: Winner and loser must differ
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
   # ── Messaging ───────────────────────────────────────────
   /conversations:
     get:
@@ -1140,6 +2309,38 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /conversations/{conversationId}:
+    delete:
+      operationId: unmatchConversation
+      summary: Unmatch — permanently end a match and delete the conversation
+      tags: [messaging]
+      description: >
+        Deletes the Swipe rows between the two participants (both directions)
+        so they become eligible for Discover again, then deletes the
+        Conversation itself (cascades to its Messages). Irreversible — unlike
+        a Block, this does not prevent the other person from re-liking the
+        caller in the future.
+      parameters:
+        - in: path
+          name: conversationId
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Unmatched
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: object
+                    required: [success]
+                    properties: { success: { type: boolean } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
         '404': { $ref: '#/components/responses/NotFound' }
 
   /conversations/{conversationId}/read:
@@ -1396,3 +2597,1014 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/ErrorResponse' }
         '401': { $ref: '#/components/responses/Unauthorized' }
+
+  # ── Admin ─────────────────────────────────────────────────
+  # First slice of the apps/admin -> apps/mobile Admin migration (see
+  # CLAUDE.md's migration batches). getQueueMetrics already existed as a
+  # hand-registered Fastify route/handler (apps/server/src/handlers/admin.ts)
+  # — reused as-is here, just moved onto the spec-driven glue routing so the
+  # mobile Admin area can consume it through the normal SDK layer instead of
+  # raw fetch, matching every other route in this file.
+  /admin/queue:
+    get:
+      operationId: getQueueMetrics
+      summary: Job queue health — counts by status, oldest pending, most recent failures
+      tags: [admin]
+      security:
+        - adminAuth: []
+      responses:
+        '200':
+          description: Job queue metrics
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AdminQueueMetrics' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /admin/moderation/submissions:
+    get:
+      operationId: getEntitySubmissions
+      summary: List entity submissions awaiting (or already given) moderation review
+      tags: [admin]
+      security:
+        - adminAuth: []
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+        - in: query
+          name: status
+          schema: { type: string, enum: [PENDING, APPROVED, REJECTED, MERGED], default: PENDING }
+      responses:
+        '200':
+          description: A page of entity submissions
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [submissions, hasMore, nextCursor]
+                properties:
+                  submissions:
+                    type: array
+                    items: { $ref: '#/components/schemas/AdminEntitySubmission' }
+                  hasMore: { type: boolean }
+                  nextCursor: { type: string, nullable: true }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /admin/moderation/submissions/{id}/review:
+    post:
+      operationId: reviewEntitySubmission
+      summary: Approve, reject, or merge a pending entity submission
+      tags: [admin]
+      security:
+        - adminAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AdminEntitySubmissionReviewInput' }
+      responses:
+        '200':
+          description: The reviewed submission
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [submission]
+                properties:
+                  submission: { $ref: '#/components/schemas/AdminEntitySubmissionScalar' }
+        '400':
+          description: Invalid action, or the submission was already reviewed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /admin/moderation/reports:
+    get:
+      operationId: getReports
+      summary: List safety reports (profile or message) awaiting (or already given) moderation review
+      tags: [admin]
+      security:
+        - adminAuth: []
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+        - in: query
+          name: status
+          schema: { type: string, enum: [PENDING, REVIEWED, ACTIONED], default: PENDING }
+      responses:
+        '200':
+          description: A page of reports
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [reports, hasMore, nextCursor]
+                properties:
+                  reports:
+                    type: array
+                    items: { $ref: '#/components/schemas/AdminReport' }
+                  hasMore: { type: boolean }
+                  nextCursor: { type: string, nullable: true }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /admin/moderation/reports/{id}/review:
+    post:
+      operationId: reviewReport
+      summary: Mark a report reviewed, or actioned once real enforcement (e.g. a ban) has been taken
+      tags: [admin]
+      security:
+        - adminAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AdminReportReviewInput' }
+      responses:
+        '200':
+          description: The reviewed report
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [report]
+                properties:
+                  report: { $ref: '#/components/schemas/AdminReportScalar' }
+        '400':
+          description: Invalid status
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # GET was pulled forward in batch 2 for the Moderation merge-target picker
+  # (using the lean consumer Entity schema, which is all that picker needs);
+  # upgraded to AdminEntity here in batch 5 now that Taxonomy's own tree
+  # browser needs the fuller admin shape (parentId, sourceType, etc.) — same
+  # operationId/handler, richer contract, no consumer of the old shape breaks
+  # since every dropped field was already optional to them.
+  /admin/taxonomy/entities:
+    get:
+      operationId: getEntities
+      summary: List entities, optionally filtered by type or parent — used for the taxonomy tree browser and the Moderation merge-target picker
+      tags: [admin]
+      security:
+        - adminAuth: []
+      parameters:
+        - in: query
+          name: entityTypeId
+          schema: { type: string }
+        - in: query
+          name: parentId
+          schema: { type: string }
+          description: Pass the literal string "null" to fetch root-level entities of a type.
+      responses:
+        '200':
+          description: Matching entities
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [entities]
+                properties:
+                  entities:
+                    type: array
+                    items: { $ref: '#/components/schemas/AdminEntity' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      operationId: createEntity
+      summary: Create a new entity value under a type (and optional parent entity)
+      tags: [admin]
+      security:
+        - adminAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AdminCreateEntityInput' }
+      responses:
+        '201':
+          description: The created entity
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [entity]
+                properties:
+                  entity: { $ref: '#/components/schemas/AdminEntityScalar' }
+        '400':
+          description: Missing field, or parent entity's type does not match the expected hierarchy
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /admin/taxonomy/entities/{id}:
+    put:
+      operationId: updateEntity
+      summary: Update an entity's name, slug, parent, or status
+      tags: [admin]
+      security:
+        - adminAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AdminUpdateEntityInput' }
+      responses:
+        '200':
+          description: The updated entity
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [entity]
+                properties:
+                  entity: { $ref: '#/components/schemas/AdminEntityScalar' }
+        '400':
+          description: Missing field, reparent cycle detected, or new parent's type does not match the expected hierarchy
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /admin/taxonomy/entities/generate:
+    post:
+      operationId: generateEntities
+      summary: AI-generate candidate entity names for a category (review-and-save via the bulk endpoint, nothing is persisted here)
+      tags: [admin]
+      security:
+        - adminAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AdminGenerateEntitiesInput' }
+      responses:
+        '200':
+          description: Candidate names
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [candidates]
+                properties:
+                  candidates:
+                    type: array
+                    items: { type: string }
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '500':
+          description: The AI generation call failed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  /admin/taxonomy/entities/bulk:
+    post:
+      operationId: bulkSaveEntities
+      summary: Save a batch of reviewed candidate names as real entities (idempotent per name — upserts on slug)
+      tags: [admin]
+      security:
+        - adminAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AdminBulkSaveEntitiesInput' }
+      responses:
+        '200':
+          description: Save result
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success, count, entities]
+                properties:
+                  success: { type: boolean }
+                  count: { type: integer }
+                  entities:
+                    type: array
+                    items: { $ref: '#/components/schemas/AdminEntityScalar' }
+        '400':
+          description: Invalid input, or parent entity's type does not match the expected hierarchy
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /admin/taxonomy/types:
+    get:
+      operationId: getEntityTypes
+      summary: List all entity types (flat — types are hierarchical via parentId, not nested in the response)
+      tags: [admin]
+      security:
+        - adminAuth: []
+      responses:
+        '200':
+          description: All entity types
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [entityTypes]
+                properties:
+                  entityTypes:
+                    type: array
+                    items: { $ref: '#/components/schemas/AdminEntityType' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      operationId: createEntityType
+      summary: Create a new entity type
+      tags: [admin]
+      security:
+        - adminAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AdminCreateEntityTypeInput' }
+      responses:
+        '200':
+          description: The created entity type
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [entityType]
+                properties:
+                  entityType: { $ref: '#/components/schemas/AdminEntityTypeScalar' }
+        '400':
+          description: Missing field, or parent type not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /admin/taxonomy/types/{id}:
+    put:
+      operationId: updateEntityType
+      summary: Update an entity type's label, slug, parent, icon, or active status
+      tags: [admin]
+      security:
+        - adminAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AdminUpdateEntityTypeInput' }
+      responses:
+        '200':
+          description: The updated entity type
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [entityType]
+                properties:
+                  entityType: { $ref: '#/components/schemas/AdminEntityTypeScalar' }
+        '400':
+          description: Missing field, or reparent cycle detected
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # ── Admin: List Definitions (batch 6) ────────────────────────────────
+  /admin/lists/definitions:
+    get:
+      operationId: getListDefinitions
+      summary: List every List Definition (Category row) for the admin Lists browser
+      tags: [admin]
+      security:
+        - adminAuth: []
+      responses:
+        '200':
+          description: All list definitions
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [categories]
+                properties:
+                  categories:
+                    type: array
+                    items: { $ref: '#/components/schemas/AdminCategory' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      operationId: createListDefinition
+      summary: Create a new List Definition (Category)
+      tags: [admin]
+      security:
+        - adminAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AdminCreateListDefinitionInput' }
+      responses:
+        '201':
+          description: The created list definition
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [category]
+                properties:
+                  category: { $ref: '#/components/schemas/AdminCategoryScalar' }
+        '400':
+          description: Missing field
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /admin/lists/definitions/{id}:
+    put:
+      operationId: updateListDefinition
+      summary: Update a List Definition's configuration (scope, prompt, item counts, flags)
+      tags: [admin]
+      security:
+        - adminAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AdminUpdateListDefinitionInput' }
+      responses:
+        '200':
+          description: The updated list definition
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [category]
+                properties:
+                  category: { $ref: '#/components/schemas/AdminCategoryScalar' }
+        '400':
+          description: Missing field
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /admin/lists/definitions/{id}/entities:
+    get:
+      operationId: getListDefinitionCuratedEntities
+      summary: The entities explicitly curated into this List Definition, in display order
+      tags: [admin]
+      security:
+        - adminAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Curated entities
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [curatedEntities]
+                properties:
+                  curatedEntities:
+                    type: array
+                    items: { $ref: '#/components/schemas/AdminCuratedEntity' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    put:
+      operationId: updateListDefinitionCuratedEntities
+      summary: Replace this List Definition's curated entities and their order (full replace, not a merge)
+      tags: [admin]
+      security:
+        - adminAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AdminUpdateCuratedEntitiesInput' }
+      responses:
+        '200':
+          description: The list's curated entities after the replace
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [curatedEntities]
+                properties:
+                  curatedEntities:
+                    type: array
+                    items: { $ref: '#/components/schemas/AdminCuratedEntity' }
+        '400':
+          description: entities must be an array
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # ── Admin: Media (batch 7) ────────────────────────────────
+  /admin/media/search:
+    post:
+      operationId: searchTaxonomyImages
+      summary: Search trusted image providers (wikimedia, tmdb, openverse, unsplash, pexels, pixabay) for candidate thumbnails
+      tags: [admin]
+      security:
+        - adminAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AdminSearchImagesInput' }
+      responses:
+        '200':
+          description: Candidate images, ranked and capped at 60 total across all providers
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [candidates]
+                properties:
+                  candidates:
+                    type: array
+                    items: { $ref: '#/components/schemas/AdminImageCandidate' }
+        '400':
+          description: query is required
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /admin/media/import:
+    post:
+      operationId: importTaxonomyImage
+      summary: Copy an IMPORT_ALLOWED provider candidate's bytes onto our own storage and attach it as the target's primary image
+      tags: [admin]
+      security:
+        - adminAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AdminAttachImageInput' }
+      responses:
+        '201':
+          description: The attached image
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [asset]
+                properties:
+                  asset: { $ref: '#/components/schemas/AdminMediaAsset' }
+        '400':
+          description: Missing/invalid candidate, or the source host isn't an approved provider host
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409':
+          description: The candidate isn't approved for import (use /admin/media/reference instead)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '413':
+          description: Remote image exceeds the import size limit
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '502':
+          description: The provider's image host did not return the image
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  /admin/media/reference:
+    post:
+      operationId: referenceTaxonomyImage
+      summary: Attach a HOTLINK_ONLY/REVIEW_REQUIRED candidate by provenance and public URL only — we never copy the bytes (falls back to a real import for an IMPORT_ALLOWED candidate)
+      tags: [admin]
+      security:
+        - adminAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AdminAttachImageInput' }
+      responses:
+        '201':
+          description: The attached image
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [asset]
+                properties:
+                  asset: { $ref: '#/components/schemas/AdminMediaAsset' }
+        '400':
+          description: Missing/invalid candidate
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /admin/media/upload:
+    post:
+      operationId: uploadTaxonomyImage
+      summary: Upload a local image file (multipart) and attach it as the target's primary image — normalized server-side (rotated, bounded to 1000px, re-encoded to WebP)
+      description: >
+        Multipart request — fields `entityId`/`entityTypeId`/`categoryId` (exactly
+        one), an optional `crop` JSON field, and the `file` itself. No
+        requestBody schema is declared here on purpose: `@fastify/multipart`
+        never populates `request.body`, so any declared schema (even `{}`)
+        makes every real upload fail ajv's "must be object" check — see
+        MediaService's own /media/upload for the same fix. `MediaAssetPicker`
+        already does real file-type/size validation.
+      tags: [admin]
+      security:
+        - adminAuth: []
+      responses:
+        '201':
+          description: The attached image
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [asset]
+                properties:
+                  asset: { $ref: '#/components/schemas/AdminMediaAsset' }
+        '400':
+          description: No file uploaded, or no taxonomy target given
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '415':
+          description: Unsupported or undecodable image format
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  /admin/media/assets:
+    get:
+      operationId: listTaxonomyImages
+      summary: List every image ever attached to a taxonomy target, most recent first (the current one is the isPrimary row)
+      tags: [admin]
+      security:
+        - adminAuth: []
+      parameters:
+        - in: query
+          name: entityId
+          schema: { type: string }
+        - in: query
+          name: entityTypeId
+          schema: { type: string }
+        - in: query
+          name: categoryId
+          schema: { type: string }
+      responses:
+        '200':
+          description: This target's image history
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [assets]
+                properties:
+                  assets:
+                    type: array
+                    items: { $ref: '#/components/schemas/AdminMediaAsset' }
+        '400':
+          description: A taxonomy target is required
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  # ── Admin: Users (batch 3) ────────────────────────────────
+  /admin/users:
+    get:
+      operationId: getUsers
+      summary: List users, optionally filtered by search term or active plan
+      tags: [admin]
+      security:
+        - adminAuth: []
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+        - in: query
+          name: search
+          schema: { type: string }
+          description: Matches email, exact user id, display name, or username.
+        - in: query
+          name: planId
+          schema: { type: string }
+          description: Only users with an ACTIVE subscription to this plan.
+      responses:
+        '200':
+          description: A page of users
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [users, hasMore, nextCursor]
+                properties:
+                  users:
+                    type: array
+                    items: { $ref: '#/components/schemas/AdminUserSummary' }
+                  hasMore: { type: boolean }
+                  nextCursor: { type: string, nullable: true }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /admin/users/{id}:
+    get:
+      operationId: getUser
+      summary: A single user's full account state, membership, and admin audit history
+      tags: [admin]
+      security:
+        - adminAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: User detail
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [user, auditEvents]
+                properties:
+                  user: { $ref: '#/components/schemas/AdminUserDetail' }
+                  auditEvents:
+                    type: array
+                    items: { $ref: '#/components/schemas/AdminAuditEvent' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /admin/users/ban:
+    post:
+      operationId: banUser
+      summary: Suspend or restore a user account
+      tags: [admin]
+      security:
+        - adminAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AdminBanUserInput' }
+      responses:
+        '200':
+          description: The updated user
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [user]
+                properties:
+                  user: { $ref: '#/components/schemas/AdminUserScalar' }
+        '400':
+          description: Cannot ban your own account
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /admin/users/verify:
+    post:
+      operationId: verifyUser
+      summary: Manually mark a user's email verified or unverified
+      tags: [admin]
+      security:
+        - adminAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AdminVerifyUserInput' }
+      responses:
+        '200':
+          description: The updated user
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [user]
+                properties:
+                  user: { $ref: '#/components/schemas/AdminUserScalar' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /admin/users/membership:
+    post:
+      operationId: overrideUserMembership
+      summary: Grant or change a user's active plan manually (support/comp access)
+      tags: [admin]
+      security:
+        - adminAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AdminOverrideMembershipInput' }
+      responses:
+        '200':
+          description: The resulting subscription
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [subscription]
+                properties:
+                  subscription: { $ref: '#/components/schemas/AdminSubscriptionScalar' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /admin/users/membership/revoke:
+    post:
+      operationId: revokeUserMembership
+      summary: Cancel a user's active membership immediately
+      tags: [admin]
+      security:
+        - adminAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AdminRevokeMembershipInput' }
+      responses:
+        '200':
+          description: The canceled subscription
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [subscription]
+                properties:
+                  subscription: { $ref: '#/components/schemas/AdminSubscriptionScalar' }
+        '400':
+          description: User has no active membership to revoke
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # Owned by the future Memberships migration batch, but the Users detail
+  # screen's membership-override picker genuinely depends on the plan list —
+  # same pulled-forward-read pattern as /admin/taxonomy/entities above. Only
+  # the read is migrated; create/update stay on Memberships' batch.
+  /admin/plans:
+    get:
+      operationId: getPlans
+      summary: List all plans (active and archived) with their active-subscriber counts
+      tags: [admin]
+      security:
+        - adminAuth: []
+      responses:
+        '200':
+          description: All plans
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [plans]
+                properties:
+                  plans:
+                    type: array
+                    items: { $ref: '#/components/schemas/AdminPlan' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      operationId: createPlan
+      summary: Create a new membership plan
+      tags: [admin]
+      security:
+        - adminAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AdminCreatePlanInput' }
+      responses:
+        '200':
+          description: The created plan
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [plan]
+                properties:
+                  plan: { $ref: '#/components/schemas/AdminPlanScalar' }
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /admin/plans/update:
+    post:
+      operationId: updatePlan
+      summary: Update a plan's price, active status, or entitlements
+      tags: [admin]
+      security:
+        - adminAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AdminUpdatePlanInput' }
+      responses:
+        '200':
+          description: The updated plan
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [plan]
+                properties:
+                  plan: { $ref: '#/components/schemas/AdminPlanScalar' }
+        '400':
+          description: Price or entitlements changed on a plan with active subscriptions
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
