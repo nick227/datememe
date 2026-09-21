@@ -9,6 +9,7 @@ import { useIsDesktop } from '../../lib/useResponsive'
 import type { ContentUnit, GridShape, StructureState } from './types'
 
 type Props = {
+  testID?: string
   title?: string | null
   items: ContentUnit[]
   state: StructureState
@@ -22,16 +23,26 @@ type Props = {
 // few-per-row" cards with room for real content, not a dense inventory.
 // `columns` (from ContentCollection.options, a backend hint) overrides it;
 // `gridShape='dense'` is the one explicit opt-in for a tighter grid.
-export function Grid({ title, items, state, gridShape = 'square', columns, onPressItem, onRetry }: Props) {
+//
+// Every grid — category-kind (topic groups + Site Picks) and person-kind
+// (Discover's People grid) alike — renders the compact ~3:4 "poster" card
+// (CategoryUnitCard/PersonUnitCard's grid-square path): a fixed small
+// shape, not "however wide the column is". Both kinds used to fork here
+// (person grids trusted the backend's `columns` hint instead), which read
+// as two different visual systems on the same app — unified per the "small
+// card style from Lists" request. The backend's `columns` hint is still
+// advisory only; frontend has final say.
+export function Grid({ testID, title, items, state, gridShape = 'square', columns, onPressItem, onRetry }: Props) {
   const isDesktop = useIsDesktop()
-  const desktopColumns = columns ?? (gridShape === 'dense' ? 4 : 2)
-  const mobileColumns = gridShape === 'dense' ? 2 : 1
+  const isCompactCardGrid = gridShape !== 'dense'
+  const desktopColumns = isCompactCardGrid ? 4 : columns ?? (gridShape === 'dense' ? 4 : 2)
+  const mobileColumns = isCompactCardGrid || gridShape === 'dense' ? 2 : 1
   const resolvedColumns = isDesktop ? desktopColumns : mobileColumns
   const widthPercent = `${100 / resolvedColumns}%` as const
   const variant = gridShape === 'dense' ? 'grid-dense' : 'grid-square'
 
   return (
-    <View style={styles.section}>
+    <View testID={testID} style={styles.section}>
       {title ? (
         <Typography variant="heading" style={styles.heading}>
           {title}
@@ -62,7 +73,7 @@ function GridSkeleton({ columns, widthPercent }: { columns: number; widthPercent
     <View style={styles.grid}>
       {Array.from({ length: columns * 2 }).map((_, i) => (
         <View key={i} style={[styles.cell, { width: widthPercent }]}>
-          <Skeleton variant="rect" width="100%" height={120} />
+          <Skeleton variant="rect" width="100%" height={260} />
         </View>
       ))}
     </View>

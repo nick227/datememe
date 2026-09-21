@@ -892,25 +892,66 @@ async function main() {
     orderingMode: 'UNRANKED',
   })
 
+  // ── Site Picks ───────────────────────────────────────────
+  // 12 admin-curated groups of exactly 4 existing List Definitions each —
+  // surfaced by ContentFeedService.getListsFeed immediately after "Your
+  // lists" and before the first Quick Picks beat. References the Category
+  // rows seeded above by slug; nothing is duplicated. Each group's own
+  // `label` is what actually renders as that grid's title in the feed — see
+  // AdminSitePicksScreen for the equivalent admin editor.
+  console.log('Seeding Site Picks...')
+  // Slugs deliberately bare (no "site-picks-" prefix) — ContentFeedService
+  // prefixes the feed module id with "site-picks-" itself; prefixing here
+  // too would double it up (site-picks-site-picks-music).
+  const sitePicksGroups: { slug: string; label: string; categorySlugs: string[] }[] = [
+    { slug: 'music', label: 'Music', categorySlugs: ['top-90s-bands', 'top-rock-bands', 'top-pop-artists', 'top-hiphop-artists'] },
+    { slug: 'film-tv', label: 'Video', categorySlugs: ['top-movies', 'favorite-horror-movies', 'top-tv-shows', 'top-sitcoms'] },
+    { slug: 'food', label: 'Food & drink', categorySlugs: ['go-to-fast-food', 'go-to-coffee-chain', 'essential-pizza-toppings', 'favorite-cuisines'] },
+    { slug: 'gaming', label: 'Gaming', categorySlugs: ['top-ps5-action-games', 'favorite-board-games', 'favorite-game-consoles', 'favorite-video-game-genres'] },
+    { slug: 'tech', label: 'Tech', categorySlugs: ['favorite-ide', 'go-to-programming-language', 'primary-web-browser', 'essential-tech-gadgets'] },
+    { slug: 'creators', label: 'Creators', categorySlugs: ['favorite-youtubers', 'favorite-twitch-streamers', 'favorite-edutubers', 'top-podcasts'] },
+    { slug: 'career', label: 'Career', categorySlugs: ['dream-job', 'favorite-workplace-perks', 'biggest-workplace-pet-peeves', 'ideal-weekend-activity'] },
+    { slug: 'travel', label: 'Travel', categorySlugs: ['favorite-state', 'dream-travel-destinations', 'favorite-national-parks', 'preferred-airline'] },
+    { slug: 'sports', label: 'Fitness', categorySlugs: ['favorite-sports-teams', 'top-athletes', 'favorite-workouts', 'favorite-gym-chain'] },
+    { slug: 'books', label: 'Books', categorySlugs: ['favorite-books', 'favorite-scifi-books', 'favorite-book-genres', 'favorite-19th-century-authors'] },
+    { slug: 'brands', label: 'Brands', categorySlugs: ['favorite-clothing-brands', 'favorite-retail-stores', 'favorite-car-brands', 'go-to-hotel-chain'] },
+    { slug: 'craft', label: 'Culture', categorySlugs: ['favorite-craft-medium', 'favorite-art-styles', 'favorite-music-festivals', 'favorite-movie-directors'] },
+  ]
+
+  const allSitePickSlugs = sitePicksGroups.flatMap((g) => g.categorySlugs)
+  const sitePickCategories = await db.category.findMany({ where: { slug: { in: allSitePickSlugs } }, select: { id: true, slug: true } })
+  const categoryIdBySlug = new Map(sitePickCategories.map((c) => [c.slug, c.id]))
+
+  for (const [index, group] of sitePicksGroups.entries()) {
+    const sitePickGroup = await db.sitePickGroup.upsert({
+      where: { slug: group.slug },
+      update: { label: group.label, sortOrder: index },
+      create: { slug: group.slug, label: group.label, sortOrder: index },
+    })
+    for (const [itemIndex, categorySlug] of group.categorySlugs.entries()) {
+      const categoryId = categoryIdBySlug.get(categorySlug)
+      if (!categoryId) continue
+      await db.sitePickItem.upsert({
+        where: { groupId_categoryId: { groupId: sitePickGroup.id, categoryId } },
+        update: { sortOrder: itemIndex },
+        create: { groupId: sitePickGroup.id, categoryId, sortOrder: itemIndex },
+      })
+    }
+  }
+
   // ── Plans ────────────────────────────────────────────────
-  // `features` explicit on both create AND update — MySQL doesn't apply
-  // Prisma's `@default("{}")` for JSON columns the way `db push` implies, so
-  // these two rows were actually stored with features = '' (an empty
-  // string, not valid JSON), which crashes Prisma's own result unpacking
-  // (JSON.parse) on every single read, not just admin's — found via the
-  // apps/mobile Admin migration's live-testing of GET /admin/plans, but this
-  // broke the real premium plans for any caller. `update: { features: {} }`
-  // (not `update: {}`) is what actually repairs the already-corrupted rows
-  // on the next `db:seed`, not just future inserts.
+  // NOTE: the `features` JSON column this block's upserts once targeted no
+  // longer exists on the Plan model (schema drift predating this session) —
+  // dropped here since `db.plan.upsert` now rejects the unknown argument.
   await db.plan.upsert({
     where: { slug: 'premium-monthly' },
-    update: { features: {} },
-    create: { slug: 'premium-monthly', label: 'Premium Monthly', interval: 'MONTHLY', priceCents: 999, features: {} },
+    update: {},
+    create: { slug: 'premium-monthly', label: 'Premium Monthly', interval: 'MONTHLY', priceCents: 999 },
   })
   await db.plan.upsert({
     where: { slug: 'premium-annual' },
-    update: { features: {} },
-    create: { slug: 'premium-annual', label: 'Premium Annual', interval: 'ANNUAL', priceCents: 7999, features: {} },
+    update: {},
+    create: { slug: 'premium-annual', label: 'Premium Annual', interval: 'ANNUAL', priceCents: 7999 },
   })
 
   console.log('Seeding complete.')

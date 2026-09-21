@@ -7,6 +7,7 @@ import { spacing } from '../../theme'
 import type { ContentUnit, StructureState } from './types'
 
 type Props = {
+  testID?: string
   title?: string | null
   items: ContentUnit[]
   state: StructureState
@@ -19,11 +20,11 @@ type Props = {
 // box. It must also be dramatically larger than surrounding Grid/Rail cards,
 // not "a Grid with one item" — the enforced minHeight is what makes that true
 // regardless of how little/much content the one featured unit carries.
-export function Spotlight({ title, items, state, onPressItem, onRetry }: Props) {
+export function Spotlight({ testID, title, items, state, onPressItem, onRetry }: Props) {
   if (state === 'ready' && items.length === 0) return null
 
   return (
-    <View style={styles.section}>
+    <View testID={testID} style={styles.section}>
       {title ? (
         <Typography variant="heading" style={styles.heading}>
           {title}

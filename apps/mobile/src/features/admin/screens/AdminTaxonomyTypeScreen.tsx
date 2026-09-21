@@ -42,16 +42,16 @@ export function AdminTaxonomyTypeScreen({ route, navigation }: Props) {
     updateType.mutate(
       { id: typeId, slug, label, pluralLabel, parentId: type?.parentId ?? null, isActive },
       {
-        onSuccess: () => sheet.show({ title: 'Saved', buttons: [{ text: 'OK', onPress: () => navigation.goBack() }] }),
-        onError: (err) => sheet.show({ title: 'Could not save', message: err instanceof ApiError ? err.message : 'Try again.', buttons: [{ text: 'OK' }] }),
+        onSuccess: () => sheet.show({ title: 'Saved', buttons: [{ testID: 'admin-taxonomy-type.dialog.ok', text: 'OK', onPress: () => navigation.goBack() }] }),
+        onError: (err) => sheet.show({ title: 'Could not save', message: err instanceof ApiError ? err.message : 'Try again.', buttons: [{ testID: 'admin-taxonomy-type.dialog.ok', text: 'OK' }] }),
       },
     )
   }
 
   if (types.isLoading) {
     return (
-      <ScreenContainer width="narrow">
-        <TopNavigation alignment="left" leftAction="back" onLeftAction={() => navigation.goBack()} title="Edit type" />
+      <ScreenContainer testID="screen.admin-taxonomy-type" width="narrow">
+        <TopNavigation testID="admin-taxonomy-type.header" alignment="left" leftAction="back" onLeftAction={() => navigation.goBack()} title="Edit type" />
         <Skeleton height={200} />
       </ScreenContainer>
     )
@@ -59,28 +59,28 @@ export function AdminTaxonomyTypeScreen({ route, navigation }: Props) {
 
   if (types.isError || !type) {
     return (
-      <ScreenContainer width="narrow">
-        <TopNavigation alignment="left" leftAction="back" onLeftAction={() => navigation.goBack()} title="Edit type" />
-        <ErrorState subtitle="Couldn't load this type." onRetry={() => types.refetch()} />
+      <ScreenContainer testID="screen.admin-taxonomy-type" width="narrow">
+        <TopNavigation testID="admin-taxonomy-type.header" alignment="left" leftAction="back" onLeftAction={() => navigation.goBack()} title="Edit type" />
+        <ErrorState testID="admin-taxonomy-type.error" subtitle="Couldn't load this type." onRetry={() => types.refetch()} />
       </ScreenContainer>
     )
   }
 
   return (
-    <ScreenContainer width="narrow">
-      <TopNavigation alignment="left" leftAction="back" onLeftAction={() => navigation.goBack()} title="Edit Type" />
+    <ScreenContainer testID="screen.admin-taxonomy-type" width="narrow">
+      <TopNavigation testID="admin-taxonomy-type.header" alignment="left" leftAction="back" onLeftAction={() => navigation.goBack()} title="Edit Type" />
 
       <ScrollView>
-        <TextField label="Label" value={label} onChangeText={setLabel} />
-        <TextField label="Plural label" value={pluralLabel} onChangeText={setPluralLabel} />
-        <TextField label="Slug" value={slug} onChangeText={setSlug} autoCapitalize="none" />
+        <TextField testID="admin-taxonomy-type.label" label="Label" value={label} onChangeText={setLabel} />
+        <TextField testID="admin-taxonomy-type.plural-label" label="Plural label" value={pluralLabel} onChangeText={setPluralLabel} />
+        <TextField testID="admin-taxonomy-type.slug" label="Slug" value={slug} onChangeText={setSlug} autoCapitalize="none" />
 
         <View style={styles.toggleRow}>
           <Typography variant="body">Active (visible in app)</Typography>
-          <Button label={isActive ? 'Active' : 'Archived'} variant="secondary" onPress={() => setIsActive((v) => !v)} />
+          <Button testID="admin-taxonomy-type.is-active" label={isActive ? 'Active' : 'Archived'} variant="secondary" onPress={() => setIsActive((v) => !v)} />
         </View>
 
-        <Button label="Save changes" loading={updateType.isPending} onPress={handleSave} />
+        <Button testID="admin-taxonomy-type.save" label="Save changes" loading={updateType.isPending} onPress={handleSave} />
 
         <AdminImagePicker
           target={{ entityTypeId: typeId }}
@@ -90,7 +90,7 @@ export function AdminTaxonomyTypeScreen({ route, navigation }: Props) {
         />
       </ScrollView>
 
-      <ActionSheet config={sheet.config} onDismiss={sheet.dismiss} />
+      <ActionSheet testID="admin-taxonomy-type.dialog" config={sheet.config} onDismiss={sheet.dismiss} />
     </ScreenContainer>
   )
 }

@@ -23,6 +23,7 @@ export type DiscoveryStackParamList = {
   ProfileDetail: {
     profileId: string
     displayName: string
+    age?: number
     matchPercentage?: number
     insights?: MatchInsight[]
   }
@@ -64,4 +65,13 @@ export type AdminStackParamList = {
   AdminTaxonomyGenerate: { parentEntityId: string; parentEntityName: string; parentEntityTypeId: string }
   AdminLists: undefined
   AdminListDetail: { listId: string } | undefined
+  AdminSitePicks: undefined
+  AdminSitePickGroupDetail: { groupId: string } | undefined
+  AdminMembership: undefined
+  AdminMemberFeatures: undefined
+  AdminSignupPromotions: undefined
+  AdminCoupons: undefined
+  AdminCouponRedemptions: { couponId: string; code: string }
+  AdminEffectiveMembers: undefined
+  AdminGrants: undefined
 }

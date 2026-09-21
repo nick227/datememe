@@ -6,6 +6,7 @@ import { Icon } from './Icon'
 export type SelectOption = { label: string; value: string }
 
 type Props = {
+  testID?: string
   label?: string
   value: string
   options: SelectOption[]
@@ -15,7 +16,7 @@ type Props = {
   style?: any
 }
 
-export function SelectField({ label, value, options, onSelect, placeholder, error, style }: Props) {
+export function SelectField({ testID, label, value, options, onSelect, placeholder, error, style }: Props) {
   const [open, setOpen] = useState(false)
   
   const selectedOption = options.find((o) => o.value === value)
@@ -24,6 +25,7 @@ export function SelectField({ label, value, options, onSelect, placeholder, erro
     <View style={[styles.wrapper, style]}>
       {label ? <Text style={styles.label}>{label}</Text> : null}
       <Pressable
+        testID={testID}
         style={[styles.input, error && styles.inputError]}
         onPress={() => setOpen(true)}
       >
@@ -34,20 +36,22 @@ export function SelectField({ label, value, options, onSelect, placeholder, erro
       </Pressable>
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
-      <Modal visible={open} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+      <Modal testID={testID ? `${testID}.modal` : undefined} visible={open} animationType="slide" transparent>
+        <View testID={testID ? `${testID}.overlay` : undefined} style={styles.modalOverlay}>
+          <View testID={testID ? `${testID}.dialog` : undefined} style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>{label || placeholder}</Text>
-              <Pressable onPress={() => setOpen(false)} style={styles.closeBtn}>
+              <Text testID={testID ? `${testID}.title` : undefined} style={styles.modalTitle}>{label || placeholder}</Text>
+              <Pressable testID={testID ? `${testID}.close` : undefined} onPress={() => setOpen(false)} style={styles.closeBtn}>
                 <Icon name="X" size={24} color={colors.ink} />
               </Pressable>
             </View>
             <FlatList
+              testID={testID ? `${testID}.options` : undefined}
               data={options}
               keyExtractor={(item) => item.value}
               renderItem={({ item }) => (
                 <Pressable
+                  testID={testID ? `${testID}.option.${item.value}` : undefined}
                   style={styles.option}
                   onPress={() => {
                     onSelect(item.value)

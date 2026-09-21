@@ -4,18 +4,23 @@ import { borderWidth, colors, radius, spacing } from '../../../theme'
 
 type Props = {
   list: any
+  // Default usage is a FlatList grid cell, where `flex: 1` makes the card
+  // fill its numColumns row evenly. A full-width single-column stack (see
+  // ProfileDetailScreen) needs that cancelled so the card sizes to its own
+  // content instead of stretching to fill an unbounded auto-height parent.
+  style?: any
 }
 
-export function PreviewListCard({ list }: Props) {
+export function PreviewListCard({ list, style }: Props) {
   // Sort items 1 to 5
   const sortedItems = list.items.slice().sort((a: any, b: any) => a.rank - b.rank)
   const categoryTitle = list.category?.shortLabel ?? 'List'
-  
+
   // Try to find a thumbnail from the first item
   const thumbnail = sortedItems[0]?.entity?.imageUrl
 
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, style]}>
       <View style={styles.header}>
         {thumbnail ? (
           <Image source={{ uri: thumbnail }} style={styles.thumbnail} />

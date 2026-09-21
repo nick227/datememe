@@ -34,7 +34,7 @@ export function AdminTaxonomyGenerateScreen({ route, navigation }: Props) {
       { categoryName: parentEntityName, prompt, count: 10 },
       {
         onSuccess: (result) => setCandidates(result),
-        onError: (err) => sheet.show({ title: 'Could not generate', message: err instanceof ApiError ? err.message : 'Try again.', buttons: [{ text: 'OK' }] }),
+        onError: (err) => sheet.show({ title: 'Could not generate', message: err instanceof ApiError ? err.message : 'Try again.', buttons: [{ testID: 'admin-taxonomy-generate.dialog.ok', text: 'OK' }] }),
       },
     )
   }
@@ -63,15 +63,15 @@ export function AdminTaxonomyGenerateScreen({ route, navigation }: Props) {
     bulkSave.mutate(
       { entityTypeId: childType.id, parentId: parentEntityId, entities: candidates },
       {
-        onSuccess: () => sheet.show({ title: 'Saved', buttons: [{ text: 'OK', onPress: () => navigation.goBack() }] }),
-        onError: (err) => sheet.show({ title: 'Could not save', message: err instanceof ApiError ? err.message : 'Try again.', buttons: [{ text: 'OK' }] }),
+        onSuccess: () => sheet.show({ title: 'Saved', buttons: [{ testID: 'admin-taxonomy-generate.dialog.ok', text: 'OK', onPress: () => navigation.goBack() }] }),
+        onError: (err) => sheet.show({ title: 'Could not save', message: err instanceof ApiError ? err.message : 'Try again.', buttons: [{ testID: 'admin-taxonomy-generate.dialog.ok', text: 'OK' }] }),
       },
     )
   }
 
   return (
-    <ScreenContainer width="narrow">
-      <TopNavigation
+    <ScreenContainer testID="screen.admin-taxonomy-generate" width="narrow">
+      <TopNavigation testID="admin-taxonomy-generate.header"
         alignment="left"
         leftAction="back"
         onLeftAction={() => navigation.goBack()}
@@ -80,10 +80,10 @@ export function AdminTaxonomyGenerateScreen({ route, navigation }: Props) {
       />
 
       {!childType ? (
-        <ErrorState title="No child type defined" subtitle={`Add an entity type whose parent is "${parentEntityName}"'s type before generating.`} />
+        <ErrorState testID="admin-taxonomy-generate.error" title="No child type defined" subtitle={`Add an entity type whose parent is "${parentEntityName}"'s type before generating.`} />
       ) : candidates === null ? (
         <>
-          <TextField
+          <TextField testID="admin-taxonomy-generate.prompt"
             label="Prompt instructions (optional)"
             value={prompt}
             onChangeText={setPrompt}
@@ -91,7 +91,7 @@ export function AdminTaxonomyGenerateScreen({ route, navigation }: Props) {
             numberOfLines={3}
             placeholder={`e.g. Generate the top 10 models for ${parentEntityName}`}
           />
-          <Button label={generate.isPending ? 'Generating…' : 'Generate candidates'} loading={generate.isPending} onPress={handleGenerate} />
+          <Button testID="admin-taxonomy-generate.generate" label={generate.isPending ? 'Generating…' : 'Generate candidates'} loading={generate.isPending} onPress={handleGenerate} />
         </>
       ) : (
         <View style={{ flex: 1 }}>
@@ -113,7 +113,7 @@ export function AdminTaxonomyGenerateScreen({ route, navigation }: Props) {
                   </Pressable>
                 </View>
                 <View style={styles.candidateInputWrapper}>
-                  <TextField value={item} onChangeText={(v) => updateCandidate(index, v)} />
+                  <TextField testID="admin-taxonomy-generate.item" value={item} onChangeText={(v) => updateCandidate(index, v)} />
                 </View>
                 <Pressable hitSlop={8} onPress={() => removeCandidate(index)} style={styles.removeBtn}>
                   <Icon name="X" size={18} color={colors.danger} />
@@ -121,15 +121,15 @@ export function AdminTaxonomyGenerateScreen({ route, navigation }: Props) {
               </View>
             )}
             ListFooterComponent={
-              <Pressable style={styles.addRow} onPress={() => setCandidates((c) => [...(c ?? []), 'New item'])}>
+              <Pressable testID="admin-taxonomy-generate.candidates" style={styles.addRow} onPress={() => setCandidates((c) => [...(c ?? []), 'New item'])}>
                 <Typography variant="label">+ Add custom item</Typography>
               </Pressable>
             }
           />
 
           <View style={styles.footer}>
-            <Button label="Discard & start over" variant="secondary" onPress={() => setCandidates(null)} />
-            <Button
+            <Button testID="admin-taxonomy-generate.discard-start-over" label="Discard & start over" variant="secondary" onPress={() => setCandidates(null)} />
+            <Button testID="admin-taxonomy-generate.approve"
               label={bulkSave.isPending ? 'Saving…' : `Approve & save ${candidates.length}`}
               loading={bulkSave.isPending}
               disabled={candidates.length === 0}
@@ -139,7 +139,7 @@ export function AdminTaxonomyGenerateScreen({ route, navigation }: Props) {
         </View>
       )}
 
-      <ActionSheet config={sheet.config} onDismiss={sheet.dismiss} />
+      <ActionSheet testID="admin-taxonomy-generate.dialog" config={sheet.config} onDismiss={sheet.dismiss} />
     </ScreenContainer>
   )
 }

@@ -4,6 +4,7 @@ import { colors, radius, spacing, type } from '../../../theme'
 import { Typography } from '../../../ui/Typography'
 
 type Props = {
+  testID?: string
   name: string
   imageUrl?: string | null
   isPending?: boolean
@@ -12,11 +13,12 @@ type Props = {
   disabled?: boolean
 }
 
-export function FastPickTile({ name, imageUrl, isPending, pickedRank, onToggle, disabled }: Props) {
+export function FastPickTile({ testID, name, imageUrl, isPending, pickedRank, onToggle, disabled }: Props) {
   const isPicked = pickedRank != null
   
   return (
     <Pressable
+      testID={testID}
       onPress={onToggle}
       disabled={disabled && !isPicked}
       style={[styles.tile, isPicked && styles.tilePicked, disabled && !isPicked && styles.tileDisabled]}

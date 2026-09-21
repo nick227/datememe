@@ -17,15 +17,15 @@ export function AdminListsScreen({ navigation }: Props) {
   const lists = useAdminListDefinitions()
 
   return (
-    <ScreenContainer width="wide">
-      <TopNavigation
+    <ScreenContainer testID="screen.admin-lists" width="wide">
+      <TopNavigation testID="admin-lists.header"
         alignment="left"
         leftAction="back"
         onLeftAction={() => navigation.goBack()}
         title="Lists"
         subtitle="List definitions"
         rightElement={
-          <Pressable hitSlop={12} onPress={() => navigation.navigate('AdminListDetail', undefined)}>
+          <Pressable testID="admin-lists.open-admin-list-detail" hitSlop={12} onPress={() => navigation.navigate('AdminListDetail', undefined)}>
             <Typography variant="button" style={styles.newLink}>+ New</Typography>
           </Pressable>
         }
@@ -36,16 +36,16 @@ export function AdminListsScreen({ navigation }: Props) {
           {[0, 1, 2, 3].map((i) => <Skeleton key={i} height={64} />)}
         </View>
       ) : lists.isError ? (
-        <ErrorState subtitle="Couldn't load lists." onRetry={() => lists.refetch()} />
+        <ErrorState testID="admin-lists.error" subtitle="Couldn't load lists." onRetry={() => lists.refetch()} />
       ) : (lists.data ?? []).length === 0 ? (
-        <EmptyState title="No lists defined" subtitle="Create one to get started." />
+        <EmptyState testID="admin-lists.empty" title="No lists defined" subtitle="Create one to get started." />
       ) : (
         <FlatList
           data={lists.data}
           keyExtractor={(item) => item.id}
           ItemSeparatorComponent={() => <View style={styles.separator} />}
           renderItem={({ item }) => (
-            <Pressable style={styles.row} onPress={() => navigation.navigate('AdminListDetail', { listId: item.id })}>
+            <Pressable testID={`admin-lists.open-admin-list-detail.${item.id}`} style={styles.row} onPress={() => navigation.navigate('AdminListDetail', { listId: item.id })}>
               <View style={{ flex: 1 }}>
                 <View style={styles.rowTitle}>
                   <Typography variant="body" style={!item.isActive && styles.archivedText}>{item.shortLabel}</Typography>

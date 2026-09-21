@@ -13,8 +13,8 @@ async function buildAdminApp() {
   app.get('/admin/users/:id', { preHandler: [security.adminAuth] }, handlers.getUser)
   app.post('/admin/users/ban', { preHandler: [security.adminAuth] }, handlers.banUser)
   app.post('/admin/users/verify', { preHandler: [security.adminAuth] }, handlers.verifyUser)
-  app.post('/admin/users/membership', { preHandler: [security.adminAuth] }, handlers.overrideUserMembership)
-  app.post('/admin/users/membership/revoke', { preHandler: [security.adminAuth] }, handlers.revokeUserMembership)
+  app.post('/admin/membership/grants', { preHandler: [security.adminAuth] }, handlers.createMembershipGrant)
+  app.post('/admin/membership/grants/:id/revoke', { preHandler: [security.adminAuth] }, handlers.revokeMembershipGrant)
   app.post('/admin/plans', { preHandler: [security.adminAuth] }, handlers.createPlan)
   app.post('/admin/plans/update', { preHandler: [security.adminAuth] }, handlers.updatePlan)
 
@@ -88,6 +88,7 @@ describe('admin user management', () => {
       where: { actorUserId: adminUser.id }
     })
     await db.session.deleteMany({ where: { userId: { in: createdUserIds } } })
+    await db.membershipGrant.deleteMany({ where: { userId: { in: createdUserIds } } })
     await db.profile.deleteMany({ where: { userId: { in: createdUserIds } } })
     await db.subscription.deleteMany({ where: { userId: { in: createdUserIds } } })
     await db.user.deleteMany({ where: { id: { in: createdUserIds } } })
@@ -158,43 +159,54 @@ describe('admin user management', () => {
     expect(audits[0]?.metadata).toMatchObject({ action: 'ban' })
   })
 
-  it('can override user membership', async () => {
+  let grantId: string
+
+  it('can create a membership grant without touching Subscription', async () => {
+    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
     const res = await app.inject({
       method: 'POST',
-      url: '/admin/users/membership',
+      url: '/admin/membership/grants',
       headers: { authorization: `Bearer ${adminToken}` },
-      payload: { userId: targetUser.id, planId },
+      payload: { userId: targetUser.id, expiresAt, reason: 'test grant' },
     })
-    expect(res.statusCode).toBe(200)
+    expect(res.statusCode).toBe(201)
     const json = res.json()
-    expect(json.subscription.planId).toBe(planId)
-    expect(json.subscription.status).toBe('ACTIVE')
+    expect(json.grant.userId).toBe(targetUser.id)
+    expect(json.grant.source).toBe('MANUAL_ADMIN')
+    expect(json.grant.revokedAt).toBeNull()
+    grantId = json.grant.id
+
+    const subs = await db.subscription.count({ where: { userId: targetUser.id } })
+    expect(subs).toBe(0) // grants never create/touch a Subscription row
+
+    const { resolveMembership } = await import('../lib/entitlements')
+    expect((await resolveMembership(targetUser.id)).state).toBe('MEMBER')
 
     const audits = await db.adminAuditEvent.findMany({
-      where: { targetId: targetUser.id, action: 'override_membership' },
+      where: { targetId: targetUser.id, action: 'create_membership_grant' },
       orderBy: { createdAt: 'desc' }
     })
     expect(audits.length).toBeGreaterThan(0)
-    expect(audits[0]?.afterValue).toMatchObject({ planId, status: 'ACTIVE' })
   })
 
-  it('can revoke user membership', async () => {
+  it('can revoke a membership grant, dropping the user back to FREE', async () => {
     const res = await app.inject({
       method: 'POST',
-      url: '/admin/users/membership/revoke',
+      url: `/admin/membership/grants/${grantId}/revoke`,
       headers: { authorization: `Bearer ${adminToken}` },
-      payload: { userId: targetUser.id },
+      payload: { reason: 'test revoke' },
     })
     expect(res.statusCode).toBe(200)
-    const json = res.json()
-    expect(json.subscription.status).toBe('CANCELED')
+    expect(res.json().grant.revokedAt).toBeTruthy()
+
+    const { resolveMembership } = await import('../lib/entitlements')
+    expect((await resolveMembership(targetUser.id)).state).toBe('FREE')
 
     const audits = await db.adminAuditEvent.findMany({
-      where: { targetId: targetUser.id, action: 'revoke_membership' },
+      where: { targetId: targetUser.id, action: 'revoke_membership_grant' },
       orderBy: { createdAt: 'desc' }
     })
     expect(audits.length).toBeGreaterThan(0)
-    expect(audits[0]?.afterValue).toMatchObject({ status: 'CANCELED' })
   })
 
   it('can create a new plan', async () => {
@@ -202,21 +214,27 @@ describe('admin user management', () => {
       method: 'POST',
       url: '/admin/plans',
       headers: { authorization: `Bearer ${adminToken}` },
-      payload: { label: 'New Plan', slug: `new-plan-${Date.now()}`, interval: 'MONTHLY', priceCents: 1500, features: { bonus: true } },
+      payload: { label: 'New Plan', slug: `new-plan-${Date.now()}`, interval: 'MONTHLY', priceCents: 1500 },
     })
     expect(res.statusCode).toBe(200)
     expect(res.json().plan.label).toBe('New Plan')
     expect(res.json().plan.priceCents).toBe(1500)
   })
 
-  it('rejects price mutation on an active plan', async () => {
-    // targetUser is currently subscribed to planId because we just tested overriding membership but wait, we revoked it!
-    // Let's re-override membership to make planId have an active subscriber
-    await app.inject({
-      method: 'POST',
-      url: '/admin/users/membership',
-      headers: { authorization: `Bearer ${adminToken}` },
-      payload: { userId: targetUser.id, planId },
+  it('allows repricing a plan with active subscriptions, without touching what existing subscribers already paid', async () => {
+    // Real, direct Subscription row — a membership grant (tested above) never
+    // touches this table, so this is the only way to get planId an active
+    // subscriber for this test.
+    const sub = await db.subscription.create({
+      data: {
+        userId: targetUser.id,
+        planId,
+        provider: 'STRIPE',
+        providerSubscriptionId: `test_${Date.now()}`,
+        status: 'ACTIVE',
+        currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        pricePaidCents: 999,
+      },
     })
 
     const res = await app.inject({
@@ -225,7 +243,10 @@ describe('admin user management', () => {
       headers: { authorization: `Bearer ${adminToken}` },
       payload: { planId, priceCents: 1000 }, // changing from 999 to 1000
     })
-    expect(res.statusCode).toBe(400)
-    expect(JSON.stringify(res.json())).toMatch(/Cannot change price of a plan with active subscriptions/)
+    expect(res.statusCode).toBe(200)
+    expect(res.json().plan.priceCents).toBe(1000)
+
+    const unchanged = await db.subscription.findUnique({ where: { id: sub.id } })
+    expect(unchanged?.pricePaidCents).toBe(999)
   })
 })

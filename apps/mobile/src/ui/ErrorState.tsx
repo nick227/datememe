@@ -3,9 +3,9 @@ import { spacing } from '../theme'
 import { Typography } from './Typography'
 import { Button } from './Button'
 
-export function ErrorState({ title = 'Something went wrong', subtitle, onRetry }: { title?: string; subtitle?: string; onRetry?: () => void }) {
+export function ErrorState({ testID, title = 'Something went wrong', subtitle, onRetry }: { testID?: string; title?: string; subtitle?: string; onRetry?: () => void }) {
   return (
-    <View style={styles.container}>
+    <View testID={testID} style={styles.container}>
       <Typography variant="heading">{title}</Typography>
       {subtitle ? (
         <Typography variant="bodyMuted" style={styles.subtitle}>
@@ -14,7 +14,7 @@ export function ErrorState({ title = 'Something went wrong', subtitle, onRetry }
       ) : null}
       {onRetry ? (
         <View style={styles.retry}>
-          <Button label="Try again" variant="secondary" onPress={onRetry} />
+          <Button testID={testID ? `${testID}.retry` : undefined} label="Try again" variant="secondary" onPress={onRetry} />
         </View>
       ) : null}
     </View>

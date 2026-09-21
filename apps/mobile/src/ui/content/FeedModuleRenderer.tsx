@@ -32,7 +32,7 @@ export function FeedModuleRenderer({ module, state, onPressItem, onPressQuickPic
   // module.id keys the query so multiple instances down the feed don't share one prompt.
   if (module.type === 'quiz') return <QuickPicksSpotlight moduleId={module.id} peopleMode={quickPicksPeopleMode} />
 
-  const shared = { title: module.title, items: module.items, state, onPressItem }
+  const shared = { testID: `feed.module.${module.id}`, title: module.title, items: module.items, state, onPressItem }
 
   switch (module.suggestedStructure) {
     case 'rail': {

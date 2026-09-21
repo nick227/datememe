@@ -131,32 +131,32 @@ export function AdminListDetailScreen({ route, navigation }: Props) {
       isActive: form.isActive,
     }
     if (!body.groupId || !body.entityTypeId || !body.slug || !body.prompt || !body.shortLabel) {
-      sheet.show({ title: 'Missing fields', message: 'Group, entity type, slug, prompt, and name are all required.', buttons: [{ text: 'OK' }] })
+      sheet.show({ title: 'Missing fields', message: 'Group, entity type, slug, prompt, and name are all required.', buttons: [{ testID: 'admin-list-detail.dialog.ok', text: 'OK' }] })
       return
     }
     if (listId) {
       updateList.mutate(
         { id: listId, ...body },
         {
-          onSuccess: () => sheet.show({ title: 'Saved', message: 'List details saved.', buttons: [{ text: 'OK' }] }),
-          onError: (err) => sheet.show({ title: 'Could not save', message: err instanceof ApiError ? err.message : 'Try again.', buttons: [{ text: 'OK' }] }),
+          onSuccess: () => sheet.show({ title: 'Saved', message: 'List details saved.', buttons: [{ testID: 'admin-list-detail.dialog.ok', text: 'OK' }] }),
+          onError: (err) => sheet.show({ title: 'Could not save', message: err instanceof ApiError ? err.message : 'Try again.', buttons: [{ testID: 'admin-list-detail.dialog.ok', text: 'OK' }] }),
         },
       )
     } else {
       createList.mutate(body, {
         onSuccess: (created) => {
           navigation.setParams({ listId: created.id })
-          sheet.show({ title: 'List created', message: 'Now add curated values below.', buttons: [{ text: 'OK' }] })
+          sheet.show({ title: 'List created', message: 'Now add curated values below.', buttons: [{ testID: 'admin-list-detail.dialog.ok', text: 'OK' }] })
         },
-        onError: (err) => sheet.show({ title: 'Could not create', message: err instanceof ApiError ? err.message : 'Try again.', buttons: [{ text: 'OK' }] }),
+        onError: (err) => sheet.show({ title: 'Could not create', message: err instanceof ApiError ? err.message : 'Try again.', buttons: [{ testID: 'admin-list-detail.dialog.ok', text: 'OK' }] }),
       })
     }
   }
 
   if (listId && lists.isLoading) {
     return (
-      <ScreenContainer width="wide">
-        <TopNavigation alignment="left" leftAction="back" onLeftAction={() => navigation.goBack()} title="List" />
+      <ScreenContainer testID="screen.admin-list-detail" width="wide">
+        <TopNavigation testID="admin-list-detail.header" alignment="left" leftAction="back" onLeftAction={() => navigation.goBack()} title="List" />
         <Skeleton height={300} />
       </ScreenContainer>
     )
@@ -164,9 +164,9 @@ export function AdminListDetailScreen({ route, navigation }: Props) {
 
   if (listId && (lists.isError || !list)) {
     return (
-      <ScreenContainer width="wide">
-        <TopNavigation alignment="left" leftAction="back" onLeftAction={() => navigation.goBack()} title="List" />
-        <ErrorState subtitle="Couldn't load this list." onRetry={() => lists.refetch()} />
+      <ScreenContainer testID="screen.admin-list-detail" width="wide">
+        <TopNavigation testID="admin-list-detail.header" alignment="left" leftAction="back" onLeftAction={() => navigation.goBack()} title="List" />
+        <ErrorState testID="admin-list-detail.error" subtitle="Couldn't load this list." onRetry={() => lists.refetch()} />
       </ScreenContainer>
     )
   }
@@ -179,8 +179,8 @@ export function AdminListDetailScreen({ route, navigation }: Props) {
   ]
 
   return (
-    <ScreenContainer width="wide" padded={false}>
-      <TopNavigation
+    <ScreenContainer testID="screen.admin-list-detail" width="wide" padded={false}>
+      <TopNavigation testID="admin-list-detail.header"
         alignment="left"
         leftAction="back"
         onLeftAction={() => navigation.goBack()}
@@ -190,17 +190,17 @@ export function AdminListDetailScreen({ route, navigation }: Props) {
         <View style={styles.card}>
           <Typography variant="heading" style={styles.cardTitle}>List configuration</Typography>
 
-          <TextField label="List name (short label)" value={form.shortLabel} onChangeText={(v) => setForm((f) => ({ ...f, shortLabel: v }))} />
-          <TextField label="Slug" value={form.slug} onChangeText={(v) => setForm((f) => ({ ...f, slug: v }))} autoCapitalize="none" />
-          <TextField label="Prompt (question)" value={form.prompt} onChangeText={(v) => setForm((f) => ({ ...f, prompt: v }))} />
+          <TextField testID="admin-list-detail.short-label" label="List name (short label)" value={form.shortLabel} onChangeText={(v) => setForm((f) => ({ ...f, shortLabel: v }))} />
+          <TextField testID="admin-list-detail.slug" label="Slug" value={form.slug} onChangeText={(v) => setForm((f) => ({ ...f, slug: v }))} autoCapitalize="none" />
+          <TextField testID="admin-list-detail.prompt" label="Prompt (question)" value={form.prompt} onChangeText={(v) => setForm((f) => ({ ...f, prompt: v }))} />
 
           <View style={styles.scopeBox}>
             <Typography variant="label" style={styles.scopeTitle}>Taxonomy scope</Typography>
-            <SelectField label="Group" value={form.groupId} options={groupOptions} onSelect={(v) => setForm((f) => ({ ...f, groupId: v }))} placeholder="Select a group…" />
-            <SelectField label="Entity type (required)" value={form.entityTypeId} options={typeOptions} onSelect={handleEntityTypeChange} placeholder="Select a type…" />
+            <SelectField testID="admin-list-detail.group-id" label="Group" value={form.groupId} options={groupOptions} onSelect={(v) => setForm((f) => ({ ...f, groupId: v }))} placeholder="Select a group…" />
+            <SelectField testID="admin-list-detail.entity-type-id" label="Entity type (required)" value={form.entityTypeId} options={typeOptions} onSelect={handleEntityTypeChange} placeholder="Select a type…" />
             {parentTypeId ? (
               <>
-                <SelectField
+                <SelectField testID="admin-list-detail.parent-entity-id"
                   label="Parent entity constraint (optional)"
                   value={form.parentEntityId ?? ''}
                   options={parentOptions}
@@ -213,21 +213,21 @@ export function AdminListDetailScreen({ route, navigation }: Props) {
           </View>
 
           <View style={styles.row}>
-            <TextField label="Min items" value={form.minItems} onChangeText={(v) => setForm((f) => ({ ...f, minItems: v }))} keyboardType="number-pad" style={styles.rowField} />
-            <TextField label="Max items" value={form.maxItems} onChangeText={(v) => setForm((f) => ({ ...f, maxItems: v }))} keyboardType="number-pad" style={styles.rowField} />
+            <TextField testID="admin-list-detail.min-items" label="Min items" value={form.minItems} onChangeText={(v) => setForm((f) => ({ ...f, minItems: v }))} keyboardType="number-pad" style={styles.rowField} />
+            <TextField testID="admin-list-detail.max-items" label="Max items" value={form.maxItems} onChangeText={(v) => setForm((f) => ({ ...f, maxItems: v }))} keyboardType="number-pad" style={styles.rowField} />
           </View>
-          <SelectField label="Ordering" value={form.orderingMode} options={ORDERING_OPTIONS} onSelect={(v) => setForm((f) => ({ ...f, orderingMode: v as 'RANKED' | 'UNRANKED' }))} />
+          <SelectField testID="admin-list-detail.ordering-mode" label="Ordering" value={form.orderingMode} options={ORDERING_OPTIONS} onSelect={(v) => setForm((f) => ({ ...f, orderingMode: v as 'RANKED' | 'UNRANKED' }))} />
 
           <View style={styles.toggleRow}>
             <Typography variant="body">Active (visible in app)</Typography>
-            <Button label={form.isActive ? 'Active' : 'Archived'} variant="secondary" onPress={() => setForm((f) => ({ ...f, isActive: !f.isActive }))} />
+            <Button testID="admin-list-detail.active" label={form.isActive ? 'Active' : 'Archived'} variant="secondary" onPress={() => setForm((f) => ({ ...f, isActive: !f.isActive }))} />
           </View>
           <View style={styles.toggleRow}>
             <Typography variant="body">Premium only</Typography>
-            <Button label={form.isPremiumOnly ? 'Yes' : 'No'} variant="secondary" onPress={() => setForm((f) => ({ ...f, isPremiumOnly: !f.isPremiumOnly }))} />
+            <Button testID="admin-list-detail.premium-only" label={form.isPremiumOnly ? 'Yes' : 'No'} variant="secondary" onPress={() => setForm((f) => ({ ...f, isPremiumOnly: !f.isPremiumOnly }))} />
           </View>
 
-          <Button label="Save configuration" loading={createList.isPending || updateList.isPending} onPress={handleSaveConfig} />
+          <Button testID="admin-list-detail.save-config" label="Save configuration" loading={createList.isPending || updateList.isPending} onPress={handleSaveConfig} />
 
           {listId && list ? (
             <AdminImagePicker
@@ -241,11 +241,11 @@ export function AdminListDetailScreen({ route, navigation }: Props) {
         </View>
 
         {listId ? (
-          <CuratedValuesEditor listId={listId} entityTypeId={form.entityTypeId} parentEntityId={form.parentEntityId} shortLabel={form.shortLabel} />
+          <CuratedValuesEditor key={listId} listId={listId} entityTypeId={form.entityTypeId} parentEntityId={form.parentEntityId} shortLabel={form.shortLabel} />
         ) : null}
       </ScrollView>
 
-      <ActionSheet config={sheet.config} onDismiss={sheet.dismiss} />
+      <ActionSheet testID="admin-list-detail.dialog" config={sheet.config} onDismiss={sheet.dismiss} />
     </ScreenContainer>
   )
 }
@@ -268,27 +268,20 @@ function CuratedValuesEditor({
   const saveCurated = useAdminUpdateListCuratedEntities()
   const sheet = useActionSheet()
 
-  const [curatedList, setCuratedList] = useState<CuratedItem[]>([])
+  // A null draft follows server data until the first edit; refetches cannot
+  // overwrite an in-progress selection. The component is keyed by list ID.
+  const [selectedDraft, setSelectedDraft] = useState<CuratedItem[] | null>(null)
+  const selectedValues = selectedDraft ?? (curated.data ?? [])
+    .slice()
+    .sort((a, b) => a.sortOrder - b.sortOrder)
+    .map((c) => ({ entityId: c.entityId, name: c.entity.canonicalName, imageUrl: c.entity.imageUrl }))
   const [searchQuery, setSearchQuery] = useState('')
-  const hydrated = useRef(false)
-  const hydratedForListId = useRef<string | null>(null)
+  const selectionReady = curated.data !== undefined
+  const editingDisabled = !selectionReady || saveCurated.isPending
 
-  useEffect(() => {
-    // Re-hydrate when switching to a different list's curated editor
-    // (e.g. right after create) — but never clobber in-progress local edits.
-    if (hydratedForListId.current !== listId) {
-      hydrated.current = false
-      hydratedForListId.current = listId
-    }
-    if (hydrated.current || !curated.data) return
-    setCuratedList(
-      curated.data
-        .slice()
-        .sort((a, b) => a.sortOrder - b.sortOrder)
-        .map((c) => ({ entityId: c.entityId, name: c.entity.canonicalName, imageUrl: c.entity.imageUrl })),
-    )
-    hydrated.current = true
-  }, [curated.data, listId])
+  function setSelectedValues(update: (previous: CuratedItem[]) => CuratedItem[]) {
+    setSelectedDraft((previous) => update(previous ?? selectedValues))
+  }
 
   const [showGenerateModal, setShowGenerateModal] = useState(false)
   const [genPrompt, setGenPrompt] = useState('')
@@ -297,20 +290,22 @@ function CuratedValuesEditor({
   const bulkSave = useAdminBulkSaveEntities()
 
   const filteredAvailable = (available.data ?? []).filter(
-    (e) => e.canonicalName.toLowerCase().includes(searchQuery.toLowerCase()) && !curatedList.some((c) => c.entityId === e.id),
+    (e) => e.canonicalName.toLowerCase().includes(searchQuery.trim().toLowerCase()) && !selectedValues.some((c) => c.entityId === e.id),
   )
 
   function addEntity(entity: { id: string; canonicalName: string; imageUrl?: string | null }) {
-    if (curatedList.some((c) => c.entityId === entity.id)) return
-    setCuratedList((prev) => [...prev, { entityId: entity.id, name: entity.canonicalName, imageUrl: entity.imageUrl }])
+    if (editingDisabled) return
+    setSelectedValues((prev) => prev.some((c) => c.entityId === entity.id)
+      ? prev
+      : [...prev, { entityId: entity.id, name: entity.canonicalName, imageUrl: entity.imageUrl }])
   }
 
   function removeEntity(entityId: string) {
-    setCuratedList((prev) => prev.filter((c) => c.entityId !== entityId))
+    setSelectedValues((prev) => prev.filter((c) => c.entityId !== entityId))
   }
 
   function moveEntity(index: number, delta: number) {
-    setCuratedList((prev) => {
+    setSelectedValues((prev) => {
       const target = index + delta
       if (target < 0 || target >= prev.length) return prev
       const next = [...prev]
@@ -320,11 +315,12 @@ function CuratedValuesEditor({
   }
 
   function handleSaveCurated() {
+    if (editingDisabled) return
     saveCurated.mutate(
-      { id: listId, entities: curatedList.map((c, i) => ({ entityId: c.entityId, sortOrder: i })) },
+      { id: listId, entities: selectedValues.map((c, i) => ({ entityId: c.entityId, sortOrder: i })) },
       {
-        onSuccess: () => sheet.show({ title: 'Saved', message: 'Curated values saved.', buttons: [{ text: 'OK' }] }),
-        onError: (err) => sheet.show({ title: 'Could not save', message: err instanceof ApiError ? err.message : 'Try again.', buttons: [{ text: 'OK' }] }),
+        onSuccess: () => sheet.show({ title: 'Saved', message: 'Curated values saved.', buttons: [{ testID: 'admin-list-detail.curated-dialog.ok', text: 'OK' }] }),
+        onError: (err) => sheet.show({ title: 'Could not save', message: err instanceof ApiError ? err.message : 'Try again.', buttons: [{ testID: 'admin-list-detail.curated-dialog.ok', text: 'OK' }] }),
       },
     )
   }
@@ -340,7 +336,7 @@ function CuratedValuesEditor({
       { categoryName: shortLabel, prompt: genPrompt, count: 10 },
       {
         onSuccess: (result) => setGenCandidates(result),
-        onError: (err) => sheet.show({ title: 'Could not generate', message: err instanceof ApiError ? err.message : 'Try again.', buttons: [{ text: 'OK' }] }),
+        onError: (err) => sheet.show({ title: 'Could not generate', message: err instanceof ApiError ? err.message : 'Try again.', buttons: [{ testID: 'admin-list-detail.curated-dialog.ok', text: 'OK' }] }),
       },
     )
   }
@@ -370,7 +366,7 @@ function CuratedValuesEditor({
       { entityTypeId, parentId: parentEntityId, entities: genCandidates },
       {
         onSuccess: (result) => {
-          setCuratedList((prev) => [
+          setSelectedValues((prev) => [
             ...prev,
             ...result.entities
               .filter((e) => !prev.some((c) => c.entityId === e.id))
@@ -378,7 +374,7 @@ function CuratedValuesEditor({
           ])
           closeGenerateModal()
         },
-        onError: (err) => sheet.show({ title: 'Could not save', message: err instanceof ApiError ? err.message : 'Try again.', buttons: [{ text: 'OK' }] }),
+        onError: (err) => sheet.show({ title: 'Could not save', message: err instanceof ApiError ? err.message : 'Try again.', buttons: [{ testID: 'admin-list-detail.curated-dialog.ok', text: 'OK' }] }),
       },
     )
   }
@@ -388,73 +384,81 @@ function CuratedValuesEditor({
       <View style={styles.curatedHeader}>
         <View style={{ flex: 1 }}>
           <Typography variant="heading">Curated values</Typography>
-          <Typography variant="bodyMuted">Explicitly pick and order the entities available in this list.</Typography>
+          <Typography variant="bodyMuted">Add available values to your selection, then order and save them.</Typography>
         </View>
-        <Pressable hitSlop={8} onPress={() => setShowGenerateModal(true)}>
+        <Pressable testID="admin-list-detail.show-generate-modal" hitSlop={8} disabled={editingDisabled || !entityTypeId} onPress={() => setShowGenerateModal(true)}>
           <Typography variant="button" style={styles.aiLink}>AI suggest…</Typography>
         </Pressable>
       </View>
 
-      <TextField placeholder="Search available values…" value={searchQuery} onChangeText={setSearchQuery} />
+      <TextField testID="admin-list-detail.search-query" placeholder="Search available values…" value={searchQuery} onChangeText={setSearchQuery} />
 
-      <View style={styles.availableList}>
+      <Typography variant="label" style={styles.selectedValuesLabel}>Available values</Typography>
+      <ScrollView testID="admin-list-detail.available-values" style={styles.availableList} nestedScrollEnabled keyboardShouldPersistTaps="handled">
+
         {available.isLoading ? (
           <Skeleton height={80} />
+        ) : available.isError ? (
+          <ErrorState testID="admin-list-detail.available-error" subtitle="Couldn't load available values." onRetry={() => available.refetch()} />
         ) : filteredAvailable.length === 0 ? (
-          <Typography variant="bodyMuted" style={styles.centeredHint}>No available entities match.</Typography>
+          <Typography variant="bodyMuted" style={styles.centeredHint}>{searchQuery.trim() ? 'No available values match your search.' : available.data?.length ? 'All available values are selected.' : 'No values are available for this list.'}</Typography>
         ) : (
           filteredAvailable.map((entity) => (
-            <View key={entity.id} style={styles.availableRow}>
+            <View testID={`admin-list-detail.entity.${entity.id}`} key={entity.id} style={styles.availableRow}>
               <Typography variant="body" style={{ flex: 1 }} numberOfLines={1}>{entity.canonicalName}</Typography>
-              <Pressable hitSlop={8} onPress={() => addEntity(entity)}>
+              <Pressable testID={`admin-list-detail.entity.${entity.id}.add`} accessibilityRole="button" accessibilityLabel={`Add ${entity.canonicalName}`} style={styles.valueAction} disabled={editingDisabled} onPress={() => addEntity(entity)}>
                 <Icon name="Plus" size={18} color={colors.primary} />
               </Pressable>
             </View>
           ))
         )}
-      </View>
+      </ScrollView>
 
-      <Typography variant="label" style={styles.curatedListLabel}>Selected values ({curatedList.length})</Typography>
-      {curatedList.length === 0 ? (
+      <Typography variant="label" style={styles.selectedValuesLabel}>Selected values{selectionReady ? ` (${selectedValues.length})` : ''}</Typography>
+      {!selectionReady ? (
+        curated.isError ? (
+          <ErrorState testID="admin-list-detail.curated-error" subtitle="Couldn't load selected values. Retry before editing." onRetry={() => curated.refetch()} />
+        ) : <Skeleton height={80} />
+      ) : selectedValues.length === 0 ? (
         <View style={styles.emptyCurated}>
-          <Typography variant="bodyMuted">No curated values. Add from above.</Typography>
+          <Typography variant="bodyMuted">No values selected yet. Use + beside an available value to add it.</Typography>
         </View>
       ) : (
-        <View style={{ gap: spacing.xs }}>
-          {curatedList.map((item, index) => (
-            <View key={item.entityId} style={styles.curatedRow}>
+        <ScrollView testID="admin-list-detail.selected-values" style={styles.selectedList} contentContainerStyle={{ gap: spacing.xs }} nestedScrollEnabled keyboardShouldPersistTaps="handled">
+          {selectedValues.map((item, index) => (
+            <View testID={`admin-list-detail.selected.${item.entityId}`} key={item.entityId} style={styles.curatedRow}>
               <View style={styles.reorderCol}>
-                <Pressable hitSlop={6} disabled={index === 0} onPress={() => moveEntity(index, -1)}>
+                <Pressable testID={`admin-list-detail.selected.${item.entityId}.move-up`} accessibilityRole="button" accessibilityLabel={`Move ${item.name} up`} style={styles.valueAction} disabled={editingDisabled || index === 0} onPress={() => moveEntity(index, -1)}>
                   <Icon name="ChevronUp" size={16} color={index === 0 ? colors.surfaceMuted : colors.inkMuted} />
                 </Pressable>
-                <Pressable hitSlop={6} disabled={index === curatedList.length - 1} onPress={() => moveEntity(index, 1)}>
-                  <Icon name="ChevronDown" size={16} color={index === curatedList.length - 1 ? colors.surfaceMuted : colors.inkMuted} />
+                <Pressable testID={`admin-list-detail.selected.${item.entityId}.move-down`} accessibilityRole="button" accessibilityLabel={`Move ${item.name} down`} style={styles.valueAction} disabled={editingDisabled || index === selectedValues.length - 1} onPress={() => moveEntity(index, 1)}>
+                  <Icon name="ChevronDown" size={16} color={index === selectedValues.length - 1 ? colors.surfaceMuted : colors.inkMuted} />
                 </Pressable>
               </View>
               <Typography variant="body" style={{ flex: 1 }} numberOfLines={1}>{item.name}</Typography>
-              <Pressable hitSlop={8} onPress={() => removeEntity(item.entityId)}>
+              <Pressable testID={`admin-list-detail.selected.${item.entityId}.remove`} accessibilityRole="button" accessibilityLabel={`Remove ${item.name}`} style={styles.valueAction} disabled={editingDisabled} onPress={() => removeEntity(item.entityId)}>
                 <Icon name="X" size={18} color={colors.danger} />
               </Pressable>
             </View>
           ))}
-        </View>
+        </ScrollView>
       )}
 
-      <Button label="Save curated values" loading={saveCurated.isPending} onPress={handleSaveCurated} />
+      <Button disabled={editingDisabled} testID="admin-list-detail.save-curated" label="Save curated values" loading={saveCurated.isPending} onPress={handleSaveCurated} />
 
-      <Modal visible={showGenerateModal} animationType="slide" transparent onRequestClose={closeGenerateModal}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+      <Modal testID="admin-list-detail.generate-dialog.modal" visible={showGenerateModal} animationType="slide" transparent onRequestClose={closeGenerateModal}>
+        <View testID="admin-list-detail.generate-dialog.overlay" style={styles.modalOverlay}>
+          <View testID="admin-list-detail.generate-dialog" style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Typography variant="heading">Curate AI values for {shortLabel}</Typography>
-              <Pressable hitSlop={8} onPress={closeGenerateModal}>
+              <Typography testID="admin-list-detail.generate-dialog.title" variant="heading">Curate AI values for {shortLabel}</Typography>
+              <Pressable testID="admin-list-detail.generate-dialog.close" hitSlop={8} onPress={closeGenerateModal}>
                 <Icon name="X" size={22} />
               </Pressable>
             </View>
 
             {genCandidates === null ? (
-              <View style={{ padding: spacing.lg }}>
-                <TextField
+              <View testID="admin-list-detail.generate-dialog.prompt-step" style={{ padding: spacing.lg }}>
+                <TextField testID="admin-list-detail.gen-prompt"
                   label="Prompt instructions (optional)"
                   value={genPrompt}
                   onChangeText={setGenPrompt}
@@ -462,40 +466,40 @@ function CuratedValuesEditor({
                   numberOfLines={3}
                   placeholder={`e.g. Generate the top 10 examples for ${shortLabel}`}
                 />
-                <Button label={generate.isPending ? 'Generating…' : 'Generate candidates'} loading={generate.isPending} onPress={handleGenerate} />
+                <Button testID="admin-list-detail.generate" label={generate.isPending ? 'Generating…' : 'Generate candidates'} loading={generate.isPending} onPress={handleGenerate} />
               </View>
             ) : (
-              <ScrollView style={{ padding: spacing.lg }}>
+              <ScrollView testID="admin-list-detail.generate-dialog.review-step" style={{ padding: spacing.lg }}>
                 <Typography variant="bodyMuted" style={{ marginBottom: spacing.md }}>
                   Review, edit, and reorder candidates before saving.
                 </Typography>
                 <View style={{ gap: spacing.sm }}>
                   {genCandidates.map((candidate, index) => (
-                    <View key={index} style={styles.candidateRow}>
+                    <View testID={`admin-list-detail.generate-dialog.candidate-slot.${index}`} key={index} style={styles.candidateRow}>
                       <View style={styles.reorderCol}>
-                        <Pressable hitSlop={6} disabled={index === 0} onPress={() => moveCandidate(index, -1)}>
+                        <Pressable testID="admin-list-detail.generate-dialog.candidate.move-up" hitSlop={6} disabled={index === 0} onPress={() => moveCandidate(index, -1)}>
                           <Icon name="ChevronUp" size={16} color={index === 0 ? colors.surfaceMuted : colors.inkMuted} />
                         </Pressable>
-                        <Pressable hitSlop={6} disabled={index === genCandidates.length - 1} onPress={() => moveCandidate(index, 1)}>
+                        <Pressable testID="admin-list-detail.generate-dialog.candidate.move-down" hitSlop={6} disabled={index === genCandidates.length - 1} onPress={() => moveCandidate(index, 1)}>
                           <Icon name="ChevronDown" size={16} color={index === genCandidates.length - 1 ? colors.surfaceMuted : colors.inkMuted} />
                         </Pressable>
                       </View>
                       <View style={styles.candidateInputWrapper}>
-                        <TextField value={candidate} onChangeText={(v) => updateCandidate(index, v)} />
+                        <TextField testID="admin-list-detail.candidate" value={candidate} onChangeText={(v) => updateCandidate(index, v)} />
                       </View>
-                      <Pressable hitSlop={8} onPress={() => removeCandidate(index)}>
+                      <Pressable testID="admin-list-detail.generate-dialog.candidate.remove" hitSlop={8} onPress={() => removeCandidate(index)}>
                         <Icon name="X" size={18} color={colors.danger} />
                       </Pressable>
                     </View>
                   ))}
                 </View>
-                <Pressable style={styles.addRow} onPress={() => setGenCandidates((c) => [...(c ?? []), 'New item'])}>
+                <Pressable testID="admin-list-detail.gen-candidates" style={styles.addRow} onPress={() => setGenCandidates((c) => [...(c ?? []), 'New item'])}>
                   <Typography variant="label">+ Add custom item</Typography>
                 </Pressable>
 
                 <View style={styles.modalFooter}>
-                  <Button label="Discard & start over" variant="secondary" onPress={() => setGenCandidates(null)} />
-                  <Button
+                  <Button testID="admin-list-detail.discard-start-over" label="Discard & start over" variant="secondary" onPress={() => setGenCandidates(null)} />
+                  <Button testID="admin-list-detail.approve-candidates"
                     label={bulkSave.isPending ? 'Saving…' : `Approve & add ${genCandidates.length}`}
                     loading={bulkSave.isPending}
                     disabled={genCandidates.length === 0}
@@ -507,6 +511,7 @@ function CuratedValuesEditor({
           </View>
         </View>
       </Modal>
+      <ActionSheet testID="admin-list-detail.curated-dialog" config={sheet.config} onDismiss={sheet.dismiss} />
     </View>
   )
 }
@@ -551,6 +556,8 @@ const styles = StyleSheet.create({
   aiLink: { color: colors.primary },
   availableList: {
     maxHeight: 240,
+    flexGrow: 0,
+    flexShrink: 0,
     marginBottom: spacing.md,
   },
   availableRow: {
@@ -564,7 +571,9 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     paddingVertical: spacing.lg,
   },
-  curatedListLabel: { marginBottom: spacing.sm },
+  selectedList: { maxHeight: 320, flexGrow: 0, flexShrink: 0, marginBottom: spacing.md },
+  valueAction: { minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
+  selectedValuesLabel: { marginBottom: spacing.sm },
   emptyCurated: {
     borderWidth: 1,
     borderStyle: 'dashed',
@@ -580,7 +589,7 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
     paddingVertical: spacing.xs,
   },
-  reorderCol: { width: 20, gap: 2 },
+  reorderCol: { minWidth: 44, gap: 2 },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',

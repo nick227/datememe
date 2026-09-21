@@ -43,6 +43,7 @@ export function RankingBoard({ items, maxItems, onRemove, onReorder }: RankingBo
                 exiting={FadeOut.duration(200)}
               >
                 <RankingBoardOption
+                  testID={`list-builder.item.${item.entityId}`}
                   rank={rank}
                   name={item.name}
                   imageUrl={item.imageUrl}

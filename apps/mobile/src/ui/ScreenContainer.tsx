@@ -6,16 +6,17 @@ import { colors, spacing } from '../theme'
 const MAX_WIDTH = { narrow: 440, wide: 960 }
 
 type Props = {
+  testID?: string
   children: ReactNode
   padded?: boolean
   width?: 'narrow' | 'wide' | 'full'
 }
 
-export function ScreenContainer({ children, padded = true, width = 'full' }: Props) {
+export function ScreenContainer({ testID, children, padded = true, width = 'full' }: Props) {
   return (
     // 'top' is deliberately excluded — GlobalHeader (mounted once per stack,
     // above every screen) already owns the top safe-area inset.
-    <SafeAreaView style={styles.safe} edges={['left', 'right']}>
+    <SafeAreaView testID={testID} style={styles.safe} edges={['left', 'right']}>
       <View
         style={[
           styles.container,

@@ -1,5 +1,6 @@
 import { Image, Pressable, StyleSheet, View } from 'react-native'
 import { Typography } from '../Typography'
+import { ImageCredit } from './ImageCredit'
 import { cardShell } from './cardShell'
 import { borderWidth, colors, spacing } from '../../theme'
 import type { RenderVariant } from './renderBudgets'
@@ -17,6 +18,12 @@ type Props = {
 // Discover review correction. Same outer shell as CategoryUnitCard; the
 // content anatomy differs, the geometry doesn't.
 export function PersonUnitCard({ unit, variant, onPress }: Props) {
+  // The People grid uses the same compact ~3:4 "poster" card as Lists'
+  // topic/Site Picks grids (CategoryUnitCard's CompactGridCard) — one small
+  // card language across the whole app instead of Discover's grid forking
+  // into its own bigger, differently-proportioned shape.
+  if (variant === 'grid-square') return <CompactPersonCard unit={unit} onPress={onPress} />
+
   const isRail = variant === 'rail'
   const isRiver = variant === 'river'
   const matchMetric = unit.metrics?.find((m) => m.type === 'overlap')
@@ -30,7 +37,7 @@ export function PersonUnitCard({ unit, variant, onPress }: Props) {
   // rhythm, not four differently-decorated boxes).
   if (isRiver) {
     return (
-      <Pressable style={riverStyles.row} onPress={onPress}>
+      <Pressable testID={`discover.profile.${unit.id}`} style={riverStyles.row} onPress={onPress}>
         {unit.imageUrl ? (
           <Image source={{ uri: unit.imageUrl }} style={riverStyles.photo} />
         ) : (
@@ -62,7 +69,7 @@ export function PersonUnitCard({ unit, variant, onPress }: Props) {
   }
 
   return (
-    <Pressable style={cardShell.base} onPress={onPress}>
+    <Pressable testID={`discover.profile.${unit.id}`} style={cardShell.base} onPress={onPress}>
       <View style={styles.headerRow}>
         <Typography variant="heading" numberOfLines={1} style={styles.name}>
           {unit.title}
@@ -115,6 +122,75 @@ export function PersonUnitCard({ unit, variant, onPress }: Props) {
     </Pressable>
   )
 }
+
+// Compact "poster" card — mirrors CategoryUnitCard's CompactGridCard
+// exactly: ~3:4 image on top, thick border instead of a shadow (stark
+// aesthetic), one meta line below. The corner badge carries the match
+// percentage instead of a Done/In-progress state.
+function CompactPersonCard({ unit, onPress }: { unit: ContentUnit; onPress: () => void }) {
+  const matchMetric = unit.metrics?.find((m) => m.type === 'overlap')
+  const sharedCountMetric = unit.metrics?.find((m) => m.type === 'popularity')
+  const locationLine = [unit.age, unit.subtitle].filter(Boolean).join(' · ')
+  const metaLine = locationLine || (sharedCountMetric ? `${sharedCountMetric.value} shared` : null)
+
+  return (
+    <Pressable testID={`discover.profile.${unit.id}`} style={compactStyles.card} onPress={onPress}>
+      <View style={compactStyles.imageWrap}>
+        {unit.imageUrl ? (
+          <Image accessibilityLabel={unit.title} source={{ uri: unit.imageUrl }} style={compactStyles.image} resizeMode="cover" />
+        ) : (
+          <View style={[compactStyles.image, compactStyles.imageFallback]}>
+            <Typography variant="display" style={styles.initial}>
+              {(unit.title || '?').charAt(0).toUpperCase()}
+            </Typography>
+          </View>
+        )}
+        {matchMetric ? <Typography variant="label" style={compactStyles.badge}>{matchMetric.value} match</Typography> : null}
+      </View>
+      <View style={compactStyles.body}>
+        <Typography variant="heading" style={compactStyles.title} numberOfLines={1}>
+          {unit.title}
+        </Typography>
+        {metaLine ? (
+          <Typography variant="label" style={compactStyles.meta} numberOfLines={1}>
+            {metaLine}
+          </Typography>
+        ) : null}
+        <ImageCredit credit={unit.imageCredit} />
+      </View>
+    </Pressable>
+  )
+}
+
+const compactStyles = StyleSheet.create({
+  card: {
+    backgroundColor: colors.surface,
+    borderWidth: borderWidth.thick,
+    borderColor: colors.ink,
+    flex: 1,
+  },
+  imageWrap: { position: 'relative' },
+  image: { width: '100%', aspectRatio: 3 / 4, backgroundColor: colors.surfaceMuted },
+  imageFallback: { alignItems: 'center', justifyContent: 'center' },
+  badge: {
+    position: 'absolute',
+    top: spacing.xs,
+    left: spacing.xs,
+    color: colors.accent,
+    backgroundColor: colors.surface,
+    borderWidth: borderWidth.thin,
+    borderColor: colors.ink,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: 2,
+  },
+  body: {
+    borderTopWidth: borderWidth.thick,
+    borderTopColor: colors.ink,
+    padding: spacing.sm,
+  },
+  title: { fontSize: 15, lineHeight: 19, marginBottom: 2 },
+  meta: { fontSize: 11, color: colors.inkMuted },
+})
 
 const riverStyles = StyleSheet.create({
   row: {

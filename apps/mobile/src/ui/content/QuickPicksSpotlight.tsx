@@ -49,7 +49,7 @@ export function QuickPicksSpotlight({ moduleId, peopleMode = false }: { moduleId
   }
 
   return (
-    <View style={styles.section}>
+    <View testID={`feed.module.${moduleId}`} style={styles.section}>
       <Typography variant="label" style={styles.eyebrow}>
         Quick Picks
       </Typography>

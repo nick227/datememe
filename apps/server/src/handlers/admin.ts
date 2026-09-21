@@ -114,6 +114,17 @@ export async function getUser(request: AuthenticatedRequest, reply: any) {
         include: { plan: true },
         take: 1
       },
+      membershipGrants: {
+        orderBy: { createdAt: 'desc' },
+        include: {
+          grantedByUser: { select: { id: true, email: true } },
+          revokedByUser: { select: { id: true, email: true } },
+        },
+      },
+      // planId/pricePaidCentsSnapshot on each grant above are already
+      // scalar columns pulled back automatically by the include; a
+      // ONE_TIME_PURCHASE grant's plan/price is visible without a
+      // separate relation include.
     }
   })
 
@@ -184,52 +195,44 @@ export async function updatePlan(request: AuthenticatedRequest, reply: any) {
   const planId = coerceStringId(request.body?.planId, 'planId')
   const priceCents = Number(request.body?.priceCents)
   const isActive = request.body?.isActive
-  const features = request.body?.features
 
   if (!Number.isInteger(priceCents) || priceCents < 0 || priceCents > 1000000) {
     throw { statusCode: 400, message: 'priceCents must be an integer from 0 to 1000000' }
   }
 
-  const plan = await db.plan.findUnique({ 
-    where: { id: planId }, 
-    select: { id: true, priceCents: true, label: true, isActive: true, features: true, _count: { select: { subscriptions: { where: { status: 'ACTIVE' } } } } } 
+  const plan = await db.plan.findUnique({
+    where: { id: planId },
+    select: { id: true, priceCents: true, label: true, isActive: true },
   })
   if (!plan) throw { statusCode: 404, message: 'Plan not found' }
 
-  // Prevent silent commercial term changes for grandfathered users
-  if (plan._count.subscriptions > 0) {
-    if (priceCents !== plan.priceCents) {
-      throw { statusCode: 400, message: 'Cannot change price of a plan with active subscriptions. Archive this plan and create a new one.' }
-    }
-    if (features && JSON.stringify(features) !== JSON.stringify(plan.features)) {
-      throw { statusCode: 400, message: 'Cannot change entitlements of a plan with active subscriptions. Archive this plan and create a new one.' }
-    }
-  }
-
+  // No grandfathering guard needed here: every Subscription/MembershipGrant
+  // snapshots the price it was created at (pricePaidCents /
+  // pricePaidCentsSnapshot), so repricing this plan only ever affects new
+  // purchases — existing members keep what they were charged.
   const data: any = { priceCents }
   if (typeof isActive === 'boolean') data.isActive = isActive
-  if (features) data.features = features
 
   const updatedPlan = await db.plan.update({
     where: { id: planId },
     data
   })
-  
+
   await recordAdminAudit(
-    request.user.id, 
-    request.user.role, 
-    'update_plan', 
-    'plan', 
-    planId, 
-    { priceCents: plan.priceCents, isActive: plan.isActive, features: plan.features }, 
-    { priceCents: updatedPlan.priceCents, isActive: updatedPlan.isActive, features: updatedPlan.features }, 
+    request.user.id,
+    request.user.role,
+    'update_plan',
+    'plan',
+    planId,
+    { priceCents: plan.priceCents, isActive: plan.isActive },
+    { priceCents: updatedPlan.priceCents, isActive: updatedPlan.isActive },
     { planLabel: plan.label }
   )
   return reply.send({ plan: updatedPlan })
 }
 
 export async function createPlan(request: AuthenticatedRequest, reply: any) {
-  const { label, slug, interval, priceCents, features, isActive } = request.body ?? {}
+  const { label, slug, interval, priceCents, isActive } = request.body ?? {}
 
   if (typeof label !== 'string' || !label.trim()) throw { statusCode: 400, message: 'label is required' }
   if (typeof slug !== 'string' || !slug.trim()) throw { statusCode: 400, message: 'slug is required' }
@@ -245,7 +248,6 @@ export async function createPlan(request: AuthenticatedRequest, reply: any) {
       interval,
       priceCents,
       isActive: typeof isActive === 'boolean' ? isActive : true,
-      features: features ?? {}
     }
   })
 
@@ -262,61 +264,12 @@ export async function createPlan(request: AuthenticatedRequest, reply: any) {
   return reply.send({ plan: newPlan })
 }
 
-export async function overrideUserMembership(request: AuthenticatedRequest, reply: any) {
-  const userId = coerceStringId(request.body?.userId, 'userId')
-  const planId = coerceStringId(request.body?.planId, 'planId')
-
-  const targetUser = await db.user.findUnique({ where: { id: userId }, include: { subscriptions: { where: { status: 'ACTIVE' } } } })
-  if (!targetUser) throw { statusCode: 404, message: 'User not found' }
-  const plan = await db.plan.findUnique({ where: { id: planId } })
-  if (!plan) throw { statusCode: 404, message: 'Plan not found' }
-
-  const existingSubscription = targetUser.subscriptions[0]
-  const before = existingSubscription ? { planId: existingSubscription.planId, status: existingSubscription.status } : null
-
-  let subscription
-  if (existingSubscription) {
-    subscription = await db.subscription.update({
-      where: { id: existingSubscription.id },
-      data: { planId, provider: 'MANUAL', cancelAtPeriodEnd: false, currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) }
-    })
-  } else {
-    subscription = await db.subscription.create({
-      data: {
-        userId,
-        planId,
-        provider: 'MANUAL',
-        providerSubscriptionId: `manual_${Date.now()}_${userId}`,
-        status: 'ACTIVE',
-        currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-        cancelAtPeriodEnd: false
-      }
-    })
-  }
-
-  await recordAdminAudit(request.user.id, request.user.role, 'override_membership', 'user', userId, before, { planId: subscription.planId, status: subscription.status, provider: subscription.provider }, { planLabel: plan.label })
-  return reply.send({ subscription })
-}
-
-export async function revokeUserMembership(request: AuthenticatedRequest, reply: any) {
-  const userId = coerceStringId(request.body?.userId, 'userId')
-
-  const targetUser = await db.user.findUnique({ where: { id: userId }, include: { subscriptions: { where: { status: 'ACTIVE' } } } })
-  if (!targetUser) throw { statusCode: 404, message: 'User not found' }
-
-  const existingSubscription = targetUser.subscriptions[0]
-  if (!existingSubscription) throw { statusCode: 400, message: 'User has no active membership to revoke' }
-
-  const before = { planId: existingSubscription.planId, status: existingSubscription.status }
-
-  const subscription = await db.subscription.update({
-    where: { id: existingSubscription.id },
-    data: { status: 'CANCELED', cancelAtPeriodEnd: false, currentPeriodEnd: new Date() }
-  })
-
-  await recordAdminAudit(request.user.id, request.user.role, 'revoke_membership', 'user', userId, before, { planId: subscription.planId, status: subscription.status }, null)
-  return reply.send({ subscription })
-}
+// overrideUserMembership/revokeUserMembership were removed here (Phase 7):
+// they used to mutate a user's Subscription row directly for support/comp
+// access, which could clobber a genuine paid subscription if one existed.
+// Replaced by MembershipGrant — see handlers/membership.ts
+// (createMembershipGrant/revokeMembershipGrant), which never touches
+// Subscription at all.
 
 // Taxonomy Handlers
 export async function getEntityTypes(request: AuthenticatedRequest, reply: any) {

@@ -30,7 +30,7 @@ export function ForgotPasswordScreen({ navigation }: Props) {
   }
 
   return (
-    <ScreenContainer width="narrow">
+    <ScreenContainer testID="screen.forgot-password" width="narrow">
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}>
         <View style={styles.card}>
           <Typography variant="display" style={{ marginBottom: spacing.xs }}>
@@ -39,7 +39,7 @@ export function ForgotPasswordScreen({ navigation }: Props) {
           <Typography variant="bodyMuted" style={{ marginBottom: spacing.xl }}>
             Enter your account email and we'll send you a 6-digit code.
           </Typography>
-          <TextField
+          <TextField testID="forgot-password.email"
             label="Email"
             value={email}
             onChangeText={setEmail}
@@ -47,10 +47,10 @@ export function ForgotPasswordScreen({ navigation }: Props) {
             keyboardType="email-address"
           />
           <View style={{ marginTop: spacing.sm }}>
-            <Button label="Send code" onPress={handleSubmit} loading={forgotPassword.isPending} disabled={!email} />
+            <Button testID="forgot-password.submit" label="Send code" onPress={handleSubmit} loading={forgotPassword.isPending} disabled={!email} />
           </View>
           <View style={{ marginTop: spacing.md }}>
-            <Button label="Back to log in" variant="secondary" onPress={() => navigation.navigate('Login')} />
+            <Button testID="forgot-password.back-to-log-in" label="Back to log in" variant="secondary" onPress={() => navigation.navigate('Login')} />
           </View>
         </View>
       </ScrollView>

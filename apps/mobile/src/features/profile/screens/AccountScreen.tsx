@@ -26,16 +26,16 @@ export function AccountScreen({ navigation }: Props) {
 
   if (me.isLoading) {
     return (
-      <ScreenContainer width="narrow">
-        <TopNavigation alignment="left" leftAction="back" onLeftAction={() => navigation.goBack()} title="Account" />
+      <ScreenContainer testID="screen.account" width="narrow">
+        <TopNavigation testID="account.header" alignment="left" leftAction="back" onLeftAction={() => navigation.goBack()} title="Account" />
         <ActivityIndicator style={{ marginTop: spacing.xl }} color={colors.primary} />
       </ScreenContainer>
     )
   }
 
   return (
-    <ScreenContainer width="narrow">
-      <TopNavigation alignment="left" leftAction="back" onLeftAction={() => navigation.goBack()} title="Account" />
+    <ScreenContainer testID="screen.account" width="narrow">
+      <TopNavigation testID="account.header" alignment="left" leftAction="back" onLeftAction={() => navigation.goBack()} title="Account" />
 
       <View style={styles.card}>
         <View style={styles.row}>
@@ -50,7 +50,7 @@ export function AccountScreen({ navigation }: Props) {
             <Typography variant="bodyMuted" style={{ marginBottom: spacing.md }}>
               Upgrade to Premium for unlimited browsing and to see who likes you.
             </Typography>
-            <Button label="Go Premium" onPress={() => navigation.navigate('Paywall')} />
+            <Button testID="account.go-premium" label="Go Premium" onPress={() => navigation.navigate('Paywall')} />
           </View>
         ) : null}
       </View>
@@ -70,7 +70,7 @@ export function AccountScreen({ navigation }: Props) {
             <Typography variant="bodyMuted" style={{ marginBottom: spacing.md }}>
               Verify {me.data?.email} to keep your account secure.
             </Typography>
-            <Button
+            <Button testID="account.send-verification-code"
               label="Send verification code"
               onPress={async () => {
                 await sendVerification.mutateAsync()
@@ -83,7 +83,7 @@ export function AccountScreen({ navigation }: Props) {
       </View>
 
       {me.data?.role === 'ADMIN' ? (
-        <Pressable style={styles.card} onPress={() => navigation.navigate('Admin')}>
+        <Pressable testID="account.open-admin" style={styles.card} onPress={() => navigation.navigate('Admin')}>
           <View style={styles.row}>
             <View style={styles.adminRowLeft}>
               <Icon name="Shield" size={20} color={colors.ink} />
@@ -96,7 +96,7 @@ export function AccountScreen({ navigation }: Props) {
 
       <View style={styles.card}>
         <Typography variant="heading" style={{ marginBottom: spacing.md }}>Actions</Typography>
-        <Button label="Log out" variant="secondary" onPress={handleLogout} loading={logout.isPending} />
+        <Button testID="account.logout" label="Log out" variant="secondary" onPress={handleLogout} loading={logout.isPending} />
       </View>
     </ScreenContainer>
   )

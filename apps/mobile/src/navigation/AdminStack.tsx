@@ -10,6 +10,15 @@ import { AdminTaxonomyEntityScreen } from '../features/admin/screens/AdminTaxono
 import { AdminTaxonomyGenerateScreen } from '../features/admin/screens/AdminTaxonomyGenerateScreen'
 import { AdminListsScreen } from '../features/admin/screens/AdminListsScreen'
 import { AdminListDetailScreen } from '../features/admin/screens/AdminListDetailScreen'
+import { AdminSitePicksScreen } from '../features/admin/screens/AdminSitePicksScreen'
+import { AdminSitePickGroupDetailScreen } from '../features/admin/screens/AdminSitePickGroupDetailScreen'
+import { AdminMembershipScreen } from '../features/admin/screens/AdminMembershipScreen'
+import { AdminMemberFeaturesScreen } from '../features/admin/screens/AdminMemberFeaturesScreen'
+import { AdminSignupPromotionsScreen } from '../features/admin/screens/AdminSignupPromotionsScreen'
+import { AdminCouponsScreen } from '../features/admin/screens/AdminCouponsScreen'
+import { AdminCouponRedemptionsScreen } from '../features/admin/screens/AdminCouponRedemptionsScreen'
+import { AdminGrantsScreen } from '../features/admin/screens/AdminGrantsScreen'
+import { AdminEffectiveMembersScreen } from '../features/admin/screens/AdminEffectiveMembersScreen'
 import type { AdminStackParamList } from './types'
 
 const Stack = createNativeStackNavigator<AdminStackParamList>()
@@ -28,6 +37,15 @@ export function AdminStack() {
       <Stack.Screen name="AdminTaxonomyGenerate" component={AdminTaxonomyGenerateScreen} />
       <Stack.Screen name="AdminLists" component={AdminListsScreen} />
       <Stack.Screen name="AdminListDetail" component={AdminListDetailScreen} />
+      <Stack.Screen name="AdminSitePicks" component={AdminSitePicksScreen} />
+      <Stack.Screen name="AdminSitePickGroupDetail" component={AdminSitePickGroupDetailScreen} />
+      <Stack.Screen name="AdminMembership" component={AdminMembershipScreen} />
+      <Stack.Screen name="AdminMemberFeatures" component={AdminMemberFeaturesScreen} />
+      <Stack.Screen name="AdminSignupPromotions" component={AdminSignupPromotionsScreen} />
+      <Stack.Screen name="AdminCoupons" component={AdminCouponsScreen} />
+      <Stack.Screen name="AdminCouponRedemptions" component={AdminCouponRedemptionsScreen} />
+      <Stack.Screen name="AdminGrants" component={AdminGrantsScreen} />
+      <Stack.Screen name="AdminEffectiveMembers" component={AdminEffectiveMembersScreen} />
     </Stack.Navigator>
   )
 }

@@ -32,6 +32,10 @@ model User {
   emailVerificationTokens EmailVerificationToken[]
   pushTokens              PushToken[]
   adminAuditEvents        AdminAuditEvent[]
+  membershipGrants        MembershipGrant[]        @relation("GrantRecipient")
+  grantsIssued            MembershipGrant[]        @relation("GrantIssuedBy")
+  grantsRevoked           MembershipGrant[]        @relation("GrantRevokedBy")
+  couponRedemptions       CouponRedemption[]
 }
 
 enum AccountRole {
@@ -485,6 +489,7 @@ model Category {
   curatedEntities  CategoryEntity[]
   lists            List[]
   mediaAssets      MediaAsset[]
+  sitePickItems    SitePickItem[]
 
   @@index([groupId])
   @@index([isActive])
@@ -516,6 +521,35 @@ model CategoryEntity {
   entity   Entity   @relation(fields: [entityId], references: [id], onDelete: Restrict)
 
   @@id([categoryId, entityId])
+}
+
+// Admin-curated "Site Picks" — 12 groups of 4 existing List Definitions
+// (Category rows) each, surfaced as their own Grid modules in the Lists feed
+// (ContentFeedService.getListsFeed), immediately after "Your lists" and
+// before the first Quick Picks beat. References existing Category rows
+// rather than duplicating them — a category can appear in multiple groups.
+model SitePickGroup {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  label     String
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items SitePickItem[]
+}
+
+model SitePickItem {
+  groupId    String
+  categoryId String
+  sortOrder  Int    @default(0)
+
+  group    SitePickGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  category Category      @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([groupId, categoryId])
+  @@index([categoryId])
 }
 
 model List {
@@ -650,9 +684,9 @@ model Plan {
   priceCents Int
   currency   String       @default("USD")
   isActive   Boolean      @default(true)
-  features   Json         @default("{}")
 
   subscriptions Subscription[]
+  grants        MembershipGrant[]
 }
 
 enum PlanInterval {
@@ -670,6 +704,17 @@ model Subscription {
   status                 SubscriptionStatus
   currentPeriodEnd       DateTime
   cancelAtPeriodEnd      Boolean            @default(false)
+  // Snapshot of MEMBER entitlement policy values at creation (Phase 7
+  // grandfathering) — a later policy *reduction* never silently takes away
+  // what this subscription already promised; a policy *improvement* still
+  // flows through live. Null on rows created before this existed — see
+  // the Phase 7 migration script, which backfills it for then-active rows.
+  entitlementFloor       Json?
+  // Snapshot of Plan.priceCents at the moment this subscription was created
+  // — an admin repricing the plan afterward never silently changes what an
+  // existing subscriber is considered to be paying. Null on rows created
+  // before this existed (see the Phase 7.1 migration script backfill).
+  pricePaidCents         Int?
   createdAt              DateTime           @default(now())
   updatedAt              DateTime           @updatedAt
 
@@ -742,4 +787,170 @@ model CompatibilityScore {
   @@unique([profileIdA, profileIdB])
   @@index([profileIdA, score(sort: Desc)])
   @@index([profileIdB, score(sort: Desc)])
+}
+
+// ── Membership (Phase 7) ──────────────────────────────────
+// FREE and MEMBER remain the only product states (see lib/entitlements.ts).
+// Plan/Subscription above stay real billing infrastructure, unchanged.
+// Everything below is how a user *becomes* MEMBER without a live paid
+// subscription, and how the entitlement policy itself is administered.
+
+// Admin-editable FREE/MEMBER feature policy — one row per (state, key). Falls
+// back to ENTITLEMENT_DEFAULTS in code for any (state, key) with no row yet,
+// so the system works before the table is ever seeded/edited.
+model EntitlementPolicy {
+  id              String           @id @default(cuid())
+  state           MembershipState
+  key             String
+  value           Json
+  updatedAt       DateTime         @updatedAt
+  updatedByUserId String?
+
+  @@unique([state, key])
+}
+
+enum MembershipState {
+  FREE
+  MEMBER
+}
+
+// Independent of Subscription — the sole non-billing path to MEMBER.
+// Lifetime when expiresAt is null. Always confers MEMBER (the only two
+// states are FREE/MEMBER, so there's nothing else for a grant to confer).
+model MembershipGrant {
+  id                 String     @id @default(cuid())
+  userId             String
+  source             GrantSource
+  reason             String?
+  expiresAt          DateTime?
+  // Snapshot of MEMBER entitlement policy values at creation — same
+  // grandfathering floor as Subscription.entitlementFloor.
+  entitlementFloor   Json?
+  revokedAt          DateTime?
+  revokedByUserId    String?
+  revokeReason       String?
+  grantedByUserId    String?
+  signupPromotionId  String?
+  couponRedemptionId String?    @unique
+  // Only set when source is ONE_TIME_PURCHASE — a lifetime/one-time plan
+  // "purchase" is a license, not recurring billing, so it never creates a
+  // Subscription row; this is its equivalent price-paid snapshot instead
+  // (same grandfathering intent as Subscription.pricePaidCents).
+  planId             String?
+  pricePaidCentsSnapshot Int?
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+
+  user             User              @relation("GrantRecipient", fields: [userId], references: [id], onDelete: Cascade)
+  grantedByUser    User?             @relation("GrantIssuedBy", fields: [grantedByUserId], references: [id], onDelete: SetNull)
+  revokedByUser    User?             @relation("GrantRevokedBy", fields: [revokedByUserId], references: [id], onDelete: SetNull)
+  signupPromotion  SignupPromotion?  @relation(fields: [signupPromotionId], references: [id], onDelete: SetNull)
+  couponRedemption CouponRedemption? @relation(fields: [couponRedemptionId], references: [id], onDelete: SetNull)
+  plan             Plan?             @relation(fields: [planId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@index([source])
+}
+
+enum GrantSource {
+  MANUAL_ADMIN
+  SIGNUP_PROMOTION
+  COUPON_REDEMPTION
+  ONE_TIME_PURCHASE
+}
+
+// [startAt, endAt) — a user who *registers* inside this window is granted
+// MEMBER (lifetime, or temporary for durationDays). Distinct from
+// GlobalMembershipWindow below, which elevates every existing user for a
+// stretch of time regardless of when they signed up.
+model SignupPromotion {
+  id              String           @id @default(cuid())
+  label           String
+  startAt         DateTime
+  endAt           DateTime
+  awardType       SignupAwardType
+  durationDays    Int?
+  isActive        Boolean          @default(true)
+  createdAt       DateTime         @default(now())
+  createdByUserId String?
+
+  grants MembershipGrant[]
+
+  @@index([isActive, startAt, endAt])
+}
+
+enum SignupAwardType {
+  LIFETIME_MEMBER
+  TEMPORARY_MEMBER
+}
+
+// [startAt, endAt) — every user (new or existing) resolves as MEMBER while
+// now() falls in this window, with no per-user grant row created (see
+// resolveMembership). Purely a temporary global promotional elevation.
+model GlobalMembershipWindow {
+  id              String   @id @default(cuid())
+  label           String
+  startAt         DateTime
+  endAt           DateTime
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  createdByUserId String?
+
+  @@index([isActive, startAt, endAt])
+}
+
+model CouponCode {
+  id                    String       @id @default(cuid())
+  code                  String       @unique
+  discountType          DiscountType
+  discountPercent       Int
+  // Only meaningful for a FULL (100%) coupon's resulting grant — null means
+  // lifetime MEMBER, otherwise the grant expires this many days after redemption.
+  grantDurationDays     Int?
+  campaign              String?
+  partner               String?
+  maxRedemptions        Int?
+  maxRedemptionsPerUser Int          @default(1)
+  startAt               DateTime?
+  endAt                 DateTime?
+  isActive              Boolean      @default(true)
+  createdAt             DateTime     @default(now())
+  createdByUserId       String?
+
+  redemptions CouponRedemption[]
+
+  @@index([isActive])
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FULL
+}
+
+// Immutable terms/history: a snapshot of the coupon's terms *as redeemed*,
+// so a later edit to CouponCode never rewrites what a past redemption
+// actually granted. A FULL (100%) redemption gets a MembershipGrant
+// (see the 1:1 relation on MembershipGrant.couponRedemptionId); a
+// PERCENTAGE redemption is recorded for attribution/history only — it
+// requires verified payment before it grants any access, which is out of
+// scope until real IAP exists.
+model CouponRedemption {
+  id                        String       @id @default(cuid())
+  couponCodeId              String
+  userId                    String
+  codeSnapshot              String
+  discountType              DiscountType
+  discountPercent           Int
+  grantDurationDaysSnapshot Int?
+  campaignSnapshot          String?
+  partnerSnapshot           String?
+  redeemedAt                DateTime     @default(now())
+
+  couponCode CouponCode       @relation(fields: [couponCodeId], references: [id], onDelete: Restrict)
+  user       User             @relation(fields: [userId], references: [id], onDelete: Restrict)
+  grant      MembershipGrant?
+
+  @@index([userId])
+  @@index([couponCodeId])
 }

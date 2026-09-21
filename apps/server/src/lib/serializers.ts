@@ -37,6 +37,11 @@ export function serializeProfile(profile: any, opts: { revealPhoto: boolean }) {
     locationLabel: profile.locationLabel,
     avatarUrl: opts.revealPhoto ? profile.avatarUrl : null,
     photos: opts.revealPhoto ? (profile.photos ?? []).map((p: any) => p.url) : [],
+    // Distinguishes "withheld by the photo gate" from "this profile just has
+    // no photos" — a null avatarUrl alone can't tell a client which one it
+    // got, and guessing from that got a genuinely photo-less profile a
+    // permanent (and wrong) "go premium to see their photos" message.
+    photosLocked: !opts.revealPhoto,
     isDiscoverable: profile.isDiscoverable,
     onboardingStep: profile.onboardingStep,
   }

@@ -2,9 +2,9 @@ import { StyleSheet, View } from 'react-native'
 import { spacing } from '../theme'
 import { Typography } from '../ui/Typography'
 
-export function EmptyState({ title, subtitle }: { title: string; subtitle?: string }) {
+export function EmptyState({ testID, title, subtitle }: { testID?: string; title: string; subtitle?: string }) {
   return (
-    <View style={styles.container}>
+    <View testID={testID} style={styles.container}>
       <Typography variant="heading">{title}</Typography>
       {subtitle ? <Typography variant="bodyMuted" style={styles.subtitle}>{subtitle}</Typography> : null}
     </View>

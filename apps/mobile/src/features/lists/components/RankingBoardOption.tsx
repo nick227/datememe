@@ -8,6 +8,7 @@ import { colors, radius, spacing } from '../../../theme'
 const ITEM_HEIGHT = 56
 
 type Props = {
+  testID?: string
   rank: number
   name: string
   imageUrl?: string | null
@@ -15,7 +16,7 @@ type Props = {
   onReorder?: (newRank: number) => void
 }
 
-export function RankingBoardOption({ rank, name, imageUrl, onRemove, onReorder }: Props) {
+export function RankingBoardOption({ testID, rank, name, imageUrl, onRemove, onReorder }: Props) {
   const isDragging = useSharedValue(false)
   const translationY = useSharedValue(0)
   const startRank = useSharedValue(rank)
@@ -55,10 +56,10 @@ export function RankingBoardOption({ rank, name, imageUrl, onRemove, onReorder }
   })
 
   return (
-    <Animated.View style={[styles.container, animatedStyle]}>
+    <Animated.View testID={testID} style={[styles.container, animatedStyle]}>
       {/* Drag handle */}
       <GestureDetector gesture={panGesture}>
-        <View style={styles.dragHandle}>
+        <View testID={testID ? `${testID}.drag` : undefined} style={styles.dragHandle}>
           <GripVertical size={20} color={colors.inkMuted} />
         </View>
       </GestureDetector>
@@ -81,7 +82,7 @@ export function RankingBoardOption({ rank, name, imageUrl, onRemove, onReorder }
       </Typography>
 
       {/* Remove Control */}
-      <Pressable onPress={onRemove} style={styles.removeButton}>
+      <Pressable testID={testID ? `${testID}.remove` : undefined} onPress={onRemove} style={styles.removeButton}>
         <X size={20} color={colors.inkMuted} />
       </Pressable>
     </Animated.View>

@@ -47,6 +47,21 @@ components:
       name: q
       schema: { type: string, minLength: 0, maxLength: 200 }
       description: Prefix/fulltext search within this resource (MySQL LIKE/FULLTEXT — see docs §6).
+    GroupSlugs:
+      in: query
+      name: groupSlugs
+      description: >
+        Comma-separated CategoryGroup slugs (e.g. "music,food") — multi-select.
+        OR'd together: a real, server-side filter to *any* selected group,
+        not an AND across all of them. Comma-joined rather than a repeated
+        query key so a single selection never needs array coercion on either
+        the client or the server's querystring parser. Shared by GET
+        /lists/feed and GET /discover/feed — the two pages' category chips
+        run the same filtering logic, though what a "match" means differs
+        per feed: on /lists/feed it's literal category membership; on
+        /discover/feed it's the *taste* axis — real engagement (a started or
+        completed list) in that group, not people tagged with it.
+      schema: { type: string }
 
   responses:
     Unauthorized:
@@ -95,6 +110,7 @@ components:
           locationLabel,
           avatarUrl,
           photos,
+          photosLocked,
           isDiscoverable,
           onboardingStep,
         ]
@@ -116,11 +132,19 @@ components:
         avatarUrl:
           type: string
           nullable: true
-          description: Null for a free-tier viewer looking at someone else's profile — see docs §8 photo gate.
+          description: Null for a free-tier viewer looking at someone else's profile — see docs §8 photo gate. Also null when the profile genuinely has no avatar; see `photosLocked` to tell the two apart.
         photos:
           type: array
           items: { type: string }
-          description: Gallery beyond the primary avatarUrl; empty for a free-tier viewer looking at someone else's profile (docs §8).
+          description: Gallery beyond the primary avatarUrl; empty for a free-tier viewer looking at someone else's profile (docs §8), and also empty when the profile genuinely has no gallery photos.
+        photosLocked:
+          type: boolean
+          description: >
+            True only when `avatarUrl`/`photos` were withheld by the docs §8
+            photo gate (a free-tier viewer looking at someone else's
+            profile) — always false for your own profile, and false for a
+            profile that simply has no photos, so a client can tell "go
+            premium to see this" apart from "there's nothing to see."
         isDiscoverable: { type: boolean }
         onboardingStep: { type: integer }
 
@@ -134,6 +158,52 @@ components:
         isVerified: { type: boolean }
         createdAt: { type: string, format: date-time }
         profile: { $ref: '#/components/schemas/Profile' }
+
+    Entitlements:
+      type: object
+      required: [profile.fullPhotoAccess, messaging.readIncoming, messaging.dailySendLimit, lists.memberOnly]
+      properties:
+        profile.fullPhotoAccess: { type: boolean }
+        messaging.readIncoming: { type: boolean }
+        messaging.dailySendLimit:
+          oneOf:
+            - { type: integer, minimum: 0 }
+            - { type: string, enum: [UNLIMITED] }
+        lists.memberOnly: { type: boolean }
+
+    AdminEntitlementPolicy:
+      description: The full Member Features policy — every FREE/MEMBER entitlement value currently in effect (DB rows, falling back to seed defaults for anything never edited).
+      type: object
+      required: [FREE, MEMBER]
+      properties:
+        FREE: { $ref: '#/components/schemas/Entitlements' }
+        MEMBER: { $ref: '#/components/schemas/Entitlements' }
+
+    AdminUpdateEntitlementPolicyInput:
+      type: object
+      required: [state, key, value]
+      properties:
+        state: { type: string, enum: [FREE, MEMBER] }
+        key: { type: string, enum: ['profile.fullPhotoAccess', 'messaging.readIncoming', 'messaging.dailySendLimit', 'lists.memberOnly'] }
+        # anyOf, not oneOf — ajv's default type coercion makes a boolean also
+        # satisfy `{type: integer}`, which makes oneOf's "exactly one match"
+        # constraint spuriously fail on true/false. The handler itself
+        # already validates `key` against the real Entitlements shape, so
+        # anyOf's looser "at least one" is fine here.
+        value:
+          anyOf:
+            - { type: boolean }
+            - { type: integer, minimum: 0 }
+            - { type: string, enum: [UNLIMITED] }
+
+    MembershipSource:
+      description: One thing currently qualifying this user for MEMBER. GLOBAL_PROMOTION has no per-user grant row — id/expiresAt point at the GlobalMembershipWindow itself.
+      type: object
+      required: [kind, id, expiresAt]
+      properties:
+        kind: { type: string, enum: [SUBSCRIPTION, MANUAL_SUBSCRIPTION, MANUAL_ADMIN, SIGNUP_PROMOTION, COUPON_REDEMPTION, ONE_TIME_PURCHASE, GLOBAL_PROMOTION] }
+        id: { type: string }
+        expiresAt: { type: string, format: date-time, nullable: true, description: 'null = lifetime.' }
 
     UserContext:
       allOf:
@@ -154,24 +224,8 @@ components:
                 state: { type: string, enum: [FREE, MEMBER] }
                 sources:
                   type: array
-                  items:
-                    type: object
-                    required: [kind, id, expiresAt]
-                    properties:
-                      kind: { type: string, enum: [SUBSCRIPTION, MANUAL_SUBSCRIPTION] }
-                      id: { type: string }
-                      expiresAt: { type: string, format: date-time }
-            entitlements:
-              type: object
-              required: [profile.fullPhotoAccess, messaging.readIncoming, messaging.dailySendLimit, lists.memberOnly]
-              properties:
-                profile.fullPhotoAccess: { type: boolean }
-                messaging.readIncoming: { type: boolean }
-                messaging.dailySendLimit:
-                  oneOf:
-                    - { type: integer, minimum: 0 }
-                    - { type: string, enum: [UNLIMITED] }
-                lists.memberOnly: { type: boolean }
+                  items: { $ref: '#/components/schemas/MembershipSource' }
+            entitlements: { $ref: '#/components/schemas/Entitlements' }
 
     RegisterInput:
       type: object
@@ -787,6 +841,14 @@ components:
         reason: { type: string }
         sourceEntityId: { type: string }
         sourceEntityType: { type: string }
+        groupSlug:
+          type: string
+          description: >
+            Present on a CategoryGroup topic module (getListsFeed's
+            groupModules, including continuation chunks) — the chip id it
+            belongs to. Lets the client's chip bar reorder that module to the
+            top of the feed instead of scrolling to find it, without
+            string-matching module ids.
 
     # ContentCollection and InteractiveModule are documented here as the two
     # logical shapes a FeedModule takes, but the wire schema below (FeedModule)
@@ -1062,7 +1124,7 @@ components:
 
     AdminPlanScalar:
       type: object
-      required: [id, slug, label, interval, priceCents, currency, isActive, features]
+      required: [id, slug, label, interval, priceCents, currency, isActive]
       properties:
         id: { type: string }
         slug: { type: string }
@@ -1071,11 +1133,6 @@ components:
         priceCents: { type: integer }
         currency: { type: string }
         isActive: { type: boolean }
-        # additionalProperties: true is load-bearing, not decorative — fast-json-stringify
-        # serializes a bare `type: object` with no declared properties as `{}`
-        # regardless of the real value, silently dropping every key. Caught
-        # live: a plan created with real features came back as `features: {}`.
-        features: { type: object, additionalProperties: true }
 
     # getPlans additionally includes the active-subscriber count; getUser's
     # subscriptions.plan include does not — AdminPlanScalar above is what
@@ -1095,7 +1152,7 @@ components:
 
     AdminSubscriptionScalar:
       type: object
-      required: [id, userId, planId, provider, providerSubscriptionId, status, currentPeriodEnd, cancelAtPeriodEnd, createdAt]
+      required: [id, userId, planId, provider, providerSubscriptionId, status, currentPeriodEnd, cancelAtPeriodEnd, pricePaidCents, createdAt]
       properties:
         id: { type: string }
         userId: { type: string }
@@ -1105,6 +1162,7 @@ components:
         status: { type: string, enum: [ACTIVE, TRIALING, PAST_DUE, CANCELED, EXPIRED] }
         currentPeriodEnd: { type: string, format: date-time }
         cancelAtPeriodEnd: { type: boolean }
+        pricePaidCents: { type: integer, nullable: true, description: 'Snapshot of Plan.priceCents when this subscription was created; null on rows predating this field. A later repricing of the plan never changes this.' }
         createdAt: { type: string, format: date-time }
 
     AdminSubscriptionWithPlan:
@@ -1141,7 +1199,7 @@ components:
 
     AdminUserDetail:
       type: object
-      required: [id, email, role, isVerified, suspendedAt, deletedAt, createdAt, profile, subscriptions]
+      required: [id, email, role, isVerified, suspendedAt, deletedAt, createdAt, profile, subscriptions, membershipGrants]
       properties:
         id: { type: string }
         email: { type: string }
@@ -1155,6 +1213,10 @@ components:
           type: array
           description: At most one — the caller's current ACTIVE subscription, if any (getUser only ever fetches status:ACTIVE, take:1).
           items: { $ref: '#/components/schemas/AdminSubscriptionWithPlan' }
+        membershipGrants:
+          type: array
+          description: Full history — active, revoked, and expired — newest first. This plus subscriptions above is the user's complete membership-source history.
+          items: { $ref: '#/components/schemas/AdminMembershipGrant' }
 
     AdminAuditEvent:
       type: object
@@ -1174,6 +1236,267 @@ components:
         createdAt: { type: string, format: date-time }
         actor: { $ref: '#/components/schemas/AdminReviewerRef' }
 
+    # ── Admin: Membership (batch 8) ──────────────────────────
+    AdminMembershipGrant:
+      type: object
+      required: [id, userId, source, reason, expiresAt, revokedAt, revokedByUserId, revokeReason, grantedByUserId, signupPromotionId, couponRedemptionId, planId, pricePaidCentsSnapshot, createdAt]
+      properties:
+        id: { type: string }
+        userId: { type: string }
+        source: { type: string, enum: [MANUAL_ADMIN, SIGNUP_PROMOTION, COUPON_REDEMPTION, ONE_TIME_PURCHASE] }
+        reason: { type: string, nullable: true }
+        expiresAt: { type: string, format: date-time, nullable: true, description: 'null = lifetime.' }
+        revokedAt: { type: string, format: date-time, nullable: true }
+        revokedByUserId: { type: string, nullable: true }
+        revokeReason: { type: string, nullable: true }
+        grantedByUserId: { type: string, nullable: true, description: 'null for a system-issued grant (signup promotion, coupon, one-time purchase).' }
+        signupPromotionId: { type: string, nullable: true }
+        couponRedemptionId: { type: string, nullable: true }
+        planId: { type: string, nullable: true, description: 'Set only when source is ONE_TIME_PURCHASE.' }
+        pricePaidCentsSnapshot: { type: integer, nullable: true, description: 'Price paid at purchase, when source is ONE_TIME_PURCHASE. A later repricing of the plan never changes this.' }
+        createdAt: { type: string, format: date-time }
+        grantedByUser: { type: object, nullable: true, allOf: [{ $ref: '#/components/schemas/AdminReviewerRef' }] }
+        revokedByUser: { type: object, nullable: true, allOf: [{ $ref: '#/components/schemas/AdminReviewerRef' }] }
+
+    AdminUserBriefRef:
+      type: object
+      required: [id, email, profile]
+      properties:
+        id: { type: string }
+        email: { type: string }
+        profile:
+          type: object
+          nullable: true
+          required: [username, displayName]
+          properties:
+            username: { type: string }
+            displayName: { type: string }
+
+    AdminMembershipGrantListItem:
+      allOf:
+        - $ref: '#/components/schemas/AdminMembershipGrant'
+        - type: object
+          required: [user]
+          properties:
+            user: { $ref: '#/components/schemas/AdminUserBriefRef' }
+
+    AdminCreateMembershipGrantInput:
+      type: object
+      required: [userId]
+      properties:
+        userId: { type: string }
+        expiresAt: { type: string, format: date-time, nullable: true, description: 'Omit or null for a lifetime grant.' }
+        reason: { type: string }
+
+    AdminRevokeMembershipGrantInput:
+      type: object
+      properties:
+        reason: { type: string }
+
+    AdminSignupPromotion:
+      type: object
+      required: [id, label, startAt, endAt, awardType, durationDays, isActive, createdAt, createdByUserId, _count]
+      properties:
+        id: { type: string }
+        label: { type: string }
+        startAt: { type: string, format: date-time }
+        endAt: { type: string, format: date-time, description: 'Exclusive — [startAt, endAt).' }
+        awardType: { type: string, enum: [LIFETIME_MEMBER, TEMPORARY_MEMBER] }
+        durationDays: { type: integer, nullable: true, description: 'Required (non-null) when awardType is TEMPORARY_MEMBER.' }
+        isActive: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        createdByUserId: { type: string, nullable: true }
+        _count:
+          type: object
+          required: [grants]
+          properties:
+            grants: { type: integer, description: Signup attribution — how many users this promotion has actually granted MEMBER to. }
+
+    AdminCreateSignupPromotionInput:
+      type: object
+      required: [label, startAt, endAt, awardType]
+      properties:
+        label: { type: string, minLength: 1, maxLength: 150 }
+        startAt: { type: string, format: date-time }
+        endAt: { type: string, format: date-time }
+        awardType: { type: string, enum: [LIFETIME_MEMBER, TEMPORARY_MEMBER] }
+        durationDays: { type: integer, minimum: 1 }
+
+    AdminUpdateSignupPromotionInput:
+      type: object
+      properties:
+        label: { type: string, minLength: 1, maxLength: 150 }
+        startAt: { type: string, format: date-time }
+        endAt: { type: string, format: date-time }
+        awardType: { type: string, enum: [LIFETIME_MEMBER, TEMPORARY_MEMBER] }
+        durationDays: { type: integer, minimum: 1 }
+        isActive: { type: boolean }
+
+    AdminGlobalMembershipWindow:
+      type: object
+      required: [id, label, startAt, endAt, isActive, createdAt, createdByUserId]
+      properties:
+        id: { type: string }
+        label: { type: string }
+        startAt: { type: string, format: date-time }
+        endAt: { type: string, format: date-time, description: 'Exclusive — [startAt, endAt).' }
+        isActive: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        createdByUserId: { type: string, nullable: true }
+
+    AdminCreateGlobalMembershipWindowInput:
+      type: object
+      required: [label, startAt, endAt]
+      properties:
+        label: { type: string, minLength: 1, maxLength: 150 }
+        startAt: { type: string, format: date-time }
+        endAt: { type: string, format: date-time }
+
+    AdminUpdateGlobalMembershipWindowInput:
+      type: object
+      properties:
+        label: { type: string, minLength: 1, maxLength: 150 }
+        startAt: { type: string, format: date-time }
+        endAt: { type: string, format: date-time }
+        isActive: { type: boolean }
+
+    AdminCouponCode:
+      type: object
+      required: [id, code, discountType, discountPercent, grantDurationDays, campaign, partner, maxRedemptions, maxRedemptionsPerUser, startAt, endAt, isActive, createdAt, createdByUserId, _count]
+      properties:
+        id: { type: string }
+        code: { type: string }
+        discountType: { type: string, enum: [PERCENTAGE, FULL] }
+        discountPercent: { type: integer, minimum: 1, maximum: 100 }
+        grantDurationDays: { type: integer, nullable: true, description: 'FULL-coupon grants only — null means the resulting grant is lifetime.' }
+        campaign: { type: string, nullable: true }
+        partner: { type: string, nullable: true }
+        maxRedemptions: { type: integer, nullable: true, description: 'null = unlimited.' }
+        maxRedemptionsPerUser: { type: integer }
+        startAt: { type: string, format: date-time, nullable: true }
+        endAt: { type: string, format: date-time, nullable: true }
+        isActive: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        createdByUserId: { type: string, nullable: true }
+        _count:
+          type: object
+          required: [redemptions]
+          properties:
+            redemptions: { type: integer }
+
+    AdminCreateCouponCodeInput:
+      type: object
+      required: [code, discountType]
+      properties:
+        code: { type: string, minLength: 1, maxLength: 60 }
+        discountType: { type: string, enum: [PERCENTAGE, FULL] }
+        discountPercent: { type: integer, minimum: 1, maximum: 100, description: 'Ignored (treated as 100) when discountType is FULL.' }
+        grantDurationDays: { type: integer, minimum: 1 }
+        campaign: { type: string, maxLength: 150 }
+        partner: { type: string, maxLength: 150 }
+        maxRedemptions: { type: integer, minimum: 1 }
+        maxRedemptionsPerUser: { type: integer, minimum: 1 }
+        startAt: { type: string, format: date-time }
+        endAt: { type: string, format: date-time }
+
+    AdminUpdateCouponCodeInput:
+      type: object
+      properties:
+        discountType: { type: string, enum: [PERCENTAGE, FULL] }
+        discountPercent: { type: integer, minimum: 1, maximum: 100 }
+        grantDurationDays: { type: integer, nullable: true }
+        campaign: { type: string, nullable: true, maxLength: 150 }
+        partner: { type: string, nullable: true, maxLength: 150 }
+        maxRedemptions: { type: integer, nullable: true }
+        maxRedemptionsPerUser: { type: integer, minimum: 1 }
+        startAt: { type: string, format: date-time, nullable: true }
+        endAt: { type: string, format: date-time, nullable: true }
+        isActive: { type: boolean }
+
+    AdminCouponRedemption:
+      type: object
+      required: [id, couponCodeId, userId, codeSnapshot, discountType, discountPercent, grantDurationDaysSnapshot, campaignSnapshot, partnerSnapshot, redeemedAt, user, grant]
+      properties:
+        id: { type: string }
+        couponCodeId: { type: string }
+        userId: { type: string }
+        codeSnapshot: { type: string, description: 'Immutable — the code as it was at redemption time.' }
+        discountType: { type: string, enum: [PERCENTAGE, FULL] }
+        discountPercent: { type: integer }
+        grantDurationDaysSnapshot: { type: integer, nullable: true }
+        campaignSnapshot: { type: string, nullable: true }
+        partnerSnapshot: { type: string, nullable: true }
+        redeemedAt: { type: string, format: date-time }
+        user: { $ref: '#/components/schemas/AdminUserBriefRef' }
+        grant: { type: object, nullable: true, allOf: [{ $ref: '#/components/schemas/AdminMembershipGrant' }] }
+
+    AdminMembershipOverview:
+      type: object
+      required: [effectiveMemberCount, totalUserCount, bySource, globalWindow]
+      properties:
+        effectiveMemberCount: { type: integer, description: 'Distinct users currently MEMBER via an active subscription or grant (excludes a currently-active global window, which would otherwise make this equal totalUserCount).' }
+        totalUserCount: { type: integer }
+        bySource:
+          type: object
+          required: [subscriptions, manualGrants, signupPromotionGrants, couponGrants, oneTimePurchaseGrants]
+          properties:
+            subscriptions: { type: integer }
+            manualGrants: { type: integer }
+            signupPromotionGrants: { type: integer }
+            couponGrants: { type: integer }
+            oneTimePurchaseGrants: { type: integer }
+        globalWindow:
+          type: object
+          nullable: true
+          required: [active, id, label, endsAt]
+          properties:
+            active: { type: boolean }
+            id: { type: string }
+            label: { type: string }
+            endsAt: { type: string, format: date-time }
+
+    AdminEffectiveMember:
+      type: object
+      required: [user, sources]
+      properties:
+        user: { $ref: '#/components/schemas/AdminUserBriefRef' }
+        sources:
+          type: array
+          items:
+            type: object
+            required: [kind, expiresAt]
+            properties:
+              kind: { type: string, enum: [SUBSCRIPTION, MANUAL_SUBSCRIPTION, MANUAL_ADMIN, SIGNUP_PROMOTION, COUPON_REDEMPTION, ONE_TIME_PURCHASE] }
+              expiresAt: { type: string, format: date-time, nullable: true }
+
+    RedeemCouponInput:
+      type: object
+      required: [code]
+      properties:
+        code: { type: string, minLength: 1, maxLength: 60 }
+
+    RedeemCouponResult:
+      type: object
+      required: [redemption, grant]
+      properties:
+        redemption:
+          type: object
+          required: [id, codeSnapshot, discountType, discountPercent, redeemedAt]
+          properties:
+            id: { type: string }
+            codeSnapshot: { type: string }
+            discountType: { type: string, enum: [PERCENTAGE, FULL] }
+            discountPercent: { type: integer }
+            redeemedAt: { type: string, format: date-time }
+        grant:
+          description: Present only for a FULL (100%) coupon — a PERCENTAGE redemption is recorded but grants nothing until a real payment exists to apply it to.
+          type: object
+          nullable: true
+          required: [id, expiresAt]
+          properties:
+            id: { type: string }
+            expiresAt: { type: string, format: date-time, nullable: true }
+
     AdminBanUserInput:
       type: object
       required: [userId, ban]
@@ -1188,18 +1511,9 @@ components:
         userId: { type: string }
         verify: { type: boolean }
 
-    AdminOverrideMembershipInput:
-      type: object
-      required: [userId, planId]
-      properties:
-        userId: { type: string }
-        planId: { type: string }
-
-    AdminRevokeMembershipInput:
-      type: object
-      required: [userId]
-      properties:
-        userId: { type: string }
+    # AdminOverrideMembershipInput/AdminRevokeMembershipInput removed (Phase
+    # 7) — replaced by AdminCreateMembershipGrantInput/grant revoke below,
+    # which never touch Subscription. See the Membership (batch 8) section.
 
     # ── Admin: Memberships (batch 4) ───────────────────────────
     AdminCreatePlanInput:
@@ -1211,7 +1525,6 @@ components:
         interval: { type: string, enum: [MONTHLY, ANNUAL, LIFETIME] }
         priceCents: { type: integer, minimum: 0, maximum: 1000000 }
         isActive: { type: boolean }
-        features: { type: object, additionalProperties: true, description: 'Arbitrary entitlement flags — free-form, no fixed key set.' }
 
     AdminUpdatePlanInput:
       type: object
@@ -1222,9 +1535,8 @@ components:
           type: integer
           minimum: 0
           maximum: 1000000
-          description: 'Must equal the plan''s current price once it has active subscriptions (grandfathering — archive and recreate instead of repricing a live plan).'
+          description: 'Freely editable, including with active subscriptions — every subscription/grant snapshots the price it was created at, so repricing only affects new purchases.'
         isActive: { type: boolean }
-        features: { type: object, additionalProperties: true, description: 'Arbitrary entitlement flags — free-form, no fixed key set.' }
 
     # ── Admin: Media (batch 7) ──────────────────────────────────
     # The MediaAssetPicker migration mediaAssets/externalRefs above were
@@ -1464,6 +1776,71 @@ components:
         entities:
           type: array
           items: { $ref: '#/components/schemas/AdminCuratedEntityInput' }
+
+    AdminSitePickGroupScalar:
+      type: object
+      required: [id, slug, label, sortOrder, isActive]
+      properties:
+        id: { type: string }
+        slug: { type: string }
+        label: { type: string }
+        sortOrder: { type: integer }
+        isActive: { type: boolean }
+
+    AdminSitePickItem:
+      description: One List Definition (Category row) curated into a Site Picks group, in display order. Has no `id` of its own — SitePickItem is a (groupId, categoryId) composite key in the schema.
+      type: object
+      required: [groupId, categoryId, sortOrder, category]
+      properties:
+        groupId: { type: string }
+        categoryId: { type: string }
+        sortOrder: { type: integer }
+        category: { $ref: '#/components/schemas/AdminCategoryScalar' }
+
+    AdminSitePickGroup:
+      description: A Site Picks group as seen by the admin browser/editor — the group plus its curated List Definitions, in order.
+      allOf:
+        - $ref: '#/components/schemas/AdminSitePickGroupScalar'
+        - type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items: { $ref: '#/components/schemas/AdminSitePickItem' }
+
+    AdminCreateSitePickGroupInput:
+      type: object
+      required: [slug, label]
+      properties:
+        slug: { type: string }
+        label: { type: string }
+        sortOrder: { type: integer }
+        isActive: { type: boolean }
+
+    AdminUpdateSitePickGroupInput:
+      type: object
+      required: [slug, label]
+      properties:
+        slug: { type: string }
+        label: { type: string }
+        sortOrder: { type: integer }
+        isActive: { type: boolean }
+
+    AdminSitePickItemInput:
+      type: object
+      required: [categoryId, sortOrder]
+      properties:
+        categoryId: { type: string }
+        sortOrder: { type: integer }
+
+    AdminUpdateSitePickItemsInput:
+      type: object
+      required: [items]
+      properties:
+        items:
+          description: Full replace, not a merge. Intended to be exactly 4 entries — enforced by the admin UI, not the server.
+          type: array
+          items: { $ref: '#/components/schemas/AdminSitePickItemInput' }
 
     AdminCreateEntityTypeInput:
       type: object
@@ -2033,14 +2410,16 @@ paths:
         ContentCollection per non-empty CategoryGroup ("Music", "Movies & TV",
         ...), each mixing answered and unanswered categories — completion is
         a fact carried by the unit (`relationship.completed`), not a separate
-        section. `chips` mirror the same groups for jump-navigation (the
-        frontend treats them as scroll anchors, not filters — there is
-        nothing left to filter server-side). The whole feed is small enough
-        to return in one page; `cursor` is accepted for forward-compatibility
-        but `hasMore` is always false today.
+        section. `chips` mirror the same groups; with no `groupSlugs`, the
+        whole feed loads unfiltered ("Your lists" -> Site Picks -> every
+        topic). With `groupSlugs`, this is a real filtered query — "Your
+        lists" still leads, then only the selected group(s)' Site Picks and
+        topic sections, with Quick Picks folded in after them — same
+        filtering shape as GET /discover/feed.
       parameters:
         - $ref: '#/components/parameters/Cursor'
         - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/GroupSlugs'
       responses:
         '200':
           description: Page summary, chips, and one feed module per topic
@@ -2086,14 +2465,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/Cursor'
         - $ref: '#/components/parameters/Limit'
-        - in: query
-          name: groupSlug
-          description: >
-            A CategoryGroup slug — the *taste* filter axis: restricts to
-            people with real engagement (a started or completed list) in
-            that group, not people tagged with it. This is the ~70% of
-            Discover's categorization that isn't demographic.
-          schema: { type: string }
+        - $ref: '#/components/parameters/GroupSlugs'
         - in: query
           name: nearMe
           description: Requires the viewer to have their own location set — returns nobody outside the radius rather than silently ignoring the filter.
@@ -3162,6 +3534,152 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
 
+  # ── Admin: Site Picks ─────────────────────────────────────
+  # Curated "Site Picks" groups (12 groups of 4 existing List Definitions
+  # each), surfaced by GET /lists/feed immediately after "Your lists" and
+  # before the first Quick Picks beat. References existing Category rows —
+  # never duplicates them.
+  /admin/site-picks/groups:
+    get:
+      operationId: getSitePickGroups
+      summary: List every Site Picks group, with its curated List Definitions, in order
+      tags: [admin]
+      security:
+        - adminAuth: []
+      responses:
+        '200':
+          description: All Site Picks groups
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [groups]
+                properties:
+                  groups:
+                    type: array
+                    items: { $ref: '#/components/schemas/AdminSitePickGroup' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      operationId: createSitePickGroup
+      summary: Create a new Site Picks group
+      tags: [admin]
+      security:
+        - adminAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AdminCreateSitePickGroupInput' }
+      responses:
+        '201':
+          description: The created group
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [group]
+                properties:
+                  group: { $ref: '#/components/schemas/AdminSitePickGroupScalar' }
+        '400':
+          description: Missing field
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /admin/site-picks/groups/{id}:
+    put:
+      operationId: updateSitePickGroup
+      summary: Update a Site Picks group's label, slug, order, or active state
+      tags: [admin]
+      security:
+        - adminAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AdminUpdateSitePickGroupInput' }
+      responses:
+        '200':
+          description: The updated group
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [group]
+                properties:
+                  group: { $ref: '#/components/schemas/AdminSitePickGroupScalar' }
+        '400':
+          description: Missing field
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      operationId: deleteSitePickGroup
+      summary: Delete a Site Picks group (does not touch the underlying List Definitions)
+      tags: [admin]
+      security:
+        - adminAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '204':
+          description: Deleted
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /admin/site-picks/groups/{id}/items:
+    put:
+      operationId: updateSitePickGroupItems
+      summary: Replace this Site Picks group's curated List Definitions and their order (full replace, not a merge)
+      tags: [admin]
+      security:
+        - adminAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AdminUpdateSitePickItemsInput' }
+      responses:
+        '200':
+          description: The group's curated List Definitions after the replace
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/AdminSitePickItem' }
+        '400':
+          description: items must be an array
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
   # ── Admin: Media (batch 7) ────────────────────────────────
   /admin/media/search:
     post:
@@ -3467,62 +3985,9 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
 
-  /admin/users/membership:
-    post:
-      operationId: overrideUserMembership
-      summary: Grant or change a user's active plan manually (support/comp access)
-      tags: [admin]
-      security:
-        - adminAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema: { $ref: '#/components/schemas/AdminOverrideMembershipInput' }
-      responses:
-        '200':
-          description: The resulting subscription
-          content:
-            application/json:
-              schema:
-                type: object
-                required: [subscription]
-                properties:
-                  subscription: { $ref: '#/components/schemas/AdminSubscriptionScalar' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '403': { $ref: '#/components/responses/Forbidden' }
-        '404': { $ref: '#/components/responses/NotFound' }
-
-  /admin/users/membership/revoke:
-    post:
-      operationId: revokeUserMembership
-      summary: Cancel a user's active membership immediately
-      tags: [admin]
-      security:
-        - adminAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema: { $ref: '#/components/schemas/AdminRevokeMembershipInput' }
-      responses:
-        '200':
-          description: The canceled subscription
-          content:
-            application/json:
-              schema:
-                type: object
-                required: [subscription]
-                properties:
-                  subscription: { $ref: '#/components/schemas/AdminSubscriptionScalar' }
-        '400':
-          description: User has no active membership to revoke
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/ErrorResponse' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '403': { $ref: '#/components/responses/Forbidden' }
-        '404': { $ref: '#/components/responses/NotFound' }
+  # POST /admin/users/membership and /admin/users/membership/revoke removed
+  # (Phase 7) — replaced by /admin/membership/grants* below, which never
+  # touches Subscription (see the Membership (batch 8) section).
 
   # Owned by the future Memberships migration batch, but the Users detail
   # screen's membership-override picker genuinely depends on the plan list —
@@ -3581,7 +4046,7 @@ paths:
   /admin/plans/update:
     post:
       operationId: updatePlan
-      summary: Update a plan's price, active status, or entitlements
+      summary: Update a plan's price or active status
       tags: [admin]
       security:
         - adminAuth: []
@@ -3601,10 +4066,508 @@ paths:
                 properties:
                   plan: { $ref: '#/components/schemas/AdminPlanScalar' }
         '400':
-          description: Price or entitlements changed on a plan with active subscriptions
+          description: Invalid input
           content:
             application/json:
               schema: { $ref: '#/components/schemas/ErrorResponse' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
+
+  # ── Admin: Membership (batch 8, Phase 7) ─────────────────
+  /admin/membership/entitlements:
+    get:
+      operationId: getEntitlementPolicy
+      summary: The full FREE/MEMBER entitlement policy (Member Features) currently in effect
+      tags: [admin]
+      security:
+        - adminAuth: []
+      responses:
+        '200':
+          description: Current policy
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AdminEntitlementPolicy' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    put:
+      operationId: updateEntitlementPolicy
+      summary: Set one entitlement's value for FREE or MEMBER
+      tags: [admin]
+      security:
+        - adminAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AdminUpdateEntitlementPolicyInput' }
+      responses:
+        '200':
+          description: The policy after the update
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AdminEntitlementPolicy' }
+        '400':
+          description: Unknown entitlement key
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /admin/membership/grants:
+    get:
+      operationId: listMembershipGrants
+      summary: List membership grants, optionally filtered to one user, newest first
+      tags: [admin]
+      security:
+        - adminAuth: []
+      parameters:
+        - in: query
+          name: userId
+          schema: { type: string }
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: A page of grants
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [grants, hasMore, nextCursor]
+                properties:
+                  grants:
+                    type: array
+                    items: { $ref: '#/components/schemas/AdminMembershipGrantListItem' }
+                  hasMore: { type: boolean }
+                  nextCursor: { type: string, nullable: true }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      operationId: createMembershipGrant
+      summary: Grant a user MEMBER independent of any Subscription (support/comp access) — lifetime unless expiresAt is set
+      tags: [admin]
+      security:
+        - adminAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AdminCreateMembershipGrantInput' }
+      responses:
+        '201':
+          description: The created grant
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [grant]
+                properties:
+                  grant: { $ref: '#/components/schemas/AdminMembershipGrant' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /admin/membership/grants/{id}/revoke:
+    post:
+      operationId: revokeMembershipGrant
+      summary: Revoke a membership grant immediately
+      tags: [admin]
+      security:
+        - adminAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AdminRevokeMembershipGrantInput' }
+      responses:
+        '200':
+          description: The revoked grant
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [grant]
+                properties:
+                  grant: { $ref: '#/components/schemas/AdminMembershipGrant' }
+        '400':
+          description: Grant is already revoked
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /admin/membership/signup-promotions:
+    get:
+      operationId: listSignupPromotions
+      summary: List signup promotions ([startAt, endAt) windows that award new registrants MEMBER), with signup attribution counts
+      tags: [admin]
+      security:
+        - adminAuth: []
+      responses:
+        '200':
+          description: All signup promotions
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [signupPromotions]
+                properties:
+                  signupPromotions:
+                    type: array
+                    items: { $ref: '#/components/schemas/AdminSignupPromotion' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      operationId: createSignupPromotion
+      summary: Create a signup promotion
+      tags: [admin]
+      security:
+        - adminAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AdminCreateSignupPromotionInput' }
+      responses:
+        '201':
+          description: The created promotion
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [signupPromotion]
+                properties:
+                  signupPromotion: { $ref: '#/components/schemas/AdminSignupPromotion' }
+        '400':
+          description: endAt must be after startAt, or durationDays missing for a temporary award
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /admin/membership/signup-promotions/{id}:
+    put:
+      operationId: updateSignupPromotion
+      summary: Update a signup promotion (partial — only given fields change)
+      tags: [admin]
+      security:
+        - adminAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AdminUpdateSignupPromotionInput' }
+      responses:
+        '200':
+          description: The updated promotion
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [signupPromotion]
+                properties:
+                  signupPromotion: { $ref: '#/components/schemas/AdminSignupPromotion' }
+        '400':
+          description: endAt must be after startAt, or durationDays missing for a temporary award
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /admin/membership/global-windows:
+    get:
+      operationId: listGlobalMembershipWindows
+      summary: List temporary global MEMBER windows ([startAt, endAt) periods that elevate every user, not just new signups)
+      tags: [admin]
+      security:
+        - adminAuth: []
+      responses:
+        '200':
+          description: All global windows
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [globalWindows]
+                properties:
+                  globalWindows:
+                    type: array
+                    items: { $ref: '#/components/schemas/AdminGlobalMembershipWindow' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      operationId: createGlobalMembershipWindow
+      summary: Create a temporary global MEMBER window
+      tags: [admin]
+      security:
+        - adminAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AdminCreateGlobalMembershipWindowInput' }
+      responses:
+        '201':
+          description: The created window
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [globalWindow]
+                properties:
+                  globalWindow: { $ref: '#/components/schemas/AdminGlobalMembershipWindow' }
+        '400':
+          description: endAt must be after startAt
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /admin/membership/global-windows/{id}:
+    put:
+      operationId: updateGlobalMembershipWindow
+      summary: Update a temporary global MEMBER window (partial — only given fields change)
+      tags: [admin]
+      security:
+        - adminAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AdminUpdateGlobalMembershipWindowInput' }
+      responses:
+        '200':
+          description: The updated window
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [globalWindow]
+                properties:
+                  globalWindow: { $ref: '#/components/schemas/AdminGlobalMembershipWindow' }
+        '400':
+          description: endAt must be after startAt
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /admin/membership/coupons:
+    get:
+      operationId: listCouponCodes
+      summary: List coupon codes with redemption counts
+      tags: [admin]
+      security:
+        - adminAuth: []
+      responses:
+        '200':
+          description: All coupons
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [coupons]
+                properties:
+                  coupons:
+                    type: array
+                    items: { $ref: '#/components/schemas/AdminCouponCode' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      operationId: createCouponCode
+      summary: Create a coupon code (100% FULL or PERCENTAGE discount)
+      tags: [admin]
+      security:
+        - adminAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AdminCreateCouponCodeInput' }
+      responses:
+        '201':
+          description: The created coupon
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [coupon]
+                properties:
+                  coupon: { $ref: '#/components/schemas/AdminCouponCode' }
+        '400':
+          description: Invalid discount or date range
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409':
+          description: A coupon with this code already exists
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  /admin/membership/coupons/{id}:
+    put:
+      operationId: updateCouponCode
+      summary: Update a coupon code (partial — only given fields change; already-redeemed history is immutable and unaffected)
+      tags: [admin]
+      security:
+        - adminAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AdminUpdateCouponCodeInput' }
+      responses:
+        '200':
+          description: The updated coupon
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [coupon]
+                properties:
+                  coupon: { $ref: '#/components/schemas/AdminCouponCode' }
+        '400':
+          description: Invalid discount or date range
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /admin/membership/coupons/{id}/redemptions:
+    get:
+      operationId: listCouponRedemptions
+      summary: List every redemption of one coupon code, newest first
+      tags: [admin]
+      security:
+        - adminAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Redemptions
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [redemptions]
+                properties:
+                  redemptions:
+                    type: array
+                    items: { $ref: '#/components/schemas/AdminCouponRedemption' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /admin/membership/overview:
+    get:
+      operationId: getMembershipOverview
+      summary: Membership reporting summary — effective member count by source, and any currently-active global window
+      tags: [admin]
+      security:
+        - adminAuth: []
+      responses:
+        '200':
+          description: Overview
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AdminMembershipOverview' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /admin/membership/members:
+    get:
+      operationId: listEffectiveMembers
+      summary: Browse currently-effective members (state=MEMBER), each with the source(s) granting them access
+      tags: [admin]
+      security:
+        - adminAuth: []
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: A page of effective members
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [members, hasMore, nextCursor]
+                properties:
+                  members:
+                    type: array
+                    items: { $ref: '#/components/schemas/AdminEffectiveMember' }
+                  hasMore: { type: boolean }
+                  nextCursor: { type: string, nullable: true }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  # ── Membership: consumer-facing (batch 8, Phase 7) ───────
+  /membership/redeem-coupon:
+    post:
+      operationId: redeemCoupon
+      summary: Redeem a coupon code — a FULL (100%) coupon grants MEMBER immediately; a PERCENTAGE coupon is recorded but requires a real payment to apply
+      tags: [monetization]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RedeemCouponInput' }
+      responses:
+        '201':
+          description: The redemption (and grant, if any)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RedeemCouponResult' }
+        '400':
+          description: Coupon is not active yet, or has expired
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404':
+          description: Coupon not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '409':
+          description: Redemption limit reached (coupon-wide or for this user)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }

@@ -10,7 +10,7 @@ export function HeaderAvatar() {
   if (!profile) return <View style={styles.placeholder} />
 
   return (
-    <Pressable onPress={() => navigationRef.isReady() && navigationRef.navigate('ProfileModal' as never)} hitSlop={12}>
+    <Pressable testID="header.profile" onPress={() => navigationRef.isReady() && navigationRef.navigate('ProfileModal' as never)} hitSlop={12}>
       {profile.avatarUrl ? (
         <Image source={{ uri: profile.avatarUrl }} style={styles.avatar} />
       ) : (

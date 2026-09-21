@@ -4,6 +4,9 @@ import bcrypt from 'bcryptjs'
 import { randomUUID } from 'crypto'
 import { PROFILE_FULL_SELECT } from '../lib/serializers'
 import { generateOtp, sendEmail } from '../lib/email'
+import { MembershipService } from './MembershipService'
+
+const membershipService = new MembershipService()
 
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000 // 30 days
 const MIN_AGE_YEARS = 18
@@ -37,6 +40,7 @@ export class AuthService {
       },
       include: { profile: { select: PROFILE_FULL_SELECT } },
     })
+    await membershipService.applySignupPromotionsForNewUser(user.id)
     const session = await this._createSession(user.id)
     return { user, token: session.token }
   }

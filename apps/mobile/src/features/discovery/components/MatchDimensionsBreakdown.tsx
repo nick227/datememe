@@ -33,7 +33,6 @@ export function MatchDimensionsBreakdown({ insights }: Props) {
 const styles = StyleSheet.create({
   container: {
     marginBottom: spacing.lg,
-    paddingHorizontal: spacing.lg,
   },
   sectionLabel: {
     marginBottom: spacing.sm,

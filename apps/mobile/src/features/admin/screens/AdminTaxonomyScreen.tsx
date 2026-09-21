@@ -129,17 +129,17 @@ export function AdminTaxonomyScreen({ navigation }: Props) {
   const rootTypes = (types.data ?? []).filter((t) => !t.parentId)
 
   return (
-    <ScreenContainer width="wide">
-      <TopNavigation alignment="left" leftAction="back" onLeftAction={() => navigation.goBack()} title="Taxonomy" subtitle="Types & values" />
+    <ScreenContainer testID="screen.admin-taxonomy" width="wide">
+      <TopNavigation testID="admin-taxonomy.header" alignment="left" leftAction="back" onLeftAction={() => navigation.goBack()} title="Taxonomy" subtitle="Types & values" />
 
       {types.isLoading ? (
         <View style={{ gap: spacing.md }}>
           {[0, 1, 2, 3].map((i) => <Skeleton key={i} height={44} />)}
         </View>
       ) : types.isError ? (
-        <ErrorState subtitle="Couldn't load taxonomy." onRetry={() => types.refetch()} />
+        <ErrorState testID="admin-taxonomy.error" subtitle="Couldn't load taxonomy." onRetry={() => types.refetch()} />
       ) : rootTypes.length === 0 ? (
-        <EmptyState title="No entity types" />
+        <EmptyState testID="admin-taxonomy.empty" title="No entity types" />
       ) : (
         <ScrollView>
           {rootTypes.map((type) => <TypeNode key={type.id} type={type} navigation={navigation} />)}

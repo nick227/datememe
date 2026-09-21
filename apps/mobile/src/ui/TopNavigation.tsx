@@ -4,6 +4,7 @@ import { Icon } from './Icon'
 import { spacing, type } from '../theme'
 
 type Props = {
+  testID?: string
   title?: string
   subtitle?: string
   alignment?: 'left' | 'center'
@@ -12,13 +13,13 @@ type Props = {
   rightElement?: React.ReactNode
 }
 
-export function TopNavigation({ title, subtitle, alignment = 'center', leftAction, onLeftAction, rightElement }: Props) {
+export function TopNavigation({ testID, title, subtitle, alignment = 'center', leftAction, onLeftAction, rightElement }: Props) {
   return (
-    <View style={styles.container}>
+    <View testID={testID} style={styles.container}>
       {(leftAction || alignment === 'center') && (
         <View style={styles.side}>
           {leftAction && (
-            <Pressable onPress={onLeftAction} hitSlop={12} style={styles.actionBtn}>
+            <Pressable testID={testID ? `${testID}.${leftAction}` : undefined} onPress={onLeftAction} hitSlop={12} style={styles.actionBtn}>
               <Icon name={leftAction === 'back' ? 'ChevronLeft' : 'X'} size={24} />
             </Pressable>
           )}

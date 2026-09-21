@@ -23,18 +23,9 @@ const INTERVAL_OPTIONS = [
 ]
 
 const STATUS_OPTIONS = [
-  { label: 'Active (visible)', value: 'active' },
-  { label: 'Archived (grandfathered)', value: 'archived' },
+  { label: 'Active (visible to new signups)', value: 'active' },
+  { label: 'Archived (hidden from new signups)', value: 'archived' },
 ]
-
-function parseFeaturesOrNull(text: string): Record<string, unknown> | null {
-  try {
-    const parsed = JSON.parse(text)
-    return typeof parsed === 'object' && parsed !== null ? parsed : null
-  } catch {
-    return null
-  }
-}
 
 export function AdminMembershipsScreen({ navigation }: Props) {
   const plans = useAdminPlans()
@@ -50,7 +41,6 @@ export function AdminMembershipsScreen({ navigation }: Props) {
   const [interval, setInterval] = useState('MONTHLY')
   const [priceUsd, setPriceUsd] = useState('0')
   const [status, setStatus] = useState('active')
-  const [featuresText, setFeaturesText] = useState('{}')
 
   function resetForm() {
     setLabel('')
@@ -58,11 +48,10 @@ export function AdminMembershipsScreen({ navigation }: Props) {
     setInterval('MONTHLY')
     setPriceUsd('0')
     setStatus('active')
-    setFeaturesText('{}')
   }
 
   function showError(title: string, err: unknown) {
-    sheet.show({ title, message: err instanceof ApiError ? err.message : 'Try again in a moment.', buttons: [{ text: 'OK' }] })
+    sheet.show({ title, message: err instanceof ApiError ? err.message : 'Try again in a moment.', buttons: [{ testID: 'admin-memberships.dialog.ok', text: 'OK' }] })
   }
 
   function startCreate() {
@@ -76,17 +65,11 @@ export function AdminMembershipsScreen({ navigation }: Props) {
     setEditingPlanId(plan.id)
     setPriceUsd((plan.priceCents / 100).toFixed(2))
     setStatus(plan.isActive ? 'active' : 'archived')
-    setFeaturesText(JSON.stringify(plan.features ?? {}, null, 2))
   }
 
   function handleCreate() {
-    const features = parseFeaturesOrNull(featuresText)
-    if (features === null) {
-      sheet.show({ title: 'Invalid entitlements', message: 'Features must be valid JSON.', buttons: [{ text: 'OK' }] })
-      return
-    }
     createPlan.mutate(
-      { label, slug, interval: interval as any, priceCents: Math.round(parseFloat(priceUsd || '0') * 100), isActive: status === 'active', features },
+      { label, slug, interval: interval as any, priceCents: Math.round(parseFloat(priceUsd || '0') * 100), isActive: status === 'active' },
       {
         onSuccess: () => setIsCreating(false),
         onError: (err) => showError('Could not create plan', err),
@@ -95,13 +78,8 @@ export function AdminMembershipsScreen({ navigation }: Props) {
   }
 
   function handleSaveEdit(planId: string) {
-    const features = parseFeaturesOrNull(featuresText)
-    if (features === null) {
-      sheet.show({ title: 'Invalid entitlements', message: 'Features must be valid JSON.', buttons: [{ text: 'OK' }] })
-      return
-    }
     updatePlan.mutate(
-      { planId, priceCents: Math.round(parseFloat(priceUsd || '0') * 100), isActive: status === 'active', features },
+      { planId, priceCents: Math.round(parseFloat(priceUsd || '0') * 100), isActive: status === 'active' },
       {
         onSuccess: () => setEditingPlanId(null),
         onError: (err) => showError('Could not update plan', err),
@@ -110,25 +88,24 @@ export function AdminMembershipsScreen({ navigation }: Props) {
   }
 
   return (
-    <ScreenContainer width="wide">
-      <TopNavigation alignment="left" leftAction="back" onLeftAction={() => navigation.goBack()} title="Memberships" />
+    <ScreenContainer testID="screen.admin-memberships" width="wide">
+      <TopNavigation testID="admin-memberships.header" alignment="left" leftAction="back" onLeftAction={() => navigation.goBack()} title="Memberships" />
 
       {!isCreating && (
-        <Button label="+ Create plan" variant="secondary" onPress={startCreate} />
+        <Button testID="admin-memberships.open-create" label="+ Create plan" variant="secondary" onPress={startCreate} />
       )}
 
       {isCreating && (
         <View style={[styles.card, styles.cardHighlight]}>
           <Typography variant="heading" style={{ marginBottom: spacing.md }}>Create new plan</Typography>
-          <TextField label="Label" value={label} onChangeText={setLabel} placeholder="e.g. Premium Plan" />
-          <TextField label="Slug" value={slug} onChangeText={setSlug} placeholder="e.g. premium" autoCapitalize="none" />
-          <SelectField label="Interval" value={interval} options={INTERVAL_OPTIONS} onSelect={setInterval} />
-          <TextField label="Price (USD)" value={priceUsd} onChangeText={setPriceUsd} keyboardType="decimal-pad" />
-          <TextField label="Entitlements (JSON)" value={featuresText} onChangeText={setFeaturesText} multiline style={styles.jsonInput} />
-          <SelectField label="Initial status" value={status} options={STATUS_OPTIONS} onSelect={setStatus} />
+          <TextField testID="admin-memberships.label" label="Label" value={label} onChangeText={setLabel} placeholder="e.g. Premium Plan" />
+          <TextField testID="admin-memberships.slug" label="Slug" value={slug} onChangeText={setSlug} placeholder="e.g. premium" autoCapitalize="none" />
+          <SelectField testID="admin-memberships.interval" label="Interval" value={interval} options={INTERVAL_OPTIONS} onSelect={setInterval} />
+          <TextField testID="admin-memberships.price-usd" label="Price (USD)" value={priceUsd} onChangeText={setPriceUsd} keyboardType="decimal-pad" />
+          <SelectField testID="admin-memberships.status" label="Initial status" value={status} options={STATUS_OPTIONS} onSelect={setStatus} />
           <View style={styles.actionsRow}>
-            <Button label="Create plan" loading={createPlan.isPending} onPress={handleCreate} />
-            <Button label="Cancel" variant="secondary" onPress={() => setIsCreating(false)} />
+            <Button testID="admin-memberships.create" label="Create plan" loading={createPlan.isPending} onPress={handleCreate} />
+            <Button testID="admin-memberships.cancel" label="Cancel" variant="secondary" onPress={() => setIsCreating(false)} />
           </View>
         </View>
       )}
@@ -138,11 +115,11 @@ export function AdminMembershipsScreen({ navigation }: Props) {
           {[0, 1].map((i) => <Skeleton key={i} height={160} />)}
         </View>
       ) : plans.isError ? (
-        <ErrorState subtitle="Couldn't load plans." onRetry={() => plans.refetch()} />
+        <ErrorState testID="admin-memberships.error" subtitle="Couldn't load plans." onRetry={() => plans.refetch()} />
       ) : (
         <ScrollView style={{ marginTop: spacing.md }}>
           {(plans.data ?? []).map((plan) => (
-            <View key={plan.id} style={[styles.card, !plan.isActive && styles.cardArchived]}>
+            <View testID={`admin-memberships.plan.${plan.id}`} key={plan.id} style={[styles.card, !plan.isActive && styles.cardArchived]}>
               <View style={styles.row}>
                 <Typography variant="heading">{plan.label}</Typography>
                 {!plan.isActive ? (
@@ -152,12 +129,11 @@ export function AdminMembershipsScreen({ navigation }: Props) {
 
               {editingPlanId === plan.id ? (
                 <>
-                  <SelectField label="Status" value={status} options={STATUS_OPTIONS} onSelect={setStatus} />
-                  <TextField label="Price (USD)" value={priceUsd} onChangeText={setPriceUsd} keyboardType="decimal-pad" />
-                  <TextField label="Entitlements (JSON)" value={featuresText} onChangeText={setFeaturesText} multiline style={styles.jsonInput} />
+                  <SelectField testID={`admin-memberships.status.${plan.id}`} label="Status" value={status} options={STATUS_OPTIONS} onSelect={setStatus} />
+                  <TextField testID={`admin-memberships.price-usd.${plan.id}`} label="Price (USD)" value={priceUsd} onChangeText={setPriceUsd} keyboardType="decimal-pad" />
                   <View style={styles.actionsRow}>
-                    <Button label="Save changes" loading={updatePlan.isPending} onPress={() => handleSaveEdit(plan.id)} />
-                    <Button label="Cancel" variant="secondary" onPress={() => setEditingPlanId(null)} />
+                    <Button testID={`admin-memberships.save-changes.${plan.id}`} label="Save changes" loading={updatePlan.isPending} onPress={() => handleSaveEdit(plan.id)} />
+                    <Button testID={`admin-memberships.cancel.${plan.id}`} label="Cancel" variant="secondary" onPress={() => setEditingPlanId(null)} />
                   </View>
                 </>
               ) : (
@@ -166,15 +142,9 @@ export function AdminMembershipsScreen({ navigation }: Props) {
                     ${(plan.priceCents / 100).toFixed(2)}{' '}
                     <Typography variant="bodyMuted">/{plan.interval.toLowerCase()}</Typography>
                   </Typography>
-                  <Typography variant="label" style={{ color: colors.inkMuted, marginBottom: spacing.xs }}>Entitlements</Typography>
-                  <View style={styles.featuresBox}>
-                    <Typography variant="label" style={{ fontFamily: 'monospace' as any }}>
-                      {JSON.stringify(plan.features ?? {}, null, 2)}
-                    </Typography>
-                  </View>
                   <View style={styles.footerRow}>
                     <Typography variant="bodyMuted">{plan._count.subscriptions} active subs</Typography>
-                    <Button label="Edit plan" variant="secondary" onPress={() => startEdit(plan)} />
+                    <Button testID={`admin-memberships.edit-plan.${plan.id}`} label="Edit plan" variant="secondary" onPress={() => startEdit(plan)} />
                   </View>
                 </>
               )}
@@ -183,7 +153,7 @@ export function AdminMembershipsScreen({ navigation }: Props) {
         </ScrollView>
       )}
 
-      <ActionSheet config={sheet.config} onDismiss={sheet.dismiss} />
+      <ActionSheet testID="admin-memberships.dialog" config={sheet.config} onDismiss={sheet.dismiss} />
     </ScreenContainer>
   )
 }
@@ -210,14 +180,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     paddingHorizontal: spacing.sm,
   },
-  jsonInput: { minHeight: 96, textAlignVertical: 'top' },
   actionsRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm },
-  featuresBox: {
-    backgroundColor: colors.surfaceMuted,
-    borderRadius: radius.md,
-    padding: spacing.sm,
-    marginBottom: spacing.md,
-  },
   footerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',

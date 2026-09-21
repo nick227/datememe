@@ -2,10 +2,12 @@ import { StyleSheet, TextInput, View } from 'react-native'
 import { colors, radius, spacing } from '../../../theme'
 
 export function SearchBar({
+  testID,
   value,
   onChangeText,
   placeholder,
 }: {
+  testID?: string
   value: string
   onChangeText: (text: string) => void
   placeholder: string
@@ -21,6 +23,7 @@ export function SearchBar({
   return (
     <View style={styles.container}>
       <TextInput
+        testID={testID}
         value={value}
         onChangeText={handleChangeText}
         placeholder={placeholder}

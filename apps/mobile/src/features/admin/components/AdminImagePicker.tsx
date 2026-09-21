@@ -48,9 +48,15 @@ export function AdminImagePicker({ target, query, entityTypeLabel, parentPath, a
   const uploadImage = useAdminUploadImage()
 
   const attaching = importImage.isPending || referenceImage.isPending || uploadImage.isPending
+  let searchResults = candidates !== null
 
   function showError(title: string, err: unknown) {
-    sheet.show({ title, message: err instanceof ApiError ? err.message : 'Try again in a moment.', buttons: [{ text: 'OK' }] })
+    sheet.show({ title, message: err instanceof ApiError ? err.message : 'Try again in a moment.', buttons: [{ testID: 'admin-image-picker.dialog.ok', text: 'OK' }] })
+  }
+
+  function handleClear() {
+    clearCandidates();
+    clearSearch();
   }
 
   async function handleChooseUpload() {
@@ -98,6 +104,15 @@ export function AdminImagePicker({ target, query, entityTypeLabel, parentPath, a
     })
   }
 
+  function clearCandidates() {
+    setCandidates(null)
+  }
+
+  function clearSearch() {
+    clearCandidates()
+    search.reset()
+  }
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -139,6 +154,7 @@ export function AdminImagePicker({ target, query, entityTypeLabel, parentPath, a
               onPress={handleSearch}
               disabled={search.isPending || !query.trim()}
             />
+            <Button label="Clear" variant="secondary" onPress={handleClear} disabled={searchResults} />
           </View>
 
           {candidates && candidates.length > 0 ? (
@@ -164,7 +180,7 @@ export function AdminImagePicker({ target, query, entityTypeLabel, parentPath, a
         </View>
       </View>
 
-      <ActionSheet config={sheet.config} onDismiss={sheet.dismiss} />
+      <ActionSheet testID="admin-image-picker.dialog" config={sheet.config} onDismiss={sheet.dismiss} />
     </View>
   )
 }

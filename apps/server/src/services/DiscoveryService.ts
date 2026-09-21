@@ -12,15 +12,25 @@ export type DiscoveryFilters = {
   cursor?: string
   limit?: number
   /**
-   * "kind:slug" — e.g. "group:music", "tag:punk", "entityType:cars". Pool
+   * Each entry is "kind:slug" — e.g. "group:music", "tag:punk". Pool
    * *engagement*, not compatibility: qualifies someone for the pool, doesn't
-   * by itself mean shared taste with the viewer (see tasteFacet.ts).
+   * by itself mean shared taste with the viewer (see tasteFacet.ts). Multiple
+   * facets are OR'd — engagement in *any* selected facet is enough to
+   * qualify (multi-select categories, e.g. "Music" + "Food" together).
    */
-  taste?: string
+  taste?: string[]
   /** Requires the viewer to have their own coordinates set; returns an honest empty result (with filterNotice explaining why) rather than silently ignoring the filter. */
   nearMe?: boolean
   /** A browse shortcut that narrows — never replaces or widens — the viewer's baseline min/max age eligibility. */
   ageBucket?: AgeBucket
+  /**
+   * Pre-resolved `profile.fullPhotoAccess`, when the caller already paid for
+   * a resolveEntitlements() round trip for the same user (ContentFeedService's
+   * getDiscoverFeed also needs it for getFavoritedCandidates) — resolveEntitlements
+   * is itself a 4-query chain, not worth paying for twice in one request.
+   * Left undefined, this resolves it itself (e.g. the bare GET /discovery route).
+   */
+  fullPhotoAccess?: boolean
 }
 
 type DiscoveryCursor = { score: number; id: string; page: number }
@@ -62,11 +72,14 @@ export class DiscoveryService {
     // Taste axis: pool *engagement* (facet.ts), resolved generically so a
     // deeper taxonomy filter (a Tag, an EntityType, eventually a nested
     // group) never needs a new parameter here — only a new case in
-    // getTasteEngagedProfileIds. CategoryGroup is the first layer, not the ceiling.
+    // getTasteEngagedProfileIds. CategoryGroup is the first layer, not the
+    // ceiling. Multiple facets (multi-select categories) are OR'd: engaged
+    // in any one of them is enough to be in the pool.
     let tasteWhitelist: string[] | null = null
-    const facet = parseTasteFacet(opts.taste)
-    if (facet) {
-      tasteWhitelist = (await getTasteEngagedProfileIds(facet)).filter((id) => id !== viewerProfileId)
+    const facets = (opts.taste ?? []).map(parseTasteFacet).filter((f): f is NonNullable<typeof f> => !!f)
+    if (facets.length) {
+      const engagedSets = await Promise.all(facets.map((f) => getTasteEngagedProfileIds(f)))
+      tasteWhitelist = [...new Set(engagedSets.flat())].filter((id) => id !== viewerProfileId)
       if (!tasteWhitelist.length) return { data: [], meta: { hasMore: false, nextCursor: null } }
     }
 
@@ -163,7 +176,7 @@ export class DiscoveryService {
     }
 
     const candidatesById = new Map(withinRange.map((c: any) => [c.id, c]))
-    const fullPhotoAccess = (await resolveEntitlements(viewerUserId))['profile.fullPhotoAccess']
+    const fullPhotoAccess = opts.fullPhotoAccess ?? (await resolveEntitlements(viewerUserId))['profile.fullPhotoAccess']
 
     const eligibleScores = scores.filter((score) => {
       const candidateId = score.profileIdA === viewerProfileId ? score.profileIdB : score.profileIdA

@@ -385,7 +385,7 @@ export interface paths {
         };
         /**
          * The Lists page as a PageSummary + FeedModule stream, grouped by topic
-         * @description Backend adapter over the existing Lists/Taxonomy data (TaxonomyService, ListService), reshaped per docs/shared-content-system-proposal.md. One ContentCollection per non-empty CategoryGroup ("Music", "Movies & TV", ...), each mixing answered and unanswered categories — completion is a fact carried by the unit (`relationship.completed`), not a separate section. `chips` mirror the same groups for jump-navigation (the frontend treats them as scroll anchors, not filters — there is nothing left to filter server-side). The whole feed is small enough to return in one page; `cursor` is accepted for forward-compatibility but `hasMore` is always false today.
+         * @description Backend adapter over the existing Lists/Taxonomy data (TaxonomyService, ListService), reshaped per docs/shared-content-system-proposal.md. One ContentCollection per non-empty CategoryGroup ("Music", "Movies & TV", ...), each mixing answered and unanswered categories — completion is a fact carried by the unit (`relationship.completed`), not a separate section. `chips` mirror the same groups; with no `groupSlugs`, the whole feed loads unfiltered ("Your lists" -> Site Picks -> every topic). With `groupSlugs`, this is a real filtered query — "Your lists" still leads, then only the selected group(s)' Site Picks and topic sections, with Quick Picks folded in after them — same filtering shape as GET /discover/feed.
          */
         get: operations["getListsFeed"];
         put?: never;
@@ -976,6 +976,59 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/site-picks/groups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List every Site Picks group, with its curated List Definitions, in order */
+        get: operations["getSitePickGroups"];
+        put?: never;
+        /** Create a new Site Picks group */
+        post: operations["createSitePickGroup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/site-picks/groups/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Update a Site Picks group's label, slug, order, or active state */
+        put: operations["updateSitePickGroup"];
+        post?: never;
+        /** Delete a Site Picks group (does not touch the underlying List Definitions) */
+        delete: operations["deleteSitePickGroup"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/site-picks/groups/{id}/items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Replace this Site Picks group's curated List Definitions and their order (full replace, not a merge) */
+        put: operations["updateSitePickGroupItems"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/media/search": {
         parameters: {
             query?: never;
@@ -1132,40 +1185,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/admin/users/membership": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Grant or change a user's active plan manually (support/comp access) */
-        post: operations["overrideUserMembership"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/admin/users/membership/revoke": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Cancel a user's active membership immediately */
-        post: operations["revokeUserMembership"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/admin/plans": {
         parameters: {
             query?: never;
@@ -1193,8 +1212,234 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Update a plan's price, active status, or entitlements */
+        /** Update a plan's price or active status */
         post: operations["updatePlan"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/membership/entitlements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The full FREE/MEMBER entitlement policy (Member Features) currently in effect */
+        get: operations["getEntitlementPolicy"];
+        /** Set one entitlement's value for FREE or MEMBER */
+        put: operations["updateEntitlementPolicy"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/membership/grants": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List membership grants, optionally filtered to one user, newest first */
+        get: operations["listMembershipGrants"];
+        put?: never;
+        /** Grant a user MEMBER independent of any Subscription (support/comp access) — lifetime unless expiresAt is set */
+        post: operations["createMembershipGrant"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/membership/grants/{id}/revoke": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Revoke a membership grant immediately */
+        post: operations["revokeMembershipGrant"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/membership/signup-promotions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List signup promotions ([startAt, endAt) windows that award new registrants MEMBER), with signup attribution counts */
+        get: operations["listSignupPromotions"];
+        put?: never;
+        /** Create a signup promotion */
+        post: operations["createSignupPromotion"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/membership/signup-promotions/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Update a signup promotion (partial — only given fields change) */
+        put: operations["updateSignupPromotion"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/membership/global-windows": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List temporary global MEMBER windows ([startAt, endAt) periods that elevate every user, not just new signups) */
+        get: operations["listGlobalMembershipWindows"];
+        put?: never;
+        /** Create a temporary global MEMBER window */
+        post: operations["createGlobalMembershipWindow"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/membership/global-windows/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Update a temporary global MEMBER window (partial — only given fields change) */
+        put: operations["updateGlobalMembershipWindow"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/membership/coupons": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List coupon codes with redemption counts */
+        get: operations["listCouponCodes"];
+        put?: never;
+        /** Create a coupon code (100% FULL or PERCENTAGE discount) */
+        post: operations["createCouponCode"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/membership/coupons/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Update a coupon code (partial — only given fields change; already-redeemed history is immutable and unaffected) */
+        put: operations["updateCouponCode"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/membership/coupons/{id}/redemptions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List every redemption of one coupon code, newest first */
+        get: operations["listCouponRedemptions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/membership/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Membership reporting summary — effective member count by source, and any currently-active global window */
+        get: operations["getMembershipOverview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/membership/members": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Browse currently-effective members (state=MEMBER), each with the source(s) granting them access */
+        get: operations["listEffectiveMembers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/membership/redeem-coupon": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Redeem a coupon code — a FULL (100%) coupon grants MEMBER immediately; a PERCENTAGE coupon is recorded but requires a real payment to apply */
+        post: operations["redeemCoupon"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1223,10 +1468,12 @@ export interface components {
             bio: string | null;
             seekingGenders: string[];
             locationLabel: string | null;
-            /** @description Null for a free-tier viewer looking at someone else's profile — see docs §8 photo gate. */
+            /** @description Null for a free-tier viewer looking at someone else's profile — see docs §8 photo gate. Also null when the profile genuinely has no avatar; see `photosLocked` to tell the two apart. */
             avatarUrl: string | null;
-            /** @description Gallery beyond the primary avatarUrl; empty for a free-tier viewer looking at someone else's profile (docs §8). */
+            /** @description Gallery beyond the primary avatarUrl; empty for a free-tier viewer looking at someone else's profile (docs §8), and also empty when the profile genuinely has no gallery photos. */
             photos: string[];
+            /** @description True only when `avatarUrl`/`photos` were withheld by the docs §8 photo gate (a free-tier viewer looking at someone else's profile) — always false for your own profile, and false for a profile that simply has no photos, so a client can tell "go premium to see this" apart from "there's nothing to see." */
+            photosLocked: boolean;
             isDiscoverable: boolean;
             onboardingStep: number;
         };
@@ -1240,6 +1487,35 @@ export interface components {
             createdAt: string;
             profile?: components["schemas"]["Profile"];
         };
+        Entitlements: {
+            "profile.fullPhotoAccess": boolean;
+            "messaging.readIncoming": boolean;
+            "messaging.dailySendLimit": number | "UNLIMITED";
+            "lists.memberOnly": boolean;
+        };
+        /** @description The full Member Features policy — every FREE/MEMBER entitlement value currently in effect (DB rows, falling back to seed defaults for anything never edited). */
+        AdminEntitlementPolicy: {
+            FREE: components["schemas"]["Entitlements"];
+            MEMBER: components["schemas"]["Entitlements"];
+        };
+        AdminUpdateEntitlementPolicyInput: {
+            /** @enum {string} */
+            state: "FREE" | "MEMBER";
+            /** @enum {string} */
+            key: "profile.fullPhotoAccess" | "messaging.readIncoming" | "messaging.dailySendLimit" | "lists.memberOnly";
+            value: boolean | number | "UNLIMITED";
+        };
+        /** @description One thing currently qualifying this user for MEMBER. GLOBAL_PROMOTION has no per-user grant row — id/expiresAt point at the GlobalMembershipWindow itself. */
+        MembershipSource: {
+            /** @enum {string} */
+            kind: "SUBSCRIPTION" | "MANUAL_SUBSCRIPTION" | "MANUAL_ADMIN" | "SIGNUP_PROMOTION" | "COUPON_REDEMPTION" | "ONE_TIME_PURCHASE" | "GLOBAL_PROMOTION";
+            id: string;
+            /**
+             * Format: date-time
+             * @description null = lifetime.
+             */
+            expiresAt: string | null;
+        };
         UserContext: components["schemas"]["User"] & {
             account: {
                 suspended: boolean;
@@ -1248,20 +1524,9 @@ export interface components {
             membership: {
                 /** @enum {string} */
                 state: "FREE" | "MEMBER";
-                sources: {
-                    /** @enum {string} */
-                    kind: "SUBSCRIPTION" | "MANUAL_SUBSCRIPTION";
-                    id: string;
-                    /** Format: date-time */
-                    expiresAt: string;
-                }[];
+                sources: components["schemas"]["MembershipSource"][];
             };
-            entitlements: {
-                "profile.fullPhotoAccess": boolean;
-                "messaging.readIncoming": boolean;
-                "messaging.dailySendLimit": number | "UNLIMITED";
-                "lists.memberOnly": boolean;
-            };
+            entitlements: components["schemas"]["Entitlements"];
         };
         RegisterInput: {
             /** Format: email */
@@ -1638,6 +1903,8 @@ export interface components {
             reason?: string;
             sourceEntityId?: string;
             sourceEntityType?: string;
+            /** @description Present on a CategoryGroup topic module (getListsFeed's groupModules, including continuation chunks) — the chip id it belongs to. Lets the client's chip bar reorder that module to the top of the feed instead of scrolling to find it, without string-matching module ids. */
+            groupSlug?: string;
         };
         FeedModule: {
             /** @enum {string} */
@@ -1843,9 +2110,6 @@ export interface components {
             priceCents: number;
             currency: string;
             isActive: boolean;
-            features: {
-                [key: string]: unknown;
-            };
         };
         AdminPlan: components["schemas"]["AdminPlanScalar"] & {
             _count: {
@@ -1865,6 +2129,8 @@ export interface components {
             /** Format: date-time */
             currentPeriodEnd: string;
             cancelAtPeriodEnd: boolean;
+            /** @description Snapshot of Plan.priceCents when this subscription was created; null on rows predating this field. A later repricing of the plan never changes this. */
+            pricePaidCents: number | null;
             /** Format: date-time */
             createdAt: string;
         };
@@ -1902,6 +2168,8 @@ export interface components {
             profile: components["schemas"]["AdminUserProfileDetail"] | null;
             /** @description At most one — the caller's current ACTIVE subscription, if any (getUser only ever fetches status:ACTIVE, take:1). */
             subscriptions: components["schemas"]["AdminSubscriptionWithPlan"][];
+            /** @description Full history — active, revoked, and expired — newest first. This plus subscriptions above is the user's complete membership-source history. */
+            membershipGrants: components["schemas"]["AdminMembershipGrant"][];
         };
         AdminAuditEvent: {
             id: string;
@@ -1923,6 +2191,252 @@ export interface components {
             createdAt: string;
             actor: components["schemas"]["AdminReviewerRef"];
         };
+        AdminMembershipGrant: {
+            id: string;
+            userId: string;
+            /** @enum {string} */
+            source: "MANUAL_ADMIN" | "SIGNUP_PROMOTION" | "COUPON_REDEMPTION" | "ONE_TIME_PURCHASE";
+            reason: string | null;
+            /**
+             * Format: date-time
+             * @description null = lifetime.
+             */
+            expiresAt: string | null;
+            /** Format: date-time */
+            revokedAt: string | null;
+            revokedByUserId: string | null;
+            revokeReason: string | null;
+            /** @description null for a system-issued grant (signup promotion, coupon, one-time purchase). */
+            grantedByUserId: string | null;
+            signupPromotionId: string | null;
+            couponRedemptionId: string | null;
+            /** @description Set only when source is ONE_TIME_PURCHASE. */
+            planId: string | null;
+            /** @description Price paid at purchase, when source is ONE_TIME_PURCHASE. A later repricing of the plan never changes this. */
+            pricePaidCentsSnapshot: number | null;
+            /** Format: date-time */
+            createdAt: string;
+            grantedByUser?: components["schemas"]["AdminReviewerRef"] | null;
+            revokedByUser?: components["schemas"]["AdminReviewerRef"] | null;
+        };
+        AdminUserBriefRef: {
+            id: string;
+            email: string;
+            profile: {
+                username: string;
+                displayName: string;
+            } | null;
+        };
+        AdminMembershipGrantListItem: components["schemas"]["AdminMembershipGrant"] & {
+            user: components["schemas"]["AdminUserBriefRef"];
+        };
+        AdminCreateMembershipGrantInput: {
+            userId: string;
+            /**
+             * Format: date-time
+             * @description Omit or null for a lifetime grant.
+             */
+            expiresAt?: string | null;
+            reason?: string;
+        };
+        AdminRevokeMembershipGrantInput: {
+            reason?: string;
+        };
+        AdminSignupPromotion: {
+            id: string;
+            label: string;
+            /** Format: date-time */
+            startAt: string;
+            /**
+             * Format: date-time
+             * @description Exclusive — [startAt, endAt).
+             */
+            endAt: string;
+            /** @enum {string} */
+            awardType: "LIFETIME_MEMBER" | "TEMPORARY_MEMBER";
+            /** @description Required (non-null) when awardType is TEMPORARY_MEMBER. */
+            durationDays: number | null;
+            isActive: boolean;
+            /** Format: date-time */
+            createdAt: string;
+            createdByUserId: string | null;
+            _count: {
+                /** @description Signup attribution — how many users this promotion has actually granted MEMBER to. */
+                grants: number;
+            };
+        };
+        AdminCreateSignupPromotionInput: {
+            label: string;
+            /** Format: date-time */
+            startAt: string;
+            /** Format: date-time */
+            endAt: string;
+            /** @enum {string} */
+            awardType: "LIFETIME_MEMBER" | "TEMPORARY_MEMBER";
+            durationDays?: number;
+        };
+        AdminUpdateSignupPromotionInput: {
+            label?: string;
+            /** Format: date-time */
+            startAt?: string;
+            /** Format: date-time */
+            endAt?: string;
+            /** @enum {string} */
+            awardType?: "LIFETIME_MEMBER" | "TEMPORARY_MEMBER";
+            durationDays?: number;
+            isActive?: boolean;
+        };
+        AdminGlobalMembershipWindow: {
+            id: string;
+            label: string;
+            /** Format: date-time */
+            startAt: string;
+            /**
+             * Format: date-time
+             * @description Exclusive — [startAt, endAt).
+             */
+            endAt: string;
+            isActive: boolean;
+            /** Format: date-time */
+            createdAt: string;
+            createdByUserId: string | null;
+        };
+        AdminCreateGlobalMembershipWindowInput: {
+            label: string;
+            /** Format: date-time */
+            startAt: string;
+            /** Format: date-time */
+            endAt: string;
+        };
+        AdminUpdateGlobalMembershipWindowInput: {
+            label?: string;
+            /** Format: date-time */
+            startAt?: string;
+            /** Format: date-time */
+            endAt?: string;
+            isActive?: boolean;
+        };
+        AdminCouponCode: {
+            id: string;
+            code: string;
+            /** @enum {string} */
+            discountType: "PERCENTAGE" | "FULL";
+            discountPercent: number;
+            /** @description FULL-coupon grants only — null means the resulting grant is lifetime. */
+            grantDurationDays: number | null;
+            campaign: string | null;
+            partner: string | null;
+            /** @description null = unlimited. */
+            maxRedemptions: number | null;
+            maxRedemptionsPerUser: number;
+            /** Format: date-time */
+            startAt: string | null;
+            /** Format: date-time */
+            endAt: string | null;
+            isActive: boolean;
+            /** Format: date-time */
+            createdAt: string;
+            createdByUserId: string | null;
+            _count: {
+                redemptions: number;
+            };
+        };
+        AdminCreateCouponCodeInput: {
+            code: string;
+            /** @enum {string} */
+            discountType: "PERCENTAGE" | "FULL";
+            /** @description Ignored (treated as 100) when discountType is FULL. */
+            discountPercent?: number;
+            grantDurationDays?: number;
+            campaign?: string;
+            partner?: string;
+            maxRedemptions?: number;
+            maxRedemptionsPerUser?: number;
+            /** Format: date-time */
+            startAt?: string;
+            /** Format: date-time */
+            endAt?: string;
+        };
+        AdminUpdateCouponCodeInput: {
+            /** @enum {string} */
+            discountType?: "PERCENTAGE" | "FULL";
+            discountPercent?: number;
+            grantDurationDays?: number | null;
+            campaign?: string | null;
+            partner?: string | null;
+            maxRedemptions?: number | null;
+            maxRedemptionsPerUser?: number;
+            /** Format: date-time */
+            startAt?: string | null;
+            /** Format: date-time */
+            endAt?: string | null;
+            isActive?: boolean;
+        };
+        AdminCouponRedemption: {
+            id: string;
+            couponCodeId: string;
+            userId: string;
+            /** @description Immutable — the code as it was at redemption time. */
+            codeSnapshot: string;
+            /** @enum {string} */
+            discountType: "PERCENTAGE" | "FULL";
+            discountPercent: number;
+            grantDurationDaysSnapshot: number | null;
+            campaignSnapshot: string | null;
+            partnerSnapshot: string | null;
+            /** Format: date-time */
+            redeemedAt: string;
+            user: components["schemas"]["AdminUserBriefRef"];
+            grant: components["schemas"]["AdminMembershipGrant"] | null;
+        };
+        AdminMembershipOverview: {
+            /** @description Distinct users currently MEMBER via an active subscription or grant (excludes a currently-active global window, which would otherwise make this equal totalUserCount). */
+            effectiveMemberCount: number;
+            totalUserCount: number;
+            bySource: {
+                subscriptions: number;
+                manualGrants: number;
+                signupPromotionGrants: number;
+                couponGrants: number;
+                oneTimePurchaseGrants: number;
+            };
+            globalWindow: {
+                active: boolean;
+                id: string;
+                label: string;
+                /** Format: date-time */
+                endsAt: string;
+            } | null;
+        };
+        AdminEffectiveMember: {
+            user: components["schemas"]["AdminUserBriefRef"];
+            sources: {
+                /** @enum {string} */
+                kind: "SUBSCRIPTION" | "MANUAL_SUBSCRIPTION" | "MANUAL_ADMIN" | "SIGNUP_PROMOTION" | "COUPON_REDEMPTION" | "ONE_TIME_PURCHASE";
+                /** Format: date-time */
+                expiresAt: string | null;
+            }[];
+        };
+        RedeemCouponInput: {
+            code: string;
+        };
+        RedeemCouponResult: {
+            redemption: {
+                id: string;
+                codeSnapshot: string;
+                /** @enum {string} */
+                discountType: "PERCENTAGE" | "FULL";
+                discountPercent: number;
+                /** Format: date-time */
+                redeemedAt: string;
+            };
+            /** @description Present only for a FULL (100%) coupon — a PERCENTAGE redemption is recorded but grants nothing until a real payment exists to apply it to. */
+            grant: {
+                id: string;
+                /** Format: date-time */
+                expiresAt: string | null;
+            } | null;
+        };
         AdminBanUserInput: {
             userId: string;
             ban: boolean;
@@ -1931,13 +2445,6 @@ export interface components {
             userId: string;
             verify: boolean;
         };
-        AdminOverrideMembershipInput: {
-            userId: string;
-            planId: string;
-        };
-        AdminRevokeMembershipInput: {
-            userId: string;
-        };
         AdminCreatePlanInput: {
             label: string;
             slug: string;
@@ -1945,20 +2452,12 @@ export interface components {
             interval: "MONTHLY" | "ANNUAL" | "LIFETIME";
             priceCents: number;
             isActive?: boolean;
-            /** @description Arbitrary entitlement flags — free-form, no fixed key set. */
-            features?: {
-                [key: string]: unknown;
-            };
         };
         AdminUpdatePlanInput: {
             planId: string;
-            /** @description Must equal the plan's current price once it has active subscriptions (grandfathering — archive and recreate instead of repricing a live plan). */
+            /** @description Freely editable, including with active subscriptions — every subscription/grant snapshots the price it was created at, so repricing only affects new purchases. */
             priceCents: number;
             isActive?: boolean;
-            /** @description Arbitrary entitlement flags — free-form, no fixed key set. */
-            features?: {
-                [key: string]: unknown;
-            };
         };
         /** @description One search result from an image provider (wikimedia, tmdb, openverse, unsplash, pexels, pixabay) — not yet attached to anything. */
         AdminImageCandidate: {
@@ -2125,6 +2624,44 @@ export interface components {
         AdminUpdateCuratedEntitiesInput: {
             entities: components["schemas"]["AdminCuratedEntityInput"][];
         };
+        AdminSitePickGroupScalar: {
+            id: string;
+            slug: string;
+            label: string;
+            sortOrder: number;
+            isActive: boolean;
+        };
+        /** @description One List Definition (Category row) curated into a Site Picks group, in display order. Has no `id` of its own — SitePickItem is a (groupId, categoryId) composite key in the schema. */
+        AdminSitePickItem: {
+            groupId: string;
+            categoryId: string;
+            sortOrder: number;
+            category: components["schemas"]["AdminCategoryScalar"];
+        };
+        /** @description A Site Picks group as seen by the admin browser/editor — the group plus its curated List Definitions, in order. */
+        AdminSitePickGroup: components["schemas"]["AdminSitePickGroupScalar"] & {
+            items: components["schemas"]["AdminSitePickItem"][];
+        };
+        AdminCreateSitePickGroupInput: {
+            slug: string;
+            label: string;
+            sortOrder?: number;
+            isActive?: boolean;
+        };
+        AdminUpdateSitePickGroupInput: {
+            slug: string;
+            label: string;
+            sortOrder?: number;
+            isActive?: boolean;
+        };
+        AdminSitePickItemInput: {
+            categoryId: string;
+            sortOrder: number;
+        };
+        AdminUpdateSitePickItemsInput: {
+            /** @description Full replace, not a merge. Intended to be exactly 4 entries — enforced by the admin UI, not the server. */
+            items: components["schemas"]["AdminSitePickItemInput"][];
+        };
         AdminCreateEntityTypeInput: {
             slug: string;
             label: string;
@@ -2200,6 +2737,8 @@ export interface components {
         Limit: number;
         /** @description Prefix/fulltext search within this resource (MySQL LIKE/FULLTEXT — see docs §6). */
         SearchQuery: string;
+        /** @description Comma-separated CategoryGroup slugs (e.g. "music,food") — multi-select. OR'd together: a real, server-side filter to *any* selected group, not an AND across all of them. Comma-joined rather than a repeated query key so a single selection never needs array coercion on either the client or the server's querystring parser. Shared by GET /lists/feed and GET /discover/feed — the two pages' category chips run the same filtering logic, though what a "match" means differs per feed: on /lists/feed it's literal category membership; on /discover/feed it's the *taste* axis — real engagement (a started or completed list) in that group, not people tagged with it. */
+        GroupSlugs: string;
     };
     requestBodies: never;
     headers: never;
@@ -2806,6 +3345,8 @@ export interface operations {
                 /** @description Opaque cursor returned by the previous page. */
                 cursor?: components["parameters"]["Cursor"];
                 limit?: components["parameters"]["Limit"];
+                /** @description Comma-separated CategoryGroup slugs (e.g. "music,food") — multi-select. OR'd together: a real, server-side filter to *any* selected group, not an AND across all of them. Comma-joined rather than a repeated query key so a single selection never needs array coercion on either the client or the server's querystring parser. Shared by GET /lists/feed and GET /discover/feed — the two pages' category chips run the same filtering logic, though what a "match" means differs per feed: on /lists/feed it's literal category membership; on /discover/feed it's the *taste* axis — real engagement (a started or completed list) in that group, not people tagged with it. */
+                groupSlugs?: components["parameters"]["GroupSlugs"];
             };
             header?: never;
             path?: never;
@@ -2859,8 +3400,8 @@ export interface operations {
                 /** @description Opaque cursor returned by the previous page. */
                 cursor?: components["parameters"]["Cursor"];
                 limit?: components["parameters"]["Limit"];
-                /** @description A CategoryGroup slug — the *taste* filter axis: restricts to people with real engagement (a started or completed list) in that group, not people tagged with it. This is the ~70% of Discover's categorization that isn't demographic. */
-                groupSlug?: string;
+                /** @description Comma-separated CategoryGroup slugs (e.g. "music,food") — multi-select. OR'd together: a real, server-side filter to *any* selected group, not an AND across all of them. Comma-joined rather than a repeated query key so a single selection never needs array coercion on either the client or the server's querystring parser. Shared by GET /lists/feed and GET /discover/feed — the two pages' category chips run the same filtering logic, though what a "match" means differs per feed: on /lists/feed it's literal category membership; on /discover/feed it's the *taste* axis — real engagement (a started or completed list) in that group, not people tagged with it. */
+                groupSlugs?: components["parameters"]["GroupSlugs"];
                 /** @description Requires the viewer to have their own location set — returns nobody outside the radius rather than silently ignoring the filter. */
                 nearMe?: boolean;
                 ageBucket?: components["schemas"]["AgeBucket"];
@@ -4069,6 +4610,170 @@ export interface operations {
             404: components["responses"]["NotFound"];
         };
     };
+    getSitePickGroups: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description All Site Picks groups */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        groups: components["schemas"]["AdminSitePickGroup"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    createSitePickGroup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminCreateSitePickGroupInput"];
+            };
+        };
+        responses: {
+            /** @description The created group */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        group: components["schemas"]["AdminSitePickGroupScalar"];
+                    };
+                };
+            };
+            /** @description Missing field */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    updateSitePickGroup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminUpdateSitePickGroupInput"];
+            };
+        };
+        responses: {
+            /** @description The updated group */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        group: components["schemas"]["AdminSitePickGroupScalar"];
+                    };
+                };
+            };
+            /** @description Missing field */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    deleteSitePickGroup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    updateSitePickGroupItems: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminUpdateSitePickItemsInput"];
+            };
+        };
+        responses: {
+            /** @description The group's curated List Definitions after the replace */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: components["schemas"]["AdminSitePickItem"][];
+                    };
+                };
+            };
+            /** @description items must be an array */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
     searchTaxonomyImages: {
         parameters: {
             query?: never;
@@ -4415,73 +5120,6 @@ export interface operations {
             404: components["responses"]["NotFound"];
         };
     };
-    overrideUserMembership: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AdminOverrideMembershipInput"];
-            };
-        };
-        responses: {
-            /** @description The resulting subscription */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        subscription: components["schemas"]["AdminSubscriptionScalar"];
-                    };
-                };
-            };
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["NotFound"];
-        };
-    };
-    revokeUserMembership: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AdminRevokeMembershipInput"];
-            };
-        };
-        responses: {
-            /** @description The canceled subscription */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        subscription: components["schemas"]["AdminSubscriptionScalar"];
-                    };
-                };
-            };
-            /** @description User has no active membership to revoke */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["NotFound"];
-        };
-    };
     getPlans: {
         parameters: {
             query?: never;
@@ -4567,7 +5205,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description Price or entitlements changed on a plan with active subscriptions */
+            /** @description Invalid input */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -4579,6 +5217,606 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+        };
+    };
+    getEntitlementPolicy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Current policy */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminEntitlementPolicy"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    updateEntitlementPolicy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminUpdateEntitlementPolicyInput"];
+            };
+        };
+        responses: {
+            /** @description The policy after the update */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminEntitlementPolicy"];
+                };
+            };
+            /** @description Unknown entitlement key */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    listMembershipGrants: {
+        parameters: {
+            query?: {
+                userId?: string;
+                /** @description Opaque cursor returned by the previous page. */
+                cursor?: components["parameters"]["Cursor"];
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A page of grants */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        grants: components["schemas"]["AdminMembershipGrantListItem"][];
+                        hasMore: boolean;
+                        nextCursor: string | null;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    createMembershipGrant: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminCreateMembershipGrantInput"];
+            };
+        };
+        responses: {
+            /** @description The created grant */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        grant: components["schemas"]["AdminMembershipGrant"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    revokeMembershipGrant: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["AdminRevokeMembershipGrantInput"];
+            };
+        };
+        responses: {
+            /** @description The revoked grant */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        grant: components["schemas"]["AdminMembershipGrant"];
+                    };
+                };
+            };
+            /** @description Grant is already revoked */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    listSignupPromotions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description All signup promotions */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        signupPromotions: components["schemas"]["AdminSignupPromotion"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    createSignupPromotion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminCreateSignupPromotionInput"];
+            };
+        };
+        responses: {
+            /** @description The created promotion */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        signupPromotion: components["schemas"]["AdminSignupPromotion"];
+                    };
+                };
+            };
+            /** @description endAt must be after startAt, or durationDays missing for a temporary award */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    updateSignupPromotion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminUpdateSignupPromotionInput"];
+            };
+        };
+        responses: {
+            /** @description The updated promotion */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        signupPromotion: components["schemas"]["AdminSignupPromotion"];
+                    };
+                };
+            };
+            /** @description endAt must be after startAt, or durationDays missing for a temporary award */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    listGlobalMembershipWindows: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description All global windows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        globalWindows: components["schemas"]["AdminGlobalMembershipWindow"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    createGlobalMembershipWindow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminCreateGlobalMembershipWindowInput"];
+            };
+        };
+        responses: {
+            /** @description The created window */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        globalWindow: components["schemas"]["AdminGlobalMembershipWindow"];
+                    };
+                };
+            };
+            /** @description endAt must be after startAt */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    updateGlobalMembershipWindow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminUpdateGlobalMembershipWindowInput"];
+            };
+        };
+        responses: {
+            /** @description The updated window */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        globalWindow: components["schemas"]["AdminGlobalMembershipWindow"];
+                    };
+                };
+            };
+            /** @description endAt must be after startAt */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    listCouponCodes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description All coupons */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        coupons: components["schemas"]["AdminCouponCode"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    createCouponCode: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminCreateCouponCodeInput"];
+            };
+        };
+        responses: {
+            /** @description The created coupon */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        coupon: components["schemas"]["AdminCouponCode"];
+                    };
+                };
+            };
+            /** @description Invalid discount or date range */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            /** @description A coupon with this code already exists */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    updateCouponCode: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminUpdateCouponCodeInput"];
+            };
+        };
+        responses: {
+            /** @description The updated coupon */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        coupon: components["schemas"]["AdminCouponCode"];
+                    };
+                };
+            };
+            /** @description Invalid discount or date range */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    listCouponRedemptions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Redemptions */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        redemptions: components["schemas"]["AdminCouponRedemption"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    getMembershipOverview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Overview */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminMembershipOverview"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    listEffectiveMembers: {
+        parameters: {
+            query?: {
+                /** @description Opaque cursor returned by the previous page. */
+                cursor?: components["parameters"]["Cursor"];
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A page of effective members */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        members: components["schemas"]["AdminEffectiveMember"][];
+                        hasMore: boolean;
+                        nextCursor: string | null;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    redeemCoupon: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RedeemCouponInput"];
+            };
+        };
+        responses: {
+            /** @description The redemption (and grant, if any) */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RedeemCouponResult"];
+                };
+            };
+            /** @description Coupon is not active yet, or has expired */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            /** @description Coupon not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Redemption limit reached (coupon-wide or for this user) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
         };
     };
 }

@@ -38,6 +38,7 @@ export function AppTabs() {
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
+        tabBarButtonTestID: `tab.${route.name.toLowerCase()}`,
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.inkMuted,
         tabBarIcon: ({ color, size }) => <Icon name={ICONS[route.name]} color={color} size={size} />,

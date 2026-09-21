@@ -53,7 +53,7 @@ export function QuickPicksScreen({ navigation }: Props) {
 
   function onCardAction(targetProfileId: string, displayName: string, action: 'LIKE' | 'PASS' | 'MORE_LIKE_THIS' | 'LESS_LIKE_THIS') {
     if (action === 'MORE_LIKE_THIS' || action === 'LESS_LIKE_THIS') {
-      sheet.show({ title: 'Training received', message: 'The algorithm will adjust your future matches.', buttons: [{ text: 'OK' }] })
+      sheet.show({ title: 'Training received', message: 'The algorithm will adjust your future matches.', buttons: [{ testID: 'quick-picks.dialog.ok', text: 'OK' }] })
       return
     }
 
@@ -123,9 +123,9 @@ export function QuickPicksScreen({ navigation }: Props) {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <ScreenContainer padded={false}>
+      <ScreenContainer testID="screen.quick-picks" padded={false}>
         <View style={styles.headerWrapper}>
-          <TopNavigation
+          <TopNavigation testID="quick-picks.header"
             title="Quick Picks"
             subtitle="Browse is unlimited, on every plan"
             alignment="left"
@@ -136,9 +136,9 @@ export function QuickPicksScreen({ navigation }: Props) {
 
         <View style={[styles.deckContainer, isDesktop && styles.deckContainerDesktop]}>
           {feed.isLoading ? (
-            <MatchFeedCardSkeleton />
+            <View testID="quick-picks.loading"><MatchFeedCardSkeleton /></View>
           ) : visibleCards.length === 0 ? (
-            <EmptyState title="No one new to show" subtitle="Check back soon, or once more members join." />
+            <EmptyState testID="quick-picks.empty" title="No one new to show" subtitle="Check back soon, or once more members join." />
           ) : (
             visibleCards.map((item, mapIndex) => {
               const isTopCard = mapIndex === visibleCards.length - 1
@@ -146,7 +146,7 @@ export function QuickPicksScreen({ navigation }: Props) {
 
               return (
                 <GestureDetector key={item.profile.id} gesture={isTopCard ? panGesture : Gesture.Pan()}>
-                  <Animated.View style={itemStyle}>
+                  <Animated.View testID={isTopCard ? "quick-picks.active-card" : undefined} style={itemStyle}>
                     <MatchFeedCard
                       profileId={item.profile.id}
                       displayName={item.profile.displayName}
@@ -175,18 +175,19 @@ export function QuickPicksScreen({ navigation }: Props) {
           <Animated.View
             entering={FadeIn}
             exiting={FadeOut}
+            testID="quick-picks.match-dialog"
             style={styles.modalOverlay}
           >
-            <Animated.View entering={ZoomIn.springify().damping(14)} exiting={ZoomOut} style={styles.modalContent}>
+            <Animated.View testID="quick-picks.match-dialog.content" entering={ZoomIn.springify().damping(14)} exiting={ZoomOut} style={styles.modalContent}>
               <Text style={styles.modalEmoji}>🎉</Text>
-              <Typography variant="title" style={{ textAlign: 'center', marginBottom: spacing.sm }}>
+              <Typography testID="quick-picks.match-dialog.title" variant="title" style={{ textAlign: 'center', marginBottom: spacing.sm }}>
                 It's a match!
               </Typography>
-              <Typography variant="body" style={{ textAlign: 'center', marginBottom: spacing.xl }}>
+              <Typography testID="quick-picks.match-dialog.message" variant="body" style={{ textAlign: 'center', marginBottom: spacing.xl }}>
                 You and {matchData.displayName} liked each other.
               </Typography>
 
-              <Button
+              <Button testID="quick-picks.say-hi"
                 label="Say hi"
                 onPress={() => {
                   const nav = navigation.getParent()?.navigate as any
@@ -198,7 +199,7 @@ export function QuickPicksScreen({ navigation }: Props) {
                 }}
               />
               <View style={{ height: spacing.md }} />
-              <Button
+              <Button testID="quick-picks.keep-swiping"
                 label="Keep swiping"
                 variant="secondary"
                 onPress={() => setMatchData(null)}
@@ -206,7 +207,7 @@ export function QuickPicksScreen({ navigation }: Props) {
             </Animated.View>
           </Animated.View>
         )}
-        <ActionSheet config={sheet.config} onDismiss={sheet.dismiss} />
+        <ActionSheet testID="quick-picks.dialog" config={sheet.config} onDismiss={sheet.dismiss} />
       </ScreenContainer>
     </GestureHandlerRootView>
   )

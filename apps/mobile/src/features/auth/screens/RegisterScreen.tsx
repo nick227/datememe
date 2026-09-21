@@ -1,14 +1,15 @@
 import { useState } from 'react'
 import { ScrollView, StyleSheet, View } from 'react-native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { useRegister } from '@project/sdk'
+import { useRegister, useRedeemCoupon } from '@project/sdk'
 import { ScreenContainer } from '../../../ui/ScreenContainer'
 import { TextField } from '../../../ui/TextField'
 import { Button } from '../../../ui/Button'
 import { ActionSheet, useActionSheet } from '../../../ui/ActionSheet'
+import { GoogleAuthButton, OrDivider } from '../../../ui/SocialAuthButton'
 import { setToken } from '../../../lib/authToken'
 import { queryClient } from '../../../lib/queryClient'
-import { borderWidth, colors, spacing } from '../../../theme'
+import { borderWidth, colors, radius, spacing } from '../../../theme'
 import type { AuthStackParamList } from '../../../navigation/types'
 import { Typography } from '../../../ui/Typography'
 import { SelectField } from '../../../ui/SelectField'
@@ -41,7 +42,9 @@ export function RegisterScreen({ navigation }: Props) {
   const [month, setMonth] = useState('')
   const [day, setDay] = useState('')
   const [year, setYear] = useState('')
+  const [promoCode, setPromoCode] = useState('')
   const register = useRegister()
+  const redeemCoupon = useRedeemCoupon()
   const sheet = useActionSheet()
 
   const birthdate = month && day && year ? `${year}-${month}-${day}` : ''
@@ -50,45 +53,77 @@ export function RegisterScreen({ navigation }: Props) {
   async function handleSubmit() {
     try {
       const result = await register.mutateAsync({ email, password, username, displayName, birthdate })
+      // Persist credentials first — redeeming needs an authenticated request.
       await setToken(result.token)
       await queryClient.invalidateQueries({ queryKey: ['me'] })
+
+      if (promoCode.trim()) {
+        try {
+          const redeemed = await redeemCoupon.mutateAsync(promoCode.trim())
+          sheet.show({
+            title: redeemed.grant ? 'Welcome — you’re a member!' : 'Code applied',
+            message: redeemed.grant
+              ? `Your code unlocked Premium${redeemed.grant.expiresAt ? ` until ${new Date(redeemed.grant.expiresAt).toLocaleDateString()}` : ' — for life'}.`
+              : `That code is a ${redeemed.redemption.discountPercent}% discount — it's saved on your account for when you upgrade.`,
+            buttons: [{ testID: 'register.dialog.ok', text: 'OK' }],
+          })
+        } catch (err: any) {
+          // Don't block a successful registration over a bad/expired code.
+          sheet.show({ title: 'Account created', message: err?.message ?? 'That code couldn’t be applied, but your account is ready to go.', buttons: [{ testID: 'register.dialog.ok', text: 'OK' }] })
+        }
+      }
     } catch (err: any) {
-      sheet.show({ title: 'Could not create account', message: err?.message ?? 'Please check your details', buttons: [{ text: 'OK' }] })
+      sheet.show({ title: 'Could not create account', message: err?.message ?? 'Please check your details', buttons: [{ testID: 'register.dialog.ok', text: 'OK' }] })
     }
   }
 
+  function handleGooglePress() {
+    sheet.show({ title: 'Coming soon', message: 'Google sign-up isn’t wired up yet — use email for now.', buttons: [{ testID: 'register.dialog.ok', text: 'OK' }] })
+  }
+
   return (
-    <ScreenContainer width="narrow">
+    <ScreenContainer testID="screen.register" width="narrow">
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}>
         <View style={styles.card}>
           <Typography variant="display" style={{ marginBottom: spacing.xs }}>
             Let's find your people
           </Typography>
-          <Typography variant="bodyMuted" style={{ marginBottom: spacing.xl }}>
+          <Typography variant="bodyMuted" style={{ marginBottom: spacing.lg }}>
             Skip the bio — your favorites do the talking.
           </Typography>
-          <TextField label="Email" value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" />
-          <TextField label="Password" value={password} onChangeText={setPassword} secureTextEntry />
-          <TextField label="Username" value={username} onChangeText={setUsername} autoCapitalize="none" />
-          <TextField label="Display name" value={displayName} onChangeText={setDisplayName} />
+
+          <View style={styles.perksBanner}>
+            <Typography variant="label" style={{ color: colors.white, marginBottom: 2 }}>MEMBERS GET</Typography>
+            <Typography variant="body" style={{ color: colors.white }}>
+              Unlimited messages, read receipts on every reply, and full photo access. Got a code? Redeem it below.
+            </Typography>
+          </View>
+
+          <GoogleAuthButton onPress={handleGooglePress} />
+          <OrDivider />
+
+          <TextField testID="register.email" label="Email" value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" />
+          <TextField testID="register.password" label="Password" value={password} onChangeText={setPassword} secureTextEntry />
+          <TextField testID="register.username" label="Username" value={username} onChangeText={setUsername} autoCapitalize="none" />
+          <TextField testID="register.display-name" label="Display name" value={displayName} onChangeText={setDisplayName} />
           <View>
             <Typography variant="label" style={{ marginBottom: spacing.xs }}>Birthdate</Typography>
             <View style={{ flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md }}>
-              <SelectField
+              <SelectField testID="register.month"
                 value={month}
                 options={MONTHS}
                 onSelect={setMonth}
                 placeholder="Month"
                 style={{ flex: 2, marginBottom: 0 }}
               />
-              <SelectField
+              <SelectField testID="register.day"
                 value={day}
                 options={DAYS}
                 onSelect={setDay}
                 placeholder="Day"
                 style={{ flex: 1, marginBottom: 0 }}
               />
-              <SelectField
+              <SelectField testID="register.year"
                 value={year}
                 options={YEARS}
                 onSelect={setYear}
@@ -97,15 +132,22 @@ export function RegisterScreen({ navigation }: Props) {
               />
             </View>
           </View>
+          <TextField testID="register.promo-code"
+            label="Promo code (optional)"
+            value={promoCode}
+            onChangeText={setPromoCode}
+            autoCapitalize="characters"
+            placeholder="Have a code for Premium?"
+          />
           <View style={{ marginTop: spacing.sm }}>
-            <Button label="Sign up" onPress={handleSubmit} loading={register.isPending} disabled={!canSubmit} />
+            <Button testID="register.submit" label="Sign up" onPress={handleSubmit} loading={register.isPending || redeemCoupon.isPending} disabled={!canSubmit} />
           </View>
           <View style={{ marginTop: spacing.md }}>
-            <Button label="I already have an account" variant="secondary" onPress={() => navigation.navigate('Login')} />
+            <Button testID="register.i-already-have-an-account" label="I already have an account" variant="secondary" onPress={() => navigation.navigate('Login')} />
           </View>
         </View>
       </ScrollView>
-      <ActionSheet config={sheet.config} onDismiss={sheet.dismiss} />
+      <ActionSheet testID="register.dialog" config={sheet.config} onDismiss={sheet.dismiss} />
     </ScreenContainer>
   )
 }
@@ -116,5 +158,11 @@ const styles = StyleSheet.create({
     borderWidth: borderWidth.thick,
     borderColor: colors.ink,
     padding: spacing.xl,
+  },
+  perksBanner: {
+    backgroundColor: colors.primary,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    marginBottom: spacing.lg,
   },
 })

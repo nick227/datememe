@@ -47,8 +47,8 @@ export function AdminTaxonomyEntityScreen({ route, navigation }: Props) {
     updateEntity.mutate(
       { id, canonicalName: form.canonicalName, slug: form.slug, parentId: form.parentId, status: form.status as any },
       {
-        onSuccess: () => sheet.show({ title: 'Saved', buttons: [{ text: 'OK', onPress: () => navigation.goBack() }] }),
-        onError: (err) => sheet.show({ title: 'Could not save', message: err instanceof ApiError ? err.message : 'Try again.', buttons: [{ text: 'OK' }] }),
+        onSuccess: () => sheet.show({ title: 'Saved', buttons: [{ testID: 'admin-taxonomy-entity.dialog.ok', text: 'OK', onPress: () => navigation.goBack() }] }),
+        onError: (err) => sheet.show({ title: 'Could not save', message: err instanceof ApiError ? err.message : 'Try again.', buttons: [{ testID: 'admin-taxonomy-entity.dialog.ok', text: 'OK' }] }),
       },
     )
   }
@@ -61,15 +61,15 @@ export function AdminTaxonomyEntityScreen({ route, navigation }: Props) {
   ]
 
   return (
-    <ScreenContainer width="narrow">
-      <TopNavigation
+    <ScreenContainer testID="screen.admin-taxonomy-entity" width="narrow">
+      <TopNavigation testID="admin-taxonomy-entity.header"
         alignment="left"
         leftAction="back"
         onLeftAction={() => navigation.goBack()}
         title="Edit Value"
         rightElement={
           hasChildType ? (
-            <Pressable
+            <Pressable testID="admin-taxonomy-entity.open-admin-taxonomy-generate"
               hitSlop={12}
               onPress={() =>
                 navigation.navigate('AdminTaxonomyGenerate', {
@@ -86,8 +86,8 @@ export function AdminTaxonomyEntityScreen({ route, navigation }: Props) {
       />
 
       <ScrollView>
-        <TextField label="Canonical name" value={form.canonicalName} onChangeText={(v) => setForm((f) => ({ ...f, canonicalName: v }))} />
-        <TextField label="Slug" value={form.slug} onChangeText={(v) => setForm((f) => ({ ...f, slug: v }))} autoCapitalize="none" />
+        <TextField testID="admin-taxonomy-entity.canonical-name" label="Canonical name" value={form.canonicalName} onChangeText={(v) => setForm((f) => ({ ...f, canonicalName: v }))} />
+        <TextField testID="admin-taxonomy-entity.slug" label="Slug" value={form.slug} onChangeText={(v) => setForm((f) => ({ ...f, slug: v }))} autoCapitalize="none" />
 
         {parentTypeId ? (
           <View style={styles.reparentBox}>
@@ -95,7 +95,7 @@ export function AdminTaxonomyEntityScreen({ route, navigation }: Props) {
             <Typography variant="bodyMuted" style={styles.reparentWarning}>
               Moving this value affects every List scoped to its current parent.
             </Typography>
-            <SelectField
+            <SelectField testID="admin-taxonomy-entity.parent-id"
               value={form.parentId ?? ''}
               options={parentOptions}
               onSelect={(v) => setForm((f) => ({ ...f, parentId: v || null }))}
@@ -104,14 +104,14 @@ export function AdminTaxonomyEntityScreen({ route, navigation }: Props) {
           </View>
         ) : null}
 
-        <SelectField
+        <SelectField testID="admin-taxonomy-entity.status"
           label="Status"
           value={form.status}
           options={STATUS_OPTIONS}
           onSelect={(v) => setForm((f) => ({ ...f, status: v }))}
         />
 
-        <Button label="Save changes" loading={updateEntity.isPending} onPress={handleSave} />
+        <Button testID="admin-taxonomy-entity.save" label="Save changes" loading={updateEntity.isPending} onPress={handleSave} />
 
         <AdminImagePicker
           target={{ entityId: id }}
@@ -122,7 +122,7 @@ export function AdminTaxonomyEntityScreen({ route, navigation }: Props) {
         />
       </ScrollView>
 
-      <ActionSheet config={sheet.config} onDismiss={sheet.dismiss} />
+      <ActionSheet testID="admin-taxonomy-entity.dialog" config={sheet.config} onDismiss={sheet.dismiss} />
     </ScreenContainer>
   )
 }

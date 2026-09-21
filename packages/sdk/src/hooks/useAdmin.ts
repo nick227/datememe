@@ -5,7 +5,6 @@ import type { UploadableFile } from './useMedia'
 
 type EntitySubmissionReviewInput = components['schemas']['AdminEntitySubmissionReviewInput']
 type ReportReviewInput = components['schemas']['AdminReportReviewInput']
-type OverrideMembershipInput = components['schemas']['AdminOverrideMembershipInput']
 type CreatePlanInput = components['schemas']['AdminCreatePlanInput']
 type UpdatePlanInput = components['schemas']['AdminUpdatePlanInput']
 type CreateEntityTypeInput = components['schemas']['AdminCreateEntityTypeInput']
@@ -17,6 +16,9 @@ type BulkSaveEntitiesInput = components['schemas']['AdminBulkSaveEntitiesInput']
 type CreateListDefinitionInput = components['schemas']['AdminCreateListDefinitionInput']
 type UpdateListDefinitionInput = components['schemas']['AdminUpdateListDefinitionInput']
 type UpdateCuratedEntitiesInput = components['schemas']['AdminUpdateCuratedEntitiesInput']
+type CreateSitePickGroupInput = components['schemas']['AdminCreateSitePickGroupInput']
+type UpdateSitePickGroupInput = components['schemas']['AdminUpdateSitePickGroupInput']
+type UpdateSitePickItemsInput = components['schemas']['AdminUpdateSitePickItemsInput']
 type SearchImagesInput = components['schemas']['AdminSearchImagesInput']
 type AttachImageInput = components['schemas']['AdminAttachImageInput']
 type MediaAsset = components['schemas']['AdminMediaAsset']
@@ -296,29 +298,10 @@ export function useAdminVerifyUser() {
   })
 }
 
-export function useAdminOverrideMembership() {
-  const invalidate = useInvalidateAdminUser()
-  return useMutation({
-    mutationFn: async (input: OverrideMembershipInput) => {
-      const { data, error, response } = await getApiClient().POST('/admin/users/membership', { body: input })
-      if (error) throw new ApiError(response.status, (error as any).error)
-      return data!.subscription
-    },
-    onSuccess: (_data, input) => invalidate(input.userId),
-  })
-}
-
-export function useAdminRevokeMembership() {
-  const invalidate = useInvalidateAdminUser()
-  return useMutation({
-    mutationFn: async (input: { userId: string }) => {
-      const { data, error, response } = await getApiClient().POST('/admin/users/membership/revoke', { body: input })
-      if (error) throw new ApiError(response.status, (error as any).error)
-      return data!.subscription
-    },
-    onSuccess: (_data, input) => invalidate(input.userId),
-  })
-}
+// useAdminOverrideMembership/useAdminRevokeMembership were removed here
+// (Phase 7) — replaced by useAdminCreateMembershipGrant/
+// useAdminRevokeMembershipGrant in useMembership.ts, which never touch
+// Subscription.
 
 export function useAdminPlans() {
   return useQuery({
@@ -426,6 +409,75 @@ export function useAdminUpdateListCuratedEntities() {
     onSuccess: (_data, vars) => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'listCuratedEntities', vars.id] })
     },
+  })
+}
+
+function useInvalidateSitePickGroups() {
+  const queryClient = useQueryClient()
+  return () => queryClient.invalidateQueries({ queryKey: ['admin', 'sitePickGroups'] })
+}
+
+export function useAdminSitePickGroups() {
+  return useQuery({
+    queryKey: ['admin', 'sitePickGroups'],
+    queryFn: async () => {
+      const { data, error, response } = await getApiClient().GET('/admin/site-picks/groups')
+      if (error) throw new ApiError(response.status, (error as any).error)
+      return data!.groups
+    },
+  })
+}
+
+export function useAdminCreateSitePickGroup() {
+  const invalidate = useInvalidateSitePickGroups()
+  return useMutation({
+    mutationFn: async (input: CreateSitePickGroupInput) => {
+      const { data, error, response } = await getApiClient().POST('/admin/site-picks/groups', { body: input })
+      if (error) throw new ApiError(response.status, (error as any).error)
+      return data!.group
+    },
+    onSuccess: invalidate,
+  })
+}
+
+export function useAdminUpdateSitePickGroup() {
+  const invalidate = useInvalidateSitePickGroups()
+  return useMutation({
+    mutationFn: async ({ id, ...body }: UpdateSitePickGroupInput & { id: string }) => {
+      const { data, error, response } = await getApiClient().PUT('/admin/site-picks/groups/{id}', { params: { path: { id } }, body })
+      if (error) throw new ApiError(response.status, (error as any).error)
+      return data!.group
+    },
+    onSuccess: invalidate,
+  })
+}
+
+export function useAdminDeleteSitePickGroup() {
+  const invalidate = useInvalidateSitePickGroups()
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error, response } = await getApiClient().DELETE('/admin/site-picks/groups/{id}', { params: { path: { id } } })
+      if (error) throw new ApiError(response.status, (error as any).error)
+    },
+    onSuccess: invalidate,
+  })
+}
+
+// Full replace, not a merge — matches the endpoint's own semantics (see
+// updateSitePickGroupItems on the server). Callers always send the complete
+// desired set of curated List Definitions, in order.
+export function useAdminUpdateSitePickGroupItems() {
+  const invalidate = useInvalidateSitePickGroups()
+  return useMutation({
+    mutationFn: async ({ id, items }: { id: string } & UpdateSitePickItemsInput) => {
+      const { data, error, response } = await getApiClient().PUT('/admin/site-picks/groups/{id}/items', {
+        params: { path: { id } },
+        body: { items },
+      })
+      if (error) throw new ApiError(response.status, (error as any).error)
+      return data!.items
+    },
+    onSuccess: invalidate,
   })
 }
 

@@ -4,6 +4,7 @@ import { ActionSheet, useActionSheet } from './ActionSheet'
 import { colors, radius } from '../theme'
 
 type Props = {
+  testID?: string
   uri?: string | null
   onChange: (url: string) => void
   onRemove?: () => void
@@ -17,7 +18,7 @@ type Props = {
  * anything that needs "pick a photo, get back a hosted URL" uses this one component
  * rather than each screen wiring expo-image-picker + upload itself.
  */
-export function PhotoPicker({ uri, onChange, onRemove, size = 96, shape = 'circle', placeholder }: Props) {
+export function PhotoPicker({ testID, uri, onChange, onRemove, size = 96, shape = 'circle', placeholder }: Props) {
   const { pick, isUploading } = usePhotoPicker()
   const sheet = useActionSheet()
 
@@ -26,7 +27,7 @@ export function PhotoPicker({ uri, onChange, onRemove, size = 96, shape = 'circl
       const url = await pick()
       if (url) onChange(url)
     } catch (err: any) {
-      sheet.show({ title: 'Could not upload photo', message: err?.message ?? 'Try again in a moment', buttons: [{ text: 'OK' }] })
+      sheet.show({ title: 'Could not upload photo', message: err?.message ?? 'Try again in a moment', buttons: [{ testID: testID ? `${testID}.error-dialog.ok` : undefined, text: 'OK' }] })
     }
   }
 
@@ -34,7 +35,7 @@ export function PhotoPicker({ uri, onChange, onRemove, size = 96, shape = 'circl
 
   return (
     <View style={{ width: size, height: size }}>
-      <Pressable onPress={handlePress} disabled={isUploading} style={[styles.base, shapeStyle]}>
+      <Pressable testID={testID} onPress={handlePress} disabled={isUploading} style={[styles.base, shapeStyle]}>
         {uri ? (
           <Image source={{ uri }} style={[StyleSheet.absoluteFill, shapeStyle]} />
         ) : (
@@ -54,11 +55,11 @@ export function PhotoPicker({ uri, onChange, onRemove, size = 96, shape = 'circl
       </Pressable>
 
       {uri && onRemove && !isUploading ? (
-        <Pressable onPress={onRemove} hitSlop={8} style={styles.removeBadge}>
+        <Pressable testID={testID ? `${testID}.remove` : undefined} onPress={onRemove} hitSlop={8} style={styles.removeBadge}>
           <Text style={styles.removeBadgeText}>✕</Text>
         </Pressable>
       ) : null}
-      <ActionSheet config={sheet.config} onDismiss={sheet.dismiss} />
+      <ActionSheet testID={testID ? `${testID}.error-dialog` : undefined} config={sheet.config} onDismiss={sheet.dismiss} />
     </View>
   )
 }

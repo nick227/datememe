@@ -3,9 +3,8 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import {
   ApiError,
   useAdminBanUser,
-  useAdminOverrideMembership,
-  useAdminPlans,
-  useAdminRevokeMembership,
+  useAdminCreateMembershipGrant,
+  useAdminRevokeMembershipGrant,
   useAdminUserDetail,
   useAdminVerifyUser,
   useCurrentUser,
@@ -22,21 +21,28 @@ import type { AdminStackParamList } from '../../../navigation/types'
 
 type Props = NativeStackScreenProps<AdminStackParamList, 'AdminUserDetail'>
 
+const GRANT_DURATIONS: { label: string; days: number | null }[] = [
+  { label: 'Lifetime', days: null },
+  { label: '7 days', days: 7 },
+  { label: '30 days', days: 30 },
+  { label: '90 days', days: 90 },
+  { label: '365 days', days: 365 },
+]
+
 export function AdminUserDetailScreen({ route, navigation }: Props) {
   const { userId } = route.params
   const me = useCurrentUser()
   const detail = useAdminUserDetail(userId)
-  const plans = useAdminPlans()
   const banUser = useAdminBanUser()
   const verifyUser = useAdminVerifyUser()
-  const overrideMembership = useAdminOverrideMembership()
-  const revokeMembership = useAdminRevokeMembership()
+  const createGrant = useAdminCreateMembershipGrant()
+  const revokeGrant = useAdminRevokeMembershipGrant()
   const sheet = useActionSheet()
 
   const isSelf = me.data?.id === userId
 
   function showError(title: string, err: unknown) {
-    sheet.show({ title, message: err instanceof ApiError ? err.message : 'Try again in a moment.', buttons: [{ text: 'OK' }] })
+    sheet.show({ title, message: err instanceof ApiError ? err.message : 'Try again in a moment.', buttons: [{ testID: 'admin-user-detail.dialog.ok', text: 'OK' }] })
   }
 
   function handleToggleBan(currentlySuspended: boolean) {
@@ -44,7 +50,7 @@ export function AdminUserDetailScreen({ route, navigation }: Props) {
       title: currentlySuspended ? 'Restore this account?' : 'Suspend this account?',
       message: currentlySuspended ? 'The user will be able to log in again.' : 'This will ban this account. Continue?',
       buttons: [
-        { text: 'Cancel', style: 'cancel' },
+        { testID: 'admin-user-detail.dialog.cancel', text: 'Cancel', style: 'cancel' },
         {
           text: currentlySuspended ? 'Restore' : 'Suspend',
           style: 'destructive',
@@ -58,40 +64,43 @@ export function AdminUserDetailScreen({ route, navigation }: Props) {
     verifyUser.mutate({ userId, verify: !currentlyVerified }, { onError: (err) => showError('Could not update verification', err) })
   }
 
-  function handleOverrideMembership() {
-    const activePlans = (plans.data ?? []).filter((p) => p.isActive)
-    if (activePlans.length === 0) {
-      sheet.show({ title: 'No active plans', message: 'Create a plan first.', buttons: [{ text: 'OK' }] })
-      return
-    }
+  function handleGrantMembership() {
     sheet.show({
-      title: 'Override membership',
-      message: 'Select a plan to grant',
+      title: 'Grant membership',
+      message: 'Independent of any Subscription — for how long?',
       buttons: [
-        ...activePlans.map((p) => ({
-          text: `${p.label} — $${(p.priceCents / 100).toFixed(2)}`,
-          onPress: () => overrideMembership.mutate({ userId, planId: p.id }, { onError: (err) => showError('Could not override membership', err) }),
+        ...GRANT_DURATIONS.map((d) => ({
+          testID: `admin-user-detail.dialog.grant.${d.days ?? "lifetime"}`,
+          text: d.label,
+          onPress: () =>
+            createGrant.mutate(
+              {
+                userId,
+                expiresAt: d.days ? new Date(Date.now() + d.days * 24 * 60 * 60 * 1000).toISOString() : null,
+                reason: 'Granted via admin user detail screen',
+              },
+              { onError: (err) => showError('Could not create grant', err) },
+            ),
         })),
-        { text: 'Cancel', style: 'cancel' as const },
+        { testID: 'admin-user-detail.dialog.cancel', text: 'Cancel', style: 'cancel' as const },
       ],
     })
   }
 
-  function handleRevokeMembership() {
+  function handleRevokeGrant(grantId: string) {
     sheet.show({
-      title: "Revoke this user's membership?",
-      message: 'Are you sure you want to revoke this active membership?',
+      title: 'Revoke this grant?',
       buttons: [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Revoke', style: 'destructive', onPress: () => revokeMembership.mutate({ userId }, { onError: (err) => showError('Could not revoke membership', err) }) },
+        { testID: 'admin-user-detail.dialog.cancel', text: 'Cancel', style: 'cancel' },
+        { testID: 'admin-user-detail.dialog.revoke', text: 'Revoke', style: 'destructive', onPress: () => revokeGrant.mutate({ id: grantId }, { onError: (err) => showError('Could not revoke grant', err) }) },
       ],
     })
   }
 
   if (detail.isLoading) {
     return (
-      <ScreenContainer width="narrow">
-        <TopNavigation alignment="left" leftAction="back" onLeftAction={() => navigation.goBack()} title="User" />
+      <ScreenContainer testID="screen.admin-user-detail" width="narrow">
+        <TopNavigation testID="admin-user-detail.header" alignment="left" leftAction="back" onLeftAction={() => navigation.goBack()} title="User" />
         <View style={{ gap: spacing.md }}>
           <Skeleton height={140} />
           <Skeleton height={140} />
@@ -102,19 +111,21 @@ export function AdminUserDetailScreen({ route, navigation }: Props) {
 
   if (detail.isError || !detail.data) {
     return (
-      <ScreenContainer width="narrow">
-        <TopNavigation alignment="left" leftAction="back" onLeftAction={() => navigation.goBack()} title="User" />
-        <ErrorState subtitle="Couldn't load this user." onRetry={() => detail.refetch()} />
+      <ScreenContainer testID="screen.admin-user-detail" width="narrow">
+        <TopNavigation testID="admin-user-detail.header" alignment="left" leftAction="back" onLeftAction={() => navigation.goBack()} title="User" />
+        <ErrorState testID="admin-user-detail.error" subtitle="Couldn't load this user." onRetry={() => detail.refetch()} />
       </ScreenContainer>
     )
   }
 
   const { user, auditEvents } = detail.data
   const activeSubscription = user.subscriptions[0]
+  const now = Date.now()
+  const isGrantActive = (g: (typeof user.membershipGrants)[number]) => !g.revokedAt && (!g.expiresAt || new Date(g.expiresAt).getTime() > now)
 
   return (
-    <ScreenContainer width="narrow">
-      <TopNavigation
+    <ScreenContainer testID="screen.admin-user-detail" width="narrow">
+      <TopNavigation testID="admin-user-detail.header"
         alignment="left"
         leftAction="back"
         onLeftAction={() => navigation.goBack()}
@@ -131,14 +142,14 @@ export function AdminUserDetailScreen({ route, navigation }: Props) {
         <Row label="Joined" value={new Date(user.createdAt).toLocaleDateString()} last />
 
         <View style={styles.actionsRow}>
-          <Button
+          <Button testID="admin-user-detail.toggle-verify"
             label={user.isVerified ? 'Unverify' : 'Verify'}
             variant="secondary"
             disabled={isSelf}
             loading={verifyUser.isPending}
             onPress={() => handleToggleVerify(user.isVerified)}
           />
-          <Button
+          <Button testID="admin-user-detail.toggle-ban"
             label={user.suspendedAt ? 'Restore account' : 'Suspend account'}
             variant={user.suspendedAt ? 'secondary' : 'danger'}
             disabled={isSelf}
@@ -150,7 +161,7 @@ export function AdminUserDetailScreen({ route, navigation }: Props) {
       </View>
 
       <View style={styles.card}>
-        <Typography variant="heading" style={{ marginBottom: spacing.md }}>Membership</Typography>
+        <Typography variant="heading" style={{ marginBottom: spacing.md }}>Subscription</Typography>
         {activeSubscription ? (
           <>
             <Row label="Plan" value={activeSubscription.plan.label} />
@@ -158,13 +169,42 @@ export function AdminUserDetailScreen({ route, navigation }: Props) {
             <Row label="Started" value={new Date(activeSubscription.createdAt).toLocaleDateString()} last />
           </>
         ) : (
-          <Typography variant="bodyMuted">No active membership plan.</Typography>
+          <Typography variant="bodyMuted">No active paid subscription.</Typography>
+        )}
+      </View>
+
+      <View style={styles.card}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.md }}>
+          <Typography variant="heading">Membership grants</Typography>
+        </View>
+        {user.membershipGrants.length === 0 ? (
+          <Typography variant="bodyMuted">No grants — independent of Subscription, for support/comp access, signup promotions, or coupons.</Typography>
+        ) : (
+          user.membershipGrants.map((grant, i) => {
+            const active = isGrantActive(grant)
+            return (
+              <View testID={`admin-user-detail.grant.${grant.id}`} key={grant.id} style={[styles.grantRow, i > 0 && styles.grantRowDivider]}>
+                <View style={{ flex: 1 }}>
+                  <Typography variant="body">{grant.source.replace(/_/g, ' ')}</Typography>
+                  {grant.reason ? <Typography variant="bodyMuted" style={{ marginTop: 2 }}>{grant.reason}</Typography> : null}
+                  <Typography variant="label" style={{ color: colors.inkMuted, marginTop: 2 }}>
+                    {grant.expiresAt ? `Expires ${new Date(grant.expiresAt).toLocaleDateString()}` : 'Lifetime'}
+                    {grant.revokedAt ? ` · Revoked ${new Date(grant.revokedAt).toLocaleDateString()}` : ''}
+                  </Typography>
+                </View>
+                {active ? (
+                  <Button testID={`admin-user-detail.revoke.${grant.id}`} label="Revoke" variant="danger" loading={revokeGrant.isPending} onPress={() => handleRevokeGrant(grant.id)} />
+                ) : (
+                  <Typography variant="label" style={{ color: grant.revokedAt ? colors.danger : colors.inkMuted }}>
+                    {grant.revokedAt ? 'Revoked' : 'Expired'}
+                  </Typography>
+                )}
+              </View>
+            )
+          })
         )}
         <View style={styles.actionsRow}>
-          <Button label="Override membership" variant="secondary" loading={overrideMembership.isPending} onPress={handleOverrideMembership} />
-          {activeSubscription ? (
-            <Button label="Revoke" variant="danger" loading={revokeMembership.isPending} onPress={handleRevokeMembership} />
-          ) : null}
+          <Button testID="admin-user-detail.grant-membership" label="Grant membership" variant="secondary" loading={createGrant.isPending} onPress={handleGrantMembership} />
         </View>
       </View>
 
@@ -174,7 +214,7 @@ export function AdminUserDetailScreen({ route, navigation }: Props) {
           <Typography variant="bodyMuted">No admin actions recorded.</Typography>
         ) : (
           auditEvents.map((evt, i) => (
-            <View key={evt.id} style={[styles.auditRow, i > 0 && styles.auditRowDivider]}>
+            <View testID={`admin-user-detail.evt.${evt.id}`} key={evt.id} style={[styles.auditRow, i > 0 && styles.auditRowDivider]}>
               <Typography variant="body">{evt.action}</Typography>
               <Typography variant="bodyMuted" style={{ marginTop: 2 }}>
                 {new Date(evt.createdAt).toLocaleString()} · {evt.actor.email}
@@ -189,7 +229,7 @@ export function AdminUserDetailScreen({ route, navigation }: Props) {
         )}
       </View>
 
-      <ActionSheet config={sheet.config} onDismiss={sheet.dismiss} />
+      <ActionSheet testID="admin-user-detail.dialog" config={sheet.config} onDismiss={sheet.dismiss} />
     </ScreenContainer>
   )
 }
@@ -219,6 +259,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingBottom: spacing.sm,
     marginBottom: spacing.sm,
+  },
+  grantRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.sm,
+  },
+  grantRowDivider: {
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
   },
   rowDivider: {
     borderBottomWidth: 1,

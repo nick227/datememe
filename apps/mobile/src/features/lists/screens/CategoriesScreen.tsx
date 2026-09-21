@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { FlatList, ScrollView } from 'react-native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { useListsFeed } from '@project/sdk'
@@ -10,31 +10,41 @@ import { PageSummaryHero } from '../../../ui/content/PageSummaryHero'
 import { FilterChipsRow } from '../../../ui/content/FilterChipsRow'
 import { FeedModuleRenderer } from '../../../ui/content/FeedModuleRenderer'
 import { FeedListFooter } from '../../../ui/content/FeedListFooter'
-import { isCollection, type ContentUnit, type FeedModule } from '../../../ui/content/types'
+import { TOP_CHIP_ID, useGroupFilterChips } from '../../../ui/content/useGroupFilterChips'
+import type { ContentUnit, FeedModule } from '../../../ui/content/types'
 import { CANVAS_WIDTH, spacing } from '../../../theme'
 import type { CategoriesStackParamList } from '../../../navigation/types'
 
 type Props = NativeStackScreenProps<CategoriesStackParamList, 'Categories'>
 
-const TOP_CHIP_ID = 'top'
-
 type Row = { rowId: string; kind: 'chips' } | { rowId: string; kind: 'module'; module: FeedModule }
 
 // The Lists page as a PageSummary + FeedModule stream, grouped by topic — see
-// docs/shared-content-system-proposal.md §8. Chips are jump anchors into the
-// topic sections below, not filters — the whole grouped feed always loads.
+// docs/shared-content-system-proposal.md §8. Chips are a real, multi-select,
+// server-side filter (useGroupFilterChips + ListsFeedFilters.groupSlugs) —
+// the exact same filtering logic and layout rule as Discover: unfiltered
+// leads with "Your lists" -> Site Picks -> every topic; filtered leads with
+// "Your lists" -> only the selected group(s)' content, Quick Picks folded in
+// after. Selecting a chip re-fetches (query key changes), it doesn't reorder
+// or scroll an already-loaded list.
 export function CategoriesScreen({ navigation }: Props) {
-  const feed = useListsFeed()
+  const { selectedGroupSlugs, toggleGroup } = useGroupFilterChips()
+  const feed = useListsFeed({ groupSlugs: selectedGroupSlugs })
   const listRef = useRef<FlatList<Row>>(null)
-  const [activeChipId, setActiveChipId] = useState(TOP_CHIP_ID)
 
-  const [pendingChipId, setPendingChipId] = useState<string | null>(null)
-  const chipsRef = useRef<Array<{ id: string }>>([])
   const pages = feed.data?.pages ?? []
   const summary = pages[0]?.summary
   const chips = pages[0]?.chips ?? []
-  chipsRef.current = chips
   const modules = useMemo<FeedModule[]>(() => pages.flatMap((p) => p.data), [pages])
+  const selectedChipIds = selectedGroupSlugs.length ? selectedGroupSlugs : [TOP_CHIP_ID]
+  const selectedChipKey = selectedChipIds.join(',')
+
+  // A filter change is a real new query (kept flash-free by useListsFeed's
+  // placeholderData) — reset scroll position rather than remounting the
+  // FlatList, which was itself a second source of the reported UI flash.
+  useEffect(() => {
+    listRef.current?.scrollToOffset({ offset: 0, animated: true })
+  }, [selectedChipKey])
 
   const rows = useMemo<Row[]>(
     () => [{ rowId: 'chips', kind: 'chips' }, ...modules.map((m) => ({ rowId: m.id, kind: 'module' as const, module: m }))],
@@ -53,39 +63,10 @@ export function CategoriesScreen({ navigation }: Props) {
     // No interactive module ships in the Lists feed today — present for type-safety only.
   }
 
-  function onSelectChip(chipId: string) {
-    setActiveChipId(chipId)
-    setPendingChipId(chipId === TOP_CHIP_ID ? null : chipId)
-    if (chipId === TOP_CHIP_ID) {
-      listRef.current?.scrollToOffset({ offset: 0, animated: true })
-      return
-    }
-  }
-
-  useEffect(() => {
-    if (!pendingChipId) return
-    const index = rows.findIndex((r) => r.kind === 'module' && r.module.id === pendingChipId)
-    if (index >= 0) {
-      listRef.current?.scrollToIndex({ index, animated: true, viewPosition: 0 })
-      setPendingChipId(null)
-    } else if (feed.hasNextPage && !feed.isFetching && !feed.isFetchNextPageError) {
-      void feed.fetchNextPage()
-    } else if (!feed.hasNextPage) {
-      setPendingChipId(null)
-    }
-  }, [pendingChipId, rows, feed.hasNextPage, feed.isFetching, feed.isFetchNextPageError, feed.fetchNextPage])
-
-  const onViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: any[] }) => {
-    const visibleGroupRow = viewableItems.find(
-      (v) => v.item?.kind === 'module' && isCollection(v.item.module) && chipsRef.current.some((c) => c.id === v.item.module.id),
-    )
-    if (visibleGroupRow) setActiveChipId(visibleGroupRow.item.module.id)
-  }).current
-
   if (feed.isLoading) {
     return (
-      <ScreenContainer padded={false} width="wide">
-        <ScrollView contentContainerStyle={{ paddingTop: spacing.lg, paddingHorizontal: spacing.lg }}>
+      <ScreenContainer testID="screen.categories" padded={false} width="wide">
+        <ScrollView testID="categories.loading" contentContainerStyle={{ paddingTop: spacing.lg, paddingHorizontal: spacing.lg }}>
           <Skeleton variant="text" width={220} height={28} style={{ marginBottom: spacing.sm }} />
           <Skeleton variant="text" width={280} height={16} style={{ marginBottom: spacing.xl }} />
           <Skeleton variant="rect" width="100%" height={200} />
@@ -96,34 +77,27 @@ export function CategoriesScreen({ navigation }: Props) {
 
   if (feed.isError && !feed.data) {
     return (
-      <ScreenContainer width="wide">
-        <ErrorState subtitle="Couldn't load your lists." onRetry={() => feed.refetch()} />
+      <ScreenContainer testID="screen.categories" width="wide">
+        <ErrorState testID="categories.error" subtitle="Couldn't load your lists." onRetry={() => feed.refetch()} />
       </ScreenContainer>
     )
   }
 
   return (
-    <ScreenContainer padded={false} width="full">
+    <ScreenContainer testID="screen.categories" padded={false} width="full">
       <FlatList
         ref={listRef}
         data={rows}
         keyExtractor={(row) => row.rowId}
         renderItem={({ item }) =>
           item.kind === 'chips' ? (
-            chips.length > 1 ? <FilterChipsRow chips={chips} selectedId={activeChipId} onSelect={onSelectChip} /> : null
+            chips.length > 1 ? <FilterChipsRow chips={chips} selectedIds={selectedChipIds} onSelect={toggleGroup} /> : null
           ) : (
             <FeedModuleRenderer module={item.module} state="ready" onPressItem={onPressItem} onPressQuickPicks={onPressQuickPicks} />
           )
         }
-        onViewableItemsChanged={onViewableItemsChanged}
-        viewabilityConfig={{ itemVisiblePercentThreshold: 20 }}
-        onScrollToIndexFailed={({ index, averageItemLength }) => {
-          listRef.current?.scrollToOffset({ offset: averageItemLength * index, animated: false })
-          const row = rows[index]
-          if (row?.kind === 'module') setTimeout(() => setPendingChipId(row.module.id), 150)
-        }}
         ListHeaderComponent={summary ? <PageSummaryHero summary={summary} /> : null}
-        ListEmptyComponent={<EmptyState title="No lists yet" subtitle="Check back soon — new ones ship often." />}
+        ListEmptyComponent={<EmptyState testID="categories.empty" title="No lists yet" subtitle="Check back soon — new ones ship often." />}
         ListFooterComponent={
           <FeedListFooter
             isFetchingNextPage={feed.isFetchingNextPage}

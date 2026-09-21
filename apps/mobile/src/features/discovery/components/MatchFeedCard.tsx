@@ -22,7 +22,7 @@ type Props = {
   onAction: (action: 'LIKE' | 'PASS' | 'MORE_LIKE_THIS' | 'LESS_LIKE_THIS') => void
 }
 
-function ActionButton({ icon, variant, onPress, onAction }: { icon: any, variant: 'pass' | 'like', onPress: () => void, onAction: () => void }) {
+function ActionButton({ testID, icon, variant, onPress, onAction }: { testID: string, icon: any, variant: 'pass' | 'like', onPress: () => void, onAction: () => void }) {
   const scale = useSharedValue(1)
 
   const style = useAnimatedStyle(() => ({
@@ -31,6 +31,7 @@ function ActionButton({ icon, variant, onPress, onAction }: { icon: any, variant
 
   return (
     <AnimatedPressable
+      testID={testID}
       onPress={onPress}
       onPressIn={() => {
         scale.value = withSpring(0.9, { damping: 12, stiffness: 200 })
@@ -50,7 +51,7 @@ function ActionButton({ icon, variant, onPress, onAction }: { icon: any, variant
   )
 }
 
-export function MatchFeedCard({ displayName, avatarUrl, photos = [], matchPercentage, insights, onPress, onAction }: Props) {
+export function MatchFeedCard({ profileId, displayName, avatarUrl, photos = [], matchPercentage, insights, onPress, onAction }: Props) {
   const primaryInsight = insights && insights.length > 0 ? insights[0] : null
   const [photoIndex, setPhotoIndex] = useState(0)
 
@@ -73,8 +74,8 @@ export function MatchFeedCard({ displayName, avatarUrl, photos = [], matchPercen
   }
 
   return (
-    <View style={styles.card}>
-      <Pressable style={StyleSheet.absoluteFill} onPress={onPress}>
+    <View testID={`discover.profile.${profileId}`} style={styles.card}>
+      <Pressable testID={`discover.profile.${profileId}.open`} style={StyleSheet.absoluteFill} onPress={onPress}>
         {currentPhotoUrl ? (
           <Image source={{ uri: currentPhotoUrl }} style={StyleSheet.absoluteFill} resizeMode="cover" />
         ) : (
@@ -85,8 +86,8 @@ export function MatchFeedCard({ displayName, avatarUrl, photos = [], matchPercen
 
         {/* Top interaction zones for gallery */}
         <View style={styles.tapZones}>
-          <Pressable style={styles.tapZone} onPress={prevPhoto} />
-          <Pressable style={styles.tapZone} onPress={nextPhoto} />
+          <Pressable testID={`discover.profile.${profileId}.previous-photo`} style={styles.tapZone} onPress={prevPhoto} />
+          <Pressable testID={`discover.profile.${profileId}.next-photo`} style={styles.tapZone} onPress={nextPhoto} />
         </View>
 
         {/* Gallery pagination indicators */}
@@ -122,13 +123,13 @@ export function MatchFeedCard({ displayName, avatarUrl, photos = [], matchPercen
 
             <View style={styles.actionsContainer}>
               <View style={styles.decisionActions}>
-                <ActionButton 
+                <ActionButton testID={`discover.profile.${profileId}.pass`}
                   icon="X" 
                   variant="pass" 
                   onAction={() => hapticMedium()}
                   onPress={() => onAction('PASS')} 
                 />
-                <ActionButton 
+                <ActionButton testID={`discover.profile.${profileId}.like`}
                   icon="Heart" 
                   variant="like" 
                   onAction={() => hapticHeavy()}
@@ -137,11 +138,11 @@ export function MatchFeedCard({ displayName, avatarUrl, photos = [], matchPercen
               </View>
               
               <View style={styles.tuningActions}>
-                <Pressable style={styles.tuneBtn} onPress={() => { hapticLight(); onAction('LESS_LIKE_THIS') }}>
+                <Pressable testID={`discover.profile.${profileId}.less-like-this`} style={styles.tuneBtn} onPress={() => { hapticLight(); onAction('LESS_LIKE_THIS') }}>
                   <Typography variant="label" style={{ color: 'rgba(255,255,255,0.6)', textTransform: 'none' }}>Less like this</Typography>
                 </Pressable>
                 <View style={styles.tuneDivider} />
-                <Pressable style={styles.tuneBtn} onPress={() => { hapticLight(); onAction('MORE_LIKE_THIS') }}>
+                <Pressable testID={`discover.profile.${profileId}.more-like-this`} style={styles.tuneBtn} onPress={() => { hapticLight(); onAction('MORE_LIKE_THIS') }}>
                   <Typography variant="label" style={{ color: 'rgba(255,255,255,0.6)', textTransform: 'none' }}>More like this</Typography>
                 </Pressable>
               </View>

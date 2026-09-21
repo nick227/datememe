@@ -8,7 +8,7 @@ import { borderWidth, colors, spacing } from '../../theme'
 // trying to cram card-stack physics into a feed row.
 export function QuickPicksModule({ onPress }: { onPress: () => void }) {
   return (
-    <Pressable style={styles.card} onPress={onPress}>
+    <Pressable testID="discover.open-quick-picks" style={styles.card} onPress={onPress}>
       <View style={styles.iconWrap}>
         <Icon name="Heart" color={colors.white} size={28} />
       </View>

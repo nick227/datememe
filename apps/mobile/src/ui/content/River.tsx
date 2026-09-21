@@ -8,6 +8,7 @@ import { spacing } from '../../theme'
 import type { ContentUnit, StructureState } from './types'
 
 type Props = {
+  testID?: string
   title?: string | null
   items: ContentUnit[]
   state: StructureState
@@ -15,9 +16,9 @@ type Props = {
   onRetry?: () => void
 }
 
-export function River({ title, items, state, onPressItem, onRetry }: Props) {
+export function River({ testID, title, items, state, onPressItem, onRetry }: Props) {
   return (
-    <View style={styles.section}>
+    <View testID={testID} style={styles.section}>
       {title ? (
         <Typography variant="heading" style={styles.heading}>
           {title}

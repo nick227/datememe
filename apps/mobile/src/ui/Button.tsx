@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native'
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated'
 import { borderWidth, colors, radius, spacing, type } from '../theme'
@@ -6,14 +7,16 @@ import { hapticLight } from '../lib/haptics'
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable)
 
 type Props = {
+  testID?: string
   label: string
   onPress: () => void
   disabled?: boolean
   loading?: boolean
   variant?: 'primary' | 'secondary' | 'danger'
+  icon?: ReactNode
 }
 
-export function Button({ label, onPress, disabled, loading, variant = 'primary' }: Props) {
+export function Button({ testID, label, onPress, disabled, loading, variant = 'primary', icon }: Props) {
   const isDisabled = disabled || loading
   const scale = useSharedValue(1)
 
@@ -36,6 +39,7 @@ export function Button({ label, onPress, disabled, loading, variant = 'primary' 
 
   return (
     <AnimatedPressable
+      testID={testID}
       onPress={onPress}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
@@ -51,7 +55,8 @@ export function Button({ label, onPress, disabled, loading, variant = 'primary' 
       {loading ? (
         <ActivityIndicator color={variant === 'secondary' ? colors.primary : colors.white} />
       ) : (
-        <View>
+        <View style={icon ? styles.contentRow : undefined}>
+          {icon}
           <Text
             style={[
               type.button,
@@ -84,5 +89,10 @@ const styles = StyleSheet.create({
   },
   disabled: {
     opacity: 0.5,
+  },
+  contentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
   },
 })

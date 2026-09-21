@@ -98,12 +98,12 @@ export function ConversationScreen({ route, navigation }: Props) {
           title: 'Daily limit reached',
           message: err?.message ?? 'Your daily message allowance has been reached.',
           buttons: [
-            { text: 'Not now', style: 'cancel' },
-            { text: 'Go Premium', onPress: () => (navigation.getParent()?.navigate as any)('Profile', { screen: 'Paywall' }) },
+            { testID: 'conversation.dialog.not-now', text: 'Not now', style: 'cancel' },
+            { testID: 'conversation.dialog.go-premium', text: 'Go Premium', onPress: () => (navigation.getParent()?.navigate as any)('Profile', { screen: 'Paywall' }) },
           ],
         })
       } else {
-        sheet.show({ title: 'Could not send', message: 'Try again in a moment.', buttons: [{ text: 'OK' }] })
+        sheet.show({ title: 'Could not send', message: 'Try again in a moment.', buttons: [{ testID: 'conversation.dialog.ok', text: 'OK' }] })
       }
       setDraft(body)
       setAttachment(currentAttachment)
@@ -128,8 +128,8 @@ export function ConversationScreen({ route, navigation }: Props) {
         ? { targetType: 'MESSAGE', targetMessageId, reason }
         : { targetType: 'PROFILE', targetProfileId: otherParticipant.id, reason },
       {
-        onSuccess: () => sheet.show({ title: 'Reported', message: "Thanks — we'll review this.", buttons: [{ text: 'OK' }] }),
-        onError: () => sheet.show({ title: 'Could not send report', message: 'Try again in a moment.', buttons: [{ text: 'OK' }] }),
+        onSuccess: () => sheet.show({ title: 'Reported', message: "Thanks — we'll review this.", buttons: [{ testID: 'conversation.dialog.ok', text: 'OK' }] }),
+        onError: () => sheet.show({ title: 'Could not send report', message: 'Try again in a moment.', buttons: [{ testID: 'conversation.dialog.ok', text: 'OK' }] }),
       },
     )
   }
@@ -139,11 +139,11 @@ export function ConversationScreen({ route, navigation }: Props) {
       title: `Report ${displayName}`,
       message: "What's the issue?",
       buttons: [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Inappropriate content', onPress: () => fileReport('Inappropriate content') },
-        { text: 'Harassment', onPress: () => fileReport('Harassment') },
-        { text: 'Fake profile', onPress: () => fileReport('Fake profile') },
-        { text: 'Spam', onPress: () => fileReport('Spam') },
+        { testID: 'conversation.dialog.cancel', text: 'Cancel', style: 'cancel' },
+        { testID: 'conversation.dialog.inappropriate-content', text: 'Inappropriate content', onPress: () => fileReport('Inappropriate content') },
+        { testID: 'conversation.dialog.harassment', text: 'Harassment', onPress: () => fileReport('Harassment') },
+        { testID: 'conversation.dialog.fake-profile', text: 'Fake profile', onPress: () => fileReport('Fake profile') },
+        { testID: 'conversation.dialog.spam', text: 'Spam', onPress: () => fileReport('Spam') },
       ],
     })
   }
@@ -153,10 +153,10 @@ export function ConversationScreen({ route, navigation }: Props) {
       title: 'Report this message',
       message: "What's the issue?",
       buttons: [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Inappropriate content', onPress: () => fileReport('Inappropriate content', messageId) },
-        { text: 'Harassment', onPress: () => fileReport('Harassment', messageId) },
-        { text: 'Spam', onPress: () => fileReport('Spam', messageId) },
+        { testID: 'conversation.dialog.cancel', text: 'Cancel', style: 'cancel' },
+        { testID: 'conversation.dialog.inappropriate-content', text: 'Inappropriate content', onPress: () => fileReport('Inappropriate content', messageId) },
+        { testID: 'conversation.dialog.harassment', text: 'Harassment', onPress: () => fileReport('Harassment', messageId) },
+        { testID: 'conversation.dialog.spam', text: 'Spam', onPress: () => fileReport('Spam', messageId) },
       ],
     })
   }
@@ -166,14 +166,14 @@ export function ConversationScreen({ route, navigation }: Props) {
       title: 'Unmatch',
       message: `Unmatch with ${displayName}? This can't be undone — you'll stop seeing each other's messages, and either of you could be shown to the other again in Discover.`,
       buttons: [
-        { text: 'Cancel', style: 'cancel' },
+        { testID: 'conversation.dialog.cancel', text: 'Cancel', style: 'cancel' },
         {
-          text: 'Unmatch',
+          testID: 'conversation.dialog.unmatch', text: 'Unmatch',
           style: 'destructive',
           onPress: () =>
             unmatchConversation.mutate(conversationId, {
               onSuccess: () => navigation.goBack(),
-              onError: () => sheet.show({ title: 'Could not unmatch', message: 'Try again in a moment.', buttons: [{ text: 'OK' }] }),
+              onError: () => sheet.show({ title: 'Could not unmatch', message: 'Try again in a moment.', buttons: [{ testID: 'conversation.dialog.ok', text: 'OK' }] }),
             }),
         },
       ],
@@ -185,22 +185,23 @@ export function ConversationScreen({ route, navigation }: Props) {
       title: 'Options',
       message: 'What would you like to do?',
       buttons: [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Report', style: 'destructive', onPress: handleReport },
-        { text: 'Unmatch', style: 'destructive', onPress: handleUnmatch },
+        { testID: 'conversation.dialog.cancel', text: 'Cancel', style: 'cancel' },
+        { testID: 'conversation.dialog.report', text: 'Report', style: 'destructive', onPress: handleReport },
+        { testID: 'conversation.dialog.unmatch', text: 'Unmatch', style: 'destructive', onPress: handleUnmatch },
       ],
     })
   }
 
   return (
-    <ScreenContainer padded={false} width="wide">
+    <ScreenContainer testID="screen.conversation" padded={false} width="wide">
       {/* Interactive Header */}
       <View style={styles.header}>
-        <Pressable onPress={() => navigation.goBack()} style={styles.headerBtn}>
+        <Pressable testID="conversation.back" onPress={() => navigation.goBack()} style={styles.headerBtn}>
           <Icon name="ArrowLeft" size={24} color={colors.ink} />
         </Pressable>
         
         <Pressable 
+          testID="conversation.profile"
           style={styles.headerProfile}
           onPress={() =>
             otherParticipant &&
@@ -220,14 +221,14 @@ export function ConversationScreen({ route, navigation }: Props) {
           <Typography variant="heading">{displayName}</Typography>
         </Pressable>
 
-        <Pressable onPress={handleOptions} style={styles.headerBtn}>
+        <Pressable testID="conversation.options" onPress={handleOptions} style={styles.headerBtn}>
           <Icon name="MoreVertical" size={24} color={colors.ink} />
         </Pressable>
       </View>
       <View style={styles.headerDivider} />
 
       {messages.isLoading ? (
-        <View style={[styles.messages, { flex: 1 }]}>
+        <View testID="conversation.loading" style={[styles.messages, { flex: 1 }]}>
           {[0, 1, 2, 3, 4].map((i) => (
             <View key={i} style={[styles.bubbleRow, i % 2 === 0 && styles.bubbleRowOwn]}>
               <Skeleton width={140 + (i % 3) * 30} height={40} style={{ borderRadius: radius.lg }} />
@@ -236,7 +237,7 @@ export function ConversationScreen({ route, navigation }: Props) {
         </View>
       ) : messages.isError ? (
         <View style={{ flex: 1 }}>
-          <ErrorState subtitle="Couldn't load this conversation." onRetry={() => messages.refetch()} />
+          <ErrorState testID="conversation.error" subtitle="Couldn't load this conversation." onRetry={() => messages.refetch()} />
         </View>
       ) : (
         <FlatList
@@ -260,6 +261,7 @@ export function ConversationScreen({ route, navigation }: Props) {
               <View style={isOwn ? styles.bubbleColumnOwn : styles.bubbleColumn}>
                 {item.locked ? (
                   <Pressable
+                    testID={`conversation.message.${item.id}.unlock`}
                     style={styles.lockedContainer}
                     onPress={() => (navigation.getParent()?.navigate as any)('Profile', { screen: 'Paywall' })}
                   >
@@ -273,6 +275,7 @@ export function ConversationScreen({ route, navigation }: Props) {
                   </Pressable>
                 ) : (
                   <Pressable
+                    testID={`conversation.message.${item.id}`}
                     style={[styles.bubble, isOwn ? styles.bubbleOwn : styles.bubbleOther]}
                     onLongPress={() => !isOwn && handleReportMessage(item.id)}
                   >
@@ -314,16 +317,16 @@ export function ConversationScreen({ route, navigation }: Props) {
           {attachment && (
             <View style={styles.attachmentPreviewContainer}>
               <Image source={{ uri: attachment.uri }} style={styles.attachmentPreview} />
-              <Pressable style={styles.attachmentRemoveBtn} onPress={() => setAttachment(null)}>
+              <Pressable testID="conversation.attachment.remove" style={styles.attachmentRemoveBtn} onPress={() => setAttachment(null)}>
                 <Icon name="X" size={12} color={colors.white} />
               </Pressable>
             </View>
           )}
           <View style={styles.composer}>
-            <Pressable style={styles.attachButton} onPress={pickImage}>
+            <Pressable testID="conversation.attach" style={styles.attachButton} onPress={pickImage}>
               <Icon name="Plus" size={24} color={colors.inkMuted} />
             </Pressable>
-            <TextField 
+            <TextField testID="conversation.compose"
               value={draft} 
               onChangeText={setDraft} 
               placeholder="Message…" 
@@ -333,6 +336,7 @@ export function ConversationScreen({ route, navigation }: Props) {
             {(draft.trim().length > 0 || attachment) && (
               <Animated.View entering={ZoomIn.duration(200)} exiting={ZoomOut.duration(200)}>
                 <Pressable 
+                  testID="conversation.send"
                   style={styles.sendButton} 
                   onPress={handleSend} 
                   disabled={sendMessage.isPending || uploadMedia.isPending}
@@ -344,7 +348,7 @@ export function ConversationScreen({ route, navigation }: Props) {
           </View>
         </View>
       </KeyboardAvoidingView>
-      <ActionSheet config={sheet.config} onDismiss={sheet.dismiss} />
+      <ActionSheet testID="conversation.dialog" config={sheet.config} onDismiss={sheet.dismiss} />
     </ScreenContainer>
   )
 }

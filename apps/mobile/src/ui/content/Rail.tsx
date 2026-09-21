@@ -8,6 +8,7 @@ import { spacing } from '../../theme'
 import type { ContentUnit, StructureState } from './types'
 
 type Props = {
+  testID?: string
   title?: string | null
   items: ContentUnit[]
   state: StructureState
@@ -22,10 +23,10 @@ type Props = {
 
 const DEFAULT_CARD_WIDTH = 200
 
-export function Rail({ title, items, state, cardWidth = DEFAULT_CARD_WIDTH, onPressItem, onRetry }: Props) {
+export function Rail({ testID, title, items, state, cardWidth = DEFAULT_CARD_WIDTH, onPressItem, onRetry }: Props) {
   const cardStyle = { width: cardWidth }
   return (
-    <View style={styles.section}>
+    <View testID={testID} style={styles.section}>
       {title ? (
         <Typography variant="heading" style={styles.heading}>
           {title}

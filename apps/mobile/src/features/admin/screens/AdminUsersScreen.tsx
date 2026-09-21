@@ -21,10 +21,10 @@ export function AdminUsersScreen({ navigation }: Props) {
   const rows = users.data?.pages.flatMap((p) => p.users) ?? []
 
   return (
-    <ScreenContainer width="wide">
-      <TopNavigation alignment="left" leftAction="back" onLeftAction={() => navigation.goBack()} title="Users" />
+    <ScreenContainer testID="screen.admin-users" width="wide">
+      <TopNavigation testID="admin-users.header" alignment="left" leftAction="back" onLeftAction={() => navigation.goBack()} title="Users" />
 
-      <TextField
+      <TextField testID="admin-users.search"
         value={search}
         onChangeText={setSearch}
         placeholder="Search by email, username, or ID"
@@ -37,16 +37,16 @@ export function AdminUsersScreen({ navigation }: Props) {
           {[0, 1, 2, 3].map((i) => <Skeleton key={i} height={56} />)}
         </View>
       ) : users.isError ? (
-        <ErrorState subtitle="Couldn't load users." onRetry={() => users.refetch()} />
+        <ErrorState testID="admin-users.error" subtitle="Couldn't load users." onRetry={() => users.refetch()} />
       ) : (
         <FlatList
           data={rows}
           keyExtractor={(item) => item.id}
           onEndReached={() => users.hasNextPage && users.fetchNextPage()}
           ItemSeparatorComponent={() => <View style={styles.separator} />}
-          ListEmptyComponent={<EmptyState title="No users found" />}
+          ListEmptyComponent={<EmptyState testID="admin-users.empty" title="No users found" />}
           renderItem={({ item }) => (
-            <Pressable style={styles.row} onPress={() => navigation.navigate('AdminUserDetail', { userId: item.id })}>
+            <Pressable testID={`admin-users.open-admin-user-detail.${item.id}`} style={styles.row} onPress={() => navigation.navigate('AdminUserDetail', { userId: item.id })}>
               <View style={{ flex: 1 }}>
                 <Typography variant="body">{item.profile?.displayName ?? item.email}</Typography>
                 <Typography variant="bodyMuted" style={{ marginTop: 2 }}>

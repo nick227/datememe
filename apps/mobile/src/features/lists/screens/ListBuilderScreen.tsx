@@ -101,7 +101,7 @@ export function ListBuilderScreen({ route, navigation }: Props) {
         return prev
       }
       if (prev.length >= maxItems) {
-        sheet.show({ title: 'That’s the max', message: `This category only allows ${maxItems}. Remove one to add another.`, buttons: [{ text: 'OK' }] })
+        sheet.show({ title: 'That’s the max', message: `This category only allows ${maxItems}. Remove one to add another.`, buttons: [{ testID: 'list-builder.dialog.ok', text: 'OK' }] })
         return prev
       }
       // Hide overlay and clear query
@@ -135,7 +135,7 @@ export function ListBuilderScreen({ route, navigation }: Props) {
       const result = await submitEntity.mutateAsync({ entityTypeId: category.data.entityTypeId, rawText: newQuery })
       toggle(result.submittedEntity.id, result.submittedEntity.canonicalName, result.submittedEntity.imageUrl)
     } catch (err: any) {
-      sheet.show({ title: 'Could not add that', message: err?.message ?? 'Try again in a moment', buttons: [{ text: 'OK' }] })
+      sheet.show({ title: 'Could not add that', message: err?.message ?? 'Try again in a moment', buttons: [{ testID: 'list-builder.dialog.ok', text: 'OK' }] })
     }
   }
 
@@ -170,7 +170,7 @@ export function ListBuilderScreen({ route, navigation }: Props) {
   const LeftPane = (
     <View style={styles.leftPane}>
       <View style={styles.searchWrapper}>
-        <SearchBar value={query} onChangeText={setQuery} placeholder={`Type an artist name...`} />
+        <SearchBar testID="list-builder.search" value={query} onChangeText={setQuery} placeholder={`Type an artist name...`} />
         {isOverlayVisible && (
           <AutocompleteOverlay
             query={query}
@@ -186,7 +186,7 @@ export function ListBuilderScreen({ route, navigation }: Props) {
       {category.data && category.data.requiredTags.length > 0 && (
         <View style={styles.filterRow}>
           {category.data.requiredTags.map((tag) => (
-            <View key={tag.id} style={styles.filterChip}>
+            <View testID={`list-builder.tag.${tag.id}`} key={tag.id} style={styles.filterChip}>
               <Typography variant="label" style={styles.filterChipText}>{tag.label}</Typography>
             </View>
           ))}
@@ -198,7 +198,7 @@ export function ListBuilderScreen({ route, navigation }: Props) {
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.fastPicksList}
         renderItem={({ item }) => (
-          <FastPickTile
+          <FastPickTile testID={`list-builder.pick.${item.id}`}
             name={item.canonicalName}
             imageUrl={item.imageUrl}
             isPending={item.status === 'PENDING'}
@@ -222,8 +222,8 @@ export function ListBuilderScreen({ route, navigation }: Props) {
   )
 
   return (
-    <ScreenContainer width="narrow">
-      <TopNavigation
+    <ScreenContainer testID="screen.list-builder" width="narrow">
+      <TopNavigation testID="list-builder.header"
         alignment="left"
         leftAction="back"
         onLeftAction={() => navigation.goBack()}
@@ -235,22 +235,22 @@ export function ListBuilderScreen({ route, navigation }: Props) {
       </View>
       <View style={styles.footer}>
         {saveError && (
-          <View style={styles.errorRow}>
+          <View testID="list-builder.save-error" style={styles.errorRow}>
             <Typography variant="body" style={styles.errorText}>
               {saveError}
             </Typography>
-            <Pressable onPress={handleRetrySave}>
+            <Pressable testID="list-builder.retry-save" onPress={handleRetrySave}>
               <Typography variant="button" style={styles.retryText}>Retry</Typography>
             </Pressable>
           </View>
         )}
-        <Button
+        <Button testID="list-builder.done"
           label={upsertList.isPending ? 'Saving...' : 'Done'}
           onPress={handleDone}
           loading={upsertList.isPending}
         />
       </View>
-      <ActionSheet config={sheet.config} onDismiss={sheet.dismiss} />
+      <ActionSheet testID="list-builder.dialog" config={sheet.config} onDismiss={sheet.dismiss} />
     </ScreenContainer>
   )
 }

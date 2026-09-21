@@ -54,16 +54,16 @@ export function EditProfileScreen({ navigation }: Props) {
       })
       navigation.goBack()
     } catch (err: any) {
-      sheet.show({ title: 'Could not save', message: err?.message ?? 'Try again in a moment', buttons: [{ text: 'OK' }] })
+      sheet.show({ title: 'Could not save', message: err?.message ?? 'Try again in a moment', buttons: [{ testID: 'edit-profile.dialog.ok', text: 'OK' }] })
     }
   }
 
   return (
-    <ScreenContainer width="narrow">
-      <TopNavigation alignment="left" leftAction="back" onLeftAction={() => navigation.goBack()} title="Edit profile" />
+    <ScreenContainer testID="screen.edit-profile" width="narrow">
+      <TopNavigation testID="edit-profile.header" alignment="left" leftAction="back" onLeftAction={() => navigation.goBack()} title="Edit profile" />
       <ScrollView keyboardShouldPersistTaps="handled">
         <View style={{ alignItems: 'center', marginBottom: spacing.lg }}>
-          <PhotoPicker
+          <PhotoPicker testID="edit-profile.avatar"
             uri={avatarUrl}
             onChange={setAvatarUrl}
             size={112}
@@ -74,8 +74,8 @@ export function EditProfileScreen({ navigation }: Props) {
           </Typography>
         </View>
 
-        <TextField label="Display name" value={displayName} onChangeText={setDisplayName} />
-        <TextField
+        <TextField testID="edit-profile.display-name" label="Display name" value={displayName} onChangeText={setDisplayName} />
+        <TextField testID="edit-profile.bio"
           label="Tagline"
           value={bio}
           onChangeText={(t) => setBio(t.slice(0, 150))}
@@ -89,7 +89,7 @@ export function EditProfileScreen({ navigation }: Props) {
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: spacing.lg }}>
           <View style={{ flexDirection: 'row', gap: spacing.sm }}>
             {galleryUrls.map((url, i) => (
-              <PhotoPicker
+              <PhotoPicker testID={`edit-profile.gallery-slot.${i}`}
                 key={i}
                 uri={url}
                 onChange={(newUrl) => updateGalleryPhoto(i, newUrl)}
@@ -99,7 +99,7 @@ export function EditProfileScreen({ navigation }: Props) {
               />
             ))}
             {galleryUrls.length < MAX_GALLERY_PHOTOS ? (
-              <PhotoPicker
+              <PhotoPicker testID="edit-profile.add-photo"
                 uri={null}
                 onChange={(newUrl) => setGalleryUrls((prev) => [...prev, newUrl])}
                 size={72}
@@ -109,9 +109,9 @@ export function EditProfileScreen({ navigation }: Props) {
           </View>
         </ScrollView>
 
-        <Button label="Save" onPress={handleSave} loading={update.isPending} />
+        <Button testID="edit-profile.save" label="Save" onPress={handleSave} loading={update.isPending} />
       </ScrollView>
-      <ActionSheet config={sheet.config} onDismiss={sheet.dismiss} />
+      <ActionSheet testID="edit-profile.dialog" config={sheet.config} onDismiss={sheet.dismiss} />
     </ScreenContainer>
   )
 }

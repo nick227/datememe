@@ -1,15 +1,16 @@
-import { FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native'
+import { FlatList, Pressable, StyleSheet, View } from 'react-native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { useCurrentUser, useMyLists } from '@project/sdk'
 import { ScreenContainer } from '../../../ui/ScreenContainer'
 import { TopNavigation } from '../../../ui/TopNavigation'
+import { ProfileGalleryHero } from '../../../ui/ProfileGalleryHero'
 import { Button } from '../../../ui/Button'
 import { EmptyState } from '../../../ui/EmptyState'
 import { PreviewListCard } from '../../lists/components/PreviewListCard'
 import { PreviewListCardSkeleton } from '../../lists/components/PreviewListCardSkeleton'
 import { Skeleton } from '../../../ui/Skeleton'
 import { Icon } from '../../../ui/Icon'
-import { colors, radius, spacing, type } from '../../../theme'
+import { borderWidth, colors, spacing } from '../../../theme'
 import { useIsDesktop } from '../../../lib/useResponsive'
 import type { ProfileStackParamList } from '../../../navigation/types'
 import { Typography } from '../../../ui/Typography'
@@ -21,45 +22,21 @@ export function ProfileScreen({ navigation }: Props) {
   const lists = useMyLists()
 
   const profile = me.data?.profile
+  const isPremium = !!me.data?.membership && me.data.membership.state !== 'FREE'
   const numColumns = useIsDesktop() ? 3 : 2
+  const photos = profile ? Array.from(new Set([profile.avatarUrl, ...(profile.photos ?? [])].filter((u): u is string => !!u))) : []
 
   return (
-    <ScreenContainer padded={false} width="wide">
-      <TopNavigation
+    <ScreenContainer testID="screen.profile" padded={false} width="wide">
+      <TopNavigation testID="profile.header"
         leftAction="close"
         onLeftAction={() => navigation.goBack()}
         rightElement={
-          <Pressable onPress={() => navigation.navigate('Account')} hitSlop={12} style={{ padding: spacing.xs }}>
+          <Pressable testID="profile.open-account" onPress={() => navigation.navigate('Account')} hitSlop={12} style={{ padding: spacing.xs }}>
             <Icon name="Settings" />
           </Pressable>
         }
       />
-      <View style={styles.header}>
-        {me.isLoading ? (
-          <Skeleton variant="circular" width={88} height={88} style={styles.avatar} />
-        ) : profile?.avatarUrl ? (
-          <Image source={{ uri: profile.avatarUrl }} style={styles.avatar} />
-        ) : (
-          <View style={[styles.avatar, styles.avatarFallback]}>
-            <Text style={styles.avatarFallbackText}>{(profile?.displayName || '?').charAt(0).toUpperCase()}</Text>
-          </View>
-        )}
-        {me.isLoading ? (
-          <>
-            <Skeleton variant="text" width={140} height={26} style={{ marginTop: spacing.xs, marginBottom: spacing.sm }} />
-            <Skeleton variant="text" width={100} height={18} />
-          </>
-        ) : (
-          <>
-            <Typography variant="title">{profile?.displayName}</Typography>
-            <Typography variant="bodyMuted">@{profile?.username}</Typography>
-          </>
-        )}
-
-        <View style={{ marginTop: spacing.lg, alignSelf: 'stretch', paddingHorizontal: spacing.lg }}>
-          <Button label="Edit profile" variant="secondary" onPress={() => navigation.navigate('EditProfile')} />
-        </View>
-      </View>
 
       <FlatList
         key={numColumns}
@@ -68,8 +45,36 @@ export function ProfileScreen({ navigation }: Props) {
         numColumns={numColumns}
         columnWrapperStyle={{ gap: spacing.sm }}
         contentContainerStyle={styles.listContent}
-        ListHeaderComponent={<Typography variant="label" style={styles.sectionLabel}>YOUR LISTS</Typography>}
-        ListEmptyComponent={<EmptyState title="No completed lists yet" subtitle="Head to the Favorites tab to start." />}
+        ListHeaderComponent={
+          <View>
+            {me.isLoading ? (
+              <Skeleton variant="rect" width="100%" height={320} />
+            ) : (
+              <ProfileGalleryHero
+                testID="profile.gallery"
+                photos={photos}
+                placeholderInitial={(profile?.displayName || '?').charAt(0)}
+              >
+                <View style={styles.heroNameRow}>
+                  <Typography variant="title" style={styles.heroName}>{profile?.displayName}</Typography>
+                  {isPremium ? (
+                    <View style={styles.premiumBadge}>
+                      <Typography variant="label" style={styles.premiumBadgeText}>Premium</Typography>
+                    </View>
+                  ) : null}
+                </View>
+                <Typography variant="bodyMuted" style={styles.heroUsername}>@{profile?.username}</Typography>
+              </ProfileGalleryHero>
+            )}
+
+            <View style={styles.body}>
+              {profile?.bio ? <Typography variant="body" style={styles.bio}>{profile.bio}</Typography> : null}
+              <Button testID="profile.edit-profile" label="Edit profile" variant="secondary" onPress={() => navigation.navigate('EditProfile')} />
+              <Typography variant="label" style={styles.sectionLabel}>Your lists</Typography>
+            </View>
+          </View>
+        }
+        ListEmptyComponent={<EmptyState testID="profile.empty" title="No completed lists yet" subtitle="Head to the Favorites tab to start." />}
         renderItem={({ item }) => (typeof item === 'number' ? <PreviewListCardSkeleton /> : <PreviewListCard list={item} />)}
       />
     </ScreenContainer>
@@ -77,10 +82,13 @@ export function ProfileScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  header: { alignItems: 'center', paddingHorizontal: spacing.lg, paddingTop: spacing.sm, paddingBottom: spacing.md },
-  avatar: { width: 88, height: 88, borderRadius: radius.pill, marginBottom: spacing.sm },
-  avatarFallback: { backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center' },
-  avatarFallbackText: { ...type.title, fontSize: 30, color: colors.primary },
+  heroNameRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  heroName: { color: colors.white },
+  heroUsername: { color: 'rgba(255,255,255,0.75)', marginTop: 2 },
+  premiumBadge: { backgroundColor: colors.accent, borderWidth: borderWidth.thin, borderColor: colors.white, paddingHorizontal: spacing.sm, paddingVertical: 2 },
+  premiumBadgeText: { color: colors.white },
+  body: { paddingHorizontal: spacing.lg, paddingTop: spacing.lg, gap: spacing.md },
+  bio: { marginBottom: spacing.xs },
+  sectionLabel: { marginTop: spacing.sm, marginBottom: spacing.sm },
   listContent: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xxl },
-  sectionLabel: { marginBottom: spacing.sm },
 })

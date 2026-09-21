@@ -286,14 +286,29 @@ describe('OpenAPI response contract — real serialization, not just service obj
     expect(plansList.statusCode).toBe(200)
     expect(plansList.json().plans.some((p: any) => p.id === plan.id)).toBe(true)
 
-    const override = await app.inject({
-      method: 'POST',
-      url: '/admin/users/membership',
-      headers: { authorization: `Bearer ${adminSession.token}` },
-      payload: { userId: targetUser.id, planId: plan.id },
+    // A real Subscription row, created directly — the endpoint that used to
+    // create one via "override membership" is gone; grants (tested below)
+    // never touch Subscription at all.
+    const subscription = await db.subscription.create({
+      data: {
+        userId: targetUser.id,
+        planId: plan.id,
+        provider: 'STRIPE',
+        providerSubscriptionId: `contract_${now}`,
+        status: 'ACTIVE',
+        currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      },
     })
-    expect(override.statusCode).toBe(200)
-    expect(override.json().subscription).toMatchObject({ userId: targetUser.id, planId: plan.id, status: 'ACTIVE' })
+
+    const grantRes = await app.inject({
+      method: 'POST',
+      url: '/admin/membership/grants',
+      headers: { authorization: `Bearer ${adminSession.token}` },
+      payload: { userId: targetUser.id, reason: 'contract test grant' },
+    })
+    expect(grantRes.statusCode).toBe(201)
+    expect(grantRes.json().grant).toMatchObject({ userId: targetUser.id, source: 'MANUAL_ADMIN', reason: 'contract test grant', revokedAt: null })
+    const grantId = grantRes.json().grant.id
 
     const detail = await app.inject({
       method: 'GET',
@@ -306,6 +321,7 @@ describe('OpenAPI response contract — real serialization, not just service obj
     expect(detailBody.user).not.toHaveProperty('passwordHash')
     expect(JSON.stringify(detailBody)).not.toContain('super-secret-bcrypt-hash-should-never-leave-the-server')
     expect(detailBody.user.subscriptions[0]).toMatchObject({ planId: plan.id, plan: { id: plan.id, label: 'Contract Plan' } })
+    expect(detailBody.user.membershipGrants[0]).toMatchObject({ id: grantId, userId: targetUser.id, source: 'MANUAL_ADMIN', revokedAt: null })
 
     const verify = await app.inject({
       method: 'POST',
@@ -328,14 +344,16 @@ describe('OpenAPI response contract — real serialization, not just service obj
 
     const revoke = await app.inject({
       method: 'POST',
-      url: '/admin/users/membership/revoke',
+      url: `/admin/membership/grants/${grantId}/revoke`,
       headers: { authorization: `Bearer ${adminSession.token}` },
-      payload: { userId: targetUser.id },
+      payload: { reason: 'contract test revoke' },
     })
     expect(revoke.statusCode).toBe(200)
-    expect(revoke.json().subscription).toMatchObject({ status: 'CANCELED' })
+    expect(revoke.json().grant).toMatchObject({ id: grantId, revokeReason: 'contract test revoke' })
+    expect(revoke.json().grant.revokedAt).toBeTruthy()
 
     await db.adminAuditEvent.deleteMany({ where: { targetId: targetUser.id } })
+    await db.membershipGrant.deleteMany({ where: { userId: targetUser.id } })
     await db.subscription.deleteMany({ where: { userId: targetUser.id } })
     await db.profile.deleteMany({ where: { userId: targetUser.id } })
     await db.user.deleteMany({ where: { id: targetUser.id } })
@@ -347,24 +365,14 @@ describe('OpenAPI response contract — real serialization, not just service obj
    * batch's own live testing caught: a bare `{ type: object }` response
    * schema property with no `properties` or `additionalProperties` keyword
    * serializes as `{}` via fast-json-stringify *regardless of the real
-   * value* — no error, no warning, just silent data loss. This hit both
-   * Plan.features (a create/update round-trip) and every AdminAuditEvent's
-   * before/after/metadata (the entire audit trail). The fix was adding
-   * `additionalProperties: true` to each; this test is what would catch a
-   * future regression of that fix.
+   * value* — no error, no warning, just silent data loss. This hit every
+   * AdminAuditEvent's before/after/metadata (the entire audit trail). The
+   * fix was adding `additionalProperties: true`; this test is what would
+   * catch a future regression of that fix.
    */
-  it('Plan.features and AdminAuditEvent before/after/metadata round-trip real object content, not {}', async () => {
+  it('AdminAuditEvent before/after/metadata round-trip real object content, not {}', async () => {
     const app = await buildRealApiApp()
     const now = Date.now()
-
-    const created = await app.inject({
-      method: 'POST',
-      url: '/admin/plans',
-      headers: { authorization: `Bearer ${adminSession.token}` },
-      payload: { label: 'Regression Plan', slug: `regression-plan-${now}`, interval: 'MONTHLY', priceCents: 300, features: { unlimitedSwipes: true, badgeColor: 'gold' } },
-    })
-    expect(created.statusCode).toBe(200)
-    expect(created.json().plan.features).toEqual({ unlimitedSwipes: true, badgeColor: 'gold' })
 
     const targetUser = await db.user.create({
       data: {
@@ -395,6 +403,66 @@ describe('OpenAPI response contract — real serialization, not just service obj
     await db.adminAuditEvent.deleteMany({ where: { targetId: targetUser.id } })
     await db.profile.deleteMany({ where: { userId: targetUser.id } })
     await db.user.deleteMany({ where: { id: targetUser.id } })
-    await db.plan.delete({ where: { id: created.json().plan.id } })
+  })
+
+  /**
+   * Membership pricing fix: Subscription.pricePaidCents is the grandfathering
+   * snapshot that lets admins reprice a Plan freely even with active
+   * subscribers (see admin.ts updatePlan). Confirms it both round-trips
+   * through the real response schema (AdminSubscriptionWithPlan) and — the
+   * actual point of the field — never changes after the plan it references
+   * is repriced.
+   */
+  it('Subscription.pricePaidCents round-trips and survives repricing its Plan', async () => {
+    const app = await buildRealApiApp()
+    const now = Date.now()
+
+    const plan = await db.plan.create({
+      data: { label: 'Repricing Plan', slug: `repricing-plan-${now}`, interval: 'MONTHLY', priceCents: 500 },
+    })
+    const targetUser = await db.user.create({
+      data: {
+        email: `contract-pricing-${now}@example.com`,
+        passwordHash: 'x',
+        profile: { create: { username: `contract-pricing-${now}`, displayName: 'Pricing Target', birthdate: new Date('1995-01-01T00:00:00.000Z') } },
+      },
+    })
+    await db.subscription.create({
+      data: {
+        userId: targetUser.id,
+        planId: plan.id,
+        provider: 'STRIPE',
+        providerSubscriptionId: `contract_${now}`,
+        status: 'ACTIVE',
+        currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        pricePaidCents: 500,
+      },
+    })
+
+    const reprice = await app.inject({
+      method: 'POST',
+      url: '/admin/plans/update',
+      headers: { authorization: `Bearer ${adminSession.token}` },
+      payload: { planId: plan.id, priceCents: 900 },
+    })
+    expect(reprice.statusCode).toBe(200)
+    expect(reprice.json().plan.priceCents).toBe(900)
+
+    const detail = await app.inject({
+      method: 'GET',
+      url: `/admin/users/${targetUser.id}`,
+      headers: { authorization: `Bearer ${adminSession.token}` },
+    })
+    expect(detail.statusCode).toBe(200)
+    const sub = detail.json().user.subscriptions[0]
+    expect(sub).toHaveProperty('pricePaidCents')
+    expect(sub.pricePaidCents).toBe(500)
+    expect(sub.plan.priceCents).toBe(900)
+
+    await db.subscription.deleteMany({ where: { userId: targetUser.id } })
+    await db.adminAuditEvent.deleteMany({ where: { targetId: plan.id } })
+    await db.profile.deleteMany({ where: { userId: targetUser.id } })
+    await db.user.deleteMany({ where: { id: targetUser.id } })
+    await db.plan.delete({ where: { id: plan.id } })
   })
 })

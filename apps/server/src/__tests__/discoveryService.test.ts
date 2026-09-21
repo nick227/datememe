@@ -197,7 +197,7 @@ describe('DiscoveryService', () => {
       await linkScore(viewer.id, engaged.profile.id)
       await linkScore(viewer.id, unengaged.profile.id)
 
-      const result = await service.getDiscoveryFeed(viewerUser.id, viewer.id, { limit: 20, taste: `group:${group.slug}` })
+      const result = await service.getDiscoveryFeed(viewerUser.id, viewer.id, { limit: 20, taste: [`group:${group.slug}`] })
       const ids = result.data.map((d: any) => d.profile.id)
       expect(ids).toContain(engaged.profile.id)
       expect(ids).not.toContain(unengaged.profile.id)
@@ -205,7 +205,7 @@ describe('DiscoveryService', () => {
       // Zero-result state: a taste facet nobody has engaged with short-circuits
       // to an honest empty page rather than falling back to "no filter".
       const emptyGroup = await db.categoryGroup.create({ data: { slug: `disco-empty-group-${now}`, label: 'Empty Group' } })
-      const zeroResult = await service.getDiscoveryFeed(viewerUser.id, viewer.id, { limit: 20, taste: `group:${emptyGroup.slug}` })
+      const zeroResult = await service.getDiscoveryFeed(viewerUser.id, viewer.id, { limit: 20, taste: [`group:${emptyGroup.slug}`] })
       expect(zeroResult).toEqual({ data: [], meta: { hasMore: false, nextCursor: null } })
 
       await db.listItem.deleteMany({ where: { listId: list.id } })
@@ -308,7 +308,7 @@ describe('DiscoveryService', () => {
       const result = await service.getDiscoveryFeed(viewerUser.id, viewer.id, {
         limit: 20,
         nearMe: true,
-        taste: `group:${group.slug}`,
+        taste: [`group:${group.slug}`],
         ageBucket: '20s',
       })
       const ids = result.data.map((d: any) => d.profile.id)
@@ -346,7 +346,7 @@ describe('DiscoveryService', () => {
       // Switching from "All" to a taste chip must re-derive the pool from
       // scratch, not resume mid-list from wherever the unfiltered scan left off.
       const unfiltered = await service.getDiscoveryFeed(viewerUser.id, viewer.id, { limit: 20 })
-      const filtered = await service.getDiscoveryFeed(viewerUser.id, viewer.id, { limit: 20, taste: `group:${group.slug}` })
+      const filtered = await service.getDiscoveryFeed(viewerUser.id, viewer.id, { limit: 20, taste: [`group:${group.slug}`] })
 
       expect(unfiltered.data.map((d: any) => d.profile.id).sort()).toEqual([engaged.profile.id, unrelated.profile.id].sort())
       expect(filtered.data.map((d: any) => d.profile.id)).toEqual([engaged.profile.id])

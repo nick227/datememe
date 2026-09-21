@@ -27,15 +27,16 @@ export function AutocompleteOverlay({ query, results, pickedRanks, onToggle, onS
   )
 
   return (
-    <View style={styles.overlay}>
+    <View testID="list-builder.suggestions" style={styles.overlay}>
       <FlatList
+        testID="list-builder.suggestions.results"
         data={results}
         keyExtractor={(item) => item.id}
         style={styles.list}
         keyboardShouldPersistTaps="handled"
         renderItem={({ item }) => (
           <View style={styles.itemWrapper}>
-            <FastPickTile
+            <FastPickTile testID={`list-builder.suggestion.${item.id}`}
               name={item.canonicalName}
               imageUrl={item.imageUrl}
               pickedRank={pickedRanks[item.id] ?? null}
@@ -46,15 +47,12 @@ export function AutocompleteOverlay({ query, results, pickedRanks, onToggle, onS
         ListFooterComponent={
           query.trim().length > 1 && !hasExactMatch ? (
             <View style={styles.suggestWrapper}>
-              <FastPickTile
+              <FastPickTile testID="list-builder.suggest-new"
                 name={query.trim()}
                 pickedRank={null}
                 onToggle={() => onSuggestNew(query.trim())}
                 isPending={isPendingNew}
               />
-              <Typography variant="label" style={styles.suggestLabel}>
-                Suggest new option
-              </Typography>
             </View>
           ) : null
         }

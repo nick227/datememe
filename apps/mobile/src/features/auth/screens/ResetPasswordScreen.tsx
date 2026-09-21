@@ -30,13 +30,13 @@ export function ResetPasswordScreen({ route, navigation }: Props) {
       sheet.show({
         title: 'Password updated',
         message: 'All your other sessions have been signed out for safety. Log in with your new password.',
-        buttons: [{ text: 'Log in', onPress: () => navigation.navigate('Login') }],
+        buttons: [{ testID: 'reset-password.dialog.log-in', text: 'Log in', onPress: () => navigation.navigate('Login') }],
       })
     } catch (err) {
       if (err instanceof ApiError && err.status === 400) {
         setCodeError('That code is invalid, expired, or already used.')
       } else {
-        sheet.show({ title: 'Could not reset password', message: 'Try again in a moment.', buttons: [{ text: 'OK' }] })
+        sheet.show({ title: 'Could not reset password', message: 'Try again in a moment.', buttons: [{ testID: 'reset-password.dialog.ok', text: 'OK' }] })
       }
     }
   }
@@ -48,11 +48,11 @@ export function ResetPasswordScreen({ route, navigation }: Props) {
     } catch {
       // Same no-enumeration posture as the initial request — move on regardless.
     }
-    sheet.show({ title: 'Code sent', message: `If an account exists for ${email}, a new code is on the way.`, buttons: [{ text: 'OK' }] })
+    sheet.show({ title: 'Code sent', message: `If an account exists for ${email}, a new code is on the way.`, buttons: [{ testID: 'reset-password.dialog.ok', text: 'OK' }] })
   }
 
   return (
-    <ScreenContainer width="narrow">
+    <ScreenContainer testID="screen.reset-password" width="narrow">
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}>
         <View style={styles.card}>
           <Typography variant="display" style={{ marginBottom: spacing.xs }}>
@@ -61,7 +61,7 @@ export function ResetPasswordScreen({ route, navigation }: Props) {
           <Typography variant="bodyMuted" style={{ marginBottom: spacing.xl }}>
             Enter the 6-digit code we sent to {email}, plus your new password.
           </Typography>
-          <TextField
+          <TextField testID="reset-password.code"
             label="Code"
             value={code}
             onChangeText={(v) => {
@@ -72,16 +72,16 @@ export function ResetPasswordScreen({ route, navigation }: Props) {
             maxLength={6}
             error={codeError}
           />
-          <TextField label="New password" value={newPassword} onChangeText={setNewPassword} secureTextEntry />
+          <TextField testID="reset-password.new-password" label="New password" value={newPassword} onChangeText={setNewPassword} secureTextEntry />
           <View style={{ marginTop: spacing.sm }}>
-            <Button label="Reset password" onPress={handleSubmit} loading={resetPassword.isPending} disabled={!canSubmit} />
+            <Button testID="reset-password.submit" label="Reset password" onPress={handleSubmit} loading={resetPassword.isPending} disabled={!canSubmit} />
           </View>
           <View style={{ marginTop: spacing.md }}>
-            <Button label="Resend code" variant="secondary" onPress={handleResend} loading={forgotPassword.isPending} />
+            <Button testID="reset-password.resend" label="Resend code" variant="secondary" onPress={handleResend} loading={forgotPassword.isPending} />
           </View>
         </View>
       </ScrollView>
-      <ActionSheet config={sheet.config} onDismiss={sheet.dismiss} />
+      <ActionSheet testID="reset-password.dialog" config={sheet.config} onDismiss={sheet.dismiss} />
     </ScreenContainer>
   )
 }

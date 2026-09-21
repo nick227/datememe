@@ -56,13 +56,13 @@ export function ConversationsScreen({ navigation }: Props) {
       title: 'Unmatch',
       message: `Unmatch with ${otherDisplayName}? This can't be undone — you'll stop seeing each other's messages, and either of you could be shown to the other again in Discover.`,
       buttons: [
-        { text: 'Cancel', style: 'cancel' },
+        { testID: 'conversations.dialog.cancel', text: 'Cancel', style: 'cancel' },
         {
-          text: 'Unmatch',
+          testID: 'conversations.dialog.unmatch', text: 'Unmatch',
           style: 'destructive',
           onPress: () =>
             unmatchConversation.mutate(conversationId, {
-              onError: () => sheet.show({ title: 'Could not unmatch', message: 'Try again in a moment.', buttons: [{ text: 'OK' }] }),
+              onError: () => sheet.show({ title: 'Could not unmatch', message: 'Try again in a moment.', buttons: [{ testID: 'conversations.dialog.ok', text: 'OK' }] }),
             }),
         },
       ],
@@ -71,7 +71,7 @@ export function ConversationsScreen({ navigation }: Props) {
 
   function renderRightActions(conversationId: string, otherDisplayName: string) {
     return (
-      <Pressable style={styles.unmatchAction} onPress={() => confirmUnmatch(conversationId, otherDisplayName)}>
+      <Pressable testID={`conversations.unmatch.${conversationId}`} style={styles.unmatchAction} onPress={() => confirmUnmatch(conversationId, otherDisplayName)}>
         <Icon name="X" size={24} color={colors.white} />
         <Text style={styles.unmatchText}>Unmatch</Text>
       </Pressable>
@@ -80,18 +80,18 @@ export function ConversationsScreen({ navigation }: Props) {
 
   if (conversations.isError) {
     return (
-      <ScreenContainer width="full">
-        <ErrorState subtitle="Couldn't load your messages." onRetry={() => conversations.refetch()} />
+      <ScreenContainer testID="screen.conversations" width="full">
+        <ErrorState testID="conversations.error" subtitle="Couldn't load your messages." onRetry={() => conversations.refetch()} />
       </ScreenContainer>
     )
   }
 
   return (
-    <ScreenContainer padded={false} width="full">
-      <TopNavigation title="Messages" alignment="left" />
+    <ScreenContainer testID="screen.conversations" padded={false} width="full">
+      <TopNavigation testID="conversations.header" title="Messages" alignment="left" />
       {!conversations.isLoading && allRows.length > 0 && (
         <View style={{ paddingHorizontal: spacing.lg, width: '100%', maxWidth: 960, alignSelf: 'center' }}>
-          <TextField
+          <TextField testID="conversations.search"
             value={search}
             onChangeText={setSearch}
             placeholder="Search conversations"
@@ -109,9 +109,9 @@ export function ConversationsScreen({ navigation }: Props) {
         onEndReached={() => conversations.hasNextPage && conversations.fetchNextPage()}
         ListEmptyComponent={
           query ? (
-            <EmptyState title="No matches" subtitle={`No conversations match "${search.trim()}".`} />
+            <EmptyState testID="conversations.empty" title="No matches" subtitle={`No conversations match "${search.trim()}".`} />
           ) : (
-            <EmptyState title="No conversations yet" subtitle="Match with someone in Discover to start a conversation." />
+            <EmptyState testID="conversations.empty" title="No conversations yet" subtitle="Match with someone in Discover to start a conversation." />
           )
         }
         ItemSeparatorComponent={() => <View style={styles.separator} />}
@@ -135,7 +135,7 @@ export function ConversationsScreen({ navigation }: Props) {
 
           return (
             <Swipeable renderRightActions={() => renderRightActions(item.id, other.displayName)} overshootRight={false}>
-              <Pressable
+              <Pressable testID={`conversations.row.${item.id}`}
                 style={styles.row}
                 onPress={() => navigation.navigate('Conversation', { conversationId: item.id, displayName: other.displayName })}
               >
@@ -173,7 +173,7 @@ export function ConversationsScreen({ navigation }: Props) {
           )
         }}
       />
-      <ActionSheet config={sheet.config} onDismiss={sheet.dismiss} />
+      <ActionSheet testID="conversations.dialog" config={sheet.config} onDismiss={sheet.dismiss} />
     </ScreenContainer>
   )
 }

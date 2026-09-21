@@ -63,7 +63,7 @@ export function AdminModerationScreen({ navigation }: Props) {
   const fetchEntities = useFetchAdminEntities()
 
   function showError(title: string) {
-    sheet.show({ title, message: 'Try again in a moment.', buttons: [{ text: 'OK' }] })
+    sheet.show({ title, message: 'Try again in a moment.', buttons: [{ testID: 'admin-moderation.dialog.ok', text: 'OK' }] })
   }
 
   function doReviewSubmission(id: string, action: 'APPROVE' | 'REJECT' | 'MERGE', mergeIntoEntityId?: string) {
@@ -80,7 +80,7 @@ export function AdminModerationScreen({ navigation }: Props) {
     }
     const candidates = entities.filter((e) => e.status === 'APPROVED' && e.id !== submission.submittedEntity.id)
     if (candidates.length === 0) {
-      sheet.show({ title: 'No merge candidates', message: 'No approved entities of this type to merge into yet.', buttons: [{ text: 'OK' }] })
+      sheet.show({ title: 'No merge candidates', message: 'No approved entities of this type to merge into yet.', buttons: [{ testID: 'admin-moderation.dialog.ok', text: 'OK' }] })
       return
     }
     const shown = candidates.slice(0, MAX_MERGE_CANDIDATES_SHOWN)
@@ -90,8 +90,8 @@ export function AdminModerationScreen({ navigation }: Props) {
         ? `Showing the first ${shown.length} of ${candidates.length} approved entities.`
         : undefined,
       buttons: [
-        ...shown.map((c) => ({ text: c.canonicalName, onPress: () => doReviewSubmission(submission.id, 'MERGE', c.id) })),
-        { text: 'Cancel', style: 'cancel' as const },
+        ...shown.map((c) => ({ testID: `admin-moderation.dialog.merge.${c.id}`, text: c.canonicalName, onPress: () => doReviewSubmission(submission.id, 'MERGE', c.id) })),
+        { testID: 'admin-moderation.dialog.cancel', text: 'Cancel', style: 'cancel' as const },
       ],
     })
   }
@@ -101,10 +101,10 @@ export function AdminModerationScreen({ navigation }: Props) {
       title: submission.rawText,
       message: submission.suggestedMatch ? `Possible match: ${submission.suggestedMatch.canonicalName}` : undefined,
       buttons: [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Approve', onPress: () => doReviewSubmission(submission.id, 'APPROVE') },
-        { text: 'Merge into existing…', onPress: () => void handleMergePicker(submission) },
-        { text: 'Reject', style: 'destructive', onPress: () => confirmReject(submission.id) },
+        { testID: 'admin-moderation.dialog.cancel', text: 'Cancel', style: 'cancel' },
+        { testID: 'admin-moderation.dialog.approve', text: 'Approve', onPress: () => doReviewSubmission(submission.id, 'APPROVE') },
+        { testID: 'admin-moderation.dialog.merge-into-existing', text: 'Merge into existing…', onPress: () => void handleMergePicker(submission) },
+        { testID: 'admin-moderation.dialog.reject', text: 'Reject', style: 'destructive', onPress: () => confirmReject(submission.id) },
       ],
     })
   }
@@ -114,8 +114,8 @@ export function AdminModerationScreen({ navigation }: Props) {
       title: 'Reject this submission?',
       message: 'The submitted entity will be marked rejected and hidden from search.',
       buttons: [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Reject', style: 'destructive', onPress: () => doReviewSubmission(id, 'REJECT') },
+        { testID: 'admin-moderation.dialog.cancel', text: 'Cancel', style: 'cancel' },
+        { testID: 'admin-moderation.dialog.reject', text: 'Reject', style: 'destructive', onPress: () => doReviewSubmission(id, 'REJECT') },
       ],
     })
   }
@@ -125,9 +125,9 @@ export function AdminModerationScreen({ navigation }: Props) {
       title: report.reason,
       message: report.details ?? undefined,
       buttons: [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Mark reviewed', onPress: () => reviewReport.mutate({ id: report.id, status: 'REVIEWED' }, { onError: () => showError('Could not review report') }) },
-        { text: 'Mark actioned…', style: 'destructive', onPress: () => confirmActioned(report.id) },
+        { testID: 'admin-moderation.dialog.cancel', text: 'Cancel', style: 'cancel' },
+        { testID: 'admin-moderation.dialog.mark-reviewed', text: 'Mark reviewed', onPress: () => reviewReport.mutate({ id: report.id, status: 'REVIEWED' }, { onError: () => showError('Could not review report') }) },
+        { testID: 'admin-moderation.dialog.mark-actioned', text: 'Mark actioned…', style: 'destructive', onPress: () => confirmActioned(report.id) },
       ],
     })
   }
@@ -137,8 +137,8 @@ export function AdminModerationScreen({ navigation }: Props) {
       title: 'Mark this report as actioned?',
       message: 'Use this once you have actually taken action against the reported profile/message (e.g. a ban).',
       buttons: [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Mark actioned', style: 'destructive', onPress: () => reviewReport.mutate({ id, status: 'ACTIONED' }, { onError: () => showError('Could not review report') }) },
+        { testID: 'admin-moderation.dialog.cancel', text: 'Cancel', style: 'cancel' },
+        { testID: 'admin-moderation.dialog.mark-actioned', text: 'Mark actioned', style: 'destructive', onPress: () => reviewReport.mutate({ id, status: 'ACTIONED' }, { onError: () => showError('Could not review report') }) },
       ],
     })
   }
@@ -147,27 +147,27 @@ export function AdminModerationScreen({ navigation }: Props) {
   const reportRows = reports.data?.pages.flatMap((p) => p.reports) ?? []
 
   return (
-    <ScreenContainer width="wide">
-      <TopNavigation alignment="left" leftAction="back" onLeftAction={() => navigation.goBack()} title="Moderation" />
+    <ScreenContainer testID="screen.admin-moderation" width="wide">
+      <TopNavigation testID="admin-moderation.header" alignment="left" leftAction="back" onLeftAction={() => navigation.goBack()} title="Moderation" />
 
       <View style={styles.segmented}>
-        <Pressable style={[styles.segment, subTab === 'submissions' && styles.segmentActive]} onPress={() => setSubTab('submissions')}>
+        <Pressable testID="admin-moderation.tab.submissions" style={[styles.segment, subTab === 'submissions' && styles.segmentActive]} onPress={() => setSubTab('submissions')}>
           <Typography variant="label" style={subTab === 'submissions' ? styles.segmentTextActive : styles.segmentText}>Submissions</Typography>
         </Pressable>
-        <Pressable style={[styles.segment, subTab === 'reports' && styles.segmentActive]} onPress={() => setSubTab('reports')}>
+        <Pressable testID="admin-moderation.tab.reports" style={[styles.segment, subTab === 'reports' && styles.segmentActive]} onPress={() => setSubTab('reports')}>
           <Typography variant="label" style={subTab === 'reports' ? styles.segmentTextActive : styles.segmentText}>Reports</Typography>
         </Pressable>
       </View>
 
       {subTab === 'submissions' ? (
-        <SelectField
+        <SelectField testID="admin-moderation.submission-status"
           value={submissionStatus}
           options={SUBMISSION_STATUS_OPTIONS}
           onSelect={(v) => setSubmissionStatus(v as typeof submissionStatus)}
           placeholder="Status"
         />
       ) : (
-        <SelectField
+        <SelectField testID="admin-moderation.report-status"
           value={reportStatus}
           options={REPORT_STATUS_OPTIONS}
           onSelect={(v) => setReportStatus(v as typeof reportStatus)}
@@ -181,16 +181,16 @@ export function AdminModerationScreen({ navigation }: Props) {
             {[0, 1, 2].map((i) => <Skeleton key={i} height={72} />)}
           </View>
         ) : submissions.isError ? (
-          <ErrorState subtitle="Couldn't load submissions." onRetry={() => submissions.refetch()} />
+          <ErrorState testID="admin-moderation.error" subtitle="Couldn't load submissions." onRetry={() => submissions.refetch()} />
         ) : (
           <FlatList
             data={submissionRows}
             keyExtractor={(item) => item.id}
             onEndReached={() => submissions.hasNextPage && submissions.fetchNextPage()}
             ItemSeparatorComponent={() => <View style={styles.separator} />}
-            ListEmptyComponent={<EmptyState title="Nothing here" subtitle="No submissions in this state." />}
+            ListEmptyComponent={<EmptyState testID="admin-moderation.empty" title="Nothing here" subtitle="No submissions in this state." />}
             renderItem={({ item }) => (
-              <Pressable style={styles.row} onPress={() => item.status === 'PENDING' && handleSubmissionActions(item)}>
+              <Pressable testID={`admin-moderation.submission.${item.id}`} style={styles.row} onPress={() => item.status === 'PENDING' && handleSubmissionActions(item)}>
                 <View style={{ flex: 1 }}>
                   <Typography variant="body">{item.rawText}</Typography>
                   <Typography variant="bodyMuted" style={{ marginTop: 2 }}>
@@ -216,16 +216,16 @@ export function AdminModerationScreen({ navigation }: Props) {
           {[0, 1, 2].map((i) => <Skeleton key={i} height={72} />)}
         </View>
       ) : reports.isError ? (
-        <ErrorState subtitle="Couldn't load reports." onRetry={() => reports.refetch()} />
+        <ErrorState testID="admin-moderation.error" subtitle="Couldn't load reports." onRetry={() => reports.refetch()} />
       ) : (
         <FlatList
           data={reportRows}
           keyExtractor={(item) => item.id}
           onEndReached={() => reports.hasNextPage && reports.fetchNextPage()}
           ItemSeparatorComponent={() => <View style={styles.separator} />}
-          ListEmptyComponent={<EmptyState title="Nothing here" subtitle="No reports in this state." />}
+          ListEmptyComponent={<EmptyState testID="admin-moderation.empty" title="Nothing here" subtitle="No reports in this state." />}
           renderItem={({ item }) => (
-            <Pressable style={styles.row} onPress={() => item.status === 'PENDING' && handleReportActions(item)}>
+            <Pressable testID={`admin-moderation.report.${item.id}`} style={styles.row} onPress={() => item.status === 'PENDING' && handleReportActions(item)}>
               <View style={{ flex: 1 }}>
                 <Typography variant="body">{item.reason}</Typography>
                 <Typography variant="bodyMuted" style={{ marginTop: 2 }}>
@@ -244,7 +244,7 @@ export function AdminModerationScreen({ navigation }: Props) {
         />
       )}
 
-      <ActionSheet config={sheet.config} onDismiss={sheet.dismiss} />
+      <ActionSheet testID="admin-moderation.dialog" config={sheet.config} onDismiss={sheet.dismiss} />
     </ScreenContainer>
   )
 }

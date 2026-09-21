@@ -1,6 +1,6 @@
 import type { FastifyRequest } from 'fastify'
 import { db, AccountRole } from '@project/db'
-import { ENTITLEMENT_DEFAULTS, resolveMembership } from './entitlements'
+import { resolveEntitlements, resolveMembership } from './entitlements'
 import { PROFILE_FULL_SELECT, serializeUser } from './serializers'
 
 // Route payloads retain their existing OpenAPI validation; identity is always typed.
@@ -39,15 +39,16 @@ export function requireProfileId(principal: Principal): string {
 
 // Bootstrap only. Authentication itself never loads photos or membership.
 export async function resolveUserContext(userId: string) {
-  const [user, membership] = await Promise.all([
+  const [user, membership, entitlements] = await Promise.all([
     db.user.findUniqueOrThrow({ where: { id: userId }, include: { profile: { select: PROFILE_FULL_SELECT } } }),
     resolveMembership(userId),
+    resolveEntitlements(userId),
   ])
   requireAccountAccess(user)
   return {
     ...serializeUser(user),
     account: { suspended: !!user.suspendedAt, deleted: !!user.deletedAt },
     membership,
-    entitlements: { ...ENTITLEMENT_DEFAULTS[membership.state] },
+    entitlements,
   }
 }

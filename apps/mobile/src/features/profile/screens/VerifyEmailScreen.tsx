@@ -24,12 +24,12 @@ export function VerifyEmailScreen({ navigation }: Props) {
     setCodeError(undefined)
     try {
       await verifyEmail.mutateAsync({ token: code })
-      sheet.show({ title: 'Email verified', message: "You're all set.", buttons: [{ text: 'Done', onPress: () => navigation.goBack() }] })
+      sheet.show({ title: 'Email verified', message: "You're all set.", buttons: [{ testID: 'verify-email.dialog.done', text: 'Done', onPress: () => navigation.goBack() }] })
     } catch (err) {
       if (err instanceof ApiError && err.status === 400) {
         setCodeError('That code is invalid, expired, or already used.')
       } else {
-        sheet.show({ title: 'Could not verify email', message: 'Try again in a moment.', buttons: [{ text: 'OK' }] })
+        sheet.show({ title: 'Could not verify email', message: 'Try again in a moment.', buttons: [{ testID: 'verify-email.dialog.ok', text: 'OK' }] })
       }
     }
   }
@@ -38,20 +38,20 @@ export function VerifyEmailScreen({ navigation }: Props) {
     setCodeError(undefined)
     try {
       await sendVerification.mutateAsync()
-      sheet.show({ title: 'Code sent', message: 'Check your email for a new 6-digit code.', buttons: [{ text: 'OK' }] })
+      sheet.show({ title: 'Code sent', message: 'Check your email for a new 6-digit code.', buttons: [{ testID: 'verify-email.dialog.ok', text: 'OK' }] })
     } catch {
-      sheet.show({ title: 'Could not send code', message: 'Try again in a moment.', buttons: [{ text: 'OK' }] })
+      sheet.show({ title: 'Could not send code', message: 'Try again in a moment.', buttons: [{ testID: 'verify-email.dialog.ok', text: 'OK' }] })
     }
   }
 
   return (
-    <ScreenContainer width="narrow">
-      <TopNavigation alignment="left" leftAction="back" onLeftAction={() => navigation.goBack()} title="Verify your email" />
+    <ScreenContainer testID="screen.verify-email" width="narrow">
+      <TopNavigation testID="verify-email.header" alignment="left" leftAction="back" onLeftAction={() => navigation.goBack()} title="Verify your email" />
       <View style={styles.card}>
         <Typography variant="bodyMuted" style={{ marginBottom: spacing.xl }}>
           Enter the 6-digit code we just sent to your email.
         </Typography>
-        <TextField
+        <TextField testID="verify-email.code"
           label="Code"
           value={code}
           onChangeText={(v) => {
@@ -63,13 +63,13 @@ export function VerifyEmailScreen({ navigation }: Props) {
           error={codeError}
         />
         <View style={{ marginTop: spacing.sm }}>
-          <Button label="Verify" onPress={handleSubmit} loading={verifyEmail.isPending} disabled={code.length !== 6} />
+          <Button testID="verify-email.submit" label="Verify" onPress={handleSubmit} loading={verifyEmail.isPending} disabled={code.length !== 6} />
         </View>
         <View style={{ marginTop: spacing.md }}>
-          <Button label="Resend code" variant="secondary" onPress={handleResend} loading={sendVerification.isPending} />
+          <Button testID="verify-email.resend" label="Resend code" variant="secondary" onPress={handleResend} loading={sendVerification.isPending} />
         </View>
       </View>
-      <ActionSheet config={sheet.config} onDismiss={sheet.dismiss} />
+      <ActionSheet testID="verify-email.dialog" config={sheet.config} onDismiss={sheet.dismiss} />
     </ScreenContainer>
   )
 }

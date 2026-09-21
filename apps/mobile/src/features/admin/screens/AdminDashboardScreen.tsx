@@ -22,40 +22,54 @@ export function AdminDashboardScreen({ navigation }: Props) {
   const queue = useAdminQueueMetrics()
 
   return (
-    <ScreenContainer width="wide">
-      <TopNavigation alignment="left" leftAction="back" onLeftAction={() => navigation.goBack()} title="Admin" subtitle="Job queue health" />
+    <ScreenContainer testID="screen.admin-dashboard" width="wide">
+      <TopNavigation testID="admin-dashboard.header" alignment="left" leftAction="back" onLeftAction={() => navigation.goBack()} title="Admin" subtitle="Job queue health" />
 
-      <Pressable style={styles.card} onPress={() => navigation.navigate('AdminModeration')}>
+      <Pressable testID="admin-dashboard.open-admin-moderation" style={styles.card} onPress={() => navigation.navigate('AdminModeration')}>
         <View style={styles.row}>
           <Typography variant="heading">Moderation</Typography>
           <Icon name="ChevronRight" size={20} color={colors.inkMuted} />
         </View>
       </Pressable>
 
-      <Pressable style={styles.card} onPress={() => navigation.navigate('AdminUsers')}>
+      <Pressable testID="admin-dashboard.open-admin-users" style={styles.card} onPress={() => navigation.navigate('AdminUsers')}>
         <View style={styles.row}>
           <Typography variant="heading">Users</Typography>
           <Icon name="ChevronRight" size={20} color={colors.inkMuted} />
         </View>
       </Pressable>
 
-      <Pressable style={styles.card} onPress={() => navigation.navigate('AdminMemberships')}>
+      <Pressable testID="admin-dashboard.open-admin-memberships" style={styles.card} onPress={() => navigation.navigate('AdminMemberships')}>
         <View style={styles.row}>
           <Typography variant="heading">Memberships</Typography>
           <Icon name="ChevronRight" size={20} color={colors.inkMuted} />
         </View>
       </Pressable>
 
-      <Pressable style={styles.card} onPress={() => navigation.navigate('AdminTaxonomy')}>
+      <Pressable testID="admin-dashboard.open-admin-taxonomy" style={styles.card} onPress={() => navigation.navigate('AdminTaxonomy')}>
         <View style={styles.row}>
           <Typography variant="heading">Taxonomy</Typography>
           <Icon name="ChevronRight" size={20} color={colors.inkMuted} />
         </View>
       </Pressable>
 
-      <Pressable style={styles.card} onPress={() => navigation.navigate('AdminLists')}>
+      <Pressable testID="admin-dashboard.open-admin-lists" style={styles.card} onPress={() => navigation.navigate('AdminLists')}>
         <View style={styles.row}>
           <Typography variant="heading">Lists</Typography>
+          <Icon name="ChevronRight" size={20} color={colors.inkMuted} />
+        </View>
+      </Pressable>
+
+      <Pressable testID="admin-dashboard.open-admin-site-picks" style={styles.card} onPress={() => navigation.navigate('AdminSitePicks')}>
+        <View style={styles.row}>
+          <Typography variant="heading">Site Picks</Typography>
+          <Icon name="ChevronRight" size={20} color={colors.inkMuted} />
+        </View>
+      </Pressable>
+
+      <Pressable testID="admin-dashboard.open-admin-membership" style={styles.card} onPress={() => navigation.navigate('AdminMembership')}>
+        <View style={styles.row}>
+          <Typography variant="heading">Membership</Typography>
           <Icon name="ChevronRight" size={20} color={colors.inkMuted} />
         </View>
       </Pressable>
@@ -70,7 +84,7 @@ export function AdminDashboardScreen({ navigation }: Props) {
           ))}
         </View>
       ) : queue.isError ? (
-        <ErrorState subtitle="Couldn't load queue metrics." onRetry={() => queue.refetch()} />
+        <ErrorState testID="admin-dashboard.error" subtitle="Couldn't load queue metrics." onRetry={() => queue.refetch()} />
       ) : (
         <>
           <View style={styles.statsRow}>
@@ -88,7 +102,7 @@ export function AdminDashboardScreen({ navigation }: Props) {
               <Typography variant="bodyMuted">Nothing waiting.</Typography>
             ) : (
               queue.data!.oldestPending.map((job) => (
-                <View key={job.id} style={styles.jobRow}>
+                <View testID={`admin-dashboard.job.${job.id}`} key={job.id} style={styles.jobRow}>
                   <Typography variant="body">{job.type}</Typography>
                   <Typography variant="bodyMuted">{new Date(job.availableAt).toLocaleString()}</Typography>
                 </View>
@@ -102,7 +116,7 @@ export function AdminDashboardScreen({ navigation }: Props) {
               <Typography variant="bodyMuted">No failures.</Typography>
             ) : (
               queue.data!.latestFailed.map((job) => (
-                <View key={job.id} style={styles.jobRow}>
+                <View testID={`admin-dashboard.job.${job.id}`} key={job.id} style={styles.jobRow}>
                   <Typography variant="body">{job.type}</Typography>
                   <Typography variant="bodyMuted" numberOfLines={1} style={{ color: colors.danger }}>
                     {job.lastError ?? 'Unknown error'}

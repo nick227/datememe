@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native'
-import { borderWidth, colors, radius, spacing, type } from '../theme'
+import { borderWidth, colors, radius, spacing, type, modalHeight } from '../theme'
 
 export type ActionSheetButton = {
+  testID?: string
   text: string
   style?: 'default' | 'cancel' | 'destructive'
   onPress?: () => void
@@ -25,22 +26,22 @@ export function useActionSheet() {
   return { config, show: setConfig, dismiss: () => setConfig(null) }
 }
 
-export function ActionSheet({ config, onDismiss }: { config: ActionSheetConfig; onDismiss: () => void }) {
+export function ActionSheet({ testID, config, onDismiss }: { testID?: string; config: ActionSheetConfig; onDismiss: () => void }) {
   function handlePress(button: ActionSheetButton) {
     onDismiss()
     button.onPress?.()
   }
 
   return (
-    <Modal visible={!!config} animationType="slide" transparent onRequestClose={onDismiss}>
-      <View style={styles.overlay}>
-        <View style={styles.sheet}>
+    <Modal testID={testID ? `${testID}.modal` : undefined} visible={!!config} animationType="slide" transparent onRequestClose={onDismiss}>
+      <View testID={testID ? `${testID}.overlay` : undefined} style={styles.overlay}>
+        <View testID={testID} style={styles.sheet}>
           {config ? (
             <>
-              <Text style={styles.title}>{config.title}</Text>
-              {config.message ? <Text style={styles.message}>{config.message}</Text> : null}
+              <Text testID={testID ? `${testID}.title` : undefined} style={styles.title}>{config.title}</Text>
+              {config.message ? <Text testID={testID ? `${testID}.message` : undefined} style={styles.message}>{config.message}</Text> : null}
               {config.buttons.map((button, i) => (
-                <Pressable key={i} style={[styles.button, i > 0 && styles.buttonDivider]} onPress={() => handlePress(button)}>
+                <Pressable testID={button.testID} key={button.testID ?? i} style={[styles.button, i > 0 && styles.buttonDivider]} onPress={() => handlePress(button)}>
                   <Text
                     style={[
                       styles.buttonText,
@@ -63,18 +64,19 @@ export function ActionSheet({ config, onDismiss }: { config: ActionSheetConfig; 
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'transparent',
     justifyContent: 'flex-end',
   },
   sheet: {
-    backgroundColor: colors.surface,
+    backgroundColor: colors.wheat,
     borderTopWidth: borderWidth.thick,
     borderColor: colors.ink,
     borderTopLeftRadius: radius.lg,
     borderTopRightRadius: radius.lg,
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.xxl,
     paddingTop: spacing.lg,
     paddingBottom: spacing.xxl,
+    minHeight: modalHeight,
   },
   title: { ...type.heading, marginBottom: spacing.xs },
   message: { ...type.body, color: colors.inkMuted, marginBottom: spacing.md },

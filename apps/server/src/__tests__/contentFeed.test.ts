@@ -88,7 +88,7 @@ describe('ContentFeedService', () => {
       expect(similarTasteModule).toBeTruthy()
       const ids = similarTasteModule.items.map((i: any) => i.id)
       expect(ids).toContain(candidateUser.profile!.id)
-      const filtered = await feedService.getDiscoverFeed(viewerUser.id, viewerUser.profile!.id, { groupSlug: 'does-not-exist' })
+      const filtered = await feedService.getDiscoverFeed(viewerUser.id, viewerUser.profile!.id, { groupSlugs: ['does-not-exist'] })
       expect(filtered.data.some((m: any) => m.id.startsWith('people-grid'))).toBe(false)
       const near = await feedService.getDiscoverFeed(viewerUser.id, viewerUser.profile!.id, { nearMe: true })
       expect(near.filterNotice).toContain('Add your location')
@@ -105,7 +105,12 @@ describe('ContentFeedService', () => {
       while (true) {
         const page: any = await feedService.getListsFeed(viewerUser.profile!.id, { cursor, limit: 4 })
         seenIds.push(...page.data.map((m: any) => m.id))
-        categoryIds.push(...page.data.filter((m: any) => m.type === 'lists' && m.id !== 'your-lists').flatMap((m: any) => m.items.map((i: any) => i.id)))
+        // Site Picks modules (id 'site-picks-*') deliberately re-surface
+        // categories that also appear in their normal topic-group module —
+        // same category, reused rather than duplicated, per
+        // ContentFeedService.getListsFeed's Site Picks section — so they're
+        // excluded here just like 'your-lists' already is.
+        categoryIds.push(...page.data.filter((m: any) => m.type === 'lists' && m.id !== 'your-lists' && !m.id.startsWith('site-picks-')).flatMap((m: any) => m.items.map((i: any) => i.id)))
         if (!page.meta.hasMore) break
         cursor = page.meta.nextCursor
         iterations++

@@ -22,6 +22,7 @@ export const colors = {
   danger: '#FF3131',
   overlay: 'rgba(0,0,0,0.75)',
   white: '#FFFFFF',
+  wheat: '#f7ead1',
 }
 
 export const radius = {
@@ -53,6 +54,8 @@ export const borderWidth = {
   thin: 1,
   thick: 2,
 }
+
+export const modalHeight = 250;
 
 export const type = {
   wordmark: { fontFamily: 'PlusJakartaSans_800ExtraBold', color: colors.ink, letterSpacing: -0.5, textTransform: 'uppercase' as const },
