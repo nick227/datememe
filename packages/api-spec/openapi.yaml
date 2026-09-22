@@ -849,6 +849,13 @@ components:
             belongs to. Lets the client's chip bar reorder that module to the
             top of the feed instead of scrolling to find it, without
             string-matching module ids.
+        zone:
+          type: string
+          enum: [results, explore]
+          description: >
+            Present when a filter is active — marks this module as the
+            canonical answer to the filter (results) vs. the always-present
+            browse feed below it (explore). Absent when unfiltered.
 
     # ContentCollection and InteractiveModule are documented here as the two
     # logical shapes a FeedModule takes, but the wire schema below (FeedModule)

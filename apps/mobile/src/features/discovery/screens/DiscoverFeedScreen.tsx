@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { FlatList, ScrollView, View } from 'react-native'
+import { FlatList, ScrollView } from 'react-native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { useDiscoverFeed, type DiscoverFeedFilters } from '@project/sdk'
 import { ScreenContainer } from '../../../ui/ScreenContainer'
@@ -10,6 +10,7 @@ import { PageSummaryHero } from '../../../ui/content/PageSummaryHero'
 import { FilterChipsRow } from '../../../ui/content/FilterChipsRow'
 import { FeedModuleRenderer } from '../../../ui/content/FeedModuleRenderer'
 import { FeedListFooter } from '../../../ui/content/FeedListFooter'
+import { ExploreBoundary } from '../../../ui/content/ExploreBoundary'
 import { TOP_CHIP_ID, useGroupFilterChips } from '../../../ui/content/useGroupFilterChips'
 import type { ContentUnit, FeedModule } from '../../../ui/content/types'
 import { CANVAS_WIDTH, spacing } from '../../../theme'
@@ -17,7 +18,11 @@ import type { DiscoveryStackParamList } from '../../../navigation/types'
 
 type Props = NativeStackScreenProps<DiscoveryStackParamList, 'Discover'>
 
-type Row = { rowId: string; kind: 'chips' } | { rowId: string; kind: 'module'; module: FeedModule }
+type Row =
+  | { rowId: string; kind: 'chips' }
+  | { rowId: string; kind: 'empty' }
+  | { rowId: string; kind: 'boundary' }
+  | { rowId: string; kind: 'module'; module: FeedModule }
 
 // Discover as a People Grid baseline with contextual Rail/Spotlight/River
 // interruptions and an embedded Quick Picks module — see
@@ -68,10 +73,34 @@ export function DiscoverFeedScreen({ navigation }: Props) {
   const modules = useMemo<FeedModule[]>(() => pages.flatMap((p) => p.data), [pages])
 
   const hasPeople = modules.some((m) => m.id.startsWith('people-grid') && !!m.items?.length)
-  const rows = useMemo<Row[]>(
-    () => [{ rowId: 'chips', kind: 'chips' }, ...modules.map((m) => ({ rowId: m.id, kind: 'module' as const, module: m }))],
-    [modules],
-  )
+  // "Your favorites" leads ahead of the category chips (Header -> Your ->
+  // Categories -> Results -> Explore). Results only exists while a filter is
+  // active — the server tags the filtered people-grid module(s)
+  // `context.zone:'results'` in that case; everything else (Highly
+  // Compatible, Quick Picks, Similar Taste, Shared Interests) is Explore,
+  // the same ambient rhythm whether or not a filter is applied. Unfiltered,
+  // there's no Results/boundary at all — chips lead straight into Explore.
+  const isFiltered = selectedGroupSlugs.length > 0 || !!demographicChipId
+  const yourModule = modules.find((m) => m.id === 'your-favorites')
+  const rest = modules.filter((m) => m.id !== 'your-favorites')
+  const resultsModules = isFiltered ? rest.filter((m) => m.context?.zone === 'results') : []
+  const exploreModules = isFiltered ? rest.filter((m) => m.context?.zone !== 'results') : rest
+  const showNoResults = !hasPeople && !feed.hasNextPage
+  const rows = useMemo<Row[]>(() => {
+    const list: Row[] = []
+    if (yourModule) list.push({ rowId: yourModule.id, kind: 'module', module: yourModule })
+    list.push({ rowId: 'chips', kind: 'chips' })
+    if (isFiltered) {
+      // Results sits directly under the chips — an obvious, stable answer
+      // to the click — followed by a boundary into the always-present
+      // Explore feed below, even when Results itself came back empty.
+      list.push(...resultsModules.map((m) => ({ rowId: m.id, kind: 'module' as const, module: m })))
+      if (showNoResults) list.push({ rowId: 'no-results', kind: 'empty' })
+      list.push({ rowId: 'explore-boundary', kind: 'boundary' })
+    }
+    list.push(...exploreModules.map((m) => ({ rowId: m.id, kind: 'module' as const, module: m })))
+    return list
+  }, [yourModule, resultsModules, exploreModules, showNoResults, isFiltered])
 
   function onPressItem(unit: ContentUnit) {
     // Site Picks cards are lists presented inside Discover, not people
@@ -128,10 +157,23 @@ export function DiscoverFeedScreen({ navigation }: Props) {
         ref={listRef}
         data={rows}
         keyExtractor={(row) => row.rowId}
-        renderItem={({ item }) =>
-          item.kind === 'chips' ? (
-            chips.length > 1 ? <FilterChipsRow chips={chips} selectedIds={displaySelectedChipIds} onSelect={onSelectChip} /> : null
-          ) : (
+        renderItem={({ item }) => {
+          if (item.kind === 'chips') {
+            return chips.length > 1 ? <FilterChipsRow chips={chips} selectedIds={displaySelectedChipIds} onSelect={onSelectChip} /> : null
+          }
+          if (item.kind === 'empty') {
+            return (
+              <EmptyState
+                testID="discover.empty"
+                title="No results"
+                subtitle={pages[0]?.filterNotice ?? (displaySelectedChipIds[0] === TOP_CHIP_ID ? 'Check back soon.' : 'Try different filters.')}
+              />
+            )
+          }
+          if (item.kind === 'boundary') {
+            return <ExploreBoundary />
+          }
+          return (
             <FeedModuleRenderer
               module={item.module}
               state="ready"
@@ -140,26 +182,17 @@ export function DiscoverFeedScreen({ navigation }: Props) {
               quickPicksPeopleMode
             />
           )
-        }
+        }}
         ListHeaderComponent={summary ? <PageSummaryHero summary={summary} /> : null}
-        ListEmptyComponent={
-          <EmptyState testID="discover.empty"
-            title="No one new to show"
-            subtitle={displaySelectedChipIds[0] === TOP_CHIP_ID ? 'Check back soon, or once more members join.' : 'Try a different filter, or check back once more members join.'}
-          />
-        }
         ListFooterComponent={
-          <View>
-          {!hasPeople && !feed.hasNextPage ? <EmptyState testID="discover.empty" title="No one new to show" subtitle={pages[0]?.filterNotice ?? (displaySelectedChipIds[0] === TOP_CHIP_ID ? 'Check back soon, or once more members join.' : 'Try a different filter, or check back once more members join.')} /> : null}
           <FeedListFooter
             isFetchingNextPage={feed.isFetchingNextPage}
             isFetchNextPageError={feed.isFetchNextPageError}
             hasNextPage={!!feed.hasNextPage}
             hasContent={hasPeople}
             onRetry={() => feed.fetchNextPage()}
-            endMessage="You've seen everyone new for now — check back soon."
+            endMessage=""
           />
-          </View>
         }
         onEndReachedThreshold={0.4}
         onEndReached={() => {

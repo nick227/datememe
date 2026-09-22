@@ -16,8 +16,10 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: spacing.xxl,
+    paddingVertical: spacing.section,
     paddingHorizontal: spacing.xl,
+    marginTop: spacing.xxl,
+    marginBottom: spacing.xxl,
   },
   subtitle: {
     marginTop: spacing.xs,

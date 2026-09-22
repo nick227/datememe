@@ -127,16 +127,16 @@ export class ContentFeedService {
       taxonomyService.listCategories(viewerProfileId),
       listService.getMyLists(viewerProfileId),
       db.categoryGroup.findMany({ orderBy: { sortOrder: 'asc' } }),
-      // Filtered directly in the query (not fetched-then-discarded in JS)
-      // when a selection is active — no reason to build all 12 groups'
-      // worth of cards just to throw most of them away.
+      // Always the full unscoped set now — a selected group filter no
+      // longer narrows the ambient Explore rhythm (see the Results/Explore
+      // split below), so there's no longer a cheaper filtered variant of
+      // this query worth doing.
       db.sitePickGroup.findMany({
-        where: { isActive: true, ...(selectedGroupSlugs ? { slug: { in: [...selectedGroupSlugs] } } : {}) },
+        where: { isActive: true },
         include: { items: { orderBy: { sortOrder: 'asc' } } },
         orderBy: { sortOrder: 'asc' },
       }),
     ])
-    const activeGroups = selectedGroupSlugs ? groups.filter((g: any) => selectedGroupSlugs.has(g.slug)) : groups
 
     const myListByCategoryId = new Map(myLists.map((l: any) => [l.categoryId, l]))
 
@@ -159,8 +159,11 @@ export class ContentFeedService {
 
     // Grid is the baseline; a small group reads better as a Rail than a
     // half-empty grid row — this is what gives topic sections visual rhythm
-    // instead of an unbroken wall of identical grids (proposal §1/§5).
-    const groupModules = activeGroups
+    // instead of an unbroken wall of identical grids (proposal §1/§5). Always
+    // built from every group, filter or no — this is Explore content now
+    // (see the Results/Explore split below), and Explore stays the same
+    // ambient rhythm regardless of what's selected in the chips.
+    const groupModules = groups
       .flatMap((group: any) => {
         const cats = categoriesByGroupId.get(group.id) ?? []
         if (!cats.length) return []
@@ -232,87 +235,115 @@ export class ContentFeedService {
       return { moduleKind: 'collection', id, type: 'quiz', title: 'Quick Picks', suggestedStructure: 'spotlight', items: [] }
     }
 
-    if (selectedGroupSlugs) {
-      // Filtered ("categories" chips, multi-select — see GroupSlugs in the
-      // spec): a real result set, same shape as GET /discover/feed's
-      // filtered response. "Your lists" still leads (personal history isn't
-      // filtered away), then only the selected group(s)' Site Picks and
-      // topic sections, with Quick Picks folded in *after* them — never
-      // pinned ahead of the actual filtered results (reported live as
-      // "quick picks always at top" / "still scrolling to find it").
-      // add-more/taste-spotlight/how-you-compare are unscoped site-wide
-      // nudges, not about the selected topic(s), so they're dropped here.
-      beats.push(...sitePicksBeats, ...groupModules, quickPicksBeat('quick-picks-0'))
-    } else {
-      // Unfiltered ("All"): the full opening rhythm — Your lists -> Site
-      // Picks x12 -> Quick Picks -> every topic section, each interleaved
-      // with the periodic recommendation/comparison/quiz beats below.
-      beats.push(...sitePicksBeats, quickPicksBeat('quick-picks-0'))
-
-      const spotlightPick = incompleteSorted.find((c: any) => (c.matchAnswerMultiplier ?? 0) >= 1.5 || c.popularityCount >= 20)
-      const comparisonCategories = categories
-        .filter((c: any) => c.matchAnswerMultiplier != null && Math.abs(c.matchAnswerMultiplier - 1) >= 0.15)
-        .slice(0, 5)
-
-      let quizCount = 1
-      groupModules.forEach((m: any, i: number) => {
-        beats.push(m)
-        if (i === 0 && incompleteSorted.length) {
-          beats.push({
-            moduleKind: 'collection',
-            id: 'add-more',
-            type: 'prompt',
-            title: 'More',
-            context: { reason: 'Picked from popularity and how often your matches answer it' },
-            suggestedStructure: 'rail',
-            items: incompleteSorted.slice(0, 6).map((c: any, i2: number) => ({ ...toCategoryUnit(c, { completed: false }), position: i2 })),
-          })
-        }
-        if (i === 1 && spotlightPick) {
-          beats.push({
-            moduleKind: 'collection',
-            id: 'taste-spotlight',
-            type: 'recommendations',
-            title: 'Taste spotlight',
-            context: {
-              reason:
-                (spotlightPick.matchAnswerMultiplier ?? 0) >= 1.5
-                  ? 'Your matches really care about this one'
-                  : 'The community has spoken',
-              sourceEntityId: spotlightPick.id,
-            },
-            suggestedStructure: 'spotlight',
-            items: [{ ...toCategoryUnit(spotlightPick, { completed: false }), position: 0 }],
-          })
-        }
-        if (i === 3 && comparisonCategories.length) {
-          beats.push({
-            moduleKind: 'collection',
-            id: 'how-you-compare',
-            type: 'comparison',
-            title: 'How you compare',
-            suggestedStructure: 'river',
-            items: comparisonCategories.map((c: any, i2: number) => ({
-              id: c.slug,
-              kind: 'insight' as const,
-              title: c.shortLabel,
-              subtitle:
-                c.matchAnswerMultiplier > 1
-                  ? `Your matches answer this ${c.matchAnswerMultiplier.toFixed(1)}× more than the community average.`
-                  : `Your matches answer this ${(1 / c.matchAnswerMultiplier).toFixed(1)}× less than the community average.`,
-              metrics: [metric('community-position', 'vs. community', `${c.matchAnswerMultiplier.toFixed(1)}×`, 'primary')],
-              position: i2,
-            })),
-          })
-        }
-        // A repeat Quick Picks beat every few groups keeps the interactive
-        // interruption recurring as the feed unfolds, not a one-time novelty.
-        if (i > 0 && i % 4 === 0) beats.push(quickPicksBeat(`quick-picks-${quizCount++}`))
-      })
+    // Filtered ("categories" chips, multi-select — see GroupSlugs in the
+    // spec): a dedicated Results module leads — every category in the
+    // selected group(s), one canonical shape, the obvious direct answer to
+    // the click. It's only ever built on page 1 (beats.slice below confines
+    // it there regardless, but there's no reason to recompute it per page).
+    if (selectedGroupSlugs && isFirstPage) {
+      const resultsModule = this.buildResultsModule(categories, groups, selectedGroupSlugs, myListByCategoryId)
+      if (resultsModule) beats.push(resultsModule)
     }
 
-    const hasMore = offset + limit < beats.length
-    const page = beats.slice(offset, offset + limit)
+    // Explore: the full ambient rhythm — Site Picks x12 -> Quick Picks ->
+    // every topic section, interleaved with periodic recommendation/
+    // comparison/quiz beats — always, whether or not a filter is active
+    // (reported live as "quick picks always at top" / filtered results
+    // getting buried under nudges — this is now a stable, unscoped browse
+    // feed that sits *after* Results rather than pretending to answer the
+    // filter itself).
+    beats.push(...sitePicksBeats, quickPicksBeat('quick-picks-0'))
+
+    const spotlightPick = incompleteSorted.find((c: any) => (c.matchAnswerMultiplier ?? 0) >= 1.5 || c.popularityCount >= 20)
+    const comparisonCategories = categories
+      .filter((c: any) => c.matchAnswerMultiplier != null && Math.abs(c.matchAnswerMultiplier - 1) >= 0.15)
+      .slice(0, 5)
+
+    let quizCount = 1
+    groupModules.forEach((m: any, i: number) => {
+      beats.push(m)
+      if (i === 0 && incompleteSorted.length) {
+        beats.push({
+          moduleKind: 'collection',
+          id: 'add-more',
+          type: 'prompt',
+          title: 'More',
+          context: { reason: 'Picked from popularity and how often your matches answer it' },
+          suggestedStructure: 'rail',
+          items: incompleteSorted.slice(0, 6).map((c: any, i2: number) => ({ ...toCategoryUnit(c, { completed: false }), position: i2 })),
+        })
+      }
+      if (i === 1 && spotlightPick) {
+        beats.push({
+          moduleKind: 'collection',
+          id: 'taste-spotlight',
+          type: 'recommendations',
+          title: 'Taste spotlight',
+          context: {
+            reason:
+              (spotlightPick.matchAnswerMultiplier ?? 0) >= 1.5
+                ? 'Your matches really care about this one'
+                : 'The community has spoken',
+            sourceEntityId: spotlightPick.id,
+          },
+          suggestedStructure: 'spotlight',
+          items: [{ ...toCategoryUnit(spotlightPick, { completed: false }), position: 0 }],
+        })
+      }
+      if (i === 3 && comparisonCategories.length) {
+        beats.push({
+          moduleKind: 'collection',
+          id: 'how-you-compare',
+          type: 'comparison',
+          title: 'How you compare',
+          suggestedStructure: 'river',
+          items: comparisonCategories.map((c: any, i2: number) => ({
+            id: c.slug,
+            kind: 'insight' as const,
+            title: c.shortLabel,
+            subtitle:
+              c.matchAnswerMultiplier > 1
+                ? `Your matches answer this ${c.matchAnswerMultiplier.toFixed(1)}× more than the community average.`
+                : `Your matches answer this ${(1 / c.matchAnswerMultiplier).toFixed(1)}× less than the community average.`,
+            metrics: [metric('community-position', 'vs. community', `${c.matchAnswerMultiplier.toFixed(1)}×`, 'primary')],
+            position: i2,
+          })),
+        })
+      }
+      // A repeat Quick Picks beat every few groups keeps the interactive
+      // interruption recurring as the feed unfolds, not a one-time novelty.
+      if (i > 0 && i % 4 === 0) beats.push(quickPicksBeat(`quick-picks-${quizCount++}`))
+    })
+
+    // Explore must feel additive, not recycled: a category that's already
+    // the direct answer to the filter (Results) shouldn't also turn up as an
+    // ordinary card further down in the same response. Presentation-only —
+    // taxonomy/eligibility (usageCount, "seen" state, etc.) are untouched;
+    // this just strips duplicate category-kind items from Explore modules
+    // and drops a module entirely if that empties it out (e.g. the selected
+    // group's own topic section, whose items are the exact same categories
+    // Results just showed). Applied on every page of a filtered session, not
+    // just page 1 — Explore keeps unfolding across pages, and the same
+    // category set stays excluded throughout. `how-you-compare`'s
+    // kind:'insight' items are deliberately untouched — a comparison stat
+    // about a category isn't the same "recycled card" as the category's
+    // ordinary List/Grid card.
+    const prunedBeats = selectedGroupSlugs
+      ? (() => {
+          const resultCategorySlugs = this.resultCategorySlugsFor(categories, groups, selectedGroupSlugs)
+          return beats
+            .map((m: any) => {
+              if (m.id === 'results' || m.id === 'your-lists') return m
+              const keptItems = (m.items ?? []).filter((item: any) => !(item.kind === 'category' && resultCategorySlugs.has(item.id)))
+              if (keptItems.length === (m.items ?? []).length) return m
+              return keptItems.length ? { ...m, items: keptItems } : null
+            })
+            .filter(Boolean)
+        })()
+      : beats
+
+    const hasMore = offset + limit < prunedBeats.length
+    const page = prunedBeats.slice(offset, offset + limit)
     const nextCursor = hasMore ? encodeOffsetCursor(offset + limit) : null
 
     return {
@@ -335,6 +366,39 @@ export class ContentFeedService {
   }
 
   /**
+   * The dedicated Results module for a filtered getListsFeed request — every
+   * active category belonging to a selected CategoryGroup, flattened into
+   * one module, always `suggestedStructure: 'grid'` regardless of how many
+   * categories that comes out to (no isSmall/Rail branching — Results gets
+   * one canonical shape, full stop, so clicking a chip has an immediate,
+   * visually stable answer). Returns null when the selection resolves to
+   * zero categories rather than emitting an empty placeholder module — the
+   * caller (and the frontend) treat "module absent" the same as "module
+   * present with no items."
+   */
+  private buildResultsModule(categories: any[], groups: any[], selectedGroupSlugs: Set<string>, myListByCategoryId: Map<string, any>): any | null {
+    const selectedGroups = groups.filter((g: any) => selectedGroupSlugs.has(g.slug))
+    const selectedGroupIds = new Set(selectedGroups.map((g: any) => g.id))
+    const items = categories
+      .filter((c: any) => selectedGroupIds.has(c.groupId))
+      .map((c: any, i: number) => categoryUnitFor(c, i, myListByCategoryId))
+    if (!items.length) return null
+
+    const labels = selectedGroups.map((g: any) => g.label)
+    const title = labels.length > 2 ? `${labels.length} topics` : labels.join(' + ')
+
+    return {
+      moduleKind: 'collection',
+      id: 'results',
+      type: 'lists',
+      title,
+      context: { zone: 'results' },
+      suggestedStructure: 'grid',
+      items,
+    }
+  }
+
+  /**
    * The Site Picks composition — up to 12 admin-curated groups of 4 existing
    * List Definitions each (SitePickGroup/SitePickItem, see the admin Lists >
    * Site Picks screen) — as a ready-to-insert array of Grid FeedModules, in
@@ -343,11 +407,13 @@ export class ContentFeedService {
    * `categories`/`myListByCategoryId` from the caller rather than
    * re-fetching them — getListsFeed already has both in hand, and
    * listCategories() alone is a 3-5 query chain (getMatchAnswerMultipliers),
-   * not worth doubling. `sitePickGroups` is likewise the caller's own
-   * (optionally pre-filtered) fetch. A group referencing a since-
-   * deactivated category (excluded from taxonomyService.listCategories)
-   * simply renders fewer than 4 cards rather than throwing; a group that
-   * resolves to zero cards is dropped entirely.
+   * not worth doubling. `sitePickGroups` is likewise the caller's own fetch
+   * — always the full unscoped set now (getListsFeed no longer filters it,
+   * since Site Picks are Explore content and Explore is unscoped by any
+   * active group filter). A group referencing a since-deactivated category
+   * (excluded from taxonomyService.listCategories) simply renders fewer than
+   * 4 cards rather than throwing; a group that resolves to zero cards is
+   * dropped entirely.
    */
   private buildSitePicksModules(categories: any[], myListByCategoryId: Map<string, any>, sitePickGroups: any[]): any[] {
     const categoryById = new Map(categories.map((c: any) => [c.id, c]))
@@ -427,6 +493,9 @@ export class ContentFeedService {
     opts: { cursor?: string; limit?: number; groupSlugs?: string[]; nearMe?: boolean; ageBucket?: AgeBucket },
   ) {
     const isFirstPage = !opts.cursor
+    // Whether any real filter is active — gates the Results/Explore split
+    // (see the people-grid module below) the same way Lists' selectedGroupSlugs does.
+    const isFiltered = !!(opts.groupSlugs?.length || opts.nearMe || opts.ageBucket)
     // Which page this is, purely to vary grammar/density as the feed
     // continues (proposal correction: an "infinite" feed that's the same
     // Grid→Rail→River shape on every page reads as a rigid rotation, not a
@@ -551,6 +620,7 @@ export class ContentFeedService {
         id: isFirstPage ? 'people-grid' : `people-grid-${offsetKey(opts.cursor)}`,
         type: 'recommendations',
         title: isFirstPage ? peopleGridTitle : null,
+        ...(isFiltered ? { context: { zone: 'results' } } : {}),
         suggestedStructure: 'grid',
         options: { columns },
         items: candidateUnits.map((u: any, i: number) => ({ ...u, position: i })),

@@ -1905,6 +1905,11 @@ export interface components {
             sourceEntityType?: string;
             /** @description Present on a CategoryGroup topic module (getListsFeed's groupModules, including continuation chunks) — the chip id it belongs to. Lets the client's chip bar reorder that module to the top of the feed instead of scrolling to find it, without string-matching module ids. */
             groupSlug?: string;
+            /**
+             * @description Present when a filter is active — marks this module as the canonical answer to the filter (results) vs. the always-present browse feed below it (explore). Absent when unfiltered.
+             * @enum {string}
+             */
+            zone?: "results" | "explore";
         };
         FeedModule: {
             /** @enum {string} */

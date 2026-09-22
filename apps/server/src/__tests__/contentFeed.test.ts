@@ -93,6 +93,35 @@ describe('ContentFeedService', () => {
       const near = await feedService.getDiscoverFeed(viewerUser.id, viewerUser.profile!.id, { nearMe: true })
       expect(near.filterNotice).toContain('Add your location')
     })
+
+    it('getListsFeed: a group filter produces a dedicated Results module (zone: "results") ahead of the unscoped Explore rhythm', async () => {
+      const filtered: any = await feedService.getListsFeed(viewerUser.profile!.id, { groupSlugs: [group.slug], limit: 500 })
+
+      const resultsModule = filtered.data.find((m: any) => m.id === 'results')
+      expect(resultsModule).toBeTruthy()
+      expect(resultsModule.context?.zone).toBe('results')
+      expect(resultsModule.suggestedStructure).toBe('grid')
+      expect(resultsModule.items.map((i: any) => i.id)).toEqual([category.slug])
+
+      // Explore is unscoped by the filter — the same group's normal topic
+      // module still appears further down, undeduped against Results.
+      const topicModule = filtered.data.find((m: any) => m.id === group.slug)
+      expect(topicModule).toBeTruthy()
+      expect(topicModule.items.map((i: any) => i.id)).toContain(category.slug)
+      expect(filtered.data.indexOf(resultsModule)).toBeLessThan(filtered.data.indexOf(topicModule))
+    })
+
+    it('getDiscoverFeed: a demographic filter tags the people-grid module with zone:"results"; unfiltered carries no zone', async () => {
+      const filtered: any = await feedService.getDiscoverFeed(viewerUser.id, viewerUser.profile!.id, { ageBucket: '30s' })
+      const filteredGrid = filtered.data.find((m: any) => m.id.startsWith('people-grid'))
+      expect(filteredGrid).toBeTruthy()
+      expect(filteredGrid.context?.zone).toBe('results')
+
+      const unfiltered: any = await feedService.getDiscoverFeed(viewerUser.id, viewerUser.profile!.id, {})
+      const unfilteredGrid = unfiltered.data.find((m: any) => m.id.startsWith('people-grid'))
+      expect(unfilteredGrid).toBeTruthy()
+      expect(unfilteredGrid.context?.zone).toBeUndefined()
+    })
   })
 
   describe('infinite feed termination', () => {

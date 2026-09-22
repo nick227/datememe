@@ -10,6 +10,7 @@ import { PageSummaryHero } from '../../../ui/content/PageSummaryHero'
 import { FilterChipsRow } from '../../../ui/content/FilterChipsRow'
 import { FeedModuleRenderer } from '../../../ui/content/FeedModuleRenderer'
 import { FeedListFooter } from '../../../ui/content/FeedListFooter'
+import { ExploreBoundary } from '../../../ui/content/ExploreBoundary'
 import { TOP_CHIP_ID, useGroupFilterChips } from '../../../ui/content/useGroupFilterChips'
 import type { ContentUnit, FeedModule } from '../../../ui/content/types'
 import { CANVAS_WIDTH, spacing } from '../../../theme'
@@ -17,7 +18,11 @@ import type { CategoriesStackParamList } from '../../../navigation/types'
 
 type Props = NativeStackScreenProps<CategoriesStackParamList, 'Categories'>
 
-type Row = { rowId: string; kind: 'chips' } | { rowId: string; kind: 'module'; module: FeedModule }
+type Row =
+  | { rowId: string; kind: 'chips' }
+  | { rowId: string; kind: 'empty' }
+  | { rowId: string; kind: 'boundary' }
+  | { rowId: string; kind: 'module'; module: FeedModule }
 
 // The Lists page as a PageSummary + FeedModule stream, grouped by topic — see
 // docs/shared-content-system-proposal.md §8. Chips are a real, multi-select,
@@ -46,10 +51,38 @@ export function CategoriesScreen({ navigation }: Props) {
     listRef.current?.scrollToOffset({ offset: 0, animated: true })
   }, [selectedChipKey])
 
-  const rows = useMemo<Row[]>(
-    () => [{ rowId: 'chips', kind: 'chips' }, ...modules.map((m) => ({ rowId: m.id, kind: 'module' as const, module: m }))],
-    [modules],
-  )
+  // "Your lists" leads ahead of the category chips (Header -> Your ->
+  // Categories -> Results -> Explore). Results only exists while a filter is
+  // active — the server tags exactly one module `context.zone:'results'` in
+  // that case (getListsFeed's new flat, always-grid Results module); every
+  // other module is Explore, the same ambient browse rhythm whether or not a
+  // filter is applied. Unfiltered, there's no Results/boundary at all — chips
+  // lead straight into Explore, same as before this pass.
+  const isFiltered = selectedGroupSlugs.length > 0
+  const yourModule = modules.find((m) => m.id === 'your-lists')
+  const rest = modules.filter((m) => m.id !== 'your-lists')
+  const resultsModules = isFiltered ? rest.filter((m) => m.context?.zone === 'results') : []
+  const exploreModules = isFiltered ? rest.filter((m) => m.context?.zone !== 'results') : rest
+  const hasResults = resultsModules.some((m) => !!m.items?.length)
+  // Results isn't paginated (getListsFeed resolves it fully on page 1), so
+  // "empty" is definitive as soon as data has loaded — no hasNextPage guard needed.
+  const showNoResults = isFiltered && !hasResults
+  const hasContent = hasResults || exploreModules.some((m) => !!m.items?.length)
+  const rows = useMemo<Row[]>(() => {
+    const list: Row[] = []
+    if (yourModule) list.push({ rowId: yourModule.id, kind: 'module', module: yourModule })
+    list.push({ rowId: 'chips', kind: 'chips' })
+    if (isFiltered) {
+      // Results sits directly under the chips — an obvious, stable answer
+      // to the click — followed by a boundary into the always-present
+      // Explore feed below, even when Results itself came back empty.
+      list.push(...resultsModules.map((m) => ({ rowId: m.id, kind: 'module' as const, module: m })))
+      if (showNoResults) list.push({ rowId: 'no-results', kind: 'empty' })
+      list.push({ rowId: 'explore-boundary', kind: 'boundary' })
+    }
+    list.push(...exploreModules.map((m) => ({ rowId: m.id, kind: 'module' as const, module: m })))
+    return list
+  }, [yourModule, resultsModules, exploreModules, showNoResults, isFiltered])
 
   function goToListBuilder(categorySlug: string, shortLabel: string) {
     navigation.navigate('ListBuilder', { categorySlug, shortLabel })
@@ -89,13 +122,18 @@ export function CategoriesScreen({ navigation }: Props) {
         ref={listRef}
         data={rows}
         keyExtractor={(row) => row.rowId}
-        renderItem={({ item }) =>
-          item.kind === 'chips' ? (
-            chips.length > 1 ? <FilterChipsRow chips={chips} selectedIds={selectedChipIds} onSelect={toggleGroup} /> : null
-          ) : (
-            <FeedModuleRenderer module={item.module} state="ready" onPressItem={onPressItem} onPressQuickPicks={onPressQuickPicks} />
-          )
-        }
+        renderItem={({ item }) => {
+          if (item.kind === 'chips') {
+            return chips.length > 1 ? <FilterChipsRow chips={chips} selectedIds={selectedChipIds} onSelect={toggleGroup} /> : null
+          }
+          if (item.kind === 'empty') {
+            return <EmptyState testID="categories.empty" title="No lists match this filter" subtitle="Try a different filter, or check back as new ones ship." />
+          }
+          if (item.kind === 'boundary') {
+            return <ExploreBoundary />
+          }
+          return <FeedModuleRenderer module={item.module} state="ready" onPressItem={onPressItem} onPressQuickPicks={onPressQuickPicks} />
+        }}
         ListHeaderComponent={summary ? <PageSummaryHero summary={summary} /> : null}
         ListEmptyComponent={<EmptyState testID="categories.empty" title="No lists yet" subtitle="Check back soon — new ones ship often." />}
         ListFooterComponent={
@@ -103,9 +141,9 @@ export function CategoriesScreen({ navigation }: Props) {
             isFetchingNextPage={feed.isFetchingNextPage}
             isFetchNextPageError={feed.isFetchNextPageError}
             hasNextPage={!!feed.hasNextPage}
-            hasContent={modules.length > 0}
+            hasContent={hasContent}
             onRetry={() => feed.fetchNextPage()}
-            endMessage="You've explored every list — check back as new ones ship."
+            endMessage=""
           />
         }
         onEndReachedThreshold={0.4}

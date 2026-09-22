@@ -55,7 +55,11 @@ function CompactGridCard({ unit, onPress }: { unit: ContentUnit; onPress: () => 
         {imageUrl ? (
           <Image accessibilityLabel={unit.title} source={{ uri: imageUrl }} style={styles.compactImage} resizeMode="cover" />
         ) : (
-          <View style={[styles.compactImage, styles.compactImageFallback]} />
+          <View style={[styles.compactImage, styles.compactImageFallback]}>
+            <Typography variant="display" style={styles.compactImageFallbackInitial}>
+              {(unit.title || '?').charAt(0).toUpperCase()}
+            </Typography>
+          </View>
         )}
         {isComplete ? (
           <Typography variant="label" style={[styles.compactBadge, styles.compactBadgeDone]}>Done</Typography>
@@ -219,7 +223,8 @@ const styles = StyleSheet.create({
   },
   compactImageWrap: { position: 'relative' },
   compactImage: { width: '100%', aspectRatio: 3 / 4, backgroundColor: colors.surfaceMuted },
-  compactImageFallback: { backgroundColor: colors.surfaceMuted },
+  compactImageFallback: { backgroundColor: colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' },
+  compactImageFallbackInitial: { color: colors.inkMuted },
   compactBadge: {
     position: 'absolute',
     top: spacing.xs,

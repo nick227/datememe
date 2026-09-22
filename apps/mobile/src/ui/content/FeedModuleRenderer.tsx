@@ -4,7 +4,15 @@ import { Spotlight } from './Spotlight'
 import { River } from './River'
 import { QuickPicksModule } from './QuickPicksModule'
 import { QuickPicksSpotlight } from './QuickPicksSpotlight'
+import { PersonalHistorySummary } from './PersonalHistorySummary'
 import { isCollection, type ContentUnit, type FeedModule, type StructureState } from './types'
+
+// The two personal-history beats (getListsFeed's "Your lists", getDiscoverFeed's
+// "Your favorites") are identified by id, not `type` — ordinary topic-group
+// rails on Lists also carry `type: 'lists'`, so type alone can't distinguish
+// "this is the viewer's own running history" from "this is a rail of browsable
+// content that happens to be list-shaped."
+const PERSONAL_HISTORY_MODULE_IDS = new Set(['your-lists', 'your-favorites'])
 
 type Props = {
   module: FeedModule
@@ -36,11 +44,16 @@ export function FeedModuleRenderer({ module, state, onPressItem, onPressQuickPic
 
   switch (module.suggestedStructure) {
     case 'rail': {
-      // Personal-history rails (Your lists / Your favorites) run large
-      // enough to show ranked covers/items inside each card; contextual
-      // nudge rails (Add more, Because you liked X) stay narrower.
-      const isPersonalHistory = module.type === 'lists' || module.type === 'favorites'
-      return <Rail {...shared} cardWidth={isPersonalHistory ? 300 : undefined} />
+      // Your lists / Your favorites collapse to a one-line summary instead
+      // of rendering as a Rail at all — see PersonalHistorySummary.
+      if (PERSONAL_HISTORY_MODULE_IDS.has(module.id)) {
+        return <PersonalHistorySummary {...shared} itemNoun={module.type === 'favorites' ? 'favorite' : 'list'} />
+      }
+      // Small topic-group rails (type 'lists') run large enough to show
+      // ranked covers/items inside each card; contextual nudge rails
+      // (Add more, Because you liked X) stay narrower.
+      const isWideRail = module.type === 'lists' || module.type === 'favorites'
+      return <Rail {...shared} cardWidth={isWideRail ? 300 : undefined} />
     }
     case 'spotlight':
       return <Spotlight {...shared} />
