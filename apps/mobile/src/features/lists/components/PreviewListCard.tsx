@@ -54,7 +54,6 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     padding: spacing.md,
     marginBottom: spacing.sm,
-    flex: 1, // fill column
     borderWidth: borderWidth.thick,
     borderColor: colors.border,
   },

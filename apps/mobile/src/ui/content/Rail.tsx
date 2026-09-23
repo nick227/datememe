@@ -1,4 +1,4 @@
-import { ScrollView, StyleSheet, View } from 'react-native'
+import { Platform, ScrollView, StyleSheet, View } from 'react-native'
 import { Typography } from '../Typography'
 import { Skeleton } from '../Skeleton'
 import { EmptyState } from '../EmptyState'
@@ -17,13 +17,19 @@ type Props = {
   // not just a different label (proposal correction: Rail must look and
   // behave like a rail, not a row of grid cards at the same scale).
   cardWidth?: number
+  zone?: string
   onPressItem: (unit: ContentUnit) => void
   onRetry?: () => void
 }
 
 const DEFAULT_CARD_WIDTH = 200
 
-export function Rail({ testID, title, items, state, cardWidth = DEFAULT_CARD_WIDTH, onPressItem, onRetry }: Props) {
+const handleWheel = (event: any) => {
+  if (Platform.OS !== 'web') return
+  event.currentTarget.scrollLeft += event.nativeEvent?.deltaY ?? event.deltaY ?? 0
+}
+
+export function Rail({ testID, title, items, state, cardWidth = DEFAULT_CARD_WIDTH, zone, onPressItem, onRetry }: Props) {
   const cardStyle = { width: cardWidth }
   return (
     <View testID={testID} style={styles.section}>
@@ -42,10 +48,16 @@ export function Rail({ testID, title, items, state, cardWidth = DEFAULT_CARD_WID
       ) : (
         // Cards flow edge-to-edge of the canvas and the last one is visibly
         // clipped — that's what reads as "rail" rather than "grid that scrolls."
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.viewport}
+          contentContainerStyle={styles.scroll}
+          {...(Platform.OS === 'web' ? { onWheel: handleWheel } as any : {})}
+        >
           {items.map((unit) => (
             <View key={unit.id} style={cardStyle}>
-              <ContentUnitCard unit={unit} variant="rail" onPress={() => onPressItem(unit)} />
+              <ContentUnitCard unit={unit} variant="rail" zone={zone} onPress={() => onPressItem(unit)} />
             </View>
           ))}
         </ScrollView>
@@ -56,7 +68,7 @@ export function Rail({ testID, title, items, state, cardWidth = DEFAULT_CARD_WID
 
 function RailSkeleton({ cardWidth }: { cardWidth: number }) {
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+    <ScrollView style={styles.viewport} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.scroll}>
       {[1, 2, 3, 4].map((i) => (
         <Skeleton key={i} variant="rect" width={cardWidth} height={cardWidth * 1.3} />
       ))}
@@ -65,7 +77,25 @@ function RailSkeleton({ cardWidth }: { cardWidth: number }) {
 }
 
 const styles = StyleSheet.create({
-  section: { marginBottom: spacing.section },
-  heading: { marginBottom: spacing.md, paddingHorizontal: spacing.lg },
-  scroll: { paddingHorizontal: spacing.lg, gap: spacing.md },
+  section: {
+    marginBottom: spacing.section,
+    width: '100%',
+    minWidth: 0,
+    overflow: 'hidden',
+  },
+
+  heading: {
+    marginBottom: spacing.md,
+    paddingHorizontal: spacing.lg,
+  },
+
+  viewport: {
+    width: '100%',
+    minWidth: 0,
+  },
+
+  scroll: {
+    paddingHorizontal: spacing.lg,
+    gap: spacing.md,
+  },
 })

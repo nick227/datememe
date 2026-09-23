@@ -12,11 +12,12 @@ type Props = {
   title?: string | null
   items: ContentUnit[]
   state: StructureState
+  zone?: string
   onPressItem: (unit: ContentUnit) => void
   onRetry?: () => void
 }
 
-export function River({ testID, title, items, state, onPressItem, onRetry }: Props) {
+export function River({ testID, title, items, state, zone, onPressItem, onRetry }: Props) {
   return (
     <View testID={testID} style={styles.section}>
       {title ? (
@@ -34,7 +35,7 @@ export function River({ testID, title, items, state, onPressItem, onRetry }: Pro
       ) : (
         <View>
           {items.map((unit) => (
-            <ContentUnitCard key={unit.id} unit={unit} variant="river" onPress={() => onPressItem(unit)} />
+            <ContentUnitCard key={unit.id} unit={unit} variant="river" zone={zone} onPress={() => onPressItem(unit)} />
           ))}
         </View>
       )}

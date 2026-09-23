@@ -10,29 +10,30 @@ import type { ContentUnit } from './types'
 type Props = {
   unit: ContentUnit
   variant: RenderVariant
+  zone?: string
   onPress: () => void
 }
 
-// Carries forward the two shipped Lists card designs (CategoryStatCard's real
-// social proof, CategoryDiscoveryCard's quieter tier, PreviewListCard's ranked
-// multi-item preview for a completed list) as variants of one generic renderer,
-// per the migration mapping in docs/shared-content-system-proposal.md §8.
-export function CategoryUnitCard({ unit, variant, onPress }: Props) {
-  // The main 2-col grid (topic groups + Site Picks on both Lists and
-  // Discover) gets one compact, image-forward card regardless of the
-  // viewer's completion state — a badge distinguishes done/in-progress
-  // instead of branching to a whole different layout the way Rail/
-  // Spotlight/River still do below.
+// Carries forward the shipped Lists card designs as variants of one generic
+// renderer. Card type is determined by the structure variant, never by the
+// presence of preview entities or images — deterministic MVP layout.
+export function CategoryUnitCard({ unit, variant, zone, onPress }: Props) {
+  // Results zone: always the compact poster card, regardless of variant.
+  if (zone === 'results') {
+    return <CompactGridCard unit={unit} onPress={onPress} />
+  }
+
+  // Variant-driven dispatch — no data-quality branching.
   if (variant === 'grid-square') {
     return <CompactGridCard unit={unit} onPress={onPress} />
   }
-  // Any list with at least one pick gets the ranked-preview treatment,
-  // whether it's finished or not — the badge inside distinguishes the two.
-  if (unit.previewEntities?.length) {
-    return <CompletedListCard unit={unit} onPress={onPress} />
-  }
   if (variant === 'grid-dense') {
     return <DenseCard unit={unit} onPress={onPress} />
+  }
+  // River variant uses CompletedListCard when the unit has ranked preview
+  // entities (the natural "list" presentation for a full-width row).
+  if (variant === 'river' && unit.previewEntities?.length) {
+    return <CompletedListCard unit={unit} onPress={onPress} />
   }
   return <StatCard unit={unit} variant={variant} onPress={onPress} />
 }

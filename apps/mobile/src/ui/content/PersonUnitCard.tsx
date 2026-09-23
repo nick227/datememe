@@ -9,6 +9,7 @@ import type { ContentUnit } from './types'
 type Props = {
   unit: ContentUnit
   variant: RenderVariant
+  zone?: string
   onPress: () => void
 }
 
@@ -17,7 +18,10 @@ type Props = {
 // match is relevant) outweighs "Also into" (supporting texture) — per the
 // Discover review correction. Same outer shell as CategoryUnitCard; the
 // content anatomy differs, the geometry doesn't.
-export function PersonUnitCard({ unit, variant, onPress }: Props) {
+export function PersonUnitCard({ unit, variant, zone, onPress }: Props) {
+  // If we're strictly in the results zone, force the canonical poster card.
+  if (zone === 'results') return <CompactPersonCard unit={unit} onPress={onPress} />
+
   // The People grid uses the same compact ~3:4 "poster" card as Lists'
   // topic/Site Picks grids (CategoryUnitCard's CompactGridCard) — one small
   // card language across the whole app instead of Discover's grid forking

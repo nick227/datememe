@@ -15,29 +15,17 @@ type Props = {
   state: StructureState
   gridShape?: GridShape
   columns?: number
+  zone?: string
   onPressItem: (unit: ContentUnit) => void
   onRetry?: () => void
 }
 
-// Default is deliberately the same on both Lists and Discover — "large,
-// few-per-row" cards with room for real content, not a dense inventory.
-// `columns` (from ContentCollection.options, a backend hint) overrides it;
-// `gridShape='dense'` is the one explicit opt-in for a tighter grid.
-//
-// Every grid — category-kind (topic groups + Site Picks) and person-kind
-// (Discover's People grid) alike — renders the compact ~3:4 "poster" card
-// (CategoryUnitCard/PersonUnitCard's grid-square path): a fixed small
-// shape, not "however wide the column is". Both kinds used to fork here
-// (person grids trusted the backend's `columns` hint instead), which read
-// as two different visual systems on the same app — unified per the "small
-// card style from Lists" request. The backend's `columns` hint is still
-// advisory only; frontend has final say.
-export function Grid({ testID, title, items, state, gridShape = 'square', columns, onPressItem, onRetry }: Props) {
+// Column count is driven by the caller (FeedModuleRenderer passes columns={4}
+// for Results, columns from server hints for Explore). Grid just applies the
+// number responsively — desktop uses the prop, mobile caps at 2.
+export function Grid({ testID, title, items, state, gridShape = 'square', columns = 3, zone, onPressItem, onRetry }: Props) {
   const isDesktop = useIsDesktop()
-  const isCompactCardGrid = gridShape !== 'dense'
-  const desktopColumns = isCompactCardGrid ? 4 : columns ?? (gridShape === 'dense' ? 4 : 2)
-  const mobileColumns = isCompactCardGrid || gridShape === 'dense' ? 2 : 1
-  const resolvedColumns = isDesktop ? desktopColumns : mobileColumns
+  const resolvedColumns = isDesktop ? columns : Math.min(columns, 2)
   const widthPercent = `${100 / resolvedColumns}%` as const
   const variant = gridShape === 'dense' ? 'grid-dense' : 'grid-square'
 
@@ -59,7 +47,7 @@ export function Grid({ testID, title, items, state, gridShape = 'square', column
         <View style={styles.grid}>
           {items.map((unit) => (
             <View key={unit.id} style={[styles.cell, { width: widthPercent }]}>
-              <ContentUnitCard unit={unit} variant={variant} onPress={() => onPressItem(unit)} />
+              <ContentUnitCard unit={unit} variant={variant} zone={zone} onPress={() => onPressItem(unit)} />
             </View>
           ))}
         </View>

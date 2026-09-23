@@ -73,6 +73,8 @@ pnpm dev
 
 ## 🚢 Deployment
 
+For the standalone Android staging APK, see the [Android QA runbook](docs/android-qa-runbook.md). It documents the EAS build, isolated Railway backend, and device verification steps.
+
 Datememe is built to be easily deployed on modern PaaS providers like **Railway** or **Render**. 
 
 It runs as three separate services:

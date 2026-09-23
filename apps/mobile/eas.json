@@ -1,0 +1,22 @@
+{
+  "cli": {
+    "version": "24.7.0",
+    "appVersionSource": "local"
+  },
+  "build": {
+    "qa": {
+      "distribution": "internal",
+      "developmentClient": false,
+      "environment": "preview",
+      "node": "22.22.0",
+      "pnpm": "10.12.1",
+      "env": {
+        "APP_VARIANT": "staging",
+        "EXPO_PUBLIC_API_URL": "https://qa-server-staging.up.railway.app"
+      },
+      "android": {
+        "buildType": "apk"
+      }
+    }
+  }
+}

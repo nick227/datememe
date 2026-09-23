@@ -11,6 +11,7 @@ type Props = {
   title?: string | null
   items: ContentUnit[]
   state: StructureState
+  zone?: string
   onPressItem: (unit: ContentUnit) => void
   onRetry?: () => void
 }
@@ -20,7 +21,7 @@ type Props = {
 // box. It must also be dramatically larger than surrounding Grid/Rail cards,
 // not "a Grid with one item" — the enforced minHeight is what makes that true
 // regardless of how little/much content the one featured unit carries.
-export function Spotlight({ testID, title, items, state, onPressItem, onRetry }: Props) {
+export function Spotlight({ testID, title, items, state, zone, onPressItem, onRetry }: Props) {
   if (state === 'ready' && items.length === 0) return null
 
   return (
@@ -37,7 +38,7 @@ export function Spotlight({ testID, title, items, state, onPressItem, onRetry }:
         <ErrorState subtitle="Couldn't load this." onRetry={onRetry} />
       ) : (
         <View style={styles.frame}>
-          <ContentUnitCard unit={items[0]!} variant="spotlight" onPress={() => onPressItem(items[0]!)} />
+          <ContentUnitCard unit={items[0]!} variant="spotlight" zone={zone} onPress={() => onPressItem(items[0]!)} />
         </View>
       )}
     </View>

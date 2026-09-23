@@ -157,27 +157,22 @@ export class ContentFeedService {
       categoriesByGroupId.get(c.groupId)!.push(c)
     }
 
-    // Grid is the baseline; a small group reads better as a Rail than a
-    // half-empty grid row — this is what gives topic sections visual rhythm
-    // instead of an unbroken wall of identical grids (proposal §1/§5). Always
-    // built from every group, filter or no — this is Explore content now
-    // (see the Results/Explore split below), and Explore stays the same
-    // ambient rhythm regardless of what's selected in the chips.
+    // Group modules are built without any size-based structure decision —
+    // their suggestedStructure will be assigned later by the deterministic
+    // Explore sequence (assignExploreSequence below).
     const groupModules = groups
       .flatMap((group: any) => {
         const cats = categoriesByGroupId.get(group.id) ?? []
         if (!cats.length) return []
         return Array.from({ length: Math.ceil(cats.length / 6) }, (_, chunk) => {
         const items = cats.slice(chunk * 6, (chunk + 1) * 6)
-        const isSmall = items.length <= 3
         return {
           moduleKind: 'collection',
           id: chunk === 0 ? group.slug : `${group.slug}-${chunk}`,
           type: 'lists',
           title: chunk === 0 ? group.label : `${group.label} · continued`,
           context: { groupSlug: group.slug },
-          suggestedStructure: isSmall ? 'rail' : 'grid',
-          options: isSmall ? undefined : { columns: 2 },
+          suggestedStructure: 'grid',
           items: items.map((c: any, i: number) => unitFor(c, chunk * 6 + i)),
         }
         })
@@ -245,25 +240,31 @@ export class ContentFeedService {
       if (resultsModule) beats.push(resultsModule)
     }
 
-    // Explore: the full ambient rhythm — Site Picks x12 -> Quick Picks ->
-    // every topic section, interleaved with periodic recommendation/
-    // comparison/quiz beats — always, whether or not a filter is active
-    // (reported live as "quick picks always at top" / filtered results
-    // getting buried under nudges — this is now a stable, unscoped browse
-    // feed that sits *after* Results rather than pretending to answer the
-    // filter itself).
-    beats.push(...sitePicksBeats, quickPicksBeat('quick-picks-0'))
+    // Explore: compose all the content beats in order, then assign the
+    // deterministic presentation sequence. The sequence is:
+    //   Editorial(spotlight) → Rail → Grid → Quick Picks → Dense → Rail → Grid → River → repeat
+    // Quick Picks beats keep their natural insertion positions rather than
+    // being duplicated to satisfy the sequence — when one lands, it occupies
+    // its slot and the sequence advances.
 
-    const spotlightPick = incompleteSorted.find((c: any) => (c.matchAnswerMultiplier ?? 0) >= 1.5 || c.popularityCount >= 20)
+    // First the spotlight pick — always included if any incomplete category
+    // exists (no data-quality threshold — that was a presentation decision
+    // based on score/popularity, not eligibility).
+    const spotlightPick = incompleteSorted[0]
     const comparisonCategories = categories
       .filter((c: any) => c.matchAnswerMultiplier != null && Math.abs(c.matchAnswerMultiplier - 1) >= 0.15)
       .slice(0, 5)
 
+    // Build the flat Explore beat list: Site Picks, then Quick Picks marker,
+    // then group modules interleaved with special beats.
+    const exploreBeats: any[] = [...sitePicksBeats]
+    exploreBeats.push(quickPicksBeat('quick-picks-0'))
+
     let quizCount = 1
     groupModules.forEach((m: any, i: number) => {
-      beats.push(m)
+      exploreBeats.push(m)
       if (i === 0 && incompleteSorted.length) {
-        beats.push({
+        exploreBeats.push({
           moduleKind: 'collection',
           id: 'add-more',
           type: 'prompt',
@@ -274,7 +275,7 @@ export class ContentFeedService {
         })
       }
       if (i === 1 && spotlightPick) {
-        beats.push({
+        exploreBeats.push({
           moduleKind: 'collection',
           id: 'taste-spotlight',
           type: 'recommendations',
@@ -291,7 +292,7 @@ export class ContentFeedService {
         })
       }
       if (i === 3 && comparisonCategories.length) {
-        beats.push({
+        exploreBeats.push({
           moduleKind: 'collection',
           id: 'how-you-compare',
           type: 'comparison',
@@ -310,10 +311,32 @@ export class ContentFeedService {
           })),
         })
       }
-      // A repeat Quick Picks beat every few groups keeps the interactive
-      // interruption recurring as the feed unfolds, not a one-time novelty.
-      if (i > 0 && i % 4 === 0) beats.push(quickPicksBeat(`quick-picks-${quizCount++}`))
+      if (i > 0 && i % 4 === 0) exploreBeats.push(quickPicksBeat(`quick-picks-${quizCount++}`))
     })
+
+    // Deterministic presentation sequence — applied positionally to every
+    // ordinary Explore beat. Quick Picks (type 'quiz') and semantic Spotlight
+    // modules (taste-spotlight) keep their own structure; everything else
+    // gets the next entry in: rail → grid → rail → grid → river (repeat).
+    // For grid slots, gridShape alternates between dense and square.
+    const EXPLORE_STRUCTURES = ['rail', 'grid', 'rail', 'grid', 'river'] as const
+    let exploreIndex = 0
+    for (const beat of exploreBeats) {
+      // Quick Picks markers keep their own structure.
+      if (beat.type === 'quiz') continue
+      // Genuinely semantic Spotlight modules (taste-spotlight) stay as-is.
+      if (beat.suggestedStructure === 'spotlight' && beat.type === 'recommendations') continue
+
+      const structure = EXPLORE_STRUCTURES[exploreIndex % EXPLORE_STRUCTURES.length]
+      beat.suggestedStructure = structure
+      if (structure === 'grid') {
+        const gridShape = exploreIndex % 2 === 0 ? 'dense' : 'square'
+        beat.options = { ...beat.options, gridShape, columns: 3 }
+      }
+      exploreIndex++
+    }
+
+    beats.push(...exploreBeats)
 
     // Explore must feel additive, not recycled: a category that's already
     // the direct answer to the filter (Results) shouldn't also turn up as an
@@ -399,6 +422,7 @@ export class ContentFeedService {
       title,
       context: { zone: 'results' },
       suggestedStructure: 'grid',
+      options: { columns: 4 },
       items,
     }
   }
@@ -432,13 +456,14 @@ export class ContentFeedService {
         })
         .filter(Boolean)
       if (!items.length) continue
+      // Structure will be overwritten by the deterministic Explore sequence
+      // (assignExploreSequence above) — no hardcoded structure here.
       modules.push({
         moduleKind: 'collection',
         id: `site-picks-${group.slug}`,
         type: 'lists',
         title: group.label,
         suggestedStructure: 'grid',
-        options: { columns: 2 },
         items,
       })
     }
@@ -615,73 +640,50 @@ export class ContentFeedService {
       // "Discover shows lists instead of users" / "filtering isn't working".
     }
 
-    if (candidateUnits.length) {
-      // Density varies with depth (2 vs 3 columns) so the back half of the
-      // feed doesn't read as an identical grid repeated forever — a real,
-      // if modest, grammar change rather than a purely cosmetic one.
-      const columns = isFirstPage || pageIndex % 2 === 0 ? 2 : 3
+    if (candidateUnits.length && isFiltered) {
+      // Filtered: one compact Results grid — same canonical shape as Lists.
       modules.push({
         moduleKind: 'collection',
         id: isFirstPage ? 'people-grid' : `people-grid-${offsetKey(opts.cursor)}`,
         type: 'recommendations',
         title: isFirstPage ? peopleGridTitle : null,
-        ...(isFiltered ? { context: { zone: 'results' } } : {}),
+        context: { zone: 'results' },
         suggestedStructure: 'grid',
-        options: { columns },
+        options: { columns: 4 },
         items: candidateUnits.map((u: any, i: number) => ({ ...u, position: i })),
       })
     }
 
-    if (isFirstPage) {
-      // Real results lead; Quick Picks is folded in right after them (and
-      // recurs later at the same periodic cadence as every other page) —
-      // never pinned ahead of the actual People grid (reported live as
-      // "quick picks are always at top, results should come before").
-      const topCandidate = page.data[0]
-      if (topCandidate && topCandidate.matchPercentage >= 90) {
-        modules.push({
-          moduleKind: 'collection',
-          id: 'highly-compatible',
-          type: 'recommendations',
-          title: 'Highly compatible',
-          suggestedStructure: 'spotlight',
-          items: [
-            { ...toPersonUnit(topCandidate, 0, alsoIntoByProfileId.get(topCandidate.profile.id) ?? []), position: 0 },
-          ],
-        })
+    // ── Explore: chunked people modules with varied presentation ────────
+    // Instead of one monolithic grid, split candidates into chunks and
+    // assign the same rail → grid → rail → grid → river cadence that
+    // Lists uses. Conditional modules (Highly Compatible, Quick Picks,
+    // Similar Taste, Shared Interests) are interleaved at natural
+    // positions within the sequence.
+    if (candidateUnits.length && !isFiltered) {
+      const CHUNK_SIZE = 6
+      const EXPLORE_STRUCTURES = ['rail', 'grid', 'rail', 'grid', 'river'] as const
+
+      // Build conditional variety modules first so we can interleave them.
+      let highlightModule: any = null
+      if (isFirstPage) {
+        const topCandidate = page.data[0]
+        if (topCandidate && topCandidate.matchPercentage >= 90) {
+          highlightModule = {
+            moduleKind: 'collection',
+            id: 'highly-compatible',
+            type: 'recommendations',
+            title: 'Highly compatible',
+            suggestedStructure: 'spotlight',
+            items: [
+              { ...toPersonUnit(topCandidate, 0, alsoIntoByProfileId.get(topCandidate.profile.id) ?? []), position: 0 },
+            ],
+          }
+        }
       }
 
-      // Same shared feature as Lists, same shape container — Quick Picks
-      // isn't a Lists-only widget, it's a site-wide taste-graph signal.
-      modules.push({ moduleKind: 'collection', id: 'quick-picks-quiz-0', type: 'quiz', title: 'Quick Picks', suggestedStructure: 'spotlight', items: [] })
-      // The InteractiveModule CTA linking out to the full-screen swipe
-      // experience (QuickPicksScreen) is deliberately NOT pushed here
-      // anymore — reported live as a non-standard dead-end ("useless as a
-      // slideup"). QuickPicksModule/QuickPicksScreen stay in the codebase
-      // shelved for a future reuse of the swipe interaction itself; the
-      // inline QuickPicksSpotlight comparison card above is unaffected.
-    } else if (pageIndex > 0 && pageIndex % 3 === 0) {
-      // Quick Picks recurs occasionally as the feed continues — an
-      // interruption within the flow (like Lists' own repeat cadence), never
-      // the structure the rest of the page hangs off of.
-      modules.push({
-        moduleKind: 'collection',
-        id: `quick-picks-quiz-${pageIndex}`,
-        type: 'quiz',
-        title: 'Quick Picks',
-        suggestedStructure: 'spotlight',
-        items: [],
-      })
-    }
-
-    // Rail and River variety continue on every page, not just the first — a
-    // long "infinite" feed that's only ever Grid after page one isn't the
-    // rhythm we're after (proposal correction). Both draw on the taste graph
-    // (ranked-#1 list picks + Quick Picks winners together), not just lists.
-    if (page.data.length) {
       let similarTasteModule: any = null
       let sharedInterestModule: any = null
-
       const tasteEntityIds = await this.getTasteGraphEntityIds(viewerProfileId)
       if (tasteEntityIds.length) {
         const candidateProfileIds = page.data.map((c: any) => c.profile.id)
@@ -735,11 +737,81 @@ export class ContentFeedService {
         }
       }
 
-      // Order alternates by page so a long session doesn't settle into the
-      // same Grid→Rail→River shape every single time (proposal correction) —
-      // both are still gated on real data existing, only the order varies.
-      const variety = pageIndex % 2 === 0 ? [similarTasteModule, sharedInterestModule] : [sharedInterestModule, similarTasteModule]
-      for (const m of variety) if (m) modules.push(m)
+      // Build the Explore beat list: chunked people modules interleaved
+      // with variety modules at natural positions.
+      const exploreBeats: any[] = []
+      const chunks = []
+      for (let i = 0; i < candidateUnits.length; i += CHUNK_SIZE) {
+        chunks.push(candidateUnits.slice(i, i + CHUNK_SIZE))
+      }
+
+      chunks.forEach((chunk, chunkIdx) => {
+        exploreBeats.push({
+          moduleKind: 'collection',
+          id: chunkIdx === 0
+            ? (isFirstPage ? 'people-grid' : `people-grid-${offsetKey(opts.cursor)}`)
+            : `people-grid-${chunkIdx}-${offsetKey(opts.cursor)}`,
+          type: 'recommendations',
+          title: chunkIdx === 0 && isFirstPage ? peopleGridTitle : null,
+          suggestedStructure: 'grid',
+          items: chunk.map((u: any, i: number) => ({ ...u, position: chunkIdx * CHUNK_SIZE + i })),
+        })
+
+        // Interleave variety modules at natural positions between chunks.
+        if (chunkIdx === 0 && highlightModule) exploreBeats.push(highlightModule)
+        if (chunkIdx === 0 && isFirstPage) {
+          exploreBeats.push({ moduleKind: 'collection', id: 'quick-picks-quiz-0', type: 'quiz', title: 'Quick Picks', suggestedStructure: 'spotlight', items: [] })
+        }
+        if (chunkIdx === 1 && similarTasteModule) exploreBeats.push(similarTasteModule)
+        if (chunkIdx === 2 && sharedInterestModule) exploreBeats.push(sharedInterestModule)
+      })
+
+      // If we had too few chunks for the interleaved positions, push the
+      // remaining variety modules at the end.
+      if (chunks.length <= 1 && similarTasteModule) exploreBeats.push(similarTasteModule)
+      if (chunks.length <= 2 && sharedInterestModule) exploreBeats.push(sharedInterestModule)
+      if (chunks.length <= 0 && isFirstPage) {
+        exploreBeats.push({ moduleKind: 'collection', id: 'quick-picks-quiz-0', type: 'quiz', title: 'Quick Picks', suggestedStructure: 'spotlight', items: [] })
+      }
+
+      // Quick Picks on later pages
+      if (!isFirstPage && pageIndex > 0 && pageIndex % 3 === 0) {
+        exploreBeats.push({
+          moduleKind: 'collection',
+          id: `quick-picks-quiz-${pageIndex}`,
+          type: 'quiz',
+          title: 'Quick Picks',
+          suggestedStructure: 'spotlight',
+          items: [],
+        })
+      }
+
+      // Apply the deterministic Explore cadence to non-special beats.
+      let exploreIndex = 0
+      for (const beat of exploreBeats) {
+        if (beat.type === 'quiz') continue
+        // Semantic Spotlight (Highly Compatible) keeps its structure.
+        if (beat.suggestedStructure === 'spotlight' && beat.id === 'highly-compatible') continue
+        // Explicitly-set variety modules (Similar Taste rail, Shared
+        // Interests river) keep their structure.
+        if (beat.id?.startsWith('similar-taste')) continue
+        if (beat.id?.startsWith('shared-interest')) continue
+
+        const structure = EXPLORE_STRUCTURES[exploreIndex % EXPLORE_STRUCTURES.length]
+        beat.suggestedStructure = structure
+        if (structure === 'grid') {
+          const gridShape = exploreIndex % 2 === 0 ? 'dense' : 'square'
+          beat.options = { ...beat.options, gridShape, columns: 3 }
+        }
+        exploreIndex++
+      }
+
+      modules.push(...exploreBeats)
+    } else if (candidateUnits.length === 0 && !isFiltered) {
+      // No candidates at all — still push Quick Picks so the page isn't empty.
+      if (isFirstPage) {
+        modules.push({ moduleKind: 'collection', id: 'quick-picks-quiz-0', type: 'quiz', title: 'Quick Picks', suggestedStructure: 'spotlight', items: [] })
+      }
     }
 
     return { ...(summaryAndChips ?? {}), data: modules, meta: page.meta, ...(page.filterNotice ? { filterNotice: page.filterNotice } : {}) }

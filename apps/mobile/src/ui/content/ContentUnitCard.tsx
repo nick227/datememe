@@ -7,6 +7,7 @@ import type { ContentUnit } from './types'
 type Props = {
   unit: ContentUnit
   variant: RenderVariant
+  zone?: string
   onPress: () => void
 }
 
@@ -17,16 +18,16 @@ type Props = {
  * the pixel level. Forcing every kind through one literal layout would just
  * relocate the rigidity this system exists to remove.
  */
-export function ContentUnitCard({ unit, variant, onPress }: Props) {
+export function ContentUnitCard({ unit, variant, zone, onPress }: Props) {
   switch (unit.kind) {
     case 'person':
-      return <PersonUnitCard unit={unit} variant={variant} onPress={onPress} />
+      return <PersonUnitCard unit={unit} variant={variant} zone={zone} onPress={onPress} />
     case 'insight':
       return <InsightUnitCard unit={unit} variant={variant} />
     case 'category':
     case 'entity':
     case 'poll':
     default:
-      return <CategoryUnitCard unit={unit} variant={variant} onPress={onPress} />
+      return <CategoryUnitCard unit={unit} variant={variant} zone={zone} onPress={onPress} />
   }
 }

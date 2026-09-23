@@ -30,6 +30,12 @@
           "photosPermission": "Datememe uses your photo library so you can add photos to your profile."
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "6343c118-dcf3-4516-a55a-cea4b9245654"
+      }
+    },
+    "owner": "hzane111"
   }
 }

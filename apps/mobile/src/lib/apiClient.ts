@@ -1,8 +1,12 @@
 import { createApiClient } from '@project/sdk'
 import { getToken } from './authToken'
+import Constants from 'expo-constants'
 
-// EXPO_PUBLIC_-prefixed env vars are inlined at build time by Expo — see .env.example.
-const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3001'
+// app.config.ts validates and embeds the endpoint for this artifact.
+const API_URL = Constants.expoConfig?.extra?.apiUrl
+if (typeof API_URL !== 'string' || !API_URL) {
+  throw new Error('Missing API configuration; rebuild with EXPO_PUBLIC_API_URL set')
+}
 
 export function initApiClient() {
   createApiClient({

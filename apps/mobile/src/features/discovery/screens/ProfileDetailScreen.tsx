@@ -237,9 +237,9 @@ export function ProfileDetailScreen({ route, navigation }: Props) {
 
             {insights?.length ? <MatchDimensionsBreakdown insights={insights} /> : null}
           </View>
-        </View>
 
         {relatedProfiles.length > 0 ? (
+          
           <Rail
             testID="profile-detail.related"
             title="More to discover"
@@ -248,7 +248,10 @@ export function ProfileDetailScreen({ route, navigation }: Props) {
             cardWidth={220}
             onPressItem={onPressRelated}
           />
+          
         ) : null}
+
+        </View>
       </ScrollView>
 
       <ActionSheet testID="profile-detail.dialog" config={sheet.config} onDismiss={sheet.dismiss} />

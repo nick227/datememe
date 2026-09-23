@@ -25,9 +25,13 @@ type Props = {
 }
 
 /**
- * The one place that turns a `suggestedStructure` hint into an actual
- * component — advisory, never authoritative (proposal §1): a missing or
- * unrecognized hint falls back to Grid, the baseline grammar.
+ * The one place that turns a FeedModule into an actual component.
+ *
+ * Results = one compact, predictable grammar (4-column Grid, always).
+ * Explore = honor the varied feed grammar the server sends.
+ *
+ * The server's `suggestedStructure` is advisory for Explore and ignored
+ * entirely for Results — FeedModuleRenderer owns the UI contract.
  */
 export function FeedModuleRenderer({ module, state, onPressItem, onPressQuickPicks, quickPicksPeopleMode }: Props) {
   if (!isCollection(module)) {
@@ -40,27 +44,41 @@ export function FeedModuleRenderer({ module, state, onPressItem, onPressQuickPic
   // module.id keys the query so multiple instances down the feed don't share one prompt.
   if (module.type === 'quiz') return <QuickPicksSpotlight moduleId={module.id} peopleMode={quickPicksPeopleMode} />
 
-  const shared = { testID: `feed.module.${module.id}`, title: module.title, items: module.items, state, onPressItem }
+  const zone = module.context?.zone
 
+  const shared = { testID: `feed.module.${module.id}`, title: module.title, items: module.items, state, onPressItem, zone }
+
+  // Personal history — collapsed summary, not a full structure.
+  if (PERSONAL_HISTORY_MODULE_IDS.has(module.id)) {
+    return <PersonalHistorySummary {...shared} itemNoun={module.type === 'favorites' ? 'favorite' : 'list'} />
+  }
+
+  // ── RESULTS = one compact, predictable grammar. ──────────────────────
+  // Ignore the server's structure/column hints entirely — Results gets a
+  // 4-column compact Grid (responsive down to 2 on mobile via Grid).
+  if (zone === 'results') {
+    return <Grid {...shared} gridShape="square" columns={4} />
+  }
+
+  // ── EXPLORE = honor the varied feed grammar. ─────────────────────────
   switch (module.suggestedStructure) {
-    case 'rail': {
-      // Your lists / Your favorites collapse to a one-line summary instead
-      // of rendering as a Rail at all — see PersonalHistorySummary.
-      if (PERSONAL_HISTORY_MODULE_IDS.has(module.id)) {
-        return <PersonalHistorySummary {...shared} itemNoun={module.type === 'favorites' ? 'favorite' : 'list'} />
-      }
-      // Small topic-group rails (type 'lists') run large enough to show
-      // ranked covers/items inside each card; contextual nudge rails
-      // (Add more, Because you liked X) stay narrower.
-      const isWideRail = module.type === 'lists' || module.type === 'favorites'
-      return <Rail {...shared} cardWidth={isWideRail ? 300 : undefined} />
-    }
+    case 'rail':
+      return <Rail {...shared} />
+
     case 'spotlight':
       return <Spotlight {...shared} />
+
     case 'river':
       return <River {...shared} />
+
     case 'grid':
     default:
-      return <Grid {...shared} gridShape={module.options?.gridShape} columns={module.options?.columns} />
+      return (
+        <Grid
+          {...shared}
+          gridShape={module.options?.gridShape}
+          columns={module.options?.columns ?? 3}
+        />
+      )
   }
 }
