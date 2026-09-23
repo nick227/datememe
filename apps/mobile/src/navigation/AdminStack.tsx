@@ -1,3 +1,4 @@
+import { AdminContentScreen } from '../features/admin/screens/AdminContentScreen'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { AdminDashboardScreen } from '../features/admin/screens/AdminDashboardScreen'
 import { AdminModerationScreen } from '../features/admin/screens/AdminModerationScreen'
@@ -25,7 +26,8 @@ const Stack = createNativeStackNavigator<AdminStackParamList>()
 
 export function AdminStack() {
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Navigator initialRouteName="AdminDashboard" screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="AdminContent" component={AdminContentScreen} />
       <Stack.Screen name="AdminDashboard" component={AdminDashboardScreen} />
       <Stack.Screen name="AdminModeration" component={AdminModerationScreen} />
       <Stack.Screen name="AdminUsers" component={AdminUsersScreen} />

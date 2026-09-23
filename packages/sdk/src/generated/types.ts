@@ -4,6 +4,22 @@
  */
 
 export interface paths {
+    "/admin/catalog": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getAdminCatalog"];
+        put?: never;
+        post: operations["commandAdminCatalog"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/auth/register": {
         parameters: {
             query?: never;
@@ -2751,6 +2767,91 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    getAdminCatalog: {
+        parameters: {
+            query?: {
+                conceptId?: string;
+                draftId?: string;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Private content factory workspace */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+    };
+    commandAdminCatalog: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @enum {string} */
+                    action: "concept" | "concept-status" | "enqueue" | "execute" | "operation" | "cancel" | "retry" | "draft" | "matches" | "candidate" | "resolve-existing" | "publish" | "facet-accept" | "facet-remove";
+                    id?: string;
+                    ids?: string[];
+                    indices?: number[];
+                    label?: string;
+                    /** @enum {string} */
+                    status?: "NEW" | "USE" | "SKIP";
+                    /** @enum {string} */
+                    kind?: "CONCEPTS" | "LIST_IDEAS" | "VALUES" | "FACETS";
+                    count?: number;
+                    brief?: string;
+                    title?: string;
+                    slug?: string;
+                    name?: string;
+                    prompt?: string;
+                    entityTypeId?: string | null;
+                    groupId?: string | null;
+                    resolvedEntityId?: string | null;
+                    /** @enum {string} */
+                    approvalState?: "DRAFT" | "APPROVED" | "REJECTED";
+                    /** @enum {string} */
+                    reviewState?: "PENDING" | "APPROVED" | "REJECTED";
+                    /** @enum {string} */
+                    resolutionState?: "UNRESOLVED" | "EXISTING" | "NEW" | "AMBIGUOUS";
+                    query?: string;
+                    rules?: {
+                        minItems: number;
+                        maxItems: number;
+                        /** @enum {string} */
+                        orderingMode: "RANKED" | "UNRANKED";
+                    };
+                };
+            };
+        };
+        responses: {
+            /** @description Action result; generation output remains private until publication */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        result?: unknown;
+                    };
+                };
+            };
+        };
+    };
     register: {
         parameters: {
             query?: never;

@@ -3,12 +3,13 @@
   "version": "0.0.1",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "tsc",
+    "build": "tsc && mkdir -p dist/prompts/catalog && cp src/prompts/catalog/*.md dist/prompts/catalog/",
     "start": "node dist/index.js",
     "test": "vitest run",
     "seed:taxonomy-media": "tsx src/scripts/seed-taxonomy-media.ts",
     "typecheck": "tsc --noEmit",
-    "lint": "echo 'no lint configured for server'"
+    "lint": "echo 'no lint configured for server'",
+    "prompt:preview": "tsx src/scripts/preview-catalog-prompt.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^9.3.0",

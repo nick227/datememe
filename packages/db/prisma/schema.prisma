@@ -31,6 +31,7 @@ model User {
   passwordResetTokens     PasswordResetToken[]
   emailVerificationTokens EmailVerificationToken[]
   pushTokens              PushToken[]
+  generationOperations    GenerationOperation[]
   adminAuditEvents        AdminAuditEvent[]
   membershipGrants        MembershipGrant[]        @relation("GrantRecipient")
   grantsIssued            MembershipGrant[]        @relation("GrantIssuedBy")
@@ -260,6 +261,7 @@ model EntityType {
   isActive       Boolean  @default(true)
   createdAt      DateTime @default(now())
 
+  categoryDrafts    CategoryDraft[]
   entities          Entity[]
   categories        Category[]
   entitySubmissions EntitySubmission[]
@@ -305,6 +307,8 @@ model Entity {
   curatedForCategories CategoryEntity[]
   mediaAssets          MediaAsset[]
   externalRefs         EntityExternalRef[]
+  candidates           EntityCandidate[]
+  facets               EntityFacet[]
 
   parentId String?
   parent   Entity?  @relation("EntityHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
@@ -459,6 +463,7 @@ model CategoryGroup {
   createdAt DateTime @default(now())
 
   categories Category[]
+  categoryDrafts CategoryDraft[]
 }
 
 model Category {
@@ -474,6 +479,8 @@ model Category {
   isMatchSignal   Boolean          @default(true)
   isPremiumOnly   Boolean          @default(false)
   isActive        Boolean          @default(true)
+  poolMode        String         @default("FILTERED")
+  authoringDraft  CategoryDraft?
   popularityCount Int              @default(0)
   parentEntityId  String?
   topPickEntityId String?
@@ -953,4 +960,94 @@ model CouponRedemption {
 
   @@index([userId])
   @@index([couponCodeId])
+}
+
+// Private authoring objects. Concepts are creative seeds, not public taxonomy.
+model Concept {
+  id     String          @id @default(cuid())
+  key    String          @unique
+  label  String
+  status String          @default("NEW")
+  drafts CategoryDraft[]
+}
+
+model GenerationOperation {
+  id                String            @id @default(cuid())
+  kind              String
+  targetId          String?
+  input             Json
+  model             String
+  systemPrompt      String            @db.Text
+  userPrompt        String            @db.Text
+  promptVersion     String
+  status            String            @default("PENDING")
+  output            Json?
+  error             String?           @db.Text
+  requestedByUserId String
+  startedAt         DateTime?
+  completedAt       DateTime?
+  createdAt         DateTime          @default(now())
+  requestedBy       User              @relation(fields: [requestedByUserId], references: [id], onDelete: Restrict)
+  drafts            CategoryDraft[]
+  candidates        EntityCandidate[]
+  facets            EntityFacet[]
+
+  @@index([status, createdAt])
+}
+
+model CategoryDraft {
+  id                    String              @id @default(cuid())
+  conceptId             String
+  generationOperationId String
+  title                 String
+  slug                  String
+  prompt                String              @db.Text
+  entityTypeId          String?
+  groupId               String?
+  rules                 Json
+  approvalState         String              @default("DRAFT")
+  publishedCategoryId   String?             @unique
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+  concept               Concept             @relation(fields: [conceptId], references: [id], onDelete: Restrict)
+  operation             GenerationOperation @relation(fields: [generationOperationId], references: [id], onDelete: Restrict)
+  entityType            EntityType?         @relation(fields: [entityTypeId], references: [id], onDelete: Restrict)
+  group                 CategoryGroup?      @relation(fields: [groupId], references: [id], onDelete: Restrict)
+  publishedCategory     Category?           @relation(fields: [publishedCategoryId], references: [id], onDelete: Restrict)
+  candidates            EntityCandidate[]
+
+  @@unique([conceptId, slug])
+  @@index([conceptId, createdAt])
+}
+
+model EntityCandidate {
+  id                    String              @id @default(cuid())
+  categoryDraftId       String
+  generationOperationId String
+  name                  String
+  slug                  String
+  details               String              @db.Text
+  resolutionState       String              @default("UNRESOLVED")
+  resolvedEntityId      String?
+  reviewState           String              @default("PENDING")
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+  draft                 CategoryDraft       @relation(fields: [categoryDraftId], references: [id], onDelete: Cascade)
+  operation             GenerationOperation @relation(fields: [generationOperationId], references: [id], onDelete: Restrict)
+  entity                Entity?             @relation(fields: [resolvedEntityId], references: [id], onDelete: Restrict)
+
+  @@unique([categoryDraftId, slug])
+}
+
+model EntityFacet {
+  id                    String               @id @default(cuid())
+  entityId              String
+  axis                  String               @db.VarChar(60)
+  value                 String               @db.VarChar(120)
+  source                String
+  generationOperationId String?
+  entity                Entity               @relation(fields: [entityId], references: [id], onDelete: Cascade)
+  operation             GenerationOperation? @relation(fields: [generationOperationId], references: [id], onDelete: Restrict)
+
+  @@unique([entityId, axis, value])
 }

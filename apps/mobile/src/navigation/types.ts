@@ -48,6 +48,7 @@ export type ProfileStackParamList = {
 // apps/admin page — see CLAUDE.md's migration batches.
 export type AdminStackParamList = {
   AdminDashboard: undefined
+  AdminContent: undefined
   AdminModeration: undefined
   AdminUsers: undefined
   AdminUserDetail: { userId: string }

@@ -1,6 +1,6 @@
 # AI content factory: V1 implementation spec
 
-Status: agreed scope translated into an implementation spec. Documentation only; the features below are not implemented yet.
+Status: local V1 implemented on 2026-09-22. See [content factory runbook](content-factory-runbook.md) for commands, verified behavior, and current limits. This document describes the intended workflow; the runbook records the delivered scope.
 
 **V1 proves a simple bulk poll pipeline. Concepts create content; taxonomy organizes content; Lists are polls; Entities are shared values.** Concept is a cheap authoring object, never a public taxonomy node. This specification supersedes the earlier proposal to merge Concept and taxonomy.
 

@@ -1,3 +1,4 @@
+import { curatedPool } from '../lib/categoryPool'
 import { db } from '@project/db'
 import { LIST_PREVIEW_SELECT, serializeListForViewer } from '../lib/serializers'
 import { resolveEntitlements } from '../lib/entitlements'
@@ -53,6 +54,7 @@ export class ListService {
         where: {
           id: { in: entityIds },
           entityTypeId: category.entityTypeId,
+          ...curatedPool(category),
           OR: [
             { status: 'APPROVED' },
             { status: { in: ['PENDING', 'REJECTED'] }, submittedByProfileId: profileId },

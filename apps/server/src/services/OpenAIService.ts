@@ -1,10 +1,26 @@
 import OpenAI from 'openai';
+import { catalogOutputSchema } from './CatalogPrompts'
+import { GenerationKind, generationTimeoutMs } from '../prompts/catalog/config'
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY || 'dummy_key',
 });
 
 export class OpenAIService {
+  static async generateCatalog(kind: GenerationKind, prompts: { model: string; systemPrompt: string; userPrompt: string }): Promise<unknown> {
+    if (!process.env.OPENAI_API_KEY) throw new Error('OPENAI_API_KEY is not configured')
+    const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY, timeout: generationTimeoutMs, maxRetries: 0 })
+    const response = await client.chat.completions.create({
+      model: prompts.model,
+      messages: [{ role: 'system', content: prompts.systemPrompt }, { role: 'user', content: prompts.userPrompt }],
+      response_format: { type: 'json_schema', json_schema: { name: `catalog_${kind.toLowerCase()}`, strict: true, schema: catalogOutputSchema(kind) } },
+      max_tokens: 8000,
+    })
+    const choice = response.choices[0]
+    if (!choice || choice.finish_reason !== 'stop' || choice.message.refusal || !choice.message.content) throw new Error('Generation was refused or incomplete; no proposals saved')
+    return JSON.parse(choice.message.content)
+  }
+
   static async generateListValues(categoryName: string, prompt: string, count: number = 5): Promise<string[]> {
     try {
       const response = await openai.chat.completions.create({

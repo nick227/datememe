@@ -1,3 +1,4 @@
+import { curatedPool } from '../lib/categoryPool'
 import { db } from '@project/db';
 import { QuickPickContextType, Entity } from '@project/db';
 import { ENTITY_SELECT, serializeEntity } from '../lib/serializers';
@@ -74,7 +75,9 @@ export class QuickPickService {
       else if (ctx.type === 'PARENT_ENTITY') baseWhere.parentId = ctx.id;
       else if (ctx.type === 'CATEGORY') {
         const category = await db.category.findUnique({ where: { id: ctx.id } });
-        if (category) baseWhere.entityTypeId = category.entityTypeId;
+        if (!category) continue;
+        baseWhere.entityTypeId = category.entityTypeId;
+        Object.assign(baseWhere, curatedPool(category));
       }
       else if (ctx.type === 'TAG') {
         baseWhere.tags = { some: { tagId: ctx.id } };
@@ -196,6 +199,14 @@ export class QuickPickService {
   }
 
   static async submitChoice(profileId: string, contextType: QuickPickContextType, contextId: string, winnerEntityId: string, loserEntityId: string) {
+    if (contextType === 'CATEGORY') {
+      const category = await db.category.findUnique({ where: { id: contextId } });
+      if (!category) throw { statusCode: 404, message: 'Category not found' };
+      if (category.poolMode === 'CURATED') {
+        const count = await db.entity.count({ where: { id: { in: [winnerEntityId, loserEntityId] }, entityTypeId: category.entityTypeId, status: 'APPROVED', ...curatedPool(category) } });
+        if (count !== 2) throw { statusCode: 400, message: 'Values are not in this curated list' };
+      }
+    }
     if (winnerEntityId === loserEntityId) throw { statusCode: 400, message: 'Winner and loser must differ' };
     const { entity1Id, entity2Id } = this.getCanonicalPair(winnerEntityId, loserEntityId);
 
@@ -251,6 +262,11 @@ export class QuickPickService {
    * Helper to submit a Quick Pick Answer
    */
   static async recordSignal(profileId: string, contextType: QuickPickContextType, contextId: string, winnerId: string, loserId: string) {
+    if (contextType === 'CATEGORY') {
+      const category = await db.category.findUnique({ where: { id: contextId } });
+      if (!category) throw { statusCode: 404, message: 'Category not found' };
+      if (category.poolMode === 'CURATED' && await db.entity.count({ where: { id: { in: [winnerId, loserId] }, entityTypeId: category.entityTypeId, status: 'APPROVED', ...curatedPool(category) } }) !== 2) throw { statusCode: 400, message: 'Values are not in this curated list' };
+    }
     const canonical = this.getCanonicalPair(winnerId, loserId);
     
     return await db.quickPickSignal.create({

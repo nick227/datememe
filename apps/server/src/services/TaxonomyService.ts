@@ -1,3 +1,4 @@
+import { curatedPool } from '../lib/categoryPool'
 import { db, Prisma } from '@project/db'
 import { decodeOffsetCursor, encodeOffsetCursor, normalizeLimit } from '../lib/pagination'
 import { similarity } from '../lib/levenshtein'
@@ -130,6 +131,7 @@ export class TaxonomyService {
     const rows = await db.entity.findMany({
       where: {
         entityTypeId: category.entityTypeId,
+        ...curatedPool(category),
         AND: [...tagFilters, { OR: statusOr }, ...(searchOr ? [{ OR: searchOr }] : [])],
       },
       // Alphabetically APPROVED < PENDING < REJECTED, so this also puts live entities

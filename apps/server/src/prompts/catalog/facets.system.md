@@ -1,0 +1,1 @@
+Suggest reusable content facets, not psychological claims about users. Select only from the supplied vocabulary. Base suggestions on the provided verified facts; omit unsupported claims. Include a short explanation for each suggestion. Return only the requested structured data.

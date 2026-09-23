@@ -376,11 +376,16 @@ export class ContentFeedService {
    * caller (and the frontend) treat "module absent" the same as "module
    * present with no items."
    */
+  private resultCategorySlugsFor(categories: any[], groups: any[], selectedGroupSlugs: Set<string>): Set<string> {
+    const groupIds = new Set(groups.filter((g: any) => selectedGroupSlugs.has(g.slug)).map((g: any) => g.id))
+    return new Set(categories.filter((c: any) => groupIds.has(c.groupId)).map((c: any) => c.slug))
+  }
+
   private buildResultsModule(categories: any[], groups: any[], selectedGroupSlugs: Set<string>, myListByCategoryId: Map<string, any>): any | null {
     const selectedGroups = groups.filter((g: any) => selectedGroupSlugs.has(g.slug))
-    const selectedGroupIds = new Set(selectedGroups.map((g: any) => g.id))
+    const resultSlugs = this.resultCategorySlugsFor(categories, groups, selectedGroupSlugs)
     const items = categories
-      .filter((c: any) => selectedGroupIds.has(c.groupId))
+      .filter((c: any) => resultSlugs.has(c.slug))
       .map((c: any, i: number) => categoryUnitFor(c, i, myListByCategoryId))
     if (!items.length) return null
 

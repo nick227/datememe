@@ -103,12 +103,12 @@ describe('ContentFeedService', () => {
       expect(resultsModule.suggestedStructure).toBe('grid')
       expect(resultsModule.items.map((i: any) => i.id)).toEqual([category.slug])
 
-      // Explore is unscoped by the filter — the same group's normal topic
-      // module still appears further down, undeduped against Results.
-      const topicModule = filtered.data.find((m: any) => m.id === group.slug)
-      expect(topicModule).toBeTruthy()
-      expect(topicModule.items.map((i: any) => i.id)).toContain(category.slug)
-      expect(filtered.data.indexOf(resultsModule)).toBeLessThan(filtered.data.indexOf(topicModule))
+      // Results own these category cards; Explore retains other topics/insights.
+      expect(filtered.data.find((m: any) => m.id === group.slug)).toBeUndefined()
+      for (const module of filtered.data.filter((m: any) => !['results', 'your-lists'].includes(m.id))) {
+        expect(module.items.some((item: any) => item.kind === 'category' && item.id === category.slug)).toBe(false)
+      }
+
     })
 
     it('getDiscoverFeed: a demographic filter tags the people-grid module with zone:"results"; unfiltered carries no zone', async () => {
