@@ -6,7 +6,7 @@ export async function profileResultsRefreshJob(payload: { metric: ResultMetric, 
   if (metric === 'MOST_LIKED') {
     const swipeAgg = await db.swipe.groupBy({
       by: ['targetProfileId'],
-      where: { liked: true },
+      where: { action: 'LIKE' },
       _count: { targetProfileId: true },
       orderBy: { _count: { targetProfileId: 'desc' } },
       take: 100
@@ -14,7 +14,7 @@ export async function profileResultsRefreshJob(payload: { metric: ResultMetric, 
     
     const sortedProfiles = swipeAgg.map(agg => ({
       profileId: agg.targetProfileId,
-      score: agg._count.targetProfileId
+      score: (agg._count as any).targetProfileId ?? 0
     }))
     
     await updateGenericResultSet('PROFILE', 'MOST_LIKED', 'GLOBAL', null, window, sortedProfiles, 0)
@@ -30,7 +30,7 @@ export async function profileResultsRefreshJob(payload: { metric: ResultMetric, 
     
     const sortedProfiles = listAgg.map(agg => ({
       profileId: agg.profileId,
-      score: agg._count.profileId
+      score: (agg._count as any).profileId ?? 0
     }))
     
     await updateGenericResultSet('PROFILE', 'MOST_ACTIVE', 'GLOBAL', null, window, sortedProfiles, 0)
@@ -39,7 +39,7 @@ export async function profileResultsRefreshJob(payload: { metric: ResultMetric, 
     // POC: Profiles created recently or gaining recent likes (Mocked for POC by reusing MOST_LIKED with a "velocity" twist)
     const swipeAgg = await db.swipe.groupBy({
       by: ['targetProfileId'],
-      where: { liked: true },
+      where: { action: 'LIKE' },
       _count: { targetProfileId: true },
       orderBy: { _count: { targetProfileId: 'desc' } },
       take: 100
@@ -48,7 +48,7 @@ export async function profileResultsRefreshJob(payload: { metric: ResultMetric, 
     // Simulate "Rising" by shuffling the top results or heavily weighting recent ones
     const sortedProfiles = swipeAgg.map((agg, i) => ({
       profileId: agg.targetProfileId,
-      score: Math.round(agg._count.targetProfileId * (1 + (Math.random() * 0.5)))
+      score: Math.round(((agg._count as any).targetProfileId ?? 0) * (1 + (Math.random() * 0.5)))
     })).sort((a, b) => b.score - a.score)
     
     await updateGenericResultSet('PROFILE', 'RISING', 'GLOBAL', null, window, sortedProfiles, 0)
@@ -102,14 +102,20 @@ async function updateGenericResultSet(
   }
 
   await db.$transaction(async (tx) => {
-    // Upsert the result set
-    const resultSet = await tx.resultSet.upsert({
-      where: { 
-        idx_result_set_unique: { subjectType, metric, scopeType, scopeValue, window }
-      },
-      update: { takeCount },
-      create: { subjectType, metric, scopeType, scopeValue, window, takeCount }
+    // Upsert the result set safely without unique constraint on nullable field
+    let resultSet = await tx.resultSet.findFirst({
+      where: { subjectType, metric, scopeType, scopeValue, window }
     })
+    if (resultSet) {
+      resultSet = await tx.resultSet.update({
+        where: { id: resultSet.id },
+        data: { takeCount }
+      })
+    } else {
+      resultSet = await tx.resultSet.create({
+        data: { subjectType, metric, scopeType, scopeValue, window, takeCount }
+      })
+    }
 
     // Delete old entries
     await tx.resultEntry.deleteMany({
