@@ -1,4 +1,3 @@
-import { useState, useRef, useEffect } from 'react'
 import { Text, FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet, View, Image } from 'react-native'
 import { useIsFocused } from '@react-navigation/native'
 import { ActionSheet, useActionSheet } from '../../../ui/ActionSheet'
@@ -15,7 +14,7 @@ import {
   useUnmatchConversation,
   useSubmitReport,
 } from '@project/sdk'
-import Animated, { FadeIn, FadeOut, ZoomIn, ZoomOut } from 'react-native-reanimated'
+import Animated, { ZoomIn, ZoomOut } from 'react-native-reanimated'
 import * as ImagePicker from 'expo-image-picker'
 import { ScreenContainer } from '../../../ui/ScreenContainer'
 import { TextField } from '../../../ui/TextField'
@@ -47,7 +46,7 @@ export function ConversationScreen({ route, navigation }: Props) {
 
   useEffect(() => {
     markAsRead.mutate()
-  }, [])
+  }, [markAsRead])
   const headerHeight = useHeaderHeight()
 
   // Get the conversation to access the avatar
@@ -62,6 +61,9 @@ export function ConversationScreen({ route, navigation }: Props) {
   const otherReadAt = conversation?.participantReadState?.find((p: any) => p.profileId === otherParticipant?.id)?.lastReadAt
   const myLastMessage = rows.find((m) => m.senderId === myProfileId)
   const isSeen = !!(myLastMessage && otherReadAt && new Date(otherReadAt) >= new Date(myLastMessage.createdAt))
+
+  const isSystemThread = conversation?.type === 'SYSTEM'
+  const contextLine = isSystemThread ? null : '8 shared favorites · strongest overlap: Music'
 
   async function handleSend() {
     const body = draft.trim()
@@ -204,21 +206,32 @@ export function ConversationScreen({ route, navigation }: Props) {
           testID="conversation.profile"
           style={styles.headerProfile}
           onPress={() =>
-            otherParticipant &&
+            !isSystemThread && otherParticipant &&
             (navigation.getParent()?.navigate as any)('Discover', {
               screen: 'ProfileDetail',
               params: { profileId: otherParticipant.id, displayName: otherParticipant.displayName },
             })
           }
         >
-          {otherParticipant?.avatarUrl ? (
+          {isSystemThread ? (
+            <View style={[styles.headerAvatar, { backgroundColor: colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' }]}>
+              <Icon name="Bell" size={16} color={colors.inkMuted} />
+            </View>
+          ) : otherParticipant?.avatarUrl ? (
             <Image source={{ uri: otherParticipant.avatarUrl }} style={styles.headerAvatar} />
           ) : (
             <View style={[styles.headerAvatar, { backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center' }]}>
               <Text style={{ color: colors.primary, fontWeight: 'bold' }}>{displayName.charAt(0).toUpperCase()}</Text>
             </View>
           )}
-          <Typography variant="heading">{displayName}</Typography>
+          <View style={styles.headerTextContainer}>
+            <Typography variant="heading">{isSystemThread ? 'Datememe' : displayName}</Typography>
+            {contextLine && (
+              <Typography variant="label" style={styles.headerContext}>
+                {contextLine}
+              </Typography>
+            )}
+          </View>
         </Pressable>
 
         <Pressable testID="conversation.options" onPress={handleOptions} style={styles.headerBtn}>
@@ -247,6 +260,26 @@ export function ConversationScreen({ route, navigation }: Props) {
           contentContainerStyle={styles.messages}
           onEndReached={() => messages.hasNextPage && messages.fetchNextPage()}
           renderItem={({ item, index }) => {
+            if (isSystemThread) {
+              const cta = item.attachments?.cta
+              return (
+                <View style={styles.systemCardContainer}>
+                  <View style={styles.systemCard}>
+                    <Text style={styles.systemCardTitle}>Datememe Insights</Text>
+                    <Text style={styles.systemCardBody}>{item.body}</Text>
+                    {cta && (
+                      <Pressable style={styles.systemCardCta} onPress={() => console.log('Navigate to:', cta.route)}>
+                        <Text style={styles.systemCardCtaText}>{cta.label}</Text>
+                      </Pressable>
+                    )}
+                    <Text style={styles.systemCardTime}>
+                      {new Date(item.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                    </Text>
+                  </View>
+                </View>
+              )
+            }
+
             const isOwn = item.senderId === myProfileId
             const prevItem = rows[index - 1] // Newer message (rendered below this one)
 
@@ -312,42 +345,44 @@ export function ConversationScreen({ route, navigation }: Props) {
         />
       )}
 
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={headerHeight}>
-        <View style={styles.composerWrapper}>
-          {attachment && (
-            <View style={styles.attachmentPreviewContainer}>
-              <Image source={{ uri: attachment.uri }} style={styles.attachmentPreview} />
-              <Pressable testID="conversation.attachment.remove" style={styles.attachmentRemoveBtn} onPress={() => setAttachment(null)}>
-                <Icon name="X" size={12} color={colors.white} />
-              </Pressable>
-            </View>
-          )}
-          <View style={styles.composer}>
-            <Pressable testID="conversation.attach" style={styles.attachButton} onPress={pickImage}>
-              <Icon name="Plus" size={24} color={colors.inkMuted} />
-            </Pressable>
-            <TextField testID="conversation.compose"
-              value={draft} 
-              onChangeText={setDraft} 
-              placeholder="Message…" 
-              multiline
-              style={styles.inputField} 
-            />
-            {(draft.trim().length > 0 || attachment) && (
-              <Animated.View entering={ZoomIn.duration(200)} exiting={ZoomOut.duration(200)}>
-                <Pressable 
-                  testID="conversation.send"
-                  style={styles.sendButton} 
-                  onPress={handleSend} 
-                  disabled={sendMessage.isPending || uploadMedia.isPending}
-                >
-                  <Icon name="Send" size={20} color={colors.white} />
+      {!isSystemThread && (
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={headerHeight}>
+          <View style={styles.composerWrapper}>
+            {attachment && (
+              <View style={styles.attachmentPreviewContainer}>
+                <Image source={{ uri: attachment.uri }} style={styles.attachmentPreview} />
+                <Pressable testID="conversation.attachment.remove" style={styles.attachmentRemoveBtn} onPress={() => setAttachment(null)}>
+                  <Icon name="X" size={12} color={colors.white} />
                 </Pressable>
-              </Animated.View>
+              </View>
             )}
+            <View style={styles.composer}>
+              <Pressable testID="conversation.attach" style={styles.attachButton} onPress={pickImage}>
+                <Icon name="Plus" size={24} color={colors.inkMuted} />
+              </Pressable>
+              <TextField testID="conversation.compose"
+                value={draft} 
+                onChangeText={setDraft} 
+                placeholder="Message…" 
+                multiline
+                style={styles.inputField} 
+              />
+              {(draft.trim().length > 0 || attachment) && (
+                <Animated.View entering={ZoomIn.duration(200)} exiting={ZoomOut.duration(200)}>
+                  <Pressable 
+                    testID="conversation.send"
+                    style={styles.sendButton} 
+                    onPress={handleSend} 
+                    disabled={sendMessage.isPending || uploadMedia.isPending}
+                  >
+                    <Icon name="Send" size={20} color={colors.white} />
+                  </Pressable>
+                </Animated.View>
+              )}
+            </View>
           </View>
-        </View>
-      </KeyboardAvoidingView>
+        </KeyboardAvoidingView>
+      )}
       <ActionSheet testID="conversation.dialog" config={sheet.config} onDismiss={sheet.dismiss} />
     </ScreenContainer>
   )
@@ -371,6 +406,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.sm,
+  },
+  headerTextContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerContext: {
+    color: colors.inkMuted,
+    fontSize: 11,
+    marginTop: 2,
   },
   headerAvatar: {
     width: 32,
@@ -428,6 +472,52 @@ const styles = StyleSheet.create({
   timeOwn: { color: 'rgba(255,255,255,0.7)', fontSize: 11, alignSelf: 'flex-end', marginTop: 4 },
   timeOther: { color: colors.inkMuted, fontSize: 11, alignSelf: 'flex-start', marginTop: 4 },
   
+  systemCardContainer: {
+    alignItems: 'center',
+    marginVertical: spacing.md,
+    width: '100%',
+  },
+  systemCard: {
+    backgroundColor: colors.surfaceMuted,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    width: '90%',
+    borderWidth: borderWidth.thin,
+    borderColor: colors.border,
+  },
+  systemCardTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.ink,
+    marginBottom: spacing.sm,
+  },
+  systemCardBody: {
+    fontSize: 14,
+    lineHeight: 20,
+    color: colors.ink,
+    marginBottom: spacing.sm,
+  },
+  systemCardCta: {
+    backgroundColor: colors.surface,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.md,
+    borderWidth: borderWidth.thin,
+    borderColor: colors.border,
+    alignItems: 'center',
+    marginVertical: spacing.xs,
+  },
+  systemCardCtaText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.ink,
+  },
+  systemCardTime: {
+    fontSize: 11,
+    color: colors.inkMuted,
+    marginTop: spacing.xs,
+  },
+
   composerWrapper: {
     backgroundColor: colors.surface,
     paddingHorizontal: spacing.md,

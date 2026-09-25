@@ -108,22 +108,33 @@ export class ListService {
       if (isComplete && !wasComplete) isCompleteDiff = 1
       else if (!isComplete && wasComplete) isCompleteDiff = -1
 
-      await tx.jobQueue.createMany({
-        data: [
-          {
-            type: 'UPDATE_TAXONOMY',
-            payload: { addedEntities: added, removedEntities: removed, categoryId: category.id, isCompleteDiff }
-          },
-          {
-            type: 'CALCULATE_MATCHES',
-            payload: { profileId }
-          },
-          {
-            type: 'LIST_RESULTS_REFRESH',
-            payload: { categoryId: category.id }
-          }
-        ]
+      const jobsToCreate: any[] = [
+        {
+          type: 'UPDATE_TAXONOMY',
+          payload: { addedEntities: added, removedEntities: removed, categoryId: category.id, isCompleteDiff }
+        },
+        {
+          type: 'CALCULATE_MATCHES',
+          payload: { profileId }
+        }
+      ]
+
+      const existingRefresh = await tx.jobQueue.findFirst({
+        where: {
+          type: 'LIST_RESULTS_REFRESH',
+          status: { in: ['PENDING', 'RUNNING'] },
+          payload: { equals: { categoryId: category.id } }
+        }
       })
+
+      if (!existingRefresh) {
+        jobsToCreate.push({
+          type: 'LIST_RESULTS_REFRESH',
+          payload: { categoryId: category.id }
+        })
+      }
+
+      await tx.jobQueue.createMany({ data: jobsToCreate })
 
       return tx.list.findUniqueOrThrow({ where: { id: upserted.id }, select: LIST_PREVIEW_SELECT })
     })

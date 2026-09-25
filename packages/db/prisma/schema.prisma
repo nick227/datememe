@@ -635,6 +635,7 @@ model List {
   @@unique([profileId, categoryId])
   @@index([profileId])
   @@index([categoryId])
+  @@index([categoryId, isComplete])
 }
 
 enum ListVisibility {
@@ -694,14 +695,20 @@ model QuickPickSignal {
 // ── Messaging ─────────────────────────────────────────────
 model Conversation {
   id            String             @id @default(cuid())
+  type          ConversationType   @default(USER)
   status        ConversationStatus @default(ACCEPTED)
-  initiatedById String
+  initiatedById String?
   createdAt     DateTime           @default(now())
   updatedAt     DateTime           @updatedAt
 
-  initiator    Profile                   @relation("ConversationInitiator", fields: [initiatedById], references: [id], onDelete: Restrict)
+  initiator    Profile?                  @relation("ConversationInitiator", fields: [initiatedById], references: [id], onDelete: Restrict)
   participants ConversationParticipant[]
   messages     Message[]
+}
+
+enum ConversationType {
+  USER
+  SYSTEM
 }
 
 enum ConversationStatus {
@@ -724,20 +731,82 @@ model ConversationParticipant {
 }
 
 model Message {
-  id             String    @id @default(cuid())
-  conversationId String
-  senderId       String
-  body           String?   @db.Text
-  attachments    Json?
-  createdAt      DateTime  @default(now())
-  deletedAt      DateTime?
+  id                String             @id @default(cuid())
+  conversationId    String
+  senderId          String?
+  systemMessageType SystemMessageType?
+  body              String?            @db.Text
+  attachments       Json?
+  createdAt         DateTime           @default(now())
+  deletedAt         DateTime?
 
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  sender       Profile      @relation("MessageSender", fields: [senderId], references: [id], onDelete: Restrict)
+  sender       Profile?     @relation("MessageSender", fields: [senderId], references: [id], onDelete: Restrict)
   reports      Report[]     @relation("ReportTargetMessage")
 
   @@index([conversationId, createdAt])
   @@index([senderId, createdAt])
+}
+
+enum SystemMessageType {
+  WELCOME
+  LIKE
+  MATCH
+  ACTIVITY_DIGEST
+  ACCOUNT
+  SAFETY
+}
+
+// ── Profile Insights ──────────────────────────────────────
+model ProfileInsightSet {
+  id              String         @id @default(cuid())
+  profileId       String
+  window          InsightWindow
+  generatedAt     DateTime       @default(now())
+  periodStart     DateTime
+  periodEnd       DateTime
+  sampleSummary   Json?
+  deliveryStatus  InsightDeliveryStatus @default(PENDING)
+  lastDeliveredAt DateTime?
+  fingerprint     String?
+
+  insights        ProfileInsight[]
+
+  @@index([profileId, window])
+}
+
+model ProfileInsight {
+  id            String            @id @default(cuid())
+  setId         String
+  sourceType    InsightSource
+  type          String
+  subjectId     String?
+  label         String
+  value         String
+  baselineValue String?
+  lift          Float?
+  strength      Float
+  sampleSize    Int
+
+  set           ProfileInsightSet @relation(fields: [setId], references: [id], onDelete: Cascade)
+}
+
+enum InsightDeliveryStatus {
+  PENDING
+  DELIVERED
+  SUPPRESSED
+}
+
+enum InsightWindow {
+  WEEKLY
+  MONTHLY
+}
+
+enum InsightSource {
+  LIKES
+  PASSES
+  MESSAGES
+  MATCHES
 }
 
 // ── Monetization ──────────────────────────────────────────

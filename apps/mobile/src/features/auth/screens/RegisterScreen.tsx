@@ -85,19 +85,6 @@ export function RegisterScreen({ navigation }: Props) {
     <ScreenContainer testID="screen.register" width="narrow">
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}>
         <View style={styles.card}>
-          <Typography variant="display" style={{ marginBottom: spacing.xs }}>
-            Let&apos;s find your people
-          </Typography>
-          <Typography variant="bodyMuted" style={{ marginBottom: spacing.lg }}>
-            Skip the bio — your favorites do the talking.
-          </Typography>
-
-          <View style={styles.perksBanner}>
-            <Typography variant="label" style={{ color: colors.white, marginBottom: 2 }}>MEMBERS GET</Typography>
-            <Typography variant="body" style={{ color: colors.white }}>
-              Unlimited messages, read receipts on every reply, and full photo access. Got a code? Redeem it below.
-            </Typography>
-          </View>
 
           <GoogleAuthButton onPress={handleGooglePress} />
           <OrDivider />
@@ -137,7 +124,7 @@ export function RegisterScreen({ navigation }: Props) {
             value={promoCode}
             onChangeText={setPromoCode}
             autoCapitalize="characters"
-            placeholder="Have a code for Premium?"
+            placeholder="Promotion code"
           />
           <View style={{ marginTop: spacing.sm }}>
             <Button testID="register.submit" label="Sign up" onPress={handleSubmit} loading={register.isPending || redeemCoupon.isPending} disabled={!canSubmit} />

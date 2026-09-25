@@ -37,7 +37,7 @@ export function AdminTaxonomyTypeScreen({ route, navigation }: Props) {
       setSlug(type.slug)
       setIsActive(type.isActive)
     }
-  }, [type?.id])
+  }, [type])
 
   function handleSave() {
     updateType.mutate(

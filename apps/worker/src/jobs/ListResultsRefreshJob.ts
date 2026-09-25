@@ -28,7 +28,7 @@ export async function listResultsRefreshJob(payload: { categoryId: string }) {
 
   const sortedEntities = Array.from(scoreMap.entries())
     .map(([entityId, score]) => ({ entityId, score }))
-    .sort((a, b) => b.score - a.score)
+    .sort((a, b) => b.score - a.score || a.entityId.localeCompare(b.entityId))
 
   // We need to fetch the existing entries to get previous ranks
   const existingSet = await db.resultSet.findFirst({

@@ -13,11 +13,11 @@ export const colors = {
   primary: '#000000',
   primaryPressed: '#333333',
   primarySoft: '#F0F0F0',
-  accent: '#FF3131',
-  accentPressed: '#D42121',
+  accent: '#0022ffff',
+  accentPressed: '#2e1921ff',
   ink: '#000000',
   inkMuted: '#595959',
-  border: '#000000',
+  border: '#242424ff',
   surface: '#FFFFFF',
   surfaceMuted: '#F0F0F0',
   canvas: '#FFFFFF',
@@ -26,13 +26,17 @@ export const colors = {
   overlay: 'rgba(0,0,0,0.75)',
   white: '#FFFFFF',
   wheat: '#f7ead1',
+  transparent: 'transparent',
 }
 
 export const radius = {
-  sm: 0,
-  md: 0,
-  lg: 0,
-  pill: 0,
+  sm: 12,
+  md: 14,
+  lg: 18,
+  pill: 999,
+  rail: 12,
+  grid: 14,
+  spotlight: 18,
 }
 
 export const spacing = {
@@ -42,16 +46,11 @@ export const spacing = {
   lg: 16,
   xl: 24,
   xxl: 32,
-  // Major-section rhythm on a browse feed (Lists/Discover) — deliberately a
-  // step above xxl: modules need room to read as distinct beats, not just
-  // another card in the same stack.
-  section: 64,
+  // Major-section rhythm on a browse feed (Lists/Discover) — reduced per UI polish
+  section: 36,
 }
 
-// The browse canvas for feed pages (Lists/Discover) — wider than the 960px
-// `wide` ScreenContainer tier so Rails/Grids/Rivers have room to establish
-// scale contrast; text content still aligns to this same left/right edge.
-export const CANVAS_WIDTH = 1280
+export const CANVAS_WIDTH = 1200
 
 export const borderWidth = {
   thin: 1,

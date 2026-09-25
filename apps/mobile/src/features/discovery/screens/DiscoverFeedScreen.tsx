@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { FlatList, ScrollView, View } from 'react-native'
+import { FlatList } from 'react-native'
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { useDiscoverFeed, type DiscoverFeedFilters } from '@project/sdk'
@@ -7,7 +7,7 @@ import { ScreenContainer } from '../../../ui/ScreenContainer'
 import { EmptyState } from '../../../ui/EmptyState'
 import { ErrorState } from '../../../ui/ErrorState'
 import { Skeleton } from '../../../ui/Skeleton'
-import { PageSummaryHero } from '../../../ui/content/PageSummaryHero'
+import { PageHeader } from '../../../ui/content/PageHeader'
 import { FilterChipsRow } from '../../../ui/content/FilterChipsRow'
 import { FeedModuleRenderer } from '../../../ui/content/FeedModuleRenderer'
 import { FeedListFooter } from '../../../ui/content/FeedListFooter'
@@ -70,26 +70,30 @@ export function DiscoverFeedScreen({ navigation }: Props) {
     listRef.current?.scrollToOffset({ offset: 0, animated: true })
   }, [selectedChipKey])
 
-  const pages = feed.data?.pages ?? []
+  const pages = useMemo(() => feed.data?.pages ?? [], [feed.data?.pages])
   const summary = pages[0]?.summary
   const chips = pages[0]?.chips ?? []
   const modules = useMemo<FeedModule[]>(() => pages.flatMap((p) => p.data), [pages])
 
-  const hasPeople = modules.some((m) => m.id.startsWith('people-grid') && !!m.items?.length)
-  // "Your favorites" leads ahead of the category chips (Header -> Your ->
-  // Categories -> Results -> Explore). Results only exists while a filter is
-  // active — the server tags the filtered people-grid module(s)
-  // `context.zone:'results'` in that case; everything else (Highly
-  // Compatible, Quick Picks, Similar Taste, Shared Interests) is Explore,
-  // the same ambient rhythm whether or not a filter is applied. Unfiltered,
-  // there's no Results/boundary at all — chips lead straight into Explore.
   const isFiltered = selectedGroupSlugs.length > 0 || !!demographicChipId
-  const yourModule = modules.find((m) => m.id === 'your-favorites')
-  const rest = modules.filter((m) => m.id !== 'your-favorites')
-  const resultsModules = isFiltered ? rest.filter((m) => m.context?.zone === 'results') : []
-  const exploreModules = isFiltered ? rest.filter((m) => m.context?.zone !== 'results') : rest
-  const showNoResults = !hasPeople && !feed.hasNextPage
+
+  const hasPeople = modules.some((m) => m.id.startsWith('people-grid') && !!m.items?.length)
+
   const rows = useMemo<Row[]>(() => {
+    const showNoResults = !hasPeople && !feed.hasNextPage
+    
+    // "Your favorites" leads ahead of the category chips (Header -> Your ->
+    // Categories -> Results -> Explore). Results only exists while a filter is
+    // active — the server tags the filtered people-grid module(s)
+    // `context.zone:'results'` in that case; everything else (Highly
+    // Compatible, Quick Picks, Similar Taste, Shared Interests) is Explore,
+    // the same ambient rhythm whether or not a filter is applied. Unfiltered,
+    // there's no Results/boundary at all — chips lead straight into Explore.
+    const yourModule = modules.find((m) => m.id === 'your-favorites')
+    const rest = modules.filter((m) => m.id !== 'your-favorites')
+    const resultsModules = isFiltered ? rest.filter((m) => m.context?.zone === 'results') : []
+    const exploreModules = isFiltered ? rest.filter((m) => m.context?.zone !== 'results') : rest
+
     const list: Row[] = []
     if (yourModule) list.push({ rowId: yourModule.id, kind: 'module', module: yourModule })
     list.push({ rowId: 'chips', kind: 'chips' })
@@ -103,7 +107,7 @@ export function DiscoverFeedScreen({ navigation }: Props) {
     }
     list.push(...exploreModules.map((m) => ({ rowId: m.id, kind: 'module' as const, module: m })))
     return list
-  }, [yourModule, resultsModules, exploreModules, showNoResults, isFiltered])
+  }, [modules, isFiltered, feed.hasNextPage])
 
   function onPressItem(unit: ContentUnit) {
     // Site Picks cards are lists presented inside Discover, not people
@@ -147,8 +151,8 @@ export function DiscoverFeedScreen({ navigation }: Props) {
           <ErrorState testID="discover.error" subtitle="Couldn't load your feed." onRetry={() => feed.refetch()} />
         </Animated.View>
       ) : (
-        <AnimatedFlatList
-          entering={FadeIn.duration(300)}
+        <Animated.View entering={FadeIn.duration(300)} style={{ flex: 1 }}>
+          <AnimatedFlatList
         ref={listRef}
         data={rows}
         keyExtractor={(row) => row.rowId}
@@ -178,7 +182,7 @@ export function DiscoverFeedScreen({ navigation }: Props) {
             />
           )
         }}
-        ListHeaderComponent={summary ? <PageSummaryHero summary={summary} /> : null}
+        ListHeaderComponent={summary ? <PageHeader title={summary.title} facts={summary.stats?.map(s => ({ value: s.value, label: s.label }))} /> : null}
         ListFooterComponent={
           <FeedListFooter
             isFetchingNextPage={feed.isFetchingNextPage}
@@ -197,6 +201,7 @@ export function DiscoverFeedScreen({ navigation }: Props) {
         // CategoriesScreen. Chips are not sticky; they scroll with the page.
         contentContainerStyle={{ width: '100%', maxWidth: CANVAS_WIDTH, alignSelf: 'center', paddingBottom: spacing.section }}
       />
+        </Animated.View>
       )}
     </ScreenContainer>
   )

@@ -15,7 +15,7 @@ export async function profileResultsRefreshJob(payload: { metric: ResultMetric, 
     const sortedProfiles = swipeAgg.map(agg => ({
       profileId: agg.targetProfileId,
       score: (agg._count as any).targetProfileId ?? 0
-    }))
+    })).sort((a, b) => b.score - a.score || a.profileId.localeCompare(b.profileId))
     
     await updateGenericResultSet('PROFILE', 'MOST_LIKED', 'GLOBAL', null, window, sortedProfiles, 0)
     
@@ -31,7 +31,7 @@ export async function profileResultsRefreshJob(payload: { metric: ResultMetric, 
     const sortedProfiles = listAgg.map(agg => ({
       profileId: agg.profileId,
       score: (agg._count as any).profileId ?? 0
-    }))
+    })).sort((a, b) => b.score - a.score || a.profileId.localeCompare(b.profileId))
     
     await updateGenericResultSet('PROFILE', 'MOST_ACTIVE', 'GLOBAL', null, window, sortedProfiles, 0)
     
@@ -45,35 +45,35 @@ export async function profileResultsRefreshJob(payload: { metric: ResultMetric, 
       take: 100
     })
     
-    // Simulate "Rising" by shuffling the top results or heavily weighting recent ones
+    // For MVP, reuse MOST_LIKED cleanly (no random velocity mutation for determinism)
     const sortedProfiles = swipeAgg.map((agg, i) => ({
       profileId: agg.targetProfileId,
-      score: Math.round(((agg._count as any).targetProfileId ?? 0) * (1 + (Math.random() * 0.5)))
-    })).sort((a, b) => b.score - a.score)
+      score: (agg._count as any).targetProfileId ?? 0
+    })).sort((a, b) => b.score - a.score || a.profileId.localeCompare(b.profileId))
     
     await updateGenericResultSet('PROFILE', 'RISING', 'GLOBAL', null, window, sortedProfiles, 0)
 
   } else if (metric === 'MOST_COMPATIBLE') {
-    // POC: Count profiles with the most shared lists (or just a generic high-engagement group)
+    // POC: Count profiles with the most shared lists deterministically
     const lists = await db.list.findMany({ where: { isComplete: true }, select: { profileId: true } })
     const counts = new Map<string, number>()
-    lists.forEach(l => counts.set(l.profileId, (counts.get(l.profileId) || 0) + Math.round(Math.random() * 5 + 5)))
+    lists.forEach(l => counts.set(l.profileId, (counts.get(l.profileId) || 0) + 1))
     
     const sortedProfiles = Array.from(counts.entries())
       .map(([profileId, score]) => ({ profileId, score }))
-      .sort((a, b) => b.score - a.score).slice(0, 100)
+      .sort((a, b) => b.score - a.score || a.profileId.localeCompare(b.profileId)).slice(0, 100)
       
     await updateGenericResultSet('PROFILE', 'MOST_COMPATIBLE', 'GLOBAL', null, window, sortedProfiles, 0)
 
   } else if (metric === 'MOST_DISTINCTIVE') {
-    // POC: Profiles with lists that deviate from consensus.
+    // POC: Profiles with lists that deviate deterministically
     const lists = await db.list.findMany({ where: { isComplete: true }, select: { profileId: true } })
     const counts = new Map<string, number>()
-    lists.forEach(l => counts.set(l.profileId, (counts.get(l.profileId) || 0) + Math.round(Math.random() * 100)))
+    lists.forEach(l => counts.set(l.profileId, (counts.get(l.profileId) || 0) + 1))
     
     const sortedProfiles = Array.from(counts.entries())
       .map(([profileId, score]) => ({ profileId, score }))
-      .sort((a, b) => b.score - a.score).slice(0, 100)
+      .sort((a, b) => b.score - a.score || a.profileId.localeCompare(b.profileId)).slice(0, 100)
       
     await updateGenericResultSet('PROFILE', 'MOST_DISTINCTIVE', 'GLOBAL', null, window, sortedProfiles, 0)
   }
@@ -102,20 +102,14 @@ async function updateGenericResultSet(
   }
 
   await db.$transaction(async (tx) => {
-    // Upsert the result set safely without unique constraint on nullable field
-    let resultSet = await tx.resultSet.findFirst({
-      where: { subjectType, metric, scopeType, scopeValue, window }
+    // Upsert the result set safely preventing duplicate constraints concurrently
+    const resultSet = await tx.resultSet.upsert({
+      where: { 
+        idx_result_set_unique: { subjectType, metric, scopeType, scopeValue: scopeValue as any, window }
+      },
+      update: { takeCount },
+      create: { subjectType, metric, scopeType, scopeValue, window, takeCount }
     })
-    if (resultSet) {
-      resultSet = await tx.resultSet.update({
-        where: { id: resultSet.id },
-        data: { takeCount }
-      })
-    } else {
-      resultSet = await tx.resultSet.create({
-        data: { subjectType, metric, scopeType, scopeValue, window, takeCount }
-      })
-    }
 
     // Delete old entries
     await tx.resultEntry.deleteMany({

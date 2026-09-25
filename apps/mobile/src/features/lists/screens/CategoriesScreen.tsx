@@ -6,7 +6,7 @@ import { ScreenContainer } from '../../../ui/ScreenContainer'
 import { EmptyState } from '../../../ui/EmptyState'
 import { ErrorState } from '../../../ui/ErrorState'
 import { Skeleton } from '../../../ui/Skeleton'
-import { PageSummaryHero } from '../../../ui/content/PageSummaryHero'
+import { PageHeader } from '../../../ui/content/PageHeader'
 import { FilterChipsRow } from '../../../ui/content/FilterChipsRow'
 import { FeedModuleRenderer } from '../../../ui/content/FeedModuleRenderer'
 import { FeedListFooter } from '../../../ui/content/FeedListFooter'
@@ -37,7 +37,7 @@ export function CategoriesScreen({ navigation }: Props) {
   const feed = useListsFeed({ groupSlugs: selectedGroupSlugs })
   const listRef = useRef<FlatList<Row>>(null)
 
-  const pages = feed.data?.pages ?? []
+  const pages = useMemo(() => feed.data?.pages ?? [], [feed.data?.pages])
   const summary = pages[0]?.summary
   const chips = pages[0]?.chips ?? []
   const modules = useMemo<FeedModule[]>(() => pages.flatMap((p) => p.data), [pages])
@@ -58,17 +58,18 @@ export function CategoriesScreen({ navigation }: Props) {
   // other module is Explore, the same ambient browse rhythm whether or not a
   // filter is applied. Unfiltered, there's no Results/boundary at all — chips
   // lead straight into Explore, same as before this pass.
-  const isFiltered = selectedGroupSlugs.length > 0
-  const yourModule = modules.find((m) => m.id === 'your-lists')
-  const rest = modules.filter((m) => m.id !== 'your-lists')
-  const resultsModules = isFiltered ? rest.filter((m) => m.context?.zone === 'results') : []
-  const exploreModules = isFiltered ? rest.filter((m) => m.context?.zone !== 'results') : rest
-  const hasResults = resultsModules.some((m) => !!m.items?.length)
-  // Results isn't paginated (getListsFeed resolves it fully on page 1), so
-  // "empty" is definitive as soon as data has loaded — no hasNextPage guard needed.
-  const showNoResults = isFiltered && !hasResults
-  const hasContent = hasResults || exploreModules.some((m) => !!m.items?.length)
-  const rows = useMemo<Row[]>(() => {
+  const { rows, hasContent } = useMemo(() => {
+    const isFiltered = selectedGroupSlugs.length > 0
+    const yourModule = modules.find((m) => m.id === 'your-lists')
+    const rest = modules.filter((m) => m.id !== 'your-lists')
+    const resultsModules = isFiltered ? rest.filter((m) => m.context?.zone === 'results') : []
+    const exploreModules = isFiltered ? rest.filter((m) => m.context?.zone !== 'results') : rest
+    const hasResults = resultsModules.some((m) => !!m.items?.length)
+    // Results isn't paginated (getListsFeed resolves it fully on page 1), so
+    // "empty" is definitive as soon as data has loaded — no hasNextPage guard needed.
+    const showNoResults = isFiltered && !hasResults
+    const _hasContent = hasResults || exploreModules.some((m) => !!m.items?.length)
+    
     const list: Row[] = []
     if (yourModule) list.push({ rowId: yourModule.id, kind: 'module', module: yourModule })
     list.push({ rowId: 'chips', kind: 'chips' })
@@ -81,8 +82,8 @@ export function CategoriesScreen({ navigation }: Props) {
       list.push({ rowId: 'explore-boundary', kind: 'boundary' })
     }
     list.push(...exploreModules.map((m) => ({ rowId: m.id, kind: 'module' as const, module: m })))
-    return list
-  }, [yourModule, resultsModules, exploreModules, showNoResults, isFiltered])
+    return { rows: list, hasContent: _hasContent }
+  }, [modules, selectedGroupSlugs.length])
 
   function goToListBuilder(categorySlug: string, shortLabel: string) {
     navigation.navigate('ListBuilder', { categorySlug, shortLabel })
@@ -134,7 +135,7 @@ export function CategoriesScreen({ navigation }: Props) {
           }
           return <FeedModuleRenderer module={item.module} state="ready" onPressItem={onPressItem} onPressQuickPicks={onPressQuickPicks} />
         }}
-        ListHeaderComponent={summary ? <PageSummaryHero summary={summary} /> : null}
+        ListHeaderComponent={summary ? <PageHeader title={summary.title} facts={summary.stats?.map(s => ({ value: s.value, label: s.label }))} /> : null}
         ListEmptyComponent={<EmptyState testID="categories.empty" title="No lists yet" subtitle="Check back soon — new ones ship often." />}
         ListFooterComponent={
           <FeedListFooter

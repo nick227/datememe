@@ -6,7 +6,7 @@ import { CardShell } from './CardShell'
 import { SmartImage } from './SmartImage'
 import { MicroBadge } from './MicroBadge'
 import { PressableScale } from '../PressableScale'
-import { Box, borderWidth, colors, spacing } from '../../theme'
+import { Box, borderWidth, colors, spacing, radius } from '../../theme'
 import { pickMetrics, RENDER_BUDGETS, type RenderVariant } from './renderBudgets'
 import type { ContentUnit } from './types'
 
@@ -55,9 +55,9 @@ function CompactGridCard({ unit, onPress }: { unit: ContentUnit; onPress: () => 
   const metric = pickMetrics(unit.metrics, 'grid-square')[0]
 
   return (
-    <CardShell testID={`categories.card.${unit.id}`} containerStyle={styles.compactCardOverwrite} onPress={onPress}>
+    <CardShell testID={`categories.card.${unit.id}`} containerStyle={styles.compactCardOverwrite} onPress={onPress} radius="grid" noBorder={!!imageUrl}>
       <CardShell.Media style={styles.compactImageWrap}>
-        <SmartImage uri={imageUrl} fallbackText={unit.title} />
+        <SmartImage uri={imageUrl} fallbackText={unit.title} style={StyleSheet.absoluteFill} />
         {isComplete ? (
           <MicroBadge label="DONE" variant="neutral" position="top-left" />
         ) : inProgress ? (
@@ -65,19 +65,21 @@ function CompactGridCard({ unit, onPress }: { unit: ContentUnit; onPress: () => 
         ) : null}
       </CardShell.Media>
       <CardShell.Body style={styles.compactBody}>
-        <Typography variant="heading" style={styles.compactTitle} numberOfLines={2}>
-          {unit.title}
-        </Typography>
-        {metric ? (
-          <Typography variant="label" style={styles.compactMeta} numberOfLines={1}>
-            <Typography style={styles.compactDot}>{'● '}</Typography>
-            {metric.value} {metric.label.toLowerCase()}
+        <View style={{ gap: spacing.xs }}>
+          <Typography variant="heading" style={styles.compactTitle} numberOfLines={2}>
+            {unit.title}
           </Typography>
-        ) : unit.subtitle ? (
-          <Typography variant="bodyMuted" style={styles.compactMeta} numberOfLines={1}>
-            {unit.subtitle}
-          </Typography>
-        ) : null}
+          {metric ? (
+            <Typography variant="label" style={styles.compactMeta} numberOfLines={1}>
+              <Typography style={styles.compactDot}>{'● '}</Typography>
+              {metric.value} {metric.label.toLowerCase()}
+            </Typography>
+          ) : (
+            <Typography variant="bodyMuted" style={styles.compactMeta} numberOfLines={1}>
+              {unit.subtitle || ' '}
+            </Typography>
+          )}
+        </View>
         <ImageCredit credit={imageCredit} />
       </CardShell.Body>
     </CardShell>
@@ -127,7 +129,13 @@ function StatCard({ unit, variant, onPress }: { unit: ContentUnit; variant: Rend
   const isWide = width >= 768
 
   return (
-    <CardShell testID={`categories.card.${unit.id}`} containerStyle={[isSpotlight && styles.spotlightCard, isSpotlight && isWide && styles.spotlightRow]} onPress={onPress}>
+    <CardShell 
+      testID={`categories.card.${unit.id}`} 
+      containerStyle={[isSpotlight && styles.spotlightCard, isSpotlight && isWide && styles.spotlightRow]} 
+      onPress={onPress}
+      radius={isSpotlight ? 'spotlight' : 'rail'}
+      noBorder={hasImage || isSpotlight}
+    >
       {isSpotlight && isWide && unit.imageUrl ? (
         <SmartImage 
           uri={unit.imageUrl} 
@@ -136,25 +144,27 @@ function StatCard({ unit, variant, onPress }: { unit: ContentUnit; variant: Rend
         />
       ) : null}
 
-      <CardShell.Body style={[isSpotlight && isWide && styles.spotlightBodyWide]}>
-        <Typography variant={isSpotlight ? 'display' : 'heading'} style={styles.statTitle}>
-          {unit.title}
-        </Typography>
-        {budget.subtitle && unit.subtitle ? (
-          <Typography variant="bodyMuted" numberOfLines={2} style={styles.statPrompt}>
-            {unit.subtitle}
+      <CardShell.Body style={[isSpotlight && isWide && styles.spotlightBodyWide, !isSpotlight && styles.railBody]}>
+        <View style={{ flex: 1 }}>
+          <Typography variant={isSpotlight ? 'display' : 'heading'} style={[styles.statTitle, !isSpotlight && styles.railTitle]} numberOfLines={isSpotlight ? undefined : 2}>
+            {unit.title}
           </Typography>
-        ) : null}
+          {budget.subtitle ? (
+            <Typography variant="bodyMuted" numberOfLines={2} style={styles.statPrompt}>
+              {unit.subtitle || ' '}
+            </Typography>
+          ) : null}
 
-        {unit.imageUrl && !(isSpotlight && isWide) ? (
-          <SmartImage 
-            uri={unit.imageUrl} 
-            fallbackText={unit.title}
-            style={[styles.coverImage, isSpotlight && styles.spotlightImage]} 
-          />
-        ) : null}
+          {!(isSpotlight && isWide) ? (
+            <SmartImage 
+              uri={unit.imageUrl} 
+              fallbackText={unit.title}
+              style={[styles.coverImage, isSpotlight && styles.spotlightImage]} 
+            />
+          ) : null}
 
-        <ImageCredit credit={unit.imageCredit} />
+          <ImageCredit credit={unit.imageCredit} />
+        </View>
 
         <CardShell.Insight>
           {unit.entity ? (
@@ -214,8 +224,10 @@ const styles = StyleSheet.create({
   spotlightRow: { flexDirection: 'row', alignItems: 'center', maxHeight: 380 },
   spotlightImageWide: { width: '45%', height: '100%', maxHeight: 380, aspectRatio: undefined },
   spotlightBodyWide: { width: '55%', paddingHorizontal: spacing.xl },
-  statTitle: { marginBottom: spacing.xs },
-  statPrompt: { marginBottom: spacing.md },
+  railBody: { paddingVertical: spacing.md, justifyContent: 'space-between', flex: 1 },
+  railTitle: { fontSize: 16, lineHeight: 20, minHeight: 40 },
+  statTitle: { marginBottom: spacing.xs, minHeight: 48 },
+  statPrompt: { marginBottom: spacing.md, minHeight: 40 },
   bold: { fontWeight: '700' },
   topPickRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   topPickRowLarge: { gap: spacing.lg },
@@ -226,29 +238,37 @@ const styles = StyleSheet.create({
 
   denseCard: {
     backgroundColor: colors.surface,
-    borderWidth: borderWidth.thin,
-    borderColor: colors.ink,
+    borderWidth: 0,
+    borderRadius: radius.grid,
     padding: spacing.md,
     justifyContent: 'space-between',
     minHeight: 88,
     flex: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   denseTitle: { fontWeight: '700', marginBottom: spacing.xs },
 
-  // Compact "poster" grid card uses cardShell.baseCompact
   compactCardOverwrite: {
-    // Only style overrides here, flex and border handled by baseCompact
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  compactImageWrap: { position: 'relative' },
+  compactImageWrap: { position: 'relative', aspectRatio: 4 / 3, width: '100%', overflow: 'hidden' },
   compactBody: {
-    borderTopWidth: borderWidth.thin,
-    borderTopColor: colors.ink,
+    borderTopWidth: 0,
     padding: spacing.md,
     gap: spacing.sm,
     flex: 1,
+    justifyContent: 'space-between',
   },
-  compactTitle: { fontSize: 18, lineHeight: 22, marginBottom: 0, fontWeight: '700' },
-  compactMeta: { fontSize: 13 },
+  compactTitle: { fontSize: 18, lineHeight: 22, marginBottom: 0, fontWeight: '700', minHeight: 44 },
+  compactMeta: { fontSize: 13, minHeight: 20 },
   compactDot: { color: colors.accent },
   denseStat: { fontSize: 12 },
 

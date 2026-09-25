@@ -6,6 +6,7 @@ export function useCurrentUser() {
     queryKey: ['me'],
     queryFn: async () => {
       const { data, error, response } = await getApiClient().GET('/auth/me')
+      if (response.status === 401) return null
       if (error) throw new ApiError(response.status, (error as any).error)
       return data!.data
     },
@@ -47,8 +48,12 @@ export function useLogout() {
       const { error, response } = await getApiClient().POST('/auth/logout')
       if (error) throw new ApiError(response.status, (error as any).error)
     },
-    onSuccess: () => {
-      queryClient.clear()
+    onSuccess: async () => {
+      // Keep the observed auth query alive so RootNavigator sees logout.
+      // Removing it with clear() leaves existing observers on stale user data.
+      await queryClient.cancelQueries()
+      queryClient.removeQueries({ predicate: (query) => query.queryKey[0] !== 'me' })
+      queryClient.setQueryData(['me'], null)
     },
   })
 }

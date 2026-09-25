@@ -4,6 +4,7 @@ import { calculateMatchesJob } from './jobs/CalculateMatchesJob'
 import { updateTaxonomyJob } from './jobs/UpdateTaxonomyJob'
 import { listResultsRefreshJob } from './jobs/ListResultsRefreshJob'
 import { profileResultsRefreshJob } from './jobs/ProfileResultsRefreshJob'
+import { profileSocialInsightsRefreshJob } from './jobs/ProfileSocialInsightsRefreshJob'
 import { randomUUID } from 'crypto'
 import { performance } from 'perf_hooks'
 
@@ -75,6 +76,8 @@ async function poll() {
       await listResultsRefreshJob(payload)
     } else if (job.type === 'PROFILE_RESULTS_REFRESH') {
       await profileResultsRefreshJob(payload)
+    } else if (job.type === 'PROFILE_SOCIAL_INSIGHTS_REFRESH') {
+      await profileSocialInsightsRefreshJob(payload)
     } else {
       throw new Error(`Unknown job type: ${job.type}`)
     }
@@ -112,11 +115,11 @@ async function poll() {
         }
       })
     }
+  } finally {
+    currentJobRunning = false
+    // Poll immediately for the next job
+    setImmediate(poll)
   }
-
-  currentJobRunning = false
-  // Poll immediately for the next job
-  setImmediate(poll)
 }
 
 function handleShutdown() {

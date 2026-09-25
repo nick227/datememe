@@ -25,7 +25,17 @@ export function RootNavigator() {
   }
 
   return (
-    <NavigationContainer ref={navigationRef} theme={navigationTheme}>
+    <NavigationContainer 
+      ref={navigationRef} 
+      theme={navigationTheme}
+      documentTitle={{
+        formatter: (options, route) => {
+          const baseTitle = 'datememe'
+          const screenTitle = options?.title ?? route?.name
+          return screenTitle ? `${screenTitle} | ${baseTitle}` : baseTitle
+        }
+      }}
+    >
       {me.data ? <MainStack /> : <AuthStack />}
     </NavigationContainer>
   )

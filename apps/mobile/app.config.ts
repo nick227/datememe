@@ -38,7 +38,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
   const suffix = variant === 'production' ? '' : variant === 'staging' ? '.staging' : '.dev'
   return {
     ...config,
-    name: variant === 'staging' ? 'Datememe QA' : variant === 'development' ? 'Datememe Dev' : 'Datememe',
+    name: variant === 'staging' ? 'datememe' : variant === 'development' ? 'datememe' : 'datememe',
     slug: 'datememe',
     ...(owner ? { owner } : {}),
     // Seed for the first remote version; EAS manages/increments built version codes.

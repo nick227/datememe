@@ -9,36 +9,36 @@ type Props = {
 }
 
 export function MicroBadge({ label, variant = 'neutral', icon, position }: Props) {
-  let bgColor = colors.surface
+  let bgColor: keyof typeof colors = 'surface'
   let textColor = colors.ink
-  let borderColor = colors.ink
+  let borderColor: keyof typeof colors = 'ink'
 
   switch (variant) {
     case 'accent':
-      bgColor = colors.accent
+      bgColor = 'accent'
       textColor = colors.white
-      borderColor = colors.accent
+      borderColor = 'accent'
       break
     case 'success':
-      bgColor = colors.success
+      bgColor = 'success'
       textColor = colors.white
-      borderColor = colors.success
+      borderColor = 'success'
       break
     case 'warning':
-      bgColor = colors.wheat
+      bgColor = 'wheat'
       textColor = colors.ink
-      borderColor = colors.inkMuted
+      borderColor = 'inkMuted'
       break
     case 'primary':
-      bgColor = colors.primary
-      textColor = colors.background || colors.white
-      borderColor = colors.primary
+      bgColor = 'primary'
+      textColor = colors.white
+      borderColor = 'primary'
       break
     case 'neutral':
     default:
-      bgColor = colors.surface
+      bgColor = 'surface'
       textColor = colors.ink
-      borderColor = colors.ink
+      borderColor = 'ink'
   }
 
   const absoluteProps = position === 'top-left' ? { position: 'absolute' as const, top: 8, left: 8 } : {}
@@ -51,8 +51,7 @@ export function MicroBadge({ label, variant = 'neutral', icon, position }: Props
       borderWidth={1}
       borderColor={borderColor as any}
       paddingHorizontal="xs"
-      paddingVertical={2}
-      borderRadius={4}
+      style={{ paddingVertical: 2, borderRadius: 4 }}
       gap="xs"
       {...absoluteProps}
     >

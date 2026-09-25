@@ -76,9 +76,9 @@ export function PersonUnitCard({ unit, variant, zone, onPress }: Props) {
         <SmartImage uri={unit.imageUrl} fallbackText={unit.title} />
       </CardShell.Media>
 
-      <CardShell.Body>
+      <CardShell.Body style={[styles.body, isRail && styles.railBody]}>
         <View style={styles.headerRow}>
-          <Typography variant="heading" numberOfLines={1} style={styles.name}>
+          <Typography variant="heading" numberOfLines={1} style={[styles.name, isRail && styles.railName]}>
             {unit.title}
           </Typography>
         </View>
@@ -107,9 +107,11 @@ export function PersonUnitCard({ unit, variant, zone, onPress }: Props) {
           ) : null}
           
           {sharedFavorites.length === 0 && alsoInto.length === 0 ? (
-            <Typography variant="bodyMuted" style={{ fontStyle: 'italic' }}>
-              No overlapping interests yet
-            </Typography>
+            <View style={styles.block}>
+              <Typography variant="bodyMuted" style={{ fontStyle: 'italic', minHeight: 40 }}>
+                No overlapping interests yet
+              </Typography>
+            </View>
           ) : null}
         </CardShell.Insight>
 
@@ -140,20 +142,20 @@ function CompactPersonCard({ unit, onPress }: { unit: ContentUnit; onPress: () =
   const metaLine = locationLine || (sharedCountMetric ? `${sharedCountMetric.value} shared` : null)
 
   return (
-    <CardShell testID={`discover.profile.${unit.id}`} onPress={onPress}>
+    <CardShell testID={`discover.profile.${unit.id}`} onPress={onPress} radius="grid" noBorder={!!unit.imageUrl}>
       <CardShell.Media style={compactStyles.imageWrap}>
-        <SmartImage uri={unit.imageUrl} fallbackText={unit.title} />
+        <SmartImage uri={unit.imageUrl} fallbackText={unit.title} style={StyleSheet.absoluteFill} />
         {matchMetric ? <MicroBadge label={`${matchMetric.value} match`} position="top-left" variant="neutral" /> : null}
       </CardShell.Media>
       <CardShell.Body style={compactStyles.body}>
-        <Typography variant="heading" style={compactStyles.title} numberOfLines={1}>
-          {unit.title}
-        </Typography>
-        {metaLine ? (
-          <Typography variant="label" style={compactStyles.meta} numberOfLines={1}>
-            {metaLine}
+        <View style={{ gap: spacing.xs }}>
+          <Typography variant="heading" style={compactStyles.title} numberOfLines={1}>
+            {unit.title}
           </Typography>
-        ) : null}
+          <Typography variant="label" style={compactStyles.meta} numberOfLines={1}>
+            {metaLine || ' '}
+          </Typography>
+        </View>
         <ImageCredit credit={unit.imageCredit} />
       </CardShell.Body>
     </CardShell>
@@ -161,15 +163,15 @@ function CompactPersonCard({ unit, onPress }: { unit: ContentUnit; onPress: () =
 }
 
 const compactStyles = StyleSheet.create({
-  imageWrap: { position: 'relative' },
+  imageWrap: { position: 'relative', aspectRatio: 3 / 4, width: '100%', overflow: 'hidden' },
   body: {
-    borderTopWidth: borderWidth.thin,
-    borderTopColor: colors.ink,
+    borderTopWidth: 0,
     padding: spacing.md,
     flex: 1,
+    justifyContent: 'space-between',
   },
-  title: { fontSize: 18, lineHeight: 22, marginBottom: 0, fontWeight: '700' },
-  meta: { fontSize: 13, color: colors.inkMuted, marginTop: spacing.xs },
+  title: { fontSize: 18, lineHeight: 22, marginBottom: 0, fontWeight: '700', minHeight: 22 },
+  meta: { fontSize: 13, color: colors.inkMuted, minHeight: 20 },
 })
 
 const riverStyles = StyleSheet.create({
@@ -187,12 +189,16 @@ const riverStyles = StyleSheet.create({
 
 const styles = StyleSheet.create({
   imageWrap: {
-    borderBottomWidth: borderWidth.thin,
-    borderBottomColor: colors.ink,
+    aspectRatio: 3 / 4,
+    width: '100%',
+    overflow: 'hidden',
   },
   headerRow: { marginBottom: 2 },
   name: { fontSize: 22, lineHeight: 28 },
-  block: { marginTop: spacing.xs },
+  body: { flex: 1, justifyContent: 'space-between' },
+  railBody: { paddingVertical: spacing.md, justifyContent: 'space-between', flex: 1 },
+  railName: { fontSize: 16, lineHeight: 20 },
+  block: { marginTop: spacing.sm, minHeight: 40 },
   sharedLabel: { color: colors.ink, marginBottom: 2 },
   sharedNames: { fontWeight: '700', fontSize: 15 },
   alsoLabel: { color: colors.inkMuted, marginBottom: 2 },

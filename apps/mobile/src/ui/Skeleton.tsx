@@ -19,7 +19,7 @@ export function Skeleton({ style, variant = 'rect', width, height }: Props) {
       -1,
       true
     )
-  }, [])
+  }, [anim])
 
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: anim.value

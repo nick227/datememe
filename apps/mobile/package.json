@@ -48,7 +48,7 @@
     "export:web": "expo export --platform web",
     "typecheck": "node --stack-size=8000 \"$(node -p \"require.resolve('typescript/bin/tsc')\")\" --noEmit",
     "lint": "expo lint",
-    "test": "tsx --test config.test.ts",
+    "test": "jest",
     "qa:config": "APP_VARIANT=staging EXPO_PUBLIC_API_URL=https://qa-server-staging.up.railway.app expo config --type public",
     "qa:build": "pnpm dlx eas-cli@24.7.0 build --platform android --profile qa",
     "qa:store:build": "pnpm dlx eas-cli@24.7.0 build --platform android --profile qa-store"

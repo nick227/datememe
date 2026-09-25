@@ -1,35 +1,23 @@
 import { useState } from 'react'
-import { FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native'
+import { FlatList, StyleSheet, Text, View } from 'react-native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { useConversations, useCurrentUser, useUnmatchConversation } from '@project/sdk'
-import Swipeable from 'react-native-gesture-handler/Swipeable'
 import { ScreenContainer } from '../../../ui/ScreenContainer'
-import { TopNavigation } from '../../../ui/TopNavigation'
-import { Skeleton } from '../../../ui/Skeleton'
+import { PageHeader } from '../../../ui/content/PageHeader'
 import { EmptyState } from '../../../ui/EmptyState'
 import { ErrorState } from '../../../ui/ErrorState'
 import { TextField } from '../../../ui/TextField'
 import { ActionSheet, useActionSheet } from '../../../ui/ActionSheet'
-import { colors, radius, spacing, type } from '../../../theme'
-import type { MessagesStackParamList } from '../../../navigation/types'
-import { Typography } from '../../../ui/Typography'
-import { Icon } from '../../../ui/Icon'
+import { CANVAS_WIDTH, colors, type, spacing } from '../../../theme'
 import { hapticMedium } from '../../../lib/haptics'
+import { ConversationRow } from '../components/ConversationRow'
+import { SystemConversationRow } from '../components/SystemConversationRow'
+import { ConversationRowSkeleton } from '../components/ConversationRowSkeleton'
+import type { MessagesStackParamList } from '../../../navigation/types'
 
 type Props = NativeStackScreenProps<MessagesStackParamList, 'Conversations'>
 
-function formatTimeRelative(dateString: string) {
-  const d = new Date(dateString)
-  const now = new Date()
-  const diffMs = now.getTime() - d.getTime()
-  const diffMins = Math.floor(diffMs / 60000)
-  if (diffMins < 1) return 'Just now'
-  if (diffMins < 60) return `${diffMins}m`
-  const diffHours = Math.floor(diffMins / 60)
-  if (diffHours < 24) return `${diffHours}h`
-  if (diffHours < 48) return 'Yesterday'
-  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
-}
+
 
 export function ConversationsScreen({ navigation }: Props) {
   const me = useCurrentUser()
@@ -39,9 +27,28 @@ export function ConversationsScreen({ navigation }: Props) {
   const sheet = useActionSheet()
   const [search, setSearch] = useState('')
   const allRows = conversations.data?.pages.flatMap((p) => p.data) ?? []
+  
+  // Enforce sort rule: unread human > recent human > unread system > recent system
+  const sortedRows = [...allRows].sort((a: any, b: any) => {
+    // 1. Rank Unread Human
+    const aHumanUnread = a.type !== 'SYSTEM' && a.hasUnread
+    const bHumanUnread = b.type !== 'SYSTEM' && b.hasUnread
+    if (aHumanUnread && !bHumanUnread) return -1
+    if (bHumanUnread && !aHumanUnread) return 1
+
+    // 2. Rank Type (Human > System)
+    if (a.type !== 'SYSTEM' && b.type === 'SYSTEM') return -1
+    if (b.type !== 'SYSTEM' && a.type === 'SYSTEM') return 1
+
+    // 3. Rank Recent (Time)
+    const aTime = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0
+    const bTime = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0
+    return bTime - aTime
+  })
+
   const query = search.trim().toLowerCase()
   const rows = query
-    ? allRows.filter((item) => {
+    ? sortedRows.filter((item) => {
         const other = item.participants.find((p: any) => p.id !== myProfileId) ?? item.participants[0]
         return (
           other?.displayName?.toLowerCase().includes(query) ||
@@ -49,6 +56,12 @@ export function ConversationsScreen({ navigation }: Props) {
         )
       })
     : allRows
+
+  const unreadCount = allRows.filter((r) => r.hasUnread).length
+  const pageFacts = [
+    { value: allRows.length, label: allRows.length === 1 ? 'conversation' : 'conversations' },
+    { value: unreadCount, label: 'unread' },
+  ]
 
   function confirmUnmatch(conversationId: string, otherDisplayName: string) {
     hapticMedium()
@@ -69,14 +82,7 @@ export function ConversationsScreen({ navigation }: Props) {
     })
   }
 
-  function renderRightActions(conversationId: string, otherDisplayName: string) {
-    return (
-      <Pressable testID={`conversations.unmatch.${conversationId}`} style={styles.unmatchAction} onPress={() => confirmUnmatch(conversationId, otherDisplayName)}>
-        <Icon name="X" size={24} color={colors.white} />
-        <Text style={styles.unmatchText}>Unmatch</Text>
-      </Pressable>
-    )
-  }
+
 
   if (conversations.isError) {
     return (
@@ -88,88 +94,73 @@ export function ConversationsScreen({ navigation }: Props) {
 
   return (
     <ScreenContainer testID="screen.conversations" padded={false} width="full">
-      <TopNavigation testID="conversations.header" title="Messages" alignment="left" />
-      {!conversations.isLoading && allRows.length > 0 && (
-        <View style={{ paddingHorizontal: spacing.lg, width: '100%', maxWidth: 960, alignSelf: 'center' }}>
-          <TextField testID="conversations.search"
-            value={search}
-            onChangeText={setSearch}
-            placeholder="Search conversations"
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
-        </View>
-      )}
       <FlatList
         data={(conversations.isLoading ? [1, 2, 3, 4, 5] : rows) as any[]}
         keyExtractor={(item) => (typeof item === 'number' ? String(item) : item.id)}
-        // Full-bleed scroll box (native scrollbar at the true browser edge);
-        // width/centering applied to content instead — see CategoriesScreen.
-        contentContainerStyle={[styles.listContent, { width: '100%', maxWidth: 960, alignSelf: 'center' }]}
+        // Full-bleed scroll box, constrained content width
+        contentContainerStyle={[styles.listContent, { width: '100%', maxWidth: CANVAS_WIDTH, alignSelf: 'center' }]}
         onEndReached={() => conversations.hasNextPage && conversations.fetchNextPage()}
+        ListHeaderComponent={
+          <View style={styles.headerContainer}>
+            <PageHeader
+              title="Messages"
+              facts={pageFacts}
+              sectionTitle="Conversations"
+              sectionAction={<Text style={styles.dropdownPlaceholder}>ALL ▾</Text>}
+            />
+            {!conversations.isLoading && allRows.length > 0 && (
+              <View style={styles.searchContainer}>
+                <TextField testID="conversations.search"
+                  value={search}
+                  onChangeText={setSearch}
+                  placeholder="Search messages"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+              </View>
+            )}
+          </View>
+        }
         ListEmptyComponent={
           query ? (
             <EmptyState testID="conversations.empty" title="No matches" subtitle={`No conversations match "${search.trim()}".`} />
           ) : (
-            <EmptyState testID="conversations.empty" title="No conversations yet" subtitle="Match with someone in Discover to start a conversation." />
+            <EmptyState testID="conversations.empty" title="No conversations yet" subtitle="When you match with someone, your conversations will appear here." />
           )
         }
         ItemSeparatorComponent={() => <View style={styles.separator} />}
         renderItem={({ item }) => {
           if (typeof item === 'number') {
+            return <ConversationRowSkeleton />
+          }
+
+          if (item.type === 'SYSTEM') {
             return (
-              <View style={styles.row}>
-                <Skeleton variant="circular" width={56} height={56} style={styles.avatar} />
-                <View style={{ flex: 1, gap: spacing.xs, justifyContent: 'center' }}>
-                  <Skeleton variant="text" width={120} height={18} />
-                  <Skeleton variant="text" width={180} height={14} />
-                </View>
-              </View>
+              <SystemConversationRow
+                conversationId={item.id}
+                title="Datememe"
+                previewText={item.lastMessageBody || 'New updates available'}
+                createdAt={item.lastMessageAt}
+                isUnread={item.hasUnread}
+                onPress={() => navigation.navigate('Conversation', { conversationId: item.id, displayName: 'Datememe' })}
+              />
             )
           }
 
-          const other = item.participants.find((p: any) => p.id !== myProfileId) ?? item.participants[0]
+          const other = item.participants?.find((p: any) => p.id !== myProfileId) ?? item.participants?.[0]
           if (!other) return null
 
-          const isUnread = item.hasUnread
-
           return (
-            <Swipeable renderRightActions={() => renderRightActions(item.id, other.displayName)} overshootRight={false}>
-              <Pressable testID={`conversations.row.${item.id}`}
-                style={styles.row}
-                onPress={() => navigation.navigate('Conversation', { conversationId: item.id, displayName: other.displayName })}
-              >
-                {other.avatarUrl ? (
-                  <Image source={{ uri: other.avatarUrl }} style={styles.avatar} />
-                ) : (
-                  <View style={[styles.avatar, styles.avatarLocked]}>
-                    <Text style={styles.avatarLockedText}>{other.displayName.charAt(0).toUpperCase()}</Text>
-                  </View>
-                )}
-                <View style={{ flex: 1, justifyContent: 'center' }}>
-                  <View style={styles.rowHeader}>
-                    <Typography variant="heading" style={isUnread && { fontWeight: '800', color: colors.ink }}>
-                      {other.displayName}
-                    </Typography>
-                    {item.lastMessageAt && (
-                      <Typography variant="label" style={{ color: isUnread ? colors.primary : colors.inkMuted, fontSize: 13 }}>
-                        {formatTimeRelative(item.lastMessageAt)}
-                      </Typography>
-                    )}
-                  </View>
-                  <View style={styles.rowSub}>
-                    <Typography 
-                      variant="bodyMuted" 
-                      numberOfLines={1} 
-                      style={[styles.snippet, isUnread && { color: colors.ink, fontWeight: '600' }]}
-                    >
-                      {item.lastMessageBody || 'Say hi!'}
-                    </Typography>
-                    {isUnread && <View style={styles.unreadDot} />}
-                  </View>
-                </View>
-              </Pressable>
-            </Swipeable>
+            <ConversationRow
+              conversationId={item.id}
+              otherDisplayName={other.displayName}
+              otherAvatarUrl={other.avatarUrl}
+              lastMessageBody={item.lastMessageBody}
+              lastMessageAt={item.lastMessageAt}
+              isUnread={item.hasUnread}
+              onPress={() => navigation.navigate('Conversation', { conversationId: item.id, displayName: other.displayName })}
+              onUnmatch={() => confirmUnmatch(item.id, other.displayName)}
+            />
           )
         }}
       />
@@ -179,52 +170,25 @@ export function ConversationsScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  listContent: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xxl },
-  row: { 
-    flexDirection: 'row', 
-    paddingVertical: spacing.md, 
-    backgroundColor: colors.surface 
+  listContent: { paddingBottom: spacing.xxl },
+  headerContainer: {
+    maxWidth: 800,
+    width: '100%',
+    alignSelf: 'center',
+  },
+  searchContainer: { 
+    paddingHorizontal: spacing.lg, 
+    marginBottom: spacing.md 
+  },
+  dropdownPlaceholder: {
+    ...type.label,
   },
   separator: {
     height: 1,
     backgroundColor: colors.border,
-    marginLeft: 56 + spacing.md,
-  },
-  avatar: { width: 56, height: 56, borderRadius: radius.pill, marginRight: spacing.md },
-  avatarLocked: { backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center' },
-  avatarLockedText: { ...type.heading, color: colors.primary },
-  rowHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  rowSub: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  snippet: {
-    flex: 1,
-    marginRight: spacing.sm,
-  },
-  unreadDot: {
-    width: 10,
-    height: 10,
-    borderRadius: radius.pill,
-    backgroundColor: colors.primary,
-  },
-  unmatchAction: {
-    backgroundColor: colors.danger,
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: 80,
-    paddingVertical: spacing.md,
-  },
-  unmatchText: {
-    color: colors.white,
-    fontSize: 12,
-    fontWeight: '700',
-    marginTop: 4,
+    marginLeft: 56 + spacing.md + spacing.lg,
+    maxWidth: 800 - (56 + spacing.md + spacing.lg),
+    width: '100%',
+    alignSelf: 'center',
   }
 })

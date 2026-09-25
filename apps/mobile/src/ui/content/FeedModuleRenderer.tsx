@@ -46,7 +46,7 @@ export function FeedModuleRenderer({ module, state, onPressItem, onPressQuickPic
 
   const zone = module.context?.zone
 
-  const shared = { testID: `feed.module.${module.id}`, title: module.title, items: module.items, state, onPressItem, zone }
+  const shared = { testID: `feed.module.${module.id}`, title: module.title, items: module.items ?? [], state, onPressItem, zone }
 
   // Personal history — collapsed summary, not a full structure.
   if (PERSONAL_HISTORY_MODULE_IDS.has(module.id)) {
@@ -54,10 +54,9 @@ export function FeedModuleRenderer({ module, state, onPressItem, onPressQuickPic
   }
 
   // ── RESULTS = one compact, predictable grammar. ──────────────────────
-  // Ignore the server's structure/column hints entirely — Results gets a
-  // 4-column compact Grid (responsive down to 2 on mobile via Grid).
+  // Results are an editorial ranking, not just another set of stacked cards.
   if (zone === 'results') {
-    return <Grid {...shared} gridShape="square" columns={4} />
+    return <River {...shared} />
   }
 
   // ── CUSTOM REDESIGN: Tech Stack ──────────────────────────────────────

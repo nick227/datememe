@@ -40,8 +40,9 @@ export function AppTabs() {
       screenOptions={({ route }) => ({
         headerShown: false,
         animation: 'fade',
+        tabBarShowLabel: false,
         tabBarButtonTestID: `tab.${route.name.toLowerCase()}`,
-        tabBarActiveTintColor: colors.primary,
+        tabBarActiveTintColor: colors.accent,
         tabBarInactiveTintColor: colors.inkMuted,
         tabBarIcon: ({ color, size }) => {
           if (route.name === 'ProfileTab') return null;

@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { Image, Pressable, StyleSheet, View } from 'react-native'
+import { Image, StyleSheet, View } from 'react-native'
 import { useNextQuickPick, useSubmitQuickPickChoice } from '@project/sdk'
 import { Typography } from '../Typography'
+import { PressableScale } from '../PressableScale'
 import { Skeleton } from '../Skeleton'
 import { EmptyState } from '../EmptyState'
 import { colors, spacing } from '../../theme'
@@ -64,11 +65,8 @@ export function QuickPicksSpotlight({ moduleId, peopleMode = false }: { moduleId
         const data: any = prompt.data
         return (
         <>
-          <Typography variant="display" style={styles.prompt}>
+          <Typography variant="heading" style={styles.prompt}>
             {data.prompt}
-          </Typography>
-          <Typography variant="label" style={styles.contextLabel}>
-            {data.contextLabel}
           </Typography>
           <View style={styles.optionsRow}>
             <QuickPickOption
@@ -123,7 +121,12 @@ function QuickPickOption({
   const initial = (representative?.displayName ?? entity.canonicalName).charAt(0).toUpperCase()
 
   return (
-    <Pressable style={styles.option} onPress={onPress} disabled={!!picked}>
+    <PressableScale 
+      style={[styles.option, isThisPicked && styles.optionSelected, picked && !isThisPicked && styles.optionNotPicked]} 
+      onPress={onPress} 
+      disabled={!!picked}
+      scaleTo={0.98}
+    >
       {photoUrl ? (
         <Image source={{ uri: photoUrl }} style={styles.optionImage} />
       ) : (
@@ -135,14 +138,9 @@ function QuickPickOption({
       )}
 
       {representative ? (
-        <>
-          <Typography variant="heading" style={styles.optionName} numberOfLines={1}>
-            {representative.displayName}
-          </Typography>
-          <Typography variant="bodyMuted" style={styles.optionCaption} numberOfLines={2}>
-            Prefers {entity.canonicalName}
-          </Typography>
-        </>
+        <Typography variant="heading" style={styles.optionName} numberOfLines={1}>
+          {representative.displayName}
+        </Typography>
       ) : (
         <Typography variant="heading" style={styles.optionName} numberOfLines={2}>
           {entity.canonicalName}
@@ -170,7 +168,7 @@ function QuickPickOption({
           ) : null}
         </View>
       ) : null}
-    </Pressable>
+    </PressableScale>
   )
 }
 
@@ -178,19 +176,21 @@ const styles = StyleSheet.create({
   // A full-bleed band with its own generous vertical rhythm — reads as a
   // genuinely different beat from the surrounding Grid/Rail sections.
   section: {
-    backgroundColor: colors.white,
-    paddingVertical: spacing.xxl,
-    paddingHorizontal: spacing.xl,
-    marginVertical: spacing.section,
-    minHeight: 460,
+    paddingVertical: spacing.xl,
+    paddingHorizontal: spacing.lg,
+    marginVertical: spacing.md,
     justifyContent: 'center',
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: colors.border,
   },
-  eyebrow: { color: colors.accent, marginBottom: spacing.md, textAlign: 'center' },
-  prompt: { color: colors.ink, fontSize: 34, lineHeight: 40, textAlign: 'center', marginBottom: spacing.xs },
-  contextLabel: { color: colors.inkMuted, textAlign: 'center', marginBottom: spacing.xl },
-  optionsRow: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.lg, maxWidth: 760, alignSelf: 'center', width: '100%' },
-  option: { flex: 1, backgroundColor: colors.surface, padding: spacing.lg, alignItems: 'center' },
-  optionImage: { width: '100%', aspectRatio: 1, marginBottom: spacing.md, backgroundColor: colors.surfaceMuted },
+  eyebrow: { color: colors.accent, marginBottom: spacing.sm, textAlign: 'center' },
+  prompt: { color: colors.ink, textAlign: 'center', marginBottom: spacing.lg },
+  optionsRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, maxWidth: 600, alignSelf: 'center', width: '100%' },
+  option: { flex: 1, backgroundColor: colors.surface, padding: spacing.md, alignItems: 'center', borderRadius: 14, borderWidth: 1, borderColor: colors.ink },
+  optionSelected: { borderColor: colors.accent, backgroundColor: colors.surfaceMuted, transform: [{ scale: 1.02 }] },
+  optionNotPicked: { opacity: 0.5, borderColor: colors.border },
+  optionImage: { width: 80, height: 80, borderRadius: 40, marginBottom: spacing.md, backgroundColor: colors.surfaceMuted },
   optionImageFallback: { alignItems: 'center', justifyContent: 'center' },
   optionInitial: { color: colors.inkMuted },
   optionName: { textAlign: 'center' },

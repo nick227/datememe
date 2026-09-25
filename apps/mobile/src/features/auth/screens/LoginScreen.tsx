@@ -67,7 +67,7 @@ export function LoginScreen({ navigation }: Props) {
           <View style={{ marginTop: spacing.md }}>
             <Button testID="login.create-an-account" label="Create an account" variant="secondary" onPress={() => navigation.navigate('Register')} />
           </View>
-          <View style={{ marginTop: spacing.md, alignItems: 'center' }}>
+          <View style={{ marginTop: spacing.md }}>
             <Button testID="login.forgot-password" label="Forgot password?" variant="secondary" onPress={() => navigation.navigate('ForgotPassword')} />
           </View>
         </View>

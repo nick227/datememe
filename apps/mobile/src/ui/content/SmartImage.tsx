@@ -3,6 +3,7 @@ import { StyleSheet } from 'react-native'
 import Animated, { FadeIn } from 'react-native-reanimated'
 import { Box, colors } from '../../theme'
 import { Typography } from '../Typography'
+import { Image as ImageIcon } from 'lucide-react-native'
 
 type Props = {
   uri?: string | null
@@ -41,9 +42,7 @@ export function SmartImage({ uri, fallbackText, aspectRatio = 16 / 9, width = '1
           justifyContent="center"
           backgroundColor="primarySoft" // A very faint tonal wash
         >
-          <Typography variant={isTiny ? 'heading' : 'display'} style={{ color: colors.inkMuted, opacity: 0.5 }}>
-            {initial}
-          </Typography>
+          <ImageIcon size={isTiny ? 16 : 32} color={colors.inkMuted} strokeWidth={1} style={{ opacity: 0.3 }} />
         </Box>
       ) : (
         <>

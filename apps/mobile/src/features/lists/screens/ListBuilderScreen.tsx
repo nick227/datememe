@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { FlatList, Keyboard, Pressable, ScrollView, StyleSheet, View } from 'react-native'
+import { FlatList, Keyboard, Pressable, StyleSheet, View } from 'react-native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { useCategory, useCategoryEntities, useMyLists, useSubmitEntity, useUpsertList } from '@project/sdk'
 import { ScreenContainer } from '../../../ui/ScreenContainer'
@@ -90,7 +90,7 @@ export function ListBuilderScreen({ route, navigation }: Props) {
     return () => {
       if (saveTimeout.current) clearTimeout(saveTimeout.current)
     }
-  }, [picked, minItems])
+  }, [picked, minItems, upsertList])
 
   function toggle(entityId: string, name: string, imageUrl?: string | null) {
     setPicked((prev) => {
