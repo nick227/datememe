@@ -50,7 +50,8 @@
     "lint": "expo lint",
     "test": "tsx --test config.test.ts",
     "qa:config": "APP_VARIANT=staging EXPO_PUBLIC_API_URL=https://qa-server-staging.up.railway.app expo config --type public",
-    "qa:build": "pnpm dlx eas-cli@24.7.0 build --platform android --profile qa"
+    "qa:build": "pnpm dlx eas-cli@24.7.0 build --platform android --profile qa",
+    "qa:store:build": "pnpm dlx eas-cli@24.7.0 build --platform android --profile qa-store"
   },
   "private": true
 }

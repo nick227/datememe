@@ -724,7 +724,7 @@ export interface paths {
         put?: never;
         /**
          * Upload an image (profile photos)
-         * @description Multipart body, one `file` field (image/jpeg, png, gif, webp, or svg+xml). No `requestBody` schema is declared here on purpose: `@fastify/multipart` never populates `request.body` (files are consumed via the streaming `request.file()` API instead), so any body schema here — even an empty one — gets validated against `request.body` and rejects every real request as "must be object". `MediaService` does the actual file-type and size validation instead.
+         * @description Multipart body, one `file` field (image/jpeg, image/png, image/gif, or image/webp). Image contents must match the declared type. Photos are decoded, oriented, resized to fit within 2000 × 2000 pixels, and stored as WebP with metadata removed. The upload is associated with the authenticated user for deletion authorization. No `requestBody` schema is declared here on purpose: `@fastify/multipart` never populates `request.body` (files are consumed via the streaming `request.file()` API instead), so any body schema here — even an empty one — gets validated against `request.body` and rejects every real request as "must be object". `MediaService` does the actual file-type and size validation instead.
          */
         post: operations["uploadMedia"];
         delete?: never;
@@ -743,7 +743,7 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /** Delete an uploaded file */
+        /** Delete an image uploaded by the authenticated user */
         delete: operations["deleteMedia"];
         options?: never;
         head?: never;
@@ -1884,7 +1884,7 @@ export interface components {
             completed?: boolean;
         };
         /** @enum {string} */
-        ContentUnitKind: "poll" | "person" | "category" | "entity" | "insight";
+        ContentUnitKind: "poll" | "person" | "category" | "entity" | "insight" | "result";
         ContentUnit: {
             /** @description Stable within its collection. For kind='category' this is the Category slug (routable); for kind='person' the Profile id. */
             id: string;
@@ -1895,6 +1895,10 @@ export interface components {
             imageCredit?: components["schemas"]["ImageCredit"];
             metrics?: components["schemas"]["Metric"][];
             capabilities?: components["schemas"]["Capabilities"];
+            /** @enum {string|null} */
+            resultType?: "entity" | "person" | null;
+            rank?: number | null;
+            trend?: string | null;
             /** @description Order of this unit *within its collection* only — not a comparative rank. Comparative standing is a fact about the unit and belongs under `metrics` as community-position / viewer-position / percentile (proposal §4). */
             position?: number | null;
             relationship?: components["schemas"]["ContentUnitRelationship"];
@@ -1914,7 +1918,7 @@ export interface components {
             previewEntities?: components["schemas"]["Entity"][];
         };
         /** @enum {string} */
-        CollectionType: "favorites" | "lists" | "recommendations" | "comparison" | "trending" | "prompt" | "quiz";
+        CollectionType: "favorites" | "lists" | "recommendations" | "comparison" | "trending" | "prompt" | "quiz" | "results";
         ContentCollectionContext: {
             reason?: string;
             sourceEntityId?: string;
@@ -4090,6 +4094,15 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            /** @description The upload belongs to another user */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
         };
     };
     getQueueMetrics: {

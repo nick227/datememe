@@ -40,6 +40,15 @@ function resolveConfig(env: ConfigEnv) {
 }
 
 const qaEnv = { ...easJson.build.qa.env, EAS_BUILD_PROFILE: 'qa' }
+// Mirror EAS's one-level inheritance so tests exercise any store-profile overrides.
+const qaStoreOverrides: Partial<typeof easJson.build.qa> = easJson.build['qa-store']
+const qaStoreProfile = {
+  ...easJson.build.qa,
+  ...qaStoreOverrides,
+  env: { ...easJson.build.qa.env, ...qaStoreOverrides.env },
+  android: { ...easJson.build.qa.android, ...qaStoreOverrides.android },
+}
+const qaStoreEnv = { ...qaStoreProfile.env, EAS_BUILD_PROFILE: 'qa-store' }
 
 test('the committed QA profile resolves the standalone staging app without local environment files', () => {
   const config = resolveConfig(qaEnv)
@@ -53,21 +62,51 @@ test('the committed QA profile resolves the standalone staging app without local
   assert.equal(easJson.build.qa.developmentClient, false)
 })
 
-for (const endpoint of ['https://datememe-server.up.railway.app', 'http://localhost:3002']) {
-  test(`QA rejects an endpoint outside staging: ${endpoint}`, () => {
+test('the staging store profile keeps the QA identity and endpoint while producing an AAB', () => {
+  const apk = resolveConfig(qaEnv)
+  const aab = resolveConfig(qaStoreEnv)
+  assert.equal(easJson.build['qa-store'].extends, 'qa')
+  assert.equal(qaStoreProfile.distribution, 'store')
+  assert.equal(qaStoreProfile.android.buildType, 'app-bundle')
+  assert.equal(qaStoreProfile.environment, 'preview')
+  assert.equal(qaStoreProfile.developmentClient, false)
+  assert.equal(aab.android?.package, apk.android?.package)
+  assert.equal(aab.extra?.apiUrl, apk.extra?.apiUrl)
+  assert.equal(aab.extra?.appVariant, 'staging')
+  assert.equal(aab.name, 'Datememe QA')
+})
+
+test('staging builds use EAS-managed increasing version codes with the first APK as the seed', () => {
+  assert.equal(easJson.cli.appVersionSource, 'remote')
+  assert.equal(easJson.build.qa.autoIncrement, true)
+  assert.equal(qaStoreProfile.autoIncrement, true)
+  assert.equal(resolveConfig(qaStoreEnv).android?.versionCode, 1)
+})
+
+for (const env of [qaEnv, qaStoreEnv]) {
+  for (const endpoint of ['https://datememe-server.up.railway.app', 'http://localhost:3002']) {
+    test(`${env.EAS_BUILD_PROFILE} rejects an endpoint outside staging: ${endpoint}`, () => {
+      assert.throws(
+        () => resolveConfig({ ...env, EXPO_PUBLIC_API_URL: endpoint }),
+        /Staging builds must use exactly/,
+      )
+    })
+  }
+
+  test(`${env.EAS_BUILD_PROFILE} rejects a missing endpoint`, () => {
     assert.throws(
-      () => resolveConfig({ ...qaEnv, EXPO_PUBLIC_API_URL: endpoint }),
-      /Staging builds must use exactly/,
+      () => resolveConfig({ APP_VARIANT: 'staging', EAS_BUILD_PROFILE: env.EAS_BUILD_PROFILE }),
+      /EXPO_PUBLIC_API_URL is required/,
+    )
+  })
+
+  test(`${env.EAS_BUILD_PROFILE} rejects the production variant even with an approved endpoint`, () => {
+    assert.throws(
+      () => resolveConfig({ ...env, APP_VARIANT: 'production' }),
+      /Only the staging qa and qa-store EAS build profiles/,
     )
   })
 }
-
-test('QA rejects a missing endpoint', () => {
-  assert.throws(
-    () => resolveConfig({ APP_VARIANT: 'staging', EAS_BUILD_PROFILE: 'qa' }),
-    /EXPO_PUBLIC_API_URL is required/,
-  )
-})
 
 test('QA rejects an unknown app variant', () => {
   assert.throws(
@@ -76,10 +115,10 @@ test('QA rejects an unknown app variant', () => {
   )
 })
 
-test('QA rejects the production variant even with an approved endpoint', () => {
+test('unconfigured EAS profiles cannot build even with the staging variant and endpoint', () => {
   assert.throws(
-    () => resolveConfig({ ...qaEnv, APP_VARIANT: 'production' }),
-    /Only the staging qa EAS build profile/,
+    () => resolveConfig({ ...qaEnv, EAS_BUILD_PROFILE: 'production' }),
+    /Only the staging qa and qa-store EAS build profiles/,
   )
 })
 

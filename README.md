@@ -67,13 +67,17 @@ pnpm dev
 |---|---|
 | `pnpm dev` | Starts **all** development servers in parallel. |
 | `pnpm typecheck` | Runs TypeScript checks across the entire monorepo. |
-| `pnpm db:push` | Syncs your Prisma schema to your local database. |
+| `pnpm db:migrate:dev` | Creates/applies a reviewed migration against a development database. |
+| `pnpm db:migrate:deploy` | Applies committed migrations to an initialized database. |
+| `pnpm db:push` | Disposable local prototyping only; never staging/production deployment. |
 | `pnpm db:studio` | Opens Prisma Studio to easily view your local data. |
 | `pnpm sdk:generate`| Regenerates frontend hooks if you change the OpenAPI spec. |
 
 ## 🚢 Deployment
 
 For the standalone Android staging APK, see the [Android QA runbook](docs/android-qa-runbook.md). It documents the EAS build, isolated Railway backend, and device verification steps.
+
+Hosted schema changes use committed migrations; see [database and media operations](docs/mobile-data-operations.md) before deploying to an existing database.
 
 Datememe is built to be easily deployed on modern PaaS providers like **Railway** or **Render**. 
 

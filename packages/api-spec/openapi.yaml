@@ -2992,7 +2992,10 @@ paths:
       summary: Upload an image (profile photos)
       tags: [media]
       description: >
-        Multipart body, one `file` field (image/jpeg, png, gif, webp, or svg+xml).
+        Multipart body, one `file` field (image/jpeg, image/png, image/gif, or image/webp).
+        Image contents must match the declared type. Photos are decoded, oriented,
+        resized to fit within 2000 × 2000 pixels, and stored as WebP with metadata removed.
+        The upload is associated with the authenticated user for deletion authorization.
         No `requestBody` schema is declared here on purpose: `@fastify/multipart`
         never populates `request.body` (files are consumed via the streaming
         `request.file()` API instead), so any body schema here — even an empty one —
@@ -3023,7 +3026,7 @@ paths:
   /media/{key}:
     delete:
       operationId: deleteMedia
-      summary: Delete an uploaded file
+      summary: Delete an image uploaded by the authenticated user
       tags: [media]
       parameters:
         - in: path
@@ -3045,6 +3048,11 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/ErrorResponse' }
         '401': { $ref: '#/components/responses/Unauthorized' }
+        '404':
+          description: The upload belongs to another user
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
 
   # ── Admin ─────────────────────────────────────────────────
   # First slice of the apps/admin -> apps/mobile Admin migration (see

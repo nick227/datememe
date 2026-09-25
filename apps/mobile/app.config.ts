@@ -9,8 +9,8 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     throw new Error(`Unknown APP_VARIANT: ${variant}`)
   }
   if (process.env.EAS_BUILD_PROFILE &&
-      (process.env.EAS_BUILD_PROFILE !== 'qa' || variant !== 'staging')) {
-    throw new Error('Only the staging qa EAS build profile is configured in milestone 1')
+      (!['qa', 'qa-store'].includes(process.env.EAS_BUILD_PROFILE) || variant !== 'staging')) {
+    throw new Error('Only the staging qa and qa-store EAS build profiles are configured')
   }
 
   const apiUrl = process.env.EXPO_PUBLIC_API_URL
@@ -41,6 +41,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     name: variant === 'staging' ? 'Datememe QA' : variant === 'development' ? 'Datememe Dev' : 'Datememe',
     slug: 'datememe',
     ...(owner ? { owner } : {}),
+    // Seed for the first remote version; EAS manages/increments built version codes.
     android: { ...config.android, package: `com.datememe.app${suffix}`, versionCode: 1 },
     // Runtime consumes this validated value; there is no separate localhost fallback.
     extra: { ...config.extra, appVariant: variant, apiUrl: apiUrl.replace(/\/$/, ''), ...(projectId ? { eas: { projectId } } : {}) },
