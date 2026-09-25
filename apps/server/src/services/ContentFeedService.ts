@@ -152,7 +152,7 @@ export class ContentFeedService {
     
     for (const rs of categoryResultSets) {
       for (const entry of rs.entries) {
-        entry.entity = entityById.get(entry.subjectId)
+        (entry as any).entity = entityById.get(entry.subjectId)
       }
     }
 
@@ -284,7 +284,7 @@ export class ContentFeedService {
       
       // Inject a Results module after every other group module, if we have them
       if (i % 2 === 1 && categoryResultSets[resultIndex]) {
-        const resultSet = categoryResultSets[resultIndex]
+        const resultSet = categoryResultSets[resultIndex]!
         const category = categories.find((c: any) => c.id === resultSet.scopeValue)
         if (category) {
           exploreBeats.push({
@@ -611,7 +611,7 @@ export class ContentFeedService {
     
     for (const rs of profileResultSets) {
       for (const entry of rs.entries) {
-        entry.profile = profileById.get(entry.subjectId)
+        (entry as any).profile = profileById.get(entry.subjectId)
       }
     }
 
@@ -830,7 +830,7 @@ export class ContentFeedService {
 
         // Inject Profile Results Modules
         if (chunkIdx % 2 === 1 && profileResultSets[resultIndex]) {
-          const resultSet = profileResultSets[resultIndex]
+          const resultSet = profileResultSets[resultIndex]!
           const titleMap: Record<string, string> = {
             'MOST_LIKED': 'Most Liked Profiles',
             'MOST_ACTIVE': 'Most Active Profiles',

@@ -38,7 +38,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version-file: .node-version
           cache: pnpm
 
       - name: Install
@@ -53,8 +53,8 @@ jobs:
       - name: Check SDK drift
         run: pnpm sdk:check
 
-      - name: Push DB schema
-        run: pnpm db:push
+      - name: Apply DB migrations
+        run: pnpm db:migrate:deploy
 
       - name: Test
         run: pnpm test

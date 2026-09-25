@@ -25,7 +25,7 @@ console.log('🚀 Bootstrapping project...\n')
 run('pnpm install', 'Install dependencies')
 run('pnpm --filter @project/db exec prisma generate', 'Generate Prisma client')
 run('pnpm --filter @project/db build', 'Build @project/db (consumed as compiled JS by server/worker)')
-run('pnpm db:push', 'Push schema to database')
+run('pnpm db:migrate:deploy', 'Apply database migrations (existing databases must be baselined first)')
 run('pnpm sdk:generate', 'Generate SDK types from OpenAPI spec')
 run('pnpm db:seed', 'Seed development data')
 

@@ -11,7 +11,12 @@
     "db:studio": "prisma studio",
     "typecheck": "tsc --noEmit",
     "lint": "echo 'no lint configured for @project/db'",
-    "test": "echo 'no tests for @project/db'"
+    "test": "echo 'no tests for @project/db'",
+    "db:migrate:dev": "prisma migrate dev",
+    "db:migrate:deploy": "prisma migrate deploy",
+    "db:migrate:status": "prisma migrate status",
+    "db:migrate:baseline": "prisma migrate resolve --applied 0_init",
+    "db:seed:staging": "tsx prisma/seed-staging.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.20.0"

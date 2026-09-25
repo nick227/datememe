@@ -12,7 +12,11 @@
     "sdk:check": "tsx scripts/check-sdk-drift.ts",
     "db:push": "pnpm --filter @project/db db:push",
     "db:seed": "pnpm --filter @project/db db:seed",
-    "db:studio": "pnpm --filter @project/db db:studio"
+    "db:studio": "pnpm --filter @project/db db:studio",
+    "db:migrate:dev": "pnpm --filter @project/db db:migrate:dev",
+    "db:migrate:deploy": "pnpm --filter @project/db db:migrate:deploy",
+    "db:migrate:status": "pnpm --filter @project/db db:migrate:status",
+    "db:migrate:baseline": "pnpm --filter @project/db db:migrate:baseline"
   },
   "devDependencies": {
     "@types/js-yaml": "^4.0.0",
