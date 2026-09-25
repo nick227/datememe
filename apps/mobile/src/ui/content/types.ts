@@ -1,7 +1,20 @@
 import type { components } from '@project/sdk'
 
-export type ContentUnit = components['schemas']['ContentUnit']
+export type ContentUnit = components['schemas']['ContentUnit'] | ResultUnit
 export type FeedModule = components['schemas']['FeedModule']
+
+export type ResultUnit = {
+  id: string
+  kind: 'result'
+  resultType: 'entity' | 'person'
+  title: string
+  subtitle?: string
+  imageUrl?: string | null
+  metrics: Metric[]
+  rank: number
+  trend?: string
+  position: number
+}
 
 // FeedModule is one flat wire schema (see openapi.yaml's comment on it — fast-json-stringify
 // can't reliably serialize a oneOf of structurally-similar objects); these two are the

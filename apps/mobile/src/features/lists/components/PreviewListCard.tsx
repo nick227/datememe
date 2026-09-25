@@ -51,10 +51,9 @@ export function PreviewListCard({ list, style }: Props) {
 const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.surface,
-    borderRadius: radius.lg,
     padding: spacing.md,
     marginBottom: spacing.sm,
-    borderWidth: borderWidth.thick,
+    borderWidth: borderWidth.thin,
     borderColor: colors.border,
   },
   header: {

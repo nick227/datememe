@@ -29,6 +29,7 @@ export function EditProfileScreen({ navigation }: Props) {
 
   useEffect(() => {
     if (hydrated || !me.data?.profile) return
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setDisplayName(me.data.profile.displayName)
     setBio(me.data.profile.bio ?? '')
     setAvatarUrl(me.data.profile.avatarUrl ?? null)

@@ -1,15 +1,13 @@
 import { useState } from 'react'
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native'
-import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated'
-import { LinearGradient } from 'expo-linear-gradient'
 import { MatchPercentageBadge } from './MatchPercentageBadge'
 import { Typography } from '../../../ui/Typography'
 import { Icon } from '../../../ui/Icon'
+import { PressableScale } from '../../../ui/PressableScale'
 import { borderWidth, colors, radius, spacing } from '../../../theme'
-import { hapticMedium, hapticHeavy, hapticLight } from '../../../lib/haptics'
+import { hapticLight } from '../../../lib/haptics'
 import type { MatchInsight } from '../../../navigation/types'
 
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable)
 
 type Props = {
   profileId: string
@@ -23,31 +21,23 @@ type Props = {
 }
 
 function ActionButton({ testID, icon, variant, onPress, onAction }: { testID: string, icon: any, variant: 'pass' | 'like', onPress: () => void, onAction: () => void }) {
-  const scale = useSharedValue(1)
-
-  const style = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }))
-
   return (
-    <AnimatedPressable
+    <PressableScale
       testID={testID}
-      onPress={onPress}
-      onPressIn={() => {
-        scale.value = withSpring(0.9, { damping: 12, stiffness: 200 })
+      onPress={() => {
         onAction()
+        onPress()
       }}
-      onPressOut={() => {
-        scale.value = withSpring(1, { damping: 12, stiffness: 200 })
-      }}
+      scaleTo={0.9}
+      duration={100}
+      haptic="none" // Action manually controls haptic type in QuickPicks
       style={[
         styles.decisionBtn,
-        variant === 'pass' ? styles.passBtn : styles.likeBtn,
-        style
+        variant === 'pass' ? styles.passBtn : styles.likeBtn
       ]}
     >
       <Icon name={icon} size={28} color={variant === 'pass' ? colors.inkMuted : colors.white} />
-    </AnimatedPressable>
+    </PressableScale>
   )
 }
 
@@ -75,108 +65,105 @@ export function MatchFeedCard({ profileId, displayName, avatarUrl, photos = [], 
 
   return (
     <View testID={`discover.profile.${profileId}`} style={styles.card}>
-      <Pressable testID={`discover.profile.${profileId}.open`} style={StyleSheet.absoluteFill} onPress={onPress}>
-        {currentPhotoUrl ? (
-          <Image source={{ uri: currentPhotoUrl }} style={StyleSheet.absoluteFill} resizeMode="cover" />
-        ) : (
-          <View style={[StyleSheet.absoluteFill, styles.photoLocked]}>
-            <Text style={styles.photoLockedText}>{(displayName || '?').charAt(0).toUpperCase()}</Text>
-          </View>
-        )}
+      <PressableScale testID={`discover.profile.${profileId}.open`} onPress={onPress} scaleTo={0.98} haptic="light">
+        <View style={styles.imageWrap}>
+          {currentPhotoUrl ? (
+            <Image source={{ uri: currentPhotoUrl }} style={styles.image} resizeMode="cover" />
+          ) : (
+            <View style={[styles.image, styles.photoLocked]}>
+              <Text style={styles.photoLockedText}>{(displayName || '?').charAt(0).toUpperCase()}</Text>
+            </View>
+          )}
 
-        {/* Top interaction zones for gallery */}
-        <View style={styles.tapZones}>
-          <Pressable testID={`discover.profile.${profileId}.previous-photo`} style={styles.tapZone} onPress={prevPhoto} />
-          <Pressable testID={`discover.profile.${profileId}.next-photo`} style={styles.tapZone} onPress={nextPhoto} />
+          {/* Top interaction zones for gallery */}
+          <View style={styles.tapZones}>
+            <Pressable testID={`discover.profile.${profileId}.previous-photo`} style={styles.tapZone} onPress={prevPhoto} />
+            <Pressable testID={`discover.profile.${profileId}.next-photo`} style={styles.tapZone} onPress={nextPhoto} />
+          </View>
+
+          {/* Gallery pagination indicators */}
+          {activePhotos.length > 1 && (
+            <View style={styles.paginationContainer}>
+              {activePhotos.map((_, i) => (
+                <View key={i} style={[styles.paginationDot, i === photoIndex && styles.paginationDotActive]} />
+              ))}
+            </View>
+          )}
         </View>
 
-        {/* Gallery pagination indicators */}
-        {activePhotos.length > 1 && (
-          <View style={styles.paginationContainer}>
-            {activePhotos.map((_, i) => (
-              <View key={i} style={[styles.paginationDot, i === photoIndex && styles.paginationDotActive]} />
-            ))}
+        <View style={styles.content}>
+          <View style={styles.infoRow}>
+            <View style={{ flex: 1 }}>
+              <Typography variant="heading" style={styles.title}>{displayName}</Typography>
+            </View>
+            {matchPercentage != null ? <MatchPercentageBadge percentage={matchPercentage} /> : null}
           </View>
-        )}
 
-        <LinearGradient
-          colors={['transparent', 'rgba(0,0,0,0.4)', 'rgba(0,0,0,0.85)']}
-          style={styles.gradient}
-        >
-          <View style={styles.content}>
-            <View style={styles.infoRow}>
+          {primaryInsight ? (
+            <View style={styles.insightBox}>
+              <Typography style={styles.insightIcon}>{primaryInsight.icon}</Typography>
               <View style={{ flex: 1 }}>
-                <Typography variant="title" style={{ color: colors.white }}>{displayName}</Typography>
+                <Typography variant="label" style={styles.insightTitle}>{primaryInsight.title}</Typography>
+                <Typography variant="bodyMuted" numberOfLines={2}>{primaryInsight.description}</Typography>
               </View>
-              {matchPercentage != null ? <MatchPercentageBadge percentage={matchPercentage} /> : null}
             </View>
+          ) : null}
 
-            {primaryInsight ? (
-              <View style={styles.insightBox}>
-                <Text style={styles.insightIcon}>{primaryInsight.icon}</Text>
-                <View style={{ flex: 1 }}>
-                  <Typography variant="label" style={{ color: colors.white }}>{primaryInsight.title}</Typography>
-                  <Typography variant="bodyMuted" numberOfLines={2} style={{ color: 'rgba(255,255,255,0.7)' }}>{primaryInsight.description}</Typography>
-                </View>
-              </View>
-            ) : null}
-
-            <View style={styles.actionsContainer}>
-              <View style={styles.decisionActions}>
-                <ActionButton testID={`discover.profile.${profileId}.pass`}
-                  icon="X" 
-                  variant="pass" 
-                  onAction={() => hapticMedium()}
-                  onPress={() => onAction('PASS')} 
-                />
-                <ActionButton testID={`discover.profile.${profileId}.like`}
-                  icon="Heart" 
-                  variant="like" 
-                  onAction={() => hapticHeavy()}
-                  onPress={() => onAction('LIKE')} 
-                />
-              </View>
-              
-              <View style={styles.tuningActions}>
-                <Pressable testID={`discover.profile.${profileId}.less-like-this`} style={styles.tuneBtn} onPress={() => { hapticLight(); onAction('LESS_LIKE_THIS') }}>
-                  <Typography variant="label" style={{ color: 'rgba(255,255,255,0.6)', textTransform: 'none' }}>Less like this</Typography>
-                </Pressable>
-                <View style={styles.tuneDivider} />
-                <Pressable testID={`discover.profile.${profileId}.more-like-this`} style={styles.tuneBtn} onPress={() => { hapticLight(); onAction('MORE_LIKE_THIS') }}>
-                  <Typography variant="label" style={{ color: 'rgba(255,255,255,0.6)', textTransform: 'none' }}>More like this</Typography>
-                </Pressable>
-              </View>
+          <View style={styles.actionsContainer}>
+            <View style={styles.decisionActions}>
+              <ActionButton testID={`discover.profile.${profileId}.pass`}
+                icon="X" 
+                variant="pass" 
+                onAction={() => hapticMedium()}
+                onPress={() => onAction('PASS')} 
+              />
+              <ActionButton testID={`discover.profile.${profileId}.like`}
+                icon="Heart" 
+                variant="like" 
+                onAction={() => hapticHeavy()}
+                onPress={() => onAction('LIKE')} 
+              />
             </View>
           </View>
-        </LinearGradient>
-      </Pressable>
+        </View>
+      </PressableScale>
     </View>
   )
 }
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colors.ink,
-    borderRadius: radius.lg,
-    borderWidth: borderWidth.thick,
+    backgroundColor: colors.surface,
+    borderWidth: borderWidth.thin,
     borderColor: colors.ink,
-    overflow: 'hidden',
-    ...StyleSheet.absoluteFill,
+    marginBottom: spacing.lg,
+    maxHeight: 600, // Reasonable cap for the main feed card to prevent runaway heights
+  },
+  imageWrap: {
+    position: 'relative',
+    borderBottomWidth: borderWidth.thin,
+    borderBottomColor: colors.ink,
+  },
+  image: {
+    width: '100%',
+    aspectRatio: 4 / 3,
+    backgroundColor: colors.surfaceMuted,
   },
   photoLocked: {
     alignItems: 'center',
     justifyContent: 'center',
+    width: '100%',
+    aspectRatio: 4 / 3, // Restored 4:3 to match actual photos and prevent layout shift
     backgroundColor: colors.surfaceMuted,
   },
   photoLockedText: {
     fontFamily: 'PlusJakartaSans_800ExtraBold',
-    fontSize: 100,
-    color: colors.primary,
+    fontSize: 40,
+    color: colors.inkMuted,
   },
   tapZones: {
-    ...StyleSheet.absoluteFill,
+    ...StyleSheet.absoluteFillObject,
     flexDirection: 'row',
-    bottom: '40%', // leave bottom 40% for buttons/scrolling
   },
   tapZone: {
     flex: 1,
@@ -193,71 +180,61 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 4,
     borderRadius: 2,
-    backgroundColor: 'rgba(255,255,255,0.3)',
+    backgroundColor: 'rgba(0,0,0,0.3)',
   },
   paginationDotActive: {
     backgroundColor: colors.white,
   },
-  gradient: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    paddingTop: 100,
-  },
   content: {
     padding: spacing.lg,
+    gap: spacing.sm,
   },
   infoRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: spacing.md,
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+  },
+  title: {
+    fontSize: 22,
+    lineHeight: 28,
   },
   insightBox: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    borderRadius: radius.md,
-    padding: spacing.md,
     gap: spacing.sm,
-    marginBottom: spacing.lg,
+    marginTop: spacing.xs,
+    marginBottom: spacing.sm,
   },
   insightIcon: {
     fontSize: 20,
+    lineHeight: 24,
+  },
+  insightTitle: {
+    color: colors.ink,
+    marginBottom: 2,
   },
   actionsContainer: {
     alignItems: 'center',
+    marginTop: spacing.sm,
   },
   decisionActions: {
     flexDirection: 'row',
     gap: spacing.xl,
-    marginBottom: spacing.lg,
   },
   decisionBtn: {
-    width: 64,
-    height: 64,
+    width: 56,
+    height: 56,
     borderRadius: radius.pill,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: borderWidth.thin,
+    borderColor: colors.ink,
   },
   passBtn: {
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: colors.surface,
   },
   likeBtn: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.ink,
+    borderColor: colors.ink,
   },
-  tuningActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  tuneBtn: {
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.sm,
-  },
-  tuneDivider: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: 'rgba(255,255,255,0.3)',
-  }
 })

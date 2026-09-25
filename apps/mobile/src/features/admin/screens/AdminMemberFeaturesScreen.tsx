@@ -104,7 +104,7 @@ export function AdminMemberFeaturesScreen({ navigation }: Props) {
 
         <View style={styles.card}>
           <Typography variant="heading">Daily message send limit</Typography>
-          <Typography variant="bodyMuted" style={{ marginBottom: spacing.md }}>A whole number, or "Unlimited".</Typography>
+          <Typography variant="bodyMuted" style={{ marginBottom: spacing.md }}>A whole number, or &quot;Unlimited&quot;.</Typography>
           <View style={styles.tierRow}>
             {(['FREE', 'MEMBER'] as const).map((state) => (
               <View key={state} style={styles.tierCol}>

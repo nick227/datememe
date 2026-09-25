@@ -1,10 +1,7 @@
 import type { ReactNode } from 'react'
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native'
-import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated'
-import { borderWidth, colors, radius, spacing, type } from '../theme'
-import { hapticLight } from '../lib/haptics'
-
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable)
+import { ActivityIndicator, StyleSheet } from 'react-native'
+import { borderWidth, colors, radius, spacing, Box, Text } from '../theme'
+import { PressableScale } from './PressableScale'
 
 type Props = {
   testID?: string
@@ -18,56 +15,31 @@ type Props = {
 
 export function Button({ testID, label, onPress, disabled, loading, variant = 'primary', icon }: Props) {
   const isDisabled = disabled || loading
-  const scale = useSharedValue(1)
-
-  const animatedStyle = useAnimatedStyle(() => {
-    return {
-      transform: [{ scale: scale.value }],
-    }
-  })
-
-  const handlePressIn = () => {
-    if (isDisabled) return
-    scale.value = withSpring(0.96, { damping: 12, stiffness: 200 })
-    hapticLight()
-  }
-
-  const handlePressOut = () => {
-    if (isDisabled) return
-    scale.value = withSpring(1, { damping: 12, stiffness: 200 })
-  }
-
   return (
-    <AnimatedPressable
+    <PressableScale
       testID={testID}
       onPress={onPress}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
       disabled={isDisabled}
+      scaleTo={0.96}
+      haptic="light"
       style={[
         styles.base,
         variant === 'secondary' && styles.secondary,
         variant === 'danger' && styles.danger,
         isDisabled && styles.disabled,
-        animatedStyle,
       ]}
     >
       {loading ? (
         <ActivityIndicator color={variant === 'secondary' ? colors.primary : colors.white} />
       ) : (
-        <View style={icon ? styles.contentRow : undefined}>
+        <Box flexDirection={icon ? 'row' : undefined} alignItems={icon ? 'center' : undefined} gap={icon ? 'sm' : undefined}>
           {icon}
-          <Text
-            style={[
-              type.button,
-              variant === 'secondary' && { color: colors.primary },
-            ]}
-          >
+          <Text variant="button" color={variant === 'secondary' ? 'primary' : 'white'}>
             {label}
           </Text>
-        </View>
+        </Box>
       )}
-    </AnimatedPressable>
+    </PressableScale>
   )
 }
 
@@ -89,10 +61,5 @@ const styles = StyleSheet.create({
   },
   disabled: {
     opacity: 0.5,
-  },
-  contentRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
   },
 })

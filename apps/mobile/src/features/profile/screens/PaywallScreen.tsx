@@ -72,7 +72,7 @@ export function PaywallScreen({ navigation }: Props) {
 
       {isPremium ? (
         <View style={styles.activeBadge}>
-          <Text style={styles.activeBadgeText}>You're already premium — thank you!</Text>
+          <Text style={styles.activeBadgeText}>You&apos;re already premium — thank you!</Text>
         </View>
       ) : plans.isLoading ? (
         <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.lg }} />

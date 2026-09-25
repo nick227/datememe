@@ -763,7 +763,7 @@ components:
 
     ContentUnitKind:
       type: string
-      enum: [poll, person, category, entity, insight]
+      enum: [poll, person, category, entity, insight, result]
 
     ContentUnit:
       type: object
@@ -781,6 +781,9 @@ components:
           type: array
           items: { $ref: '#/components/schemas/Metric' }
         capabilities: { $ref: '#/components/schemas/Capabilities' }
+        resultType: { type: string, enum: [entity, person], nullable: true }
+        rank: { type: integer, nullable: true }
+        trend: { type: string, nullable: true }
         position:
           type: integer
           nullable: true
@@ -833,7 +836,7 @@ components:
 
     CollectionType:
       type: string
-      enum: [favorites, lists, recommendations, comparison, trending, prompt, quiz]
+      enum: [favorites, lists, recommendations, comparison, trending, prompt, quiz, results]
 
     ContentCollectionContext:
       type: object

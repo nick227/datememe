@@ -1,10 +1,12 @@
-import { Text, type TextProps } from 'react-native'
-import { type as themeType } from '../theme'
+import type { TextProps as RNTextProps } from 'react-native'
+import { Text } from '../theme'
+import type { Theme } from '../theme'
 
-type Props = TextProps & {
-  variant?: keyof typeof themeType
+type Props = RNTextProps & {
+  variant?: keyof Theme['textVariants']
+  children?: React.ReactNode
 }
 
 export function Typography({ variant = 'body', style, ...rest }: Props) {
-  return <Text style={[themeType[variant], style]} {...rest} />
+  return <Text variant={variant} style={style as any} {...rest} />
 }

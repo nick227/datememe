@@ -1,10 +1,12 @@
 import { Platform, ScrollView, StyleSheet, View } from 'react-native'
+import Animated, { FadeInDown } from 'react-native-reanimated'
+import { Box, spacing } from '../../theme'
 import { Typography } from '../Typography'
 import { Skeleton } from '../Skeleton'
 import { EmptyState } from '../EmptyState'
 import { ErrorState } from '../ErrorState'
 import { ContentUnitCard } from './ContentUnitCard'
-import { spacing } from '../../theme'
+import { CardSkeleton } from './CardSkeleton'
 import type { ContentUnit, StructureState } from './types'
 
 type Props = {
@@ -32,11 +34,11 @@ const handleWheel = (event: any) => {
 export function Rail({ testID, title, items, state, cardWidth = DEFAULT_CARD_WIDTH, zone, onPressItem, onRetry }: Props) {
   const cardStyle = { width: cardWidth }
   return (
-    <View testID={testID} style={styles.section}>
+    <Box testID={testID} marginBottom="section" width="100%" overflow="hidden">
       {title ? (
-        <Typography variant="heading" style={styles.heading}>
-          {title}
-        </Typography>
+        <Box marginBottom="md" paddingHorizontal="lg">
+          <Typography variant="heading">{title}</Typography>
+        </Box>
       ) : null}
 
       {state === 'loading' ? (
@@ -55,14 +57,14 @@ export function Rail({ testID, title, items, state, cardWidth = DEFAULT_CARD_WID
           contentContainerStyle={styles.scroll}
           {...(Platform.OS === 'web' ? { onWheel: handleWheel } as any : {})}
         >
-          {items.map((unit) => (
-            <View key={unit.id} style={cardStyle}>
+          {items.map((unit, index) => (
+            <Animated.View key={unit.id} entering={FadeInDown.duration(400).delay(index * 50)} style={cardStyle}>
               <ContentUnitCard unit={unit} variant="rail" zone={zone} onPress={() => onPressItem(unit)} />
-            </View>
+            </Animated.View>
           ))}
         </ScrollView>
       )}
-    </View>
+    </Box>
   )
 }
 
@@ -70,25 +72,15 @@ function RailSkeleton({ cardWidth }: { cardWidth: number }) {
   return (
     <ScrollView style={styles.viewport} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.scroll}>
       {[1, 2, 3, 4].map((i) => (
-        <Skeleton key={i} variant="rect" width={cardWidth} height={cardWidth * 1.3} />
+        <View key={i} style={{ width: cardWidth }}>
+          <CardSkeleton compact />
+        </View>
       ))}
     </ScrollView>
   )
 }
 
 const styles = StyleSheet.create({
-  section: {
-    marginBottom: spacing.section,
-    width: '100%',
-    minWidth: 0,
-    overflow: 'hidden',
-  },
-
-  heading: {
-    marginBottom: spacing.md,
-    paddingHorizontal: spacing.lg,
-  },
-
   viewport: {
     width: '100%',
     minWidth: 0,

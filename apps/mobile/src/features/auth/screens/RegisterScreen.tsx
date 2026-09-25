@@ -86,7 +86,7 @@ export function RegisterScreen({ navigation }: Props) {
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}>
         <View style={styles.card}>
           <Typography variant="display" style={{ marginBottom: spacing.xs }}>
-            Let's find your people
+            Let&apos;s find your people
           </Typography>
           <Typography variant="bodyMuted" style={{ marginBottom: spacing.lg }}>
             Skip the bio — your favorites do the talking.

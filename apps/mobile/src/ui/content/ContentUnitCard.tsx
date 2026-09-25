@@ -1,6 +1,7 @@
 import { CategoryUnitCard } from './CategoryUnitCard'
 import { PersonUnitCard } from './PersonUnitCard'
 import { InsightUnitCard } from './InsightUnitCard'
+import { ResultUnitCard } from './ResultUnitCard'
 import type { RenderVariant } from './renderBudgets'
 import type { ContentUnit } from './types'
 
@@ -20,6 +21,8 @@ type Props = {
  */
 export function ContentUnitCard({ unit, variant, zone, onPress }: Props) {
   switch (unit.kind) {
+    case 'result':
+      return <ResultUnitCard unit={unit as any} onPress={onPress} />
     case 'person':
       return <PersonUnitCard unit={unit} variant={variant} zone={zone} onPress={onPress} />
     case 'insight':

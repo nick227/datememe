@@ -7,7 +7,13 @@ export type AuthStackParamList = {
 
 export type MainStackParamList = {
   Tabs: undefined
-  ProfileModal: undefined
+}
+
+export type AppTabsParamList = {
+  Lists: undefined
+  Discover: undefined
+  Messages: undefined
+  ProfileTab: undefined
 }
 
 export type CategoriesStackParamList = {

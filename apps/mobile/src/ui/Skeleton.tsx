@@ -1,5 +1,6 @@
-import { useEffect, useRef } from 'react'
-import { Animated, StyleSheet, ViewStyle } from 'react-native'
+import { useEffect } from 'react'
+import { StyleSheet, type ViewStyle } from 'react-native'
+import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing } from 'react-native-reanimated'
 import { colors, radius } from '../theme'
 
 type Props = {
@@ -10,16 +11,19 @@ type Props = {
 }
 
 export function Skeleton({ style, variant = 'rect', width, height }: Props) {
-  const anim = useRef(new Animated.Value(0.3)).current
+  const anim = useSharedValue(0.3)
 
   useEffect(() => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(anim, { toValue: 0.7, duration: 800, useNativeDriver: true }),
-        Animated.timing(anim, { toValue: 0.3, duration: 800, useNativeDriver: true }),
-      ])
-    ).start()
-  }, [anim])
+    anim.value = withRepeat(
+      withTiming(0.7, { duration: 800, easing: Easing.inOut(Easing.ease) }),
+      -1,
+      true
+    )
+  }, [])
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    opacity: anim.value
+  }))
 
   return (
     <Animated.View
@@ -29,7 +33,7 @@ export function Skeleton({ style, variant = 'rect', width, height }: Props) {
         variant === 'text' && { borderRadius: radius.sm, height: 16 },
         width !== undefined && { width: width as any },
         height !== undefined && { height: height as any },
-        { opacity: anim },
+        animatedStyle,
         style,
       ]}
     />

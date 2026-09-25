@@ -136,9 +136,9 @@ export function QuickPicksScreen({ navigation }: Props) {
 
         <View style={[styles.deckContainer, isDesktop && styles.deckContainerDesktop]}>
           {feed.isLoading ? (
-            <View testID="quick-picks.loading"><MatchFeedCardSkeleton /></View>
+            <Animated.View testID="quick-picks.loading" exiting={FadeOut.duration(200)}><MatchFeedCardSkeleton /></Animated.View>
           ) : visibleCards.length === 0 ? (
-            <EmptyState testID="quick-picks.empty" title="No one new to show" subtitle="Check back soon, or once more members join." />
+            <Animated.View testID="quick-picks.empty" entering={FadeIn.duration(300)}><EmptyState title="No one new to show" subtitle="Check back soon, or once more members join." /></Animated.View>
           ) : (
             visibleCards.map((item, mapIndex) => {
               const isTopCard = mapIndex === visibleCards.length - 1
@@ -146,7 +146,7 @@ export function QuickPicksScreen({ navigation }: Props) {
 
               return (
                 <GestureDetector key={item.profile.id} gesture={isTopCard ? panGesture : Gesture.Pan()}>
-                  <Animated.View testID={isTopCard ? "quick-picks.active-card" : undefined} style={itemStyle}>
+                  <Animated.View testID={isTopCard ? "quick-picks.active-card" : undefined} style={itemStyle} entering={FadeIn.duration(300)}>
                     <MatchFeedCard
                       profileId={item.profile.id}
                       displayName={item.profile.displayName}
@@ -181,7 +181,7 @@ export function QuickPicksScreen({ navigation }: Props) {
             <Animated.View testID="quick-picks.match-dialog.content" entering={ZoomIn.springify().damping(14)} exiting={ZoomOut} style={styles.modalContent}>
               <Text style={styles.modalEmoji}>🎉</Text>
               <Typography testID="quick-picks.match-dialog.title" variant="title" style={{ textAlign: 'center', marginBottom: spacing.sm }}>
-                It's a match!
+                It&apos;s a match!
               </Typography>
               <Typography testID="quick-picks.match-dialog.message" variant="body" style={{ textAlign: 'center', marginBottom: spacing.xl }}>
                 You and {matchData.displayName} liked each other.

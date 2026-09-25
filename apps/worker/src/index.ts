@@ -2,6 +2,8 @@ import { pushNotificationJob } from './jobs/PushNotificationJob'
 import { db } from '@project/db'
 import { calculateMatchesJob } from './jobs/CalculateMatchesJob'
 import { updateTaxonomyJob } from './jobs/UpdateTaxonomyJob'
+import { listResultsRefreshJob } from './jobs/ListResultsRefreshJob'
+import { profileResultsRefreshJob } from './jobs/ProfileResultsRefreshJob'
 import { randomUUID } from 'crypto'
 import { performance } from 'perf_hooks'
 
@@ -69,6 +71,10 @@ async function poll() {
       await updateTaxonomyJob(payload)
     } else if (job.type === 'SEND_PUSH_NOTIFICATION') {
       await pushNotificationJob(payload)
+    } else if (job.type === 'LIST_RESULTS_REFRESH') {
+      await listResultsRefreshJob(payload)
+    } else if (job.type === 'PROFILE_RESULTS_REFRESH') {
+      await profileResultsRefreshJob(payload)
     } else {
       throw new Error(`Unknown job type: ${job.type}`)
     }

@@ -123,7 +123,7 @@ export class ContentFeedService {
     // unfiltered (the "All" chip).
     const selectedGroupSlugs = opts.groupSlugs?.length ? new Set(opts.groupSlugs) : null
 
-    const [categories, myLists, groups, sitePickGroups] = await Promise.all([
+    const [categories, myLists, groups, sitePickGroups, categoryResultSets] = await Promise.all([
       taxonomyService.listCategories(viewerProfileId),
       listService.getMyLists(viewerProfileId),
       db.categoryGroup.findMany({ orderBy: { sortOrder: 'asc' } }),
@@ -136,9 +136,25 @@ export class ContentFeedService {
         include: { items: { orderBy: { sortOrder: 'asc' } } },
         orderBy: { sortOrder: 'asc' },
       }),
+      db.resultSet.findMany({
+        where: { subjectType: 'ENTITY', metric: 'LIST_SCORE', scopeType: 'CATEGORY', takeCount: { gt: 0 } },
+        include: { entries: { orderBy: { rank: 'asc' }, take: 10 } },
+        orderBy: { takeCount: 'desc' },
+      }),
     ])
 
     const myListByCategoryId = new Map(myLists.map((l: any) => [l.categoryId, l]))
+    
+    // Stitch entities to result sets
+    const allResultEntityIds = categoryResultSets.flatMap((rs: any) => rs.entries.map((e: any) => e.subjectId))
+    const resultEntities = await db.entity.findMany({ where: { id: { in: allResultEntityIds } } })
+    const entityById = new Map(resultEntities.map((e: any) => [e.id, e]))
+    
+    for (const rs of categoryResultSets) {
+      for (const entry of rs.entries) {
+        entry.entity = entityById.get(entry.subjectId)
+      }
+    }
 
     function unitFor(category: any, index: number) {
       return categoryUnitFor(category, index, myListByCategoryId)
@@ -261,8 +277,39 @@ export class ContentFeedService {
     exploreBeats.push(quickPicksBeat('quick-picks-0'))
 
     let quizCount = 1
+    let resultIndex = 0
+    
     groupModules.forEach((m: any, i: number) => {
       exploreBeats.push(m)
+      
+      // Inject a Results module after every other group module, if we have them
+      if (i % 2 === 1 && categoryResultSets[resultIndex]) {
+        const resultSet = categoryResultSets[resultIndex]
+        const category = categories.find((c: any) => c.id === resultSet.scopeValue)
+        if (category) {
+          exploreBeats.push({
+            moduleKind: 'collection',
+            id: `results-${resultSet.scopeValue}`,
+            type: 'results',
+            title: `Top ${category.shortLabel}`,
+            suggestedStructure: 'rail',
+            items: resultSet.entries.filter((e: any) => e.entity).map((entry: any, i2: number) => ({
+              id: entry.id,
+              kind: 'result',
+              resultType: 'entity',
+              title: entry.entity.primaryAlias,
+              subtitle: `${entry.score} points`,
+              imageUrl: entry.entity.imageUrl,
+              rank: entry.rank,
+              trend: entry.previousRank ? (entry.previousRank > entry.rank ? `+${entry.previousRank - entry.rank}` : (entry.previousRank < entry.rank ? `${entry.previousRank - entry.rank}` : undefined)) : 'New',
+              position: i2,
+              metrics: [],
+            })),
+          })
+        }
+        resultIndex++
+      }
+
       if (i === 0 && incompleteSorted.length) {
         exploreBeats.push({
           moduleKind: 'collection',
@@ -373,7 +420,7 @@ export class ContentFeedService {
       ...(isFirstPage
         ? {
             summary: {
-              title: 'Share your preferences',
+              title: 'Lists and Favorites',
               stats: [
                 { label: 'lists completed', value: completedLists.length },
                 { label: 'picks ranked', value: myLists.reduce((sum: number, l: any) => sum + l.items.length, 0) },
@@ -546,6 +593,28 @@ export class ContentFeedService {
 
     const alsoIntoByProfileId = await this.getAlsoIntoByProfileId(page.data)
     const candidateUnits = page.data.map((c: any, i: number) => toPersonUnit(c, i, alsoIntoByProfileId.get(c.profile.id) ?? []))
+    
+    // Fetch profile result sets for Explore injection
+    const profileResultSets = await db.resultSet.findMany({
+      where: { subjectType: 'PROFILE', takeCount: { gt: 0 } },
+      include: { entries: { orderBy: { rank: 'asc' }, take: 10 } },
+      orderBy: { updatedAt: 'desc' },
+    })
+
+    // Stitch profiles to result sets
+    const allResultProfileIds = profileResultSets.flatMap((rs: any) => rs.entries.map((e: any) => e.subjectId))
+    const resultProfiles = await db.profile.findMany({ 
+      where: { id: { in: allResultProfileIds } },
+      include: { photos: { orderBy: { sortOrder: 'asc' }, take: 1 } }
+    })
+    const profileById = new Map(resultProfiles.map((p: any) => [p.id, p]))
+    
+    for (const rs of profileResultSets) {
+      for (const entry of rs.entries) {
+        entry.profile = profileById.get(entry.subjectId)
+      }
+    }
+
     const modules: any[] = []
 
     // Discover's chips are real filters, not jump anchors (unlike Lists' —
@@ -587,7 +656,7 @@ export class ContentFeedService {
       }
       summaryAndChips = {
         summary: {
-          title: 'Discover people',
+          title: 'Discovery People',
           stats: [
             { label: 'favorites', value: favorited.length },
             { label: 'matches', value: matchCount },
@@ -745,6 +814,8 @@ export class ContentFeedService {
         chunks.push(candidateUnits.slice(i, i + CHUNK_SIZE))
       }
 
+      let resultIndex = 0
+
       chunks.forEach((chunk, chunkIdx) => {
         exploreBeats.push({
           moduleKind: 'collection',
@@ -756,6 +827,40 @@ export class ContentFeedService {
           suggestedStructure: 'grid',
           items: chunk.map((u: any, i: number) => ({ ...u, position: chunkIdx * CHUNK_SIZE + i })),
         })
+
+        // Inject Profile Results Modules
+        if (chunkIdx % 2 === 1 && profileResultSets[resultIndex]) {
+          const resultSet = profileResultSets[resultIndex]
+          const titleMap: Record<string, string> = {
+            'MOST_LIKED': 'Most Liked Profiles',
+            'MOST_ACTIVE': 'Most Active Profiles',
+            'RISING': 'Rising Profiles',
+            'MOST_COMPATIBLE': 'Most Compatible',
+            'MOST_DISTINCTIVE': 'Most Distinctive',
+          }
+          const title = titleMap[resultSet.metric] || 'Trending Profiles'
+          
+          exploreBeats.push({
+            moduleKind: 'collection',
+            id: `results-profile-${resultSet.id}`,
+            type: 'results',
+            title,
+            suggestedStructure: 'rail',
+            items: resultSet.entries.filter((e: any) => e.profile).map((entry: any, i2: number) => ({
+              id: entry.id,
+              kind: 'result',
+              resultType: 'person',
+              title: entry.profile.firstName || 'Anonymous',
+              subtitle: `${entry.score} points`,
+              imageUrl: entry.profile.photos?.[0]?.url || entry.profile.avatarUrl || null,
+              rank: entry.rank,
+              trend: entry.previousRank ? (entry.previousRank > entry.rank ? `+${entry.previousRank - entry.rank}` : (entry.previousRank < entry.rank ? `${entry.previousRank - entry.rank}` : undefined)) : 'New',
+              position: i2,
+              metrics: [],
+            })),
+          })
+          resultIndex++
+        }
 
         // Interleave variety modules at natural positions between chunks.
         if (chunkIdx === 0 && highlightModule) exploreBeats.push(highlightModule)

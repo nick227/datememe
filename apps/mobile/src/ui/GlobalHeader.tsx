@@ -1,8 +1,9 @@
-import { Platform, StyleSheet, View } from 'react-native'
+import { Platform, Pressable } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Logo } from './Logo'
 import { HeaderAvatar } from './HeaderAvatar'
-import { borderWidth, colors, spacing } from '../theme'
+import { colors, Box } from '../theme'
+import { useNavigation } from '@react-navigation/native'
 
 // The one persistent piece of chrome in the whole app — mounted once inside
 // each stack (Auth/Main) so it survives every screen underneath it. Owns the
@@ -11,27 +12,34 @@ import { borderWidth, colors, spacing } from '../theme'
 // needs `sticky` to stay put while the browser scrolls the rest of the page —
 // on native it's just part of the normal fixed-height column, unchanged.
 export function GlobalHeader({ showAvatar = false }: { showAvatar?: boolean }) {
+  const navigation = useNavigation()
+  const goToLists = () => {
+    navigation.navigate('Tabs', { screen: 'Lists' } as never)
+  }
   return (
-    <SafeAreaView style={[styles.safe, webStickyStyle]} edges={['top', 'left', 'right']}>
-      <View style={styles.bar}>
-        <Logo size="sm" />
-        {showAvatar ? <HeaderAvatar /> : <View style={{ width: 36, height: 36 }} />}
-      </View>
+    <SafeAreaView style={[safeStyle, webStickyStyle]} edges={['top', 'left', 'right']}>
+      <Box
+        flexDirection="row"
+        alignItems="center"
+        justifyContent="space-between"
+        paddingHorizontal="xxl"
+        paddingVertical="sm"
+        maxWidth={1310}
+        width="100%"
+        style={{
+          marginLeft: 'auto',
+          marginRight: 'auto',
+        }}
+      >
+        <Pressable onPress={goToLists}>
+          <Logo size="sm" />
+        </Pressable>
+        {showAvatar ? <HeaderAvatar /> : <Box width={36} height={36} />}
+      </Box>
     </SafeAreaView>
   )
 }
 
 const webStickyStyle = Platform.OS === 'web' ? ({ position: 'sticky', top: 0, zIndex: 10 } as any) : null
 
-const styles = StyleSheet.create({
-  safe: { backgroundColor: colors.surface },
-  bar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    borderBottomWidth: borderWidth.thick,
-    borderBottomColor: colors.border,
-  },
-})
+const safeStyle = { backgroundColor: colors.surface }

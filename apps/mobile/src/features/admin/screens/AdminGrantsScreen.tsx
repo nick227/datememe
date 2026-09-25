@@ -56,8 +56,7 @@ export function AdminGrantsScreen({ navigation }: Props) {
           ItemSeparatorComponent={() => <View style={{ height: 1, backgroundColor: colors.border }} />}
           ListEmptyComponent={<EmptyState testID="admin-grants.empty" title="No grants yet" />}
           renderItem={({ item }) => {
-            const now = Date.now()
-            const active = !item.revokedAt && (!item.expiresAt || new Date(item.expiresAt).getTime() > now)
+            const active = !item.revokedAt && (!item.expiresAt || new Date(item.expiresAt).getTime() > new Date().getTime())
             return (
               <View testID={`admin-grants.row.${item.id}`} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.md }}>
                 <View style={{ flex: 1 }}>

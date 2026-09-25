@@ -117,6 +117,10 @@ export class ListService {
           {
             type: 'CALCULATE_MATCHES',
             payload: { profileId }
+          },
+          {
+            type: 'LIST_RESULTS_REFRESH',
+            payload: { categoryId: category.id }
           }
         ]
       })

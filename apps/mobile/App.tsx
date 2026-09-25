@@ -17,7 +17,8 @@ import { initApiClient } from './src/lib/apiClient'
 import { loadToken } from './src/lib/authToken'
 import { RootNavigator } from './src/navigation/RootNavigator'
 import { Logo } from './src/ui/Logo'
-import { colors } from './src/theme'
+import { colors, theme } from './src/theme'
+import { ThemeProvider } from '@shopify/restyle'
 import {
   useFonts,
   PlusJakartaSans_400Regular,
@@ -74,8 +75,10 @@ export default function App() {
     <GestureHandlerRootView style={rootStyle}>
       <SafeAreaProvider>
         <QueryClientProvider client={queryClient}>
-          <StatusBar style="dark" />
-          <RootNavigator />
+          <ThemeProvider theme={theme}>
+            <StatusBar style="dark" />
+            <RootNavigator />
+          </ThemeProvider>
         </QueryClientProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

@@ -6,6 +6,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { CategoriesStack } from './CategoriesStack'
 import { DiscoveryStack } from './DiscoveryStack'
 import { MessagesStack } from './MessagesStack'
+import { ProfileStack } from './ProfileStack'
 import { Icon, type IconName } from '../ui/Icon'
 import { colors } from '../theme'
 import { useConversations } from '@project/sdk'
@@ -38,10 +39,14 @@ export function AppTabs() {
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
+        animation: 'fade',
         tabBarButtonTestID: `tab.${route.name.toLowerCase()}`,
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.inkMuted,
-        tabBarIcon: ({ color, size }) => <Icon name={ICONS[route.name]} color={color} size={size} />,
+        tabBarIcon: ({ color, size }) => {
+          if (route.name === 'ProfileTab') return null;
+          return <Icon name={ICONS[route.name]} color={color} size={size} />;
+        },
         // Web: the page can now grow past one viewport (App.tsx) — pin the
         // tab bar to the browser viewport instead of letting it scroll away
         // with the page content, matching native's fixed-bottom behavior.
@@ -57,6 +62,11 @@ export function AppTabs() {
           tabBarBadge: unreadCount > 0 ? unreadCount : undefined,
           tabBarBadgeStyle: { backgroundColor: colors.primary },
         }}
+      />
+      <Tab.Screen
+        name="ProfileTab"
+        component={ProfileStack}
+        options={{ tabBarItemStyle: { display: 'none' } }}
       />
     </Tab.Navigator>
   )

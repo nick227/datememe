@@ -1,9 +1,10 @@
 import { StyleSheet, View } from 'react-native'
+import { Box, spacing } from '../../theme'
 import { Typography } from '../Typography'
 import { Skeleton } from '../Skeleton'
 import { ErrorState } from '../ErrorState'
 import { ContentUnitCard } from './ContentUnitCard'
-import { spacing } from '../../theme'
+import { CardSkeleton } from './CardSkeleton'
 import type { ContentUnit, StructureState } from './types'
 
 type Props = {
@@ -16,37 +17,24 @@ type Props = {
   onRetry?: () => void
 }
 
-// A heavy, conditional interruption — per the "optional and sparse" invariant
-// (proposal §1/§7), an empty Spotlight is *omitted*, not shown as an empty
-// box. It must also be dramatically larger than surrounding Grid/Rail cards,
-// not "a Grid with one item" — the enforced minHeight is what makes that true
-// regardless of how little/much content the one featured unit carries.
 export function Spotlight({ testID, title, items, state, zone, onPressItem, onRetry }: Props) {
   if (state === 'ready' && items.length === 0) return null
 
   return (
-    <View testID={testID} style={styles.section}>
+    <Box testID={testID} paddingHorizontal="lg" marginVertical="section">
       {title ? (
-        <Typography variant="heading" style={styles.heading}>
-          {title}
-        </Typography>
+        <Box marginBottom="md">
+          <Typography variant="heading">{title}</Typography>
+        </Box>
       ) : null}
 
       {state === 'loading' ? (
-        <Skeleton variant="rect" width="100%" height={460} />
+        <CardSkeleton />
       ) : state === 'error' ? (
         <ErrorState subtitle="Couldn't load this." onRetry={onRetry} />
       ) : (
-        <View style={styles.frame}>
-          <ContentUnitCard unit={items[0]!} variant="spotlight" zone={zone} onPress={() => onPressItem(items[0]!)} />
-        </View>
+        <ContentUnitCard unit={items[0]!} variant="spotlight" zone={zone} onPress={() => onPressItem(items[0]!)} />
       )}
-    </View>
+    </Box>
   )
 }
-
-const styles = StyleSheet.create({
-  section: { paddingHorizontal: spacing.lg, marginVertical: spacing.section },
-  heading: { marginBottom: spacing.md },
-  frame: { minHeight: 460 },
-})

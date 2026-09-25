@@ -38,7 +38,7 @@ export function AdminMembershipScreen({ navigation }: Props) {
           {overview.data!.globalWindow ? (
             <View style={styles.globalBanner}>
               <Typography variant="label" style={{ color: colors.white }}>
-                Global MEMBER window active — "{overview.data!.globalWindow.label}" until {new Date(overview.data!.globalWindow.endsAt).toLocaleString()}
+                Global MEMBER window active — &quot;{overview.data!.globalWindow.label}&quot; until {new Date(overview.data!.globalWindow.endsAt).toLocaleString()}
               </Typography>
             </View>
           ) : null}

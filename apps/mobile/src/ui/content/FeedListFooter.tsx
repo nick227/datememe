@@ -30,7 +30,7 @@ export function FeedListFooter({ isFetchingNextPage, isFetchNextPageError, hasNe
     return (
       <View style={{ paddingVertical: spacing.lg, alignItems: 'center' }}>
         <Typography variant="bodyMuted" style={{ marginBottom: spacing.sm }}>
-          Couldn't load more.
+          Couldn&apos;t load more.
         </Typography>
         <Button label="Try again" variant="secondary" onPress={onRetry} />
       </View>

@@ -2,6 +2,18 @@
 
 This is the standalone staging APK path. Maestro, automated backend deployment, durable media, and Play publishing remain later milestones in the [environment proposal](android-mobile-environment-proposal.md).
 
+## First QA artifact
+
+- [EAS build d40dec2f-55d8-422a-b98f-e5601527b508](https://expo.dev/accounts/hzane111/projects/datememe/builds/d40dec2f-55d8-422a-b98f-e5601527b508) finished successfully on September 23, 2026.
+- [Download the signed APK](https://expo.dev/artifacts/eas/bkBnlG_LAyEpoNblmyVdq3LpeD-eBuY__YCujb__4os.apk): version `1.0.0`, Android version code `1`, package `com.datememe.app.staging`.
+- SHA-256: `a0e2e74646df0106c266c200762e0cbf626a099ef7fd8ff386ac6a660fbcbad7`.
+- The APK contains the JavaScript bundle and the approved staging URL in its embedded app configuration. It installs on the Android 15 / API 35 emulator and targets API 36.
+- Device checks on September 24: a cold launch rendered the native login screen; a synthetic account signed in against hosted staging and loaded the seeded lists screen. A profile bio edited and saved in the app remained visible after force-stop and cold relaunch, with the authenticated session retained. No development-server prompt appeared, ADB reverse forwarding was empty, and no native crash or fatal JavaScript/development-server error was found in the inspected logs. The existing local Metro process was left running for other development; the release app used its embedded bundle and hosted API.
+- This validates installation, standalone launch, authentication, hosted reads/writes, and persistence on one emulator. Automated smoke, messaging/discovery regression, physical-device coverage, and Play installation remain outside this milestone.
+- This first artifact was built from the uploaded working tree based on `1b79598`, including the new QA configuration. A clean archive of the subsequently committed implementation at `e2423fc` passed frozen installation, all seven config tests, mobile typecheck, and QA config resolution on September 24. The clean-archive check is separate from the first artifact's build provenance.
+
+This is a private QA artifact, not a Play release. Download it from the build page if the direct artifact link becomes unavailable.
+
 ## Identities and infrastructure
 
 | Resource | Value |

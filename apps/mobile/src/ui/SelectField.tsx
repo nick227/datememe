@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { Modal, Pressable, StyleSheet, Text, View, FlatList, SafeAreaView } from 'react-native'
+import { Pressable, StyleSheet, Text, View, FlatList, SafeAreaView } from 'react-native'
 import { borderWidth, colors, radius, spacing, type } from '../theme'
 import { Icon } from './Icon'
+import { AnimatedSheet } from './AnimatedSheet'
 
 export type SelectOption = { label: string; value: string }
 
@@ -36,39 +37,35 @@ export function SelectField({ testID, label, value, options, onSelect, placehold
       </Pressable>
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
-      <Modal testID={testID ? `${testID}.modal` : undefined} visible={open} animationType="slide" transparent>
-        <View testID={testID ? `${testID}.overlay` : undefined} style={styles.modalOverlay}>
-          <View testID={testID ? `${testID}.dialog` : undefined} style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text testID={testID ? `${testID}.title` : undefined} style={styles.modalTitle}>{label || placeholder}</Text>
-              <Pressable testID={testID ? `${testID}.close` : undefined} onPress={() => setOpen(false)} style={styles.closeBtn}>
-                <Icon name="X" size={24} color={colors.ink} />
-              </Pressable>
-            </View>
-            <FlatList
-              testID={testID ? `${testID}.options` : undefined}
-              data={options}
-              keyExtractor={(item) => item.value}
-              renderItem={({ item }) => (
-                <Pressable
-                  testID={testID ? `${testID}.option.${item.value}` : undefined}
-                  style={styles.option}
-                  onPress={() => {
-                    onSelect(item.value)
-                    setOpen(false)
-                  }}
-                >
-                  <Text style={[styles.optionText, item.value === value && styles.optionTextSelected]}>
-                    {item.label}
-                  </Text>
-                  {item.value === value && <Icon name="Check" size={20} color={colors.accent} />}
-                </Pressable>
-              )}
-            />
-            <SafeAreaView />
-          </View>
+      <AnimatedSheet testID={testID} visible={open} onClose={() => setOpen(false)} sheetStyle={styles.modalContent}>
+        <View style={styles.modalHeader}>
+          <Text testID={testID ? `${testID}.title` : undefined} style={styles.modalTitle}>{label || placeholder}</Text>
+          <Pressable testID={testID ? `${testID}.close` : undefined} onPress={() => setOpen(false)} style={styles.closeBtn}>
+            <Icon name="X" size={24} color={colors.ink} />
+          </Pressable>
         </View>
-      </Modal>
+        <FlatList
+          testID={testID ? `${testID}.options` : undefined}
+          data={options}
+          keyExtractor={(item) => item.value}
+          renderItem={({ item }) => (
+            <Pressable
+              testID={testID ? `${testID}.option.${item.value}` : undefined}
+              style={styles.option}
+              onPress={() => {
+                onSelect(item.value)
+                setOpen(false)
+              }}
+            >
+              <Text style={[styles.optionText, item.value === value && styles.optionTextSelected]}>
+                {item.label}
+              </Text>
+              {item.value === value && <Icon name="Check" size={20} color={colors.accent} />}
+            </Pressable>
+          )}
+        />
+        <SafeAreaView />
+      </AnimatedSheet>
     </View>
   )
 }
@@ -103,11 +100,6 @@ const styles = StyleSheet.create({
     color: colors.danger,
     fontSize: 13,
     marginTop: spacing.xs,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-end',
   },
   modalContent: {
     backgroundColor: colors.surface,

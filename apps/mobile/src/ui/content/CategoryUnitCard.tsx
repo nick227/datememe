@@ -1,11 +1,15 @@
-import { Image, Pressable, StyleSheet, View } from 'react-native'
+import { StyleSheet, View , useWindowDimensions } from 'react-native'
 import { Typography } from '../Typography'
 import { ImageCredit } from './ImageCredit'
 import { MetricRow } from './MetricRow'
-import { cardShell } from './cardShell'
-import { borderWidth, colors, spacing } from '../../theme'
+import { CardShell } from './CardShell'
+import { SmartImage } from './SmartImage'
+import { MicroBadge } from './MicroBadge'
+import { PressableScale } from '../PressableScale'
+import { Box, borderWidth, colors, spacing } from '../../theme'
 import { pickMetrics, RENDER_BUDGETS, type RenderVariant } from './renderBudgets'
 import type { ContentUnit } from './types'
+
 
 type Props = {
   unit: ContentUnit
@@ -51,24 +55,16 @@ function CompactGridCard({ unit, onPress }: { unit: ContentUnit; onPress: () => 
   const metric = pickMetrics(unit.metrics, 'grid-square')[0]
 
   return (
-    <Pressable testID={`categories.card.${unit.id}`} style={styles.compactCard} onPress={onPress}>
-      <View style={styles.compactImageWrap}>
-        {imageUrl ? (
-          <Image accessibilityLabel={unit.title} source={{ uri: imageUrl }} style={styles.compactImage} resizeMode="cover" />
-        ) : (
-          <View style={[styles.compactImage, styles.compactImageFallback]}>
-            <Typography variant="display" style={styles.compactImageFallbackInitial}>
-              {(unit.title || '?').charAt(0).toUpperCase()}
-            </Typography>
-          </View>
-        )}
+    <CardShell testID={`categories.card.${unit.id}`} containerStyle={styles.compactCardOverwrite} onPress={onPress}>
+      <CardShell.Media style={styles.compactImageWrap}>
+        <SmartImage uri={imageUrl} fallbackText={unit.title} />
         {isComplete ? (
-          <Typography variant="label" style={[styles.compactBadge, styles.compactBadgeDone]}>Done</Typography>
+          <MicroBadge label="DONE" variant="neutral" position="top-left" />
         ) : inProgress ? (
-          <Typography variant="label" style={[styles.compactBadge, styles.compactBadgeProgress]}>In progress</Typography>
+          <MicroBadge label="IN PROGRESS" variant="accent" position="top-left" />
         ) : null}
-      </View>
-      <View style={styles.compactBody}>
+      </CardShell.Media>
+      <CardShell.Body style={styles.compactBody}>
         <Typography variant="heading" style={styles.compactTitle} numberOfLines={2}>
           {unit.title}
         </Typography>
@@ -83,8 +79,8 @@ function CompactGridCard({ unit, onPress }: { unit: ContentUnit; onPress: () => 
           </Typography>
         ) : null}
         <ImageCredit credit={imageCredit} />
-      </View>
-    </Pressable>
+      </CardShell.Body>
+    </CardShell>
   )
 }
 
@@ -93,18 +89,14 @@ function CompletedListCard({ unit, onPress }: { unit: ContentUnit; onPress: () =
   const thumbnail = unit.imageUrl ?? items[0]?.imageUrl
   const isComplete = !!unit.relationship?.completed
   return (
-    <Pressable testID={`categories.card.${unit.id}`} style={cardShell.base} onPress={onPress}>
+    <CardShell testID={`categories.card.${unit.id}`} onPress={onPress}>
       {!isComplete ? (
-        <Typography variant="label" style={styles.inProgressBadge}>
-          In progress
-        </Typography>
+        <Box marginBottom="xs" alignSelf="flex-start">
+          <MicroBadge label="IN PROGRESS" variant="accent" />
+        </Box>
       ) : null}
       <View style={styles.previewHeader}>
-        {thumbnail ? (
-          <Image source={{ uri: thumbnail }} style={styles.previewThumb} />
-        ) : (
-          <View style={[styles.previewThumb, styles.previewThumbFallback]} />
-        )}
+        <SmartImage uri={thumbnail} fallbackText={unit.title} width={32} height={32} />
         <Typography variant="label" numberOfLines={2} style={styles.previewTitle}>
           {unit.title}
         </Typography>
@@ -122,7 +114,7 @@ function CompletedListCard({ unit, onPress }: { unit: ContentUnit; onPress: () =
           </View>
         ))}
       </View>
-    </Pressable>
+    </CardShell>
   )
 }
 
@@ -131,47 +123,75 @@ function StatCard({ unit, variant, onPress }: { unit: ContentUnit; variant: Rend
   const metrics = pickMetrics(unit.metrics, variant)
   const isSpotlight = variant === 'spotlight'
   const hasImage = !!unit.imageUrl
+  const { width } = useWindowDimensions()
+  const isWide = width >= 768
 
   return (
-    <Pressable testID={`categories.card.${unit.id}`} style={[cardShell.base, hasImage && styles.noBorder]} onPress={onPress}>
-      {unit.imageUrl ? <Image accessibilityLabel={unit.title} source={{ uri: unit.imageUrl }} style={[styles.coverImage, isSpotlight && styles.spotlightImage]} resizeMode="cover" /> : null}
-      <ImageCredit credit={unit.imageCredit} />
-      <Typography variant={isSpotlight ? 'display' : 'heading'} style={styles.statTitle}>
-        {unit.title}
-      </Typography>
-      {budget.subtitle && unit.subtitle ? (
-        <Typography variant="bodyMuted" numberOfLines={2} style={styles.statPrompt}>
-          {unit.subtitle}
+    <CardShell testID={`categories.card.${unit.id}`} containerStyle={[isSpotlight && styles.spotlightCard, isSpotlight && isWide && styles.spotlightRow]} onPress={onPress}>
+      {isSpotlight && isWide && unit.imageUrl ? (
+        <SmartImage 
+          uri={unit.imageUrl} 
+          fallbackText={unit.title}
+          style={styles.spotlightImageWide} 
+        />
+      ) : null}
+
+      <CardShell.Body style={[isSpotlight && isWide && styles.spotlightBodyWide]}>
+        <Typography variant={isSpotlight ? 'display' : 'heading'} style={styles.statTitle}>
+          {unit.title}
         </Typography>
-      ) : null}
-
-      {unit.entity ? (
-        <View style={[styles.topPickRow, isSpotlight && styles.topPickRowLarge]}>
-          {unit.entity.imageUrl ? (
-            <Image source={{ uri: unit.entity.imageUrl }} style={[styles.topPickImage, isSpotlight && styles.topPickImageLarge]} />
-          ) : (
-            <View style={[styles.topPickImage, styles.topPickImageFallback, isSpotlight && styles.topPickImageLarge]} />
-          )}
-          <Typography variant={isSpotlight ? 'heading' : 'body'} style={styles.topPickLabel} numberOfLines={1}>
-            Most common #1: <Typography style={styles.bold}>{unit.entity.canonicalName}</Typography>
+        {budget.subtitle && unit.subtitle ? (
+          <Typography variant="bodyMuted" numberOfLines={2} style={styles.statPrompt}>
+            {unit.subtitle}
           </Typography>
-        </View>
-      ) : null}
+        ) : null}
 
-      <MetricRow metrics={metrics} />
+        {unit.imageUrl && !(isSpotlight && isWide) ? (
+          <SmartImage 
+            uri={unit.imageUrl} 
+            fallbackText={unit.title}
+            style={[styles.coverImage, isSpotlight && styles.spotlightImage]} 
+          />
+        ) : null}
 
-      <Typography variant="label" style={styles.cta}>
-        Rank yours →
-      </Typography>
-    </Pressable>
+        <ImageCredit credit={unit.imageCredit} />
+
+        <CardShell.Insight>
+          {unit.entity ? (
+            <View style={[styles.topPickRow, isSpotlight && styles.topPickRowLarge]}>
+              <SmartImage 
+                uri={unit.entity.imageUrl} 
+                fallbackText={unit.entity.canonicalName}
+                style={[styles.topPickImage, isSpotlight && styles.topPickImageLarge]} 
+              />
+              <Typography variant={isSpotlight ? 'heading' : 'body'} style={styles.topPickLabel} numberOfLines={2}>
+                Most common #1: <Typography style={styles.bold}>{unit.entity.canonicalName}</Typography>
+              </Typography>
+            </View>
+          ) : (
+            <Typography variant="bodyMuted" style={{ fontStyle: 'italic' }}>
+              No top pick ranked yet
+            </Typography>
+          )}
+        </CardShell.Insight>
+
+        <MetricRow metrics={metrics} />
+
+        <CardShell.ActionRow>
+          <Typography variant="label" style={styles.cta}>
+            Rank yours →
+          </Typography>
+        </CardShell.ActionRow>
+      </CardShell.Body>
+    </CardShell>
   )
 }
 
 function DenseCard({ unit, onPress }: { unit: ContentUnit; onPress: () => void }) {
   const primary = pickMetrics(unit.metrics, 'grid-dense')[0]
   return (
-    <Pressable testID={`categories.card.${unit.id}`} style={styles.denseCard} onPress={onPress}>
-      {unit.imageUrl ? <Image accessibilityLabel={unit.title} source={{ uri: unit.imageUrl }} style={styles.previewThumb} /> : null}
+    <PressableScale testID={`categories.card.${unit.id}`} style={styles.denseCard} onPress={onPress}>
+      {unit.imageUrl ? <SmartImage uri={unit.imageUrl} fallbackText={unit.title} width={32} height={32} style={styles.previewThumb} /> : null}
       <ImageCredit credit={unit.imageCredit} />
       <Typography variant="body" style={styles.denseTitle} numberOfLines={2}>
         {unit.title}
@@ -179,7 +199,7 @@ function DenseCard({ unit, onPress }: { unit: ContentUnit; onPress: () => void }
       <Typography variant="bodyMuted" style={styles.denseStat}>
         {primary ? `${primary.value} ${primary.label.toLowerCase()}` : 'New'}
       </Typography>
-    </Pressable>
+    </PressableScale>
   )
 }
 
@@ -188,19 +208,21 @@ const styles = StyleSheet.create({
   // edge as its boundary instead of a drawn border (proposal correction —
   // borders are for text-only prompt cards, not decoration on every card).
   noBorder: { borderWidth: 0 },
-  coverImage: { width: '100%', aspectRatio: 2, marginBottom: spacing.md, backgroundColor: colors.surfaceMuted },
-  spotlightImage: { aspectRatio: 2.5 },
-  inProgressBadge: { color: colors.accent, marginBottom: spacing.xs },
+  coverImage: { width: '100%', aspectRatio: 16 / 9, borderRadius: 8, marginBottom: spacing.md, backgroundColor: colors.surfaceMuted },
+  spotlightCard: { maxHeight: 380 },
+  spotlightImage: { aspectRatio: 2.5, maxHeight: 160 },
+  spotlightRow: { flexDirection: 'row', alignItems: 'center', maxHeight: 380 },
+  spotlightImageWide: { width: '45%', height: '100%', maxHeight: 380, aspectRatio: undefined },
+  spotlightBodyWide: { width: '55%', paddingHorizontal: spacing.xl },
   statTitle: { marginBottom: spacing.xs },
   statPrompt: { marginBottom: spacing.md },
   bold: { fontWeight: '700' },
-  topPickRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.sm },
-  topPickRowLarge: { gap: spacing.lg, marginBottom: spacing.lg },
+  topPickRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  topPickRowLarge: { gap: spacing.lg },
   topPickImage: { width: 24, height: 24, borderWidth: borderWidth.thin, borderColor: colors.ink },
-  topPickImageLarge: { width: 160, height: 160, borderWidth: 0 },
-  topPickImageFallback: { backgroundColor: colors.surfaceMuted },
+  topPickImageLarge: { width: 80, height: 80, borderWidth: 0 },
   topPickLabel: { fontSize: 14, flex: 1 },
-  cta: { color: colors.accent, marginTop: spacing.sm },
+  cta: { color: colors.accent },
 
   denseCard: {
     backgroundColor: colors.surface,
@@ -213,44 +235,25 @@ const styles = StyleSheet.create({
   },
   denseTitle: { fontWeight: '700', marginBottom: spacing.xs },
 
-  // Compact "poster" grid card — sharp corners, thick border, no shadow
-  // (stark aesthetic), ~3:4 image so the whole card lands around a
-  // portrait 300x400-ish shape at typical grid-cell widths.
-  compactCard: {
-    backgroundColor: colors.surface,
-    borderWidth: borderWidth.thick,
-    borderColor: colors.ink,
-    flex: 1,
+  // Compact "poster" grid card uses cardShell.baseCompact
+  compactCardOverwrite: {
+    // Only style overrides here, flex and border handled by baseCompact
   },
   compactImageWrap: { position: 'relative' },
-  compactImage: { width: '100%', aspectRatio: 3 / 4, backgroundColor: colors.surfaceMuted },
-  compactImageFallback: { backgroundColor: colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' },
-  compactImageFallbackInitial: { color: colors.inkMuted },
-  compactBadge: {
-    position: 'absolute',
-    top: spacing.xs,
-    left: spacing.xs,
-    backgroundColor: colors.surface,
-    borderWidth: borderWidth.thin,
-    borderColor: colors.ink,
-    paddingHorizontal: spacing.xs,
-    paddingVertical: 2,
-  },
-  compactBadgeDone: { color: colors.ink },
-  compactBadgeProgress: { color: colors.accent },
   compactBody: {
-    borderTopWidth: borderWidth.thick,
+    borderTopWidth: borderWidth.thin,
     borderTopColor: colors.ink,
-    padding: spacing.sm,
+    padding: spacing.md,
+    gap: spacing.sm,
+    flex: 1,
   },
-  compactTitle: { fontSize: 15, lineHeight: 19, marginBottom: 2 },
-  compactMeta: { fontSize: 11 },
+  compactTitle: { fontSize: 18, lineHeight: 22, marginBottom: 0, fontWeight: '700' },
+  compactMeta: { fontSize: 13 },
   compactDot: { color: colors.accent },
   denseStat: { fontSize: 12 },
 
   previewHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.sm },
-  previewThumb: { width: 32, height: 32, backgroundColor: colors.surfaceMuted },
-  previewThumbFallback: { backgroundColor: colors.primarySoft },
+  previewThumb: { width: 32, height: 32 },
   previewTitle: { flex: 1, color: colors.ink },
   previewItems: { gap: 4 },
   previewRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },

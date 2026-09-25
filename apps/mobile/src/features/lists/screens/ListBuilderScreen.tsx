@@ -49,6 +49,7 @@ export function ListBuilderScreen({ route, navigation }: Props) {
     if (hydrated.current || !myLists.data) return
     const existing = myLists.data.find((l) => l.category?.slug === categorySlug)
     if (existing) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setPicked(
         existing.items
           .slice()

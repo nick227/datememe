@@ -16,6 +16,12 @@ type Props = {
 export function TopNavigation({ testID, title, subtitle, alignment = 'center', leftAction, onLeftAction, rightElement }: Props) {
   return (
     <View testID={testID} style={styles.container}>
+
+      <View style={[styles.center, alignment === 'left' && styles.centerLeft]}>
+        {title ? <Typography variant={alignment === 'center' ? 'heading' : 'title'}>{title}</Typography> : null}
+        {subtitle ? <Typography variant="bodyMuted">{subtitle}</Typography> : null}
+      </View>
+
       {(leftAction || alignment === 'center') && (
         <View style={styles.side}>
           {leftAction && (
@@ -25,11 +31,6 @@ export function TopNavigation({ testID, title, subtitle, alignment = 'center', l
           )}
         </View>
       )}
-
-      <View style={[styles.center, alignment === 'left' && styles.centerLeft]}>
-        {title ? <Typography variant={alignment === 'center' ? 'heading' : 'title'}>{title}</Typography> : null}
-        {subtitle ? <Typography variant="bodyMuted">{subtitle}</Typography> : null}
-      </View>
 
       {(rightElement || alignment === 'center') && (
         <View style={[styles.side, styles.sideRight]}>
@@ -44,7 +45,6 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: spacing.lg,
     paddingTop: spacing.sm,
     paddingBottom: spacing.md,
     minHeight: 56,

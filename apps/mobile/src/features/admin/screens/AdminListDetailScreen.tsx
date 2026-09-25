@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
-import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native'
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
+import { AnimatedSheet } from '../../../ui/AnimatedSheet'
 import {
   ApiError,
   useAdminBulkSaveEntities,
@@ -446,10 +447,9 @@ function CuratedValuesEditor({
 
       <Button disabled={editingDisabled} testID="admin-list-detail.save-curated" label="Save curated values" loading={saveCurated.isPending} onPress={handleSaveCurated} />
 
-      <Modal testID="admin-list-detail.generate-dialog.modal" visible={showGenerateModal} animationType="slide" transparent onRequestClose={closeGenerateModal}>
-        <View testID="admin-list-detail.generate-dialog.overlay" style={styles.modalOverlay}>
-          <View testID="admin-list-detail.generate-dialog" style={styles.modalContent}>
-            <View style={styles.modalHeader}>
+      <AnimatedSheet testID="admin-list-detail.generate-dialog.modal" visible={showGenerateModal} onClose={closeGenerateModal} sheetStyle={styles.modalContent}>
+        <View testID="admin-list-detail.generate-dialog" style={{ flex: 1 }}>
+          <View style={styles.modalHeader}>
               <Typography testID="admin-list-detail.generate-dialog.title" variant="heading">Curate AI values for {shortLabel}</Typography>
               <Pressable testID="admin-list-detail.generate-dialog.close" hitSlop={8} onPress={closeGenerateModal}>
                 <Icon name="X" size={22} />
@@ -509,8 +509,7 @@ function CuratedValuesEditor({
               </ScrollView>
             )}
           </View>
-        </View>
-      </Modal>
+      </AnimatedSheet>
       <ActionSheet testID="admin-list-detail.curated-dialog" config={sheet.config} onDismiss={sheet.dismiss} />
     </View>
   )
@@ -590,11 +589,6 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xs,
   },
   reorderCol: { minWidth: 44, gap: 2 },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-end',
-  },
   modalContent: {
     backgroundColor: colors.surface,
     borderTopLeftRadius: radius.lg,

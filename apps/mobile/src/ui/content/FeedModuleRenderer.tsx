@@ -60,6 +60,15 @@ export function FeedModuleRenderer({ module, state, onPressItem, onPressQuickPic
     return <Grid {...shared} gridShape="square" columns={4} />
   }
 
+  // ── CUSTOM REDESIGN: Tech Stack ──────────────────────────────────────
+  // The backend Explore sequence blindly assigns 'river' to the 6th module,
+  // which ruins the Tech Stack categories by stretching them into giant,
+  // empty full-width rows with floating images. Redesigning this specific
+  // module to always render as a compact grid.
+  if (module.id === 'site-picks-tech') {
+    return <Grid {...shared} gridShape="square" columns={2} />
+  }
+
   // ── EXPLORE = honor the varied feed grammar. ─────────────────────────
   switch (module.suggestedStructure) {
     case 'rail':

@@ -233,7 +233,7 @@ export function AdminModerationScreen({ navigation }: Props) {
                 </Typography>
                 {item.targetType === 'MESSAGE' && item.targetMessage?.body ? (
                   <Typography variant="label" style={{ color: colors.inkMuted, fontStyle: 'italic', marginTop: 2 }} numberOfLines={2}>
-                    "{item.targetMessage.body}"
+                    &quot;{item.targetMessage.body}&quot;
                   </Typography>
                 ) : null}
               </View>

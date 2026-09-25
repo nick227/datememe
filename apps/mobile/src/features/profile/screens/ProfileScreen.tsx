@@ -28,67 +28,63 @@ export function ProfileScreen({ navigation }: Props) {
 
   return (
     <ScreenContainer testID="screen.profile" padded={false} width="wide">
-      <TopNavigation testID="profile.header"
-        leftAction="close"
-        onLeftAction={() => navigation.goBack()}
-        rightElement={
-          <Pressable testID="profile.open-account" onPress={() => navigation.navigate('Account')} hitSlop={12} style={{ padding: spacing.xs }}>
-            <Icon name="Settings" />
-          </Pressable>
-        }
-      />
+      <View style={styles.column}>
 
-      <FlatList
-        key={numColumns}
-        data={(lists.isLoading ? [1, 2] : (lists.data ?? []).filter((l) => l.isComplete)) as any[]}
-        keyExtractor={(item) => (typeof item === 'number' ? String(item) : item.id)}
-        numColumns={numColumns}
-        columnWrapperStyle={{ gap: spacing.sm }}
-        contentContainerStyle={styles.listContent}
-        ListHeaderComponent={
-          <View>
-            {me.isLoading ? (
-              <Skeleton variant="rect" width="100%" height={320} />
-            ) : (
-              <ProfileGalleryHero
-                testID="profile.gallery"
-                photos={photos}
-                placeholderInitial={(profile?.displayName || '?').charAt(0)}
-              >
-                <View style={styles.heroNameRow}>
-                  <Typography variant="title" style={styles.heroName}>{profile?.displayName}</Typography>
-                  {isPremium ? (
-                    <View style={styles.premiumBadge}>
-                      <Typography variant="label" style={styles.premiumBadgeText}>Premium</Typography>
-                    </View>
-                  ) : null}
-                </View>
-                <Typography variant="bodyMuted" style={styles.heroUsername}>@{profile?.username}</Typography>
-              </ProfileGalleryHero>
-            )}
+        <FlatList
+          key={numColumns}
+          data={(lists.isLoading ? [1, 2] : (lists.data ?? []).filter((l) => l.isComplete)) as any[]}
+          keyExtractor={(item) => (typeof item === 'number' ? String(item) : item.id)}
+          numColumns={numColumns}
+          columnWrapperStyle={{ gap: spacing.sm }}
+          contentContainerStyle={styles.listContent}
+          ListHeaderComponent={
+            <View>
+              {me.isLoading ? (
+                <Skeleton variant="rect" width="100%" height={320} />
+              ) : (
+                <ProfileGalleryHero
+                  testID="profile.gallery"
+                  photos={photos}
+                  placeholderInitial={(profile?.displayName || '?').charAt(0)}
+                >
+                  <View style={styles.heroNameRow}>
+                    <Typography variant="title" style={styles.heroName}>{profile?.displayName}</Typography>
+                    {isPremium ? (
+                      <View style={styles.premiumBadge}>
+                        <Typography variant="label" style={styles.premiumBadgeText}>Premium</Typography>
+                      </View>
+                    ) : null}
+                  </View>
+                  <Typography variant="bodyMuted" style={styles.heroUsername}>@{profile?.username}</Typography>
+                </ProfileGalleryHero>
+              )}
 
-            <View style={styles.body}>
-              {profile?.bio ? <Typography variant="body" style={styles.bio}>{profile.bio}</Typography> : null}
-              <Button testID="profile.edit-profile" label="Edit profile" variant="secondary" onPress={() => navigation.navigate('EditProfile')} />
-              <Typography variant="label" style={styles.sectionLabel}>Your lists</Typography>
+              <View style={styles.body}>
+                {profile?.bio ? <Typography variant="title" style={styles.bio}>{profile.bio}</Typography> : null}
+                <Button testID="profile.open-account" label="Settings" variant="secondary" onPress={() => navigation.navigate('Account')} />
+                <Button testID="profile.edit-profile" label="Edit profile" variant="secondary" onPress={() => navigation.navigate('EditProfile')} />
+                <Typography variant="label" style={styles.sectionLabel}>Your lists</Typography>
+              </View>
             </View>
-          </View>
-        }
-        ListEmptyComponent={<EmptyState testID="profile.empty" title="No completed lists yet" subtitle="Head to the Favorites tab to start." />}
-        renderItem={({ item }) => (typeof item === 'number' ? <PreviewListCardSkeleton /> : <PreviewListCard list={item} />)}
-      />
+          }
+          ListEmptyComponent={<EmptyState testID="profile.empty" title="No completed lists yet" subtitle="Head to the Favorites tab to start." />}
+          renderItem={({ item }) => (typeof item === 'number' ? <PreviewListCardSkeleton /> : <PreviewListCard style={styles.column} list={item} />)}
+        />
+      </View>
     </ScreenContainer>
   )
 }
 
+const CONTENT_WIDTH = 640
 const styles = StyleSheet.create({
   heroNameRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   heroName: { color: colors.white },
+  column: { width: '100%', maxWidth: CONTENT_WIDTH, alignSelf: 'center', paddingHorizontal: spacing.lg, paddingTop: spacing.lg },
   heroUsername: { color: 'rgba(255,255,255,0.75)', marginTop: 2 },
   premiumBadge: { backgroundColor: colors.accent, borderWidth: borderWidth.thin, borderColor: colors.white, paddingHorizontal: spacing.sm, paddingVertical: 2 },
   premiumBadgeText: { color: colors.white },
-  body: { paddingHorizontal: spacing.lg, paddingTop: spacing.lg, gap: spacing.md },
-  bio: { marginBottom: spacing.xs },
+  body: { paddingTop: spacing.lg, gap: spacing.md },
+  bio: { marginBottom: spacing.xxl },
   sectionLabel: { marginTop: spacing.sm, marginBottom: spacing.sm },
   listContent: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xxl },
 })

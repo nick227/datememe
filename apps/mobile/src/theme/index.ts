@@ -7,6 +7,8 @@
 // distinct from colors.accent (the one red pop, used sparingly — logo, small
 // highlights — not buttons or badges).
 
+import { createTheme, createBox, createText } from '@shopify/restyle'
+
 export const colors = {
   primary: '#000000',
   primaryPressed: '#333333',
@@ -20,6 +22,7 @@ export const colors = {
   surfaceMuted: '#F0F0F0',
   canvas: '#FFFFFF',
   danger: '#FF3131',
+  success: '#00C853',
   overlay: 'rgba(0,0,0,0.75)',
   white: '#FFFFFF',
   wheat: '#f7ead1',
@@ -68,3 +71,46 @@ export const type = {
   button: { fontFamily: 'PlusJakartaSans_700Bold', fontSize: 16, color: colors.white, letterSpacing: 0.2 },
   iconButton: { fontSize: 24, color: colors.ink, width: 24, textAlign: 'center' as const },
 }
+
+export const theme = createTheme({
+  colors: {
+    ...colors,
+  },
+  spacing: {
+    ...spacing,
+    '-xs': -spacing.xs,
+    '-sm': -spacing.sm,
+    '-md': -spacing.md,
+    '-lg': -spacing.lg,
+    '-xl': -spacing.xl,
+    '-xxl': -spacing.xxl,
+    '-section': -spacing.section,
+  },
+  breakpoints: {
+    phone: 0,
+    tablet: 768,
+    large: 1024,
+  },
+  borderRadii: {
+    ...radius,
+  },
+  textVariants: {
+    defaults: {
+      color: 'ink',
+      fontFamily: 'PlusJakartaSans_400Regular',
+    },
+    // Remap type to use color keys for Restyle
+    wordmark: { fontFamily: 'PlusJakartaSans_800ExtraBold', color: 'ink', letterSpacing: -0.5, textTransform: 'uppercase' },
+    display: { fontFamily: 'PlusJakartaSans_800ExtraBold', fontSize: 30, color: 'ink', letterSpacing: -0.3, lineHeight: 36 },
+    title: { fontFamily: 'PlusJakartaSans_800ExtraBold', fontSize: 26, color: 'ink', letterSpacing: -0.5, lineHeight: 32 },
+    heading: { fontFamily: 'PlusJakartaSans_700Bold', fontSize: 18, color: 'ink', letterSpacing: -0.2, lineHeight: 24 },
+    body: { fontFamily: 'PlusJakartaSans_400Regular', fontSize: 15, color: 'ink', lineHeight: 22 },
+    bodyMuted: { fontFamily: 'PlusJakartaSans_400Regular', fontSize: 14, color: 'inkMuted', lineHeight: 20 },
+    label: { fontFamily: 'PlusJakartaSans_600SemiBold', fontSize: 13, color: 'inkMuted', letterSpacing: 1.0, textTransform: 'uppercase' },
+    button: { fontFamily: 'PlusJakartaSans_700Bold', fontSize: 16, color: 'white', letterSpacing: 0.2 },
+  },
+})
+
+export type Theme = typeof theme
+export const Box = createBox<Theme>()
+export const Text = createText<Theme>()

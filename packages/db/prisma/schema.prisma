@@ -530,6 +530,64 @@ model CategoryEntity {
   @@id([categoryId, entityId])
 }
 
+enum ResultSubjectType {
+  ENTITY
+  PROFILE
+}
+
+enum ResultMetric {
+  LIST_SCORE
+  MOST_LIKED
+  RISING
+  MOST_COMPATIBLE
+  MOST_DISTINCTIVE
+  MOST_ACTIVE
+}
+
+enum ResultScopeType {
+  GLOBAL
+  CATEGORY
+}
+
+enum ResultWindow {
+  ALL_TIME
+  DAILY
+  WEEKLY
+  MONTHLY
+}
+
+model ResultSet {
+  id          String            @id @default(cuid())
+  subjectType ResultSubjectType
+  metric      ResultMetric
+  scopeType   ResultScopeType
+  scopeValue  String?
+  window      ResultWindow      @default(ALL_TIME)
+  takeCount   Int               @default(0) // Generalized participant/sample size
+  updatedAt   DateTime          @updatedAt
+  
+  entries     ResultEntry[]
+
+  @@unique([subjectType, metric, scopeType, scopeValue, window], name: "idx_result_set_unique")
+}
+
+model ResultEntry {
+  id           String   @id @default(cuid())
+  resultSetId  String
+  subjectId    String   // The entityId or profileId
+  rank         Int      // Current standing (#1, #2...)
+  previousRank Int?     // Stored from previous snapshot for trend math
+  score        Int      // The aggregate score (e.g., weighted votes, likes count)
+  
+  resultSet    ResultSet @relation(fields: [resultSetId], references: [id], onDelete: Cascade)
+
+  // We do not strictly use foreign keys to Entity/Profile because subjectType dictates what subjectId means.
+  // The application layer resolves this when fetching.
+
+  @@unique([resultSetId, subjectId])
+  @@index([resultSetId, rank])
+}
+
 // Admin-curated "Site Picks" — 12 groups of 4 existing List Definitions
 // (Category rows) each, surfaced as their own Grid modules in the Lists feed
 // (ContentFeedService.getListsFeed), immediately after "Your lists" and

@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native'
+import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { borderWidth, colors, radius, spacing, type, modalHeight } from '../theme'
+import { AnimatedSheet } from './AnimatedSheet'
 
 export type ActionSheetButton = {
   testID?: string
@@ -33,40 +34,31 @@ export function ActionSheet({ testID, config, onDismiss }: { testID?: string; co
   }
 
   return (
-    <Modal testID={testID ? `${testID}.modal` : undefined} visible={!!config} animationType="slide" transparent onRequestClose={onDismiss}>
-      <View testID={testID ? `${testID}.overlay` : undefined} style={styles.overlay}>
-        <View testID={testID} style={styles.sheet}>
-          {config ? (
-            <>
-              <Text testID={testID ? `${testID}.title` : undefined} style={styles.title}>{config.title}</Text>
-              {config.message ? <Text testID={testID ? `${testID}.message` : undefined} style={styles.message}>{config.message}</Text> : null}
-              {config.buttons.map((button, i) => (
-                <Pressable testID={button.testID} key={button.testID ?? i} style={[styles.button, i > 0 && styles.buttonDivider]} onPress={() => handlePress(button)}>
-                  <Text
-                    style={[
-                      styles.buttonText,
-                      button.style === 'destructive' && styles.buttonTextDestructive,
-                      button.style === 'cancel' && styles.buttonTextCancel,
-                    ]}
-                  >
-                    {button.text}
-                  </Text>
-                </Pressable>
-              ))}
-            </>
-          ) : null}
-        </View>
-      </View>
-    </Modal>
+    <AnimatedSheet testID={testID} visible={!!config} onClose={onDismiss} sheetStyle={styles.sheet}>
+      {config ? (
+        <>
+          <Text testID={testID ? `${testID}.title` : undefined} style={styles.title}>{config.title}</Text>
+          {config.message ? <Text testID={testID ? `${testID}.message` : undefined} style={styles.message}>{config.message}</Text> : null}
+          {config.buttons.map((button, i) => (
+            <Pressable testID={button.testID} key={button.testID ?? i} style={[styles.button, i > 0 && styles.buttonDivider]} onPress={() => handlePress(button)}>
+              <Text
+                style={[
+                  styles.buttonText,
+                  button.style === 'destructive' && styles.buttonTextDestructive,
+                  button.style === 'cancel' && styles.buttonTextCancel,
+                ]}
+              >
+                {button.text}
+              </Text>
+            </Pressable>
+          ))}
+        </>
+      ) : null}
+    </AnimatedSheet>
   )
 }
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'transparent',
-    justifyContent: 'flex-end',
-  },
   sheet: {
     backgroundColor: colors.wheat,
     borderTopWidth: borderWidth.thick,

@@ -120,8 +120,7 @@ export function AdminUserDetailScreen({ route, navigation }: Props) {
 
   const { user, auditEvents } = detail.data
   const activeSubscription = user.subscriptions[0]
-  const now = Date.now()
-  const isGrantActive = (g: (typeof user.membershipGrants)[number]) => !g.revokedAt && (!g.expiresAt || new Date(g.expiresAt).getTime() > now)
+  const isGrantActive = (g: (typeof user.membershipGrants)[number]) => !g.revokedAt && (!g.expiresAt || new Date(g.expiresAt).getTime() > new Date().getTime())
 
   return (
     <ScreenContainer testID="screen.admin-user-detail" width="narrow">

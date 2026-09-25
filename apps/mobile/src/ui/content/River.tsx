@@ -1,10 +1,11 @@
 import { StyleSheet, View } from 'react-native'
+import Animated, { FadeInDown } from 'react-native-reanimated'
+import { Box, spacing } from '../../theme'
 import { Typography } from '../Typography'
 import { Skeleton } from '../Skeleton'
 import { EmptyState } from '../EmptyState'
 import { ErrorState } from '../ErrorState'
 import { ContentUnitCard } from './ContentUnitCard'
-import { spacing } from '../../theme'
 import type { ContentUnit, StructureState } from './types'
 
 type Props = {
@@ -19,11 +20,11 @@ type Props = {
 
 export function River({ testID, title, items, state, zone, onPressItem, onRetry }: Props) {
   return (
-    <View testID={testID} style={styles.section}>
+    <Box testID={testID} paddingHorizontal="lg" marginBottom="xl">
       {title ? (
-        <Typography variant="heading" style={styles.heading}>
-          {title}
-        </Typography>
+        <Box marginBottom="md">
+          <Typography variant="heading">{title}</Typography>
+        </Box>
       ) : null}
 
       {state === 'loading' ? (
@@ -34,26 +35,31 @@ export function River({ testID, title, items, state, zone, onPressItem, onRetry 
         <EmptyState title="Nothing here yet" />
       ) : (
         <View>
-          {items.map((unit) => (
-            <ContentUnitCard key={unit.id} unit={unit} variant="river" zone={zone} onPress={() => onPressItem(unit)} />
+          {items.map((unit, index) => (
+            <Animated.View key={unit.id} entering={FadeInDown.duration(400).delay(index * 50)}>
+              <ContentUnitCard unit={unit} variant="river" zone={zone} onPress={() => onPressItem(unit)} />
+            </Animated.View>
           ))}
         </View>
       )}
-    </View>
+    </Box>
   )
 }
 
 function RiverSkeleton() {
   return (
-    <View style={{ gap: spacing.md }}>
+    <Box gap="md">
       {[1, 2, 3].map((i) => (
-        <Skeleton key={i} variant="rect" width="100%" height={64} />
+        <Box key={i} flexDirection="row" alignItems="center" gap="md" paddingVertical="md" borderTopWidth={1} borderColor="border">
+          <Skeleton variant="circular" width={56} height={56} />
+          <Box flex={1}>
+            <Skeleton variant="text" width="60%" />
+            <Skeleton variant="text" width="40%" style={{ marginTop: 4 }} />
+          </Box>
+        </Box>
       ))}
-    </View>
+    </Box>
   )
 }
 
-const styles = StyleSheet.create({
-  section: { paddingHorizontal: spacing.lg, marginBottom: spacing.xl },
-  heading: { marginBottom: spacing.md },
-})
+const styles = StyleSheet.create({})

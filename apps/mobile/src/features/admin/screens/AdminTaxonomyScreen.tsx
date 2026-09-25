@@ -115,7 +115,7 @@ function TypeNode({ type, navigation }: { type: components['schemas']['AdminEnti
         entities.isLoading ? (
           <Skeleton height={20} style={{ marginLeft: spacing.sm + INDENT_PER_DEPTH, marginBottom: spacing.xs }} />
         ) : entities.isError ? (
-          <Typography variant="label" style={{ color: colors.danger, marginLeft: spacing.sm + INDENT_PER_DEPTH }}>Couldn't load.</Typography>
+          <Typography variant="label" style={{ color: colors.danger, marginLeft: spacing.sm + INDENT_PER_DEPTH }}>Couldn&apos;t load.</Typography>
         ) : (
           (entities.data ?? []).map((entity) => <EntityNode key={entity.id} entity={entity} depth={1} navigation={navigation} />)
         )

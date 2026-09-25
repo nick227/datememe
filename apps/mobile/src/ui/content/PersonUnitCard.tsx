@@ -1,7 +1,10 @@
-import { Image, Pressable, StyleSheet, View } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 import { Typography } from '../Typography'
 import { ImageCredit } from './ImageCredit'
-import { cardShell } from './cardShell'
+import { CardShell } from './CardShell'
+import { SmartImage } from './SmartImage'
+import { MicroBadge } from './MicroBadge'
+import { PressableScale } from '../PressableScale'
 import { borderWidth, colors, spacing } from '../../theme'
 import type { RenderVariant } from './renderBudgets'
 import type { ContentUnit } from './types'
@@ -41,89 +44,88 @@ export function PersonUnitCard({ unit, variant, zone, onPress }: Props) {
   // rhythm, not four differently-decorated boxes).
   if (isRiver) {
     return (
-      <Pressable testID={`discover.profile.${unit.id}`} style={riverStyles.row} onPress={onPress}>
-        {unit.imageUrl ? (
-          <Image source={{ uri: unit.imageUrl }} style={riverStyles.photo} />
-        ) : (
-          <View style={[riverStyles.photo, styles.photoFallback]}>
-            <Typography variant="heading" style={styles.initial}>
-              {(unit.title || '?').charAt(0).toUpperCase()}
-            </Typography>
-          </View>
-        )}
+      <PressableScale testID={`discover.profile.${unit.id}`} style={riverStyles.row} onPress={onPress}>
+        <SmartImage uri={unit.imageUrl} fallbackText={unit.title} width={56} height={56} round />
         <View style={riverStyles.content}>
           <Typography variant="heading" numberOfLines={1}>
             {unit.title}
-            {locationLine ? <Typography variant="bodyMuted"> · {locationLine}</Typography> : null}
           </Typography>
+          {locationLine ? <Typography variant="bodyMuted">{locationLine}</Typography> : null}
           {sharedFavorites.length > 0 ? (
-            <Typography variant="body" style={styles.sharedNames} numberOfLines={1}>
+            <Typography variant="body" style={styles.sharedNames} numberOfLines={2}>
               You both ranked {sharedFavorites.map((f) => f.entityName).join(' · ')}
             </Typography>
           ) : null}
+        </View>
+        
+        <View style={riverStyles.meta}>
+          {matchMetric ? (
+            <Typography style={styles.matchValue}>{matchMetric.value} match</Typography>
+          ) : null}
+          {sharedCountMetric ? (
+            <Typography variant="bodyMuted">{sharedCountMetric.value} shared interests</Typography>
+          ) : null}
+        </View>
+      </PressableScale>
+    )
+  }
+
+  return (
+    <CardShell testID={`discover.profile.${unit.id}`} onPress={onPress}>
+      <CardShell.Media style={styles.imageWrap}>
+        <SmartImage uri={unit.imageUrl} fallbackText={unit.title} />
+      </CardShell.Media>
+
+      <CardShell.Body>
+        <View style={styles.headerRow}>
+          <Typography variant="heading" numberOfLines={1} style={styles.name}>
+            {unit.title}
+          </Typography>
+        </View>
+
+        <CardShell.Insight>
+          {sharedFavorites.length > 0 ? (
+            <View style={styles.block}>
+              <Typography variant="label" style={styles.sharedLabel}>
+                You both ranked
+              </Typography>
+              <Typography variant="body" style={styles.sharedNames} numberOfLines={1}>
+                {sharedFavorites.map((f) => f.entityName).join(' · ')}
+              </Typography>
+            </View>
+          ) : null}
+
+          {alsoInto.length > 0 && !isRail ? (
+            <View style={styles.block}>
+              <Typography variant="label" style={styles.alsoLabel}>
+                Also into
+              </Typography>
+              <Typography variant="bodyMuted" numberOfLines={1}>
+                {alsoInto.map((e) => e.canonicalName).join(' · ')}
+              </Typography>
+            </View>
+          ) : null}
+          
+          {sharedFavorites.length === 0 && alsoInto.length === 0 ? (
+            <Typography variant="bodyMuted" style={{ fontStyle: 'italic' }}>
+              No overlapping interests yet
+            </Typography>
+          ) : null}
+        </CardShell.Insight>
+
+        <CardShell.ActionRow>
+          <Typography variant="bodyMuted" numberOfLines={1} style={styles.metaText}>
+            {locationLine}
+          </Typography>
           {matchMetric ? (
             <Typography variant="body" style={styles.matchLine}>
               <Typography style={styles.matchValue}>{matchMetric.value} match</Typography>
               {sharedCountMetric ? ` · ${sharedCountMetric.value} shared` : ''}
             </Typography>
           ) : null}
-        </View>
-      </Pressable>
-    )
-  }
-
-  return (
-    <Pressable testID={`discover.profile.${unit.id}`} style={cardShell.base} onPress={onPress}>
-      <View style={styles.headerRow}>
-        <Typography variant="heading" numberOfLines={1} style={styles.name}>
-          {unit.title}
-        </Typography>
-        {locationLine ? (
-          <Typography variant="bodyMuted" numberOfLines={1}>
-            {locationLine}
-          </Typography>
-        ) : null}
-      </View>
-
-      {unit.imageUrl ? (
-        <Image source={{ uri: unit.imageUrl }} style={styles.photo} />
-      ) : (
-        <View style={[styles.photo, styles.photoFallback]}>
-          <Typography variant="display" style={styles.initial}>
-            {(unit.title || '?').charAt(0).toUpperCase()}
-          </Typography>
-        </View>
-      )}
-
-      {sharedFavorites.length > 0 ? (
-        <View style={styles.block}>
-          <Typography variant="label" style={styles.sharedLabel}>
-            You both ranked
-          </Typography>
-          <Typography variant="body" style={styles.sharedNames} numberOfLines={2}>
-            {sharedFavorites.map((f) => f.entityName).join(' · ')}
-          </Typography>
-        </View>
-      ) : null}
-
-      {alsoInto.length > 0 && !isRail ? (
-        <View style={styles.block}>
-          <Typography variant="label" style={styles.alsoLabel}>
-            Also into
-          </Typography>
-          <Typography variant="bodyMuted" numberOfLines={1}>
-            {alsoInto.map((e) => e.canonicalName).join(' · ')}
-          </Typography>
-        </View>
-      ) : null}
-
-      {matchMetric ? (
-        <Typography variant="body" style={styles.matchLine}>
-          <Typography style={styles.matchValue}>{matchMetric.value} match</Typography>
-          {sharedCountMetric ? ` · ${sharedCountMetric.value} shared` : ''}
-        </Typography>
-      ) : null}
-    </Pressable>
+        </CardShell.ActionRow>
+      </CardShell.Body>
+    </CardShell>
   )
 }
 
@@ -138,20 +140,12 @@ function CompactPersonCard({ unit, onPress }: { unit: ContentUnit; onPress: () =
   const metaLine = locationLine || (sharedCountMetric ? `${sharedCountMetric.value} shared` : null)
 
   return (
-    <Pressable testID={`discover.profile.${unit.id}`} style={compactStyles.card} onPress={onPress}>
-      <View style={compactStyles.imageWrap}>
-        {unit.imageUrl ? (
-          <Image accessibilityLabel={unit.title} source={{ uri: unit.imageUrl }} style={compactStyles.image} resizeMode="cover" />
-        ) : (
-          <View style={[compactStyles.image, compactStyles.imageFallback]}>
-            <Typography variant="display" style={styles.initial}>
-              {(unit.title || '?').charAt(0).toUpperCase()}
-            </Typography>
-          </View>
-        )}
-        {matchMetric ? <Typography variant="label" style={compactStyles.badge}>{matchMetric.value} match</Typography> : null}
-      </View>
-      <View style={compactStyles.body}>
+    <CardShell testID={`discover.profile.${unit.id}`} onPress={onPress}>
+      <CardShell.Media style={compactStyles.imageWrap}>
+        <SmartImage uri={unit.imageUrl} fallbackText={unit.title} />
+        {matchMetric ? <MicroBadge label={`${matchMetric.value} match`} position="top-left" variant="neutral" /> : null}
+      </CardShell.Media>
+      <CardShell.Body style={compactStyles.body}>
         <Typography variant="heading" style={compactStyles.title} numberOfLines={1}>
           {unit.title}
         </Typography>
@@ -161,39 +155,21 @@ function CompactPersonCard({ unit, onPress }: { unit: ContentUnit; onPress: () =
           </Typography>
         ) : null}
         <ImageCredit credit={unit.imageCredit} />
-      </View>
-    </Pressable>
+      </CardShell.Body>
+    </CardShell>
   )
 }
 
 const compactStyles = StyleSheet.create({
-  card: {
-    backgroundColor: colors.surface,
-    borderWidth: borderWidth.thick,
-    borderColor: colors.ink,
+  imageWrap: { position: 'relative' },
+  body: {
+    borderTopWidth: borderWidth.thin,
+    borderTopColor: colors.ink,
+    padding: spacing.md,
     flex: 1,
   },
-  imageWrap: { position: 'relative' },
-  image: { width: '100%', aspectRatio: 3 / 4, backgroundColor: colors.surfaceMuted },
-  imageFallback: { alignItems: 'center', justifyContent: 'center' },
-  badge: {
-    position: 'absolute',
-    top: spacing.xs,
-    left: spacing.xs,
-    color: colors.accent,
-    backgroundColor: colors.surface,
-    borderWidth: borderWidth.thin,
-    borderColor: colors.ink,
-    paddingHorizontal: spacing.xs,
-    paddingVertical: 2,
-  },
-  body: {
-    borderTopWidth: borderWidth.thick,
-    borderTopColor: colors.ink,
-    padding: spacing.sm,
-  },
-  title: { fontSize: 15, lineHeight: 19, marginBottom: 2 },
-  meta: { fontSize: 11, color: colors.inkMuted },
+  title: { fontSize: 18, lineHeight: 22, marginBottom: 0, fontWeight: '700' },
+  meta: { fontSize: 13, color: colors.inkMuted, marginTop: spacing.xs },
 })
 
 const riverStyles = StyleSheet.create({
@@ -205,20 +181,22 @@ const riverStyles = StyleSheet.create({
     borderColor: colors.border,
     paddingVertical: spacing.md,
   },
-  photo: { width: 56, height: 56, backgroundColor: colors.surfaceMuted },
-  content: { flex: 1, gap: 2 },
+  content: { flex: 1, gap: 2, paddingRight: spacing.sm },
+  meta: { alignItems: 'flex-end', gap: 2 },
 })
 
 const styles = StyleSheet.create({
-  headerRow: { marginBottom: spacing.sm },
-  name: { marginBottom: 2 },
-  photo: { width: '100%', aspectRatio: 1.4, backgroundColor: colors.surfaceMuted, marginBottom: spacing.md },
-  photoFallback: { alignItems: 'center', justifyContent: 'center' },
-  initial: { color: colors.inkMuted },
-  block: { marginBottom: spacing.sm },
+  imageWrap: {
+    borderBottomWidth: borderWidth.thin,
+    borderBottomColor: colors.ink,
+  },
+  headerRow: { marginBottom: 2 },
+  name: { fontSize: 22, lineHeight: 28 },
+  block: { marginTop: spacing.xs },
   sharedLabel: { color: colors.ink, marginBottom: 2 },
   sharedNames: { fontWeight: '700', fontSize: 15 },
   alsoLabel: { color: colors.inkMuted, marginBottom: 2 },
-  matchLine: { marginTop: spacing.xs, color: colors.inkMuted },
+  metaText: { flex: 1, paddingRight: spacing.sm },
+  matchLine: { color: colors.inkMuted, textAlign: 'right' },
   matchValue: { color: colors.accent, fontWeight: '800' },
 })

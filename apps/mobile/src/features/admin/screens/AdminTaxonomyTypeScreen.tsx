@@ -31,6 +31,7 @@ export function AdminTaxonomyTypeScreen({ route, navigation }: Props) {
 
   useEffect(() => {
     if (type) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLabel(type.label)
       setPluralLabel(type.pluralLabel)
       setSlug(type.slug)

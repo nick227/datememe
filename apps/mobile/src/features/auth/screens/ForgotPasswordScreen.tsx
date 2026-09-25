@@ -37,7 +37,7 @@ export function ForgotPasswordScreen({ navigation }: Props) {
             Reset your password
           </Typography>
           <Typography variant="bodyMuted" style={{ marginBottom: spacing.xl }}>
-            Enter your account email and we'll send you a 6-digit code.
+            Enter your account email and we&apos;ll send you a 6-digit code.
           </Typography>
           <TextField testID="forgot-password.email"
             label="Email"

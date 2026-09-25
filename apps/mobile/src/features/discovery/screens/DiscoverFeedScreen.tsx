@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { FlatList, ScrollView } from 'react-native'
+import { FlatList, ScrollView, View } from 'react-native'
+import Animated, { FadeIn, FadeOut } from 'react-native-reanimated'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { useDiscoverFeed, type DiscoverFeedFilters } from '@project/sdk'
 import { ScreenContainer } from '../../../ui/ScreenContainer'
@@ -23,6 +24,8 @@ type Row =
   | { rowId: string; kind: 'empty' }
   | { rowId: string; kind: 'boundary' }
   | { rowId: string; kind: 'module'; module: FeedModule }
+
+const AnimatedFlatList = Animated.createAnimatedComponent(FlatList<Row>)
 
 // Discover as a People Grid baseline with contextual Rail/Spotlight/River
 // interruptions and an embedded Quick Picks module — see
@@ -131,29 +134,21 @@ export function DiscoverFeedScreen({ navigation }: Props) {
     navigation.navigate('QuickPicks')
   }
 
-  if (feed.isLoading) {
-    return (
-      <ScreenContainer testID="screen.discover" padded={false} width="full">
-        <ScrollView testID="discover.loading" contentContainerStyle={{ paddingTop: spacing.lg, paddingHorizontal: spacing.lg }}>
+  return (
+    <ScreenContainer testID="screen.discover" padded={false} width="full">
+      {feed.isLoading ? (
+        <Animated.ScrollView testID="discover.loading" exiting={FadeOut.duration(200)} contentContainerStyle={{ paddingTop: spacing.lg, paddingHorizontal: spacing.lg, width: '100%', maxWidth: CANVAS_WIDTH, alignSelf: 'center' }}>
           <Skeleton variant="text" width={260} height={28} style={{ marginBottom: spacing.sm }} />
           <Skeleton variant="text" width={200} height={16} style={{ marginBottom: spacing.xl }} />
           <Skeleton variant="rect" width="100%" height={220} />
-        </ScrollView>
-      </ScreenContainer>
-    )
-  }
-
-  if (feed.isError && !feed.data) {
-    return (
-      <ScreenContainer testID="screen.discover" width="full">
-        <ErrorState testID="discover.error" subtitle="Couldn't load your feed." onRetry={() => feed.refetch()} />
-      </ScreenContainer>
-    )
-  }
-
-  return (
-    <ScreenContainer testID="screen.discover" padded={false} width="full">
-      <FlatList
+        </Animated.ScrollView>
+      ) : feed.isError && !feed.data ? (
+        <Animated.View entering={FadeIn.duration(300)} exiting={FadeOut.duration(200)}>
+          <ErrorState testID="discover.error" subtitle="Couldn't load your feed." onRetry={() => feed.refetch()} />
+        </Animated.View>
+      ) : (
+        <AnimatedFlatList
+          entering={FadeIn.duration(300)}
         ref={listRef}
         data={rows}
         keyExtractor={(row) => row.rowId}
@@ -202,6 +197,7 @@ export function DiscoverFeedScreen({ navigation }: Props) {
         // CategoriesScreen. Chips are not sticky; they scroll with the page.
         contentContainerStyle={{ width: '100%', maxWidth: CANVAS_WIDTH, alignSelf: 'center', paddingBottom: spacing.section }}
       />
+      )}
     </ScreenContainer>
   )
 }
