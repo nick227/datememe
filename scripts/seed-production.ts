@@ -35,6 +35,11 @@ async function run() {
   execSync(`env DATABASE_URL="${dbUrl}" npx tsx apps/server/src/scripts/import-batch4.ts`, { stdio: 'inherit' })
 
   console.log('\n=======================================')
+  console.log('🚀 STEP 3.6: Importing Batch 5 Lists (Music & Video)')
+  console.log('=======================================')
+  execSync(`env DATABASE_URL="${dbUrl}" npx tsx apps/server/src/scripts/import-batch5.ts`, { stdio: 'inherit' })
+
+  console.log('\n=======================================')
   console.log('🚀 STEP 4: Fetching Wikipedia/Wikidata Media (This might take a minute)')
   console.log('=======================================')
   execSync(`env DATABASE_URL="${dbUrl}" npx tsx apps/server/src/scripts/seed-taxonomy-media.ts`, { stdio: 'inherit' })
