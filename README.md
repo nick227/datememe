@@ -90,10 +90,17 @@ It runs as three separate services:
 
 ## 🛣️ Roadmap
 
-We've got the core MVP loop nailed down (registration, onboarding, building lists, swiping, compatibility matching, and messaging). Up next:
+We've completely overhauled the core MVP loop. The matching engine is now mathematically robust—prioritizing rare exact overlaps and utilizing a secondary semantic axis layer to generate meaningful matches even on low evidence. The catalog taxonomy has been rebuilt to ensure a wide breadth of domains (lifestyle, entertainment, food) so the engine can accurately capture a user's vibe.
 
+**Recently Completed:**
+- **Smarter Match Engine:** Log-based rarity weighting, mathematically capped axis confidence damping, and configuration extraction (`apps/worker/src/config/scoring.ts`).
+- **Broadened Catalog:** Pruned redundancies and added diverse semantic axes (e.g., Weekend Vibe, Comfort Food) to avoid purely entertainment-heavy profiles.
+- **Three-Pillar UI Primitive:** A unified, contextual `PreviewListCard` that seamlessly bridges prompt taking, match discovering, and global ranking exploration.
+
+**Up Next:**
+- Wait for real-world beta users to tune the provisional `SCORING_CONFIG` parameters (k-shrinkage, axis floor).
+- Implement TTL compute-on-read logic for stale scores via `updatedAt`.
 - Integrating real Apple/Google In-App Purchases for subscriptions.
-- Wiring up native Mobile UI screens for safety flows (report/block buttons).
 
 ---
 *Built with ❤️ for better connections.*
