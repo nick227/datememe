@@ -69,6 +69,8 @@ export function ListBuilderScreen({ route, navigation }: Props) {
   const minItems = category.data?.minItems ?? 1
   const results = entities.data?.pages[0]?.data ?? []
 
+  const { mutateAsync: saveListAsync } = upsertList
+  
   // Background autosave logic
   useEffect(() => {
     if (!hydrated.current) return
@@ -77,7 +79,7 @@ export function ListBuilderScreen({ route, navigation }: Props) {
     saveTimeout.current = setTimeout(() => {
       isSaving.current = true
       setSaveError(null)
-      upsertList.mutateAsync({
+      saveListAsync({
         items: picked.map((p) => ({ entityId: p.entityId, rank: p.rank })),
         isComplete: picked.length >= minItems,
       }).catch((err) => {
@@ -90,7 +92,7 @@ export function ListBuilderScreen({ route, navigation }: Props) {
     return () => {
       if (saveTimeout.current) clearTimeout(saveTimeout.current)
     }
-  }, [picked, minItems, upsertList])
+  }, [picked, minItems, saveListAsync])
 
   function toggle(entityId: string, name: string, imageUrl?: string | null) {
     setPicked((prev) => {
