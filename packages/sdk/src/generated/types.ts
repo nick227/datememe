@@ -412,6 +412,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/rankings/feed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The Rankings tab — site-wide aggregate answers as a FeedModule stream
+         * @description Read-only over the ResultSets RankingsRebuildJob rebuilds on a timer (only published categories — enough answers — exist there). Mostly `rankings-top-{slug}` river modules (one category's top 5 as rows, rest of the id = the category slug), occasionally interrupted by a rail of category units ("From lists you've taken", "Closest races", "Most answered"). `chips` = "All" + only the groups that have at least one published ranking; `groupSlugs` filters to those groups. Not paginated — `meta.hasMore` is always false.
+         */
+        get: operations["getRankingsFeed"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/categories/{categorySlug}/rankings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Full site-wide ranking for one category, with the viewer's own picks marked */
+        get: operations["getCategoryRankings"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/lists/feed/collections/{collectionId}": {
         parameters: {
             query?: never;
@@ -1967,6 +2004,38 @@ export interface components {
             id: string;
             label: string;
         };
+        CategoryRankingEntry: {
+            rank: number;
+            /** @description Rank at the last daily baseline — null when the entity is new since then. */
+            previousRank: number | null;
+            /** @description RankingsRebuildJob points — ranked lists maxItems - rank + 1, unranked lists 1 per pick. */
+            score: number;
+            /** @description People whose completed list includes this entity. */
+            pickCount: number;
+            /** @description People who put this entity at #1. */
+            firstPlaceCount: number;
+            /** @description pickCount as a whole-number percent of takeCount. */
+            pickPercent: number;
+            /** @description Where the viewer ranked this entity in their own list, if they did. */
+            viewerRank: number | null;
+            entity: components["schemas"]["Entity"];
+        };
+        CategoryRankings: {
+            category: components["schemas"]["Category"];
+            /** @description False until enough people have answered (the worker's RANKINGS_MIN_TAKES) — then takeCount is null and entries is empty ("Not enough answers yet"). */
+            isPublished: boolean;
+            /** @description Answers counted at the last rebuild. Null while unpublished. */
+            takeCount: number | null;
+            /**
+             * Format: date-time
+             * @description When the aggregate ranking was last refreshed — null if it never has been.
+             */
+            updatedAt: string | null;
+            viewerHasTaken: boolean;
+            /** @description Share of everyone counted whose #1 is the viewer's #1 ("31% of people put Target at #1"), from the last rebuild's firstPlaceCount. Null for unranked categories, while unpublished, or if the viewer hasn't taken the list. */
+            viewerTopPickPercent: number | null;
+            entries: components["schemas"]["CategoryRankingEntry"][];
+        };
         ContentFeedPageResponse: {
             filterNotice?: string;
             /** @description Page chrome — only ever populated on the first page (cursor omitted). */
@@ -3474,6 +3543,56 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+        };
+    };
+    getRankingsFeed: {
+        parameters: {
+            query?: {
+                /** @description Comma-separated CategoryGroup slugs (e.g. "music,food") — multi-select. OR'd together: a real, server-side filter to *any* selected group, not an AND across all of them. Comma-joined rather than a repeated query key so a single selection never needs array coercion on either the client or the server's querystring parser. Shared by GET /lists/feed and GET /discover/feed — the two pages' category chips run the same filtering logic, though what a "match" means differs per feed: on /lists/feed it's literal category membership; on /discover/feed it's the *taste* axis — real engagement (a started or completed list) in that group, not people tagged with it. */
+                groupSlugs?: components["parameters"]["GroupSlugs"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Page summary and ranking modules */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContentFeedPageResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    getCategoryRankings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                categorySlug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The category's aggregate ranking (top 50) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["CategoryRankings"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
         };
     };
     getListsFeedCollection: {

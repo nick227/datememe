@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { useConversations, useDiscoverFeed, useProfile, useProfileLists, useSwipe } from '@project/sdk'
+import { useConversations, useDiscoverFeed, useMyLists, useProfile, useProfileLists, useSwipe } from '@project/sdk'
 import { ScreenContainer } from '../../../ui/ScreenContainer'
 import { ProfileGalleryHero } from '../../../ui/ProfileGalleryHero'
 import { Icon } from '../../../ui/Icon'
@@ -32,6 +32,7 @@ export function ProfileDetailScreen({ route, navigation }: Props) {
   const { profileId, displayName, age, matchPercentage, insights } = route.params
   const profile = useProfile(profileId)
   const lists = useProfileLists(profileId)
+  const myLists = useMyLists()
   const relatedFeed = useDiscoverFeed()
   const swipe = useSwipe()
   const conversations = useConversations()
@@ -89,6 +90,30 @@ export function ProfileDetailScreen({ route, navigation }: Props) {
       title: 'Not matched yet',
       message: `Messaging unlocks once you and ${displayName} both like each other — try Like above.`,
       buttons: [{ testID: 'profile-detail.dialog.ok', text: 'Got it' }],
+    })
+  }
+
+  // The viewer's own list per category, so each of this profile's lists can
+  // show "you took this / N% match". Only a list with items counts as taken.
+  const myListByCategory = useMemo(() => {
+    const map = new Map<string, any>()
+    for (const l of myLists.data ?? []) if (l.items?.length) map.set(l.categoryId, l)
+    return map
+  }, [myLists.data])
+
+  // Cross-tab, same pattern as DiscoverFeedScreen's category units.
+  function openListBuilder(list: any) {
+    ;(navigation.getParent()?.navigate as any)('Lists', {
+      screen: 'ListBuilder',
+      params: { categorySlug: list.category.slug, shortLabel: list.category.shortLabel },
+    })
+  }
+
+  function openSiteRankings(list: any) {
+    ;(navigation.getParent()?.navigate as any)('Rankings', {
+      screen: 'CategoryRanking',
+      params: { categorySlug: list.category.slug, shortLabel: list.category.shortLabel },
+      initial: false,
     })
   }
 
@@ -227,7 +252,17 @@ export function ProfileDetailScreen({ route, navigation }: Props) {
               ) : lists.data?.length ? (
                 <View style={styles.listsStack}>
                   {lists.data.map((list: any) => (
-                    <PreviewListCard key={list.id} list={list} style={styles.listCard} />
+                    <PreviewListCard
+                      key={list.id}
+                      list={list}
+                      ownerName={displayName}
+                      // Hold off comparing until the viewer's lists load, so
+                      // it doesn't flash "You haven't taken this".
+                      viewerList={myLists.isSuccess ? myListByCategory.get(list.categoryId) ?? null : undefined}
+                      onPressTitle={() => openListBuilder(list)}
+                      onPressRankings={() => openSiteRankings(list)}
+                      style={styles.listCard}
+                    />
                   ))}
                 </View>
               ) : (

@@ -578,6 +578,9 @@ model ResultSet {
   scopeValue  String
   window      ResultWindow      @default(ALL_TIME)
   takeCount   Int               @default(0) // Generalized participant/sample size
+  // When entries' previousRank was last rolled forward — trend arrows mean
+  // "since this snapshot" (RankingsRebuildJob rolls it every 24h).
+  baselineAt  DateTime?
   updatedAt   DateTime          @updatedAt
   
   entries     ResultEntry[]
@@ -592,6 +595,8 @@ model ResultEntry {
   rank         Int      // Current standing (#1, #2...)
   previousRank Int?     // Stored from previous snapshot for trend math
   score        Int      // The aggregate score (e.g., weighted votes, likes count)
+  pickCount       Int   @default(0) // Distinct people who picked this subject
+  firstPlaceCount Int   @default(0) // ...and put it at #1
   
   resultSet    ResultSet @relation(fields: [resultSetId], references: [id], onDelete: Cascade)
 

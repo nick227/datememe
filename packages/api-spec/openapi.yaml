@@ -927,6 +927,60 @@ components:
         id: { type: string }
         label: { type: string }
 
+    CategoryRankingEntry:
+      type: object
+      required: [rank, previousRank, score, pickCount, firstPlaceCount, pickPercent, viewerRank, entity]
+      properties:
+        rank: { type: integer }
+        previousRank:
+          type: integer
+          nullable: true
+          description: Rank at the last daily baseline — null when the entity is new since then.
+        score:
+          type: integer
+          description: RankingsRebuildJob points — ranked lists maxItems - rank + 1, unranked lists 1 per pick.
+        pickCount: { type: integer, description: People whose completed list includes this entity. }
+        firstPlaceCount: { type: integer, description: 'People who put this entity at #1.' }
+        pickPercent: { type: integer, description: pickCount as a whole-number percent of takeCount. }
+        viewerRank:
+          type: integer
+          nullable: true
+          description: Where the viewer ranked this entity in their own list, if they did.
+        entity: { $ref: '#/components/schemas/Entity' }
+
+    CategoryRankings:
+      type: object
+      required: [category, isPublished, takeCount, updatedAt, viewerHasTaken, viewerTopPickPercent, entries]
+      properties:
+        category: { $ref: '#/components/schemas/Category' }
+        isPublished:
+          type: boolean
+          description: >
+            False until enough people have answered (the worker's
+            RANKINGS_MIN_TAKES) — then takeCount is null and entries is empty
+            ("Not enough answers yet").
+        takeCount:
+          type: integer
+          nullable: true
+          description: Answers counted at the last rebuild. Null while unpublished.
+        updatedAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: When the aggregate ranking was last refreshed — null if it never has been.
+        viewerHasTaken: { type: boolean }
+        viewerTopPickPercent:
+          type: integer
+          nullable: true
+          description: >
+            Share of everyone counted whose #1 is the viewer's #1 ("31% of
+            people put Target at #1"), from the last rebuild's
+            firstPlaceCount. Null for unranked categories, while unpublished,
+            or if the viewer hasn't taken the list.
+        entries:
+          type: array
+          items: { $ref: '#/components/schemas/CategoryRankingEntry' }
+
     ContentFeedPageResponse:
       type: object
       required: [data, meta]
@@ -2503,6 +2557,52 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/ContentFeedPageResponse' }
         '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /rankings/feed:
+    get:
+      operationId: getRankingsFeed
+      summary: The Rankings tab — site-wide aggregate answers as a FeedModule stream
+      tags: [content-feed]
+      description: >
+        Read-only over the ResultSets RankingsRebuildJob rebuilds on a timer
+        (only published categories — enough answers — exist there). Mostly
+        `rankings-top-{slug}` river modules (one category's top 5 as rows,
+        rest of the id = the category slug), occasionally interrupted by a
+        rail of category units ("From lists you've taken", "Closest races",
+        "Most answered"). `chips` = "All" + only the groups that have at
+        least one published ranking; `groupSlugs` filters to those groups.
+        Not paginated — `meta.hasMore` is always false.
+      parameters:
+        - $ref: '#/components/parameters/GroupSlugs'
+      responses:
+        '200':
+          description: Page summary and ranking modules
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ContentFeedPageResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /categories/{categorySlug}/rankings:
+    get:
+      operationId: getCategoryRankings
+      summary: Full site-wide ranking for one category, with the viewer's own picks marked
+      tags: [content-feed]
+      parameters:
+        - in: path
+          name: categorySlug
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: The category's aggregate ranking (top 50)
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties: { data: { $ref: '#/components/schemas/CategoryRankings' } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
 
   /lists/feed/collections/{collectionId}:
     get:

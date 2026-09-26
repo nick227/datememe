@@ -97,7 +97,8 @@ async function main() {
   const groups = {
     music: await db.categoryGroup.upsert({ where: { slug: 'music' }, update: {}, create: { slug: 'music', label: 'Music', sortOrder: 0 } }),
     filmTv: await db.categoryGroup.upsert({ where: { slug: 'film-tv' }, update: {}, create: { slug: 'film-tv', label: 'Film & TV', sortOrder: 1 } }),
-    food: await db.categoryGroup.upsert({ where: { slug: 'food' }, update: {}, create: { slug: 'food', label: 'Food', sortOrder: 2 } }),
+    // Same slugs the list importers use — see apps/worker/src/scripts/merge-category-groups.ts.
+    food: await db.categoryGroup.upsert({ where: { slug: 'food-drink' }, update: {}, create: { slug: 'food-drink', label: 'Food & Drink', sortOrder: 2 } }),
     career: await db.categoryGroup.upsert({ where: { slug: 'career' }, update: {}, create: { slug: 'career', label: 'Career', sortOrder: 3 } }),
     tech: await db.categoryGroup.upsert({ where: { slug: 'tech' }, update: {}, create: { slug: 'tech', label: 'Tech', sortOrder: 4 } }),
     gaming: await db.categoryGroup.upsert({ where: { slug: 'gaming' }, update: {}, create: { slug: 'gaming', label: 'Gaming', sortOrder: 5 } }),
@@ -105,7 +106,7 @@ async function main() {
     geography: await db.categoryGroup.upsert({ where: { slug: 'geography' }, update: {}, create: { slug: 'geography', label: 'Geography', sortOrder: 7 } }),
     craft: await db.categoryGroup.upsert({ where: { slug: 'craft' }, update: {}, create: { slug: 'craft', label: 'Craft & Hobbies', sortOrder: 8 } }),
     literature: await db.categoryGroup.upsert({ where: { slug: 'literature' }, update: {}, create: { slug: 'literature', label: 'Literature', sortOrder: 9 } }),
-    lifestyle: await db.categoryGroup.upsert({ where: { slug: 'lifestyle' }, update: {}, create: { slug: 'lifestyle', label: 'Lifestyle & Hobbies', sortOrder: 10 } }),
+    lifestyle: await db.categoryGroup.upsert({ where: { slug: 'lifestyle-hobbies' }, update: {}, create: { slug: 'lifestyle-hobbies', label: 'Lifestyle & Hobbies', sortOrder: 10 } }),
     travel: await db.categoryGroup.upsert({ where: { slug: 'travel' }, update: {}, create: { slug: 'travel', label: 'Travel & Places', sortOrder: 11 } }),
     sports: await db.categoryGroup.upsert({ where: { slug: 'sports' }, update: {}, create: { slug: 'sports', label: 'Sports', sortOrder: 12 } }),
     podcasts: await db.categoryGroup.upsert({ where: { slug: 'podcasts' }, update: {}, create: { slug: 'podcasts', label: 'Podcasts', sortOrder: 13 } }),

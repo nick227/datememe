@@ -119,20 +119,9 @@ export class ListService {
         }
       ]
 
-      const existingRefresh = await tx.jobQueue.findFirst({
-        where: {
-          type: 'LIST_RESULTS_REFRESH',
-          status: { in: ['PENDING', 'RUNNING'] },
-          payload: { equals: { categoryId: category.id } }
-        }
-      })
-
-      if (!existingRefresh) {
-        jobsToCreate.push({
-          type: 'LIST_RESULTS_REFRESH',
-          payload: { categoryId: category.id }
-        })
-      }
+      // No rankings job here: site Rankings (and Category.popularityCount /
+      // topPickEntityId) are rebuilt wholesale on the worker's timer —
+      // see apps/worker/src/jobs/RankingsRebuildJob.ts.
 
       await tx.jobQueue.createMany({ data: jobsToCreate })
 

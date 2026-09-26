@@ -17,6 +17,7 @@ import {
   Send,
   Settings,
   Shield,
+  Trophy,
   X,
 } from 'lucide-react-native'
 import { colors } from '../theme'
@@ -25,7 +26,7 @@ import { colors } from '../theme'
 // namespace lookup — that giant barrel object doesn't survive Metro's production
 // export bundling reliably (crashes with "Cannot read properties of undefined"
 // the moment any screen tries to render an icon in the exported web build).
-const ICON_MAP = { ArrowLeft, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Check, Flame, Heart, ListChecks, Lock, MapPin, MessageCircle, MoreVertical, Play, Plus, Send, Settings, Shield, X }
+const ICON_MAP = { ArrowLeft, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Check, Flame, Heart, ListChecks, Lock, MapPin, MessageCircle, MoreVertical, Play, Plus, Send, Settings, Shield, Trophy, X }
 
 export type IconName = keyof typeof ICON_MAP
 

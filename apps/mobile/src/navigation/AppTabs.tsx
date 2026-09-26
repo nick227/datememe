@@ -5,6 +5,7 @@ import * as Notifications from 'expo-notifications'
 import { useQueryClient } from '@tanstack/react-query'
 import { CategoriesStack } from './CategoriesStack'
 import { DiscoveryStack } from './DiscoveryStack'
+import { RankingsStack } from './RankingsStack'
 import { MessagesStack } from './MessagesStack'
 import { ProfileStack } from './ProfileStack'
 import { Icon, type IconName } from '../ui/Icon'
@@ -15,6 +16,7 @@ const Tab = createBottomTabNavigator()
 
 const ICONS: Record<string, IconName> = {
   Lists: 'ListChecks',
+  Rankings: 'Trophy',
   Discover: 'Flame',
   Messages: 'MessageCircle',
 }
@@ -55,6 +57,7 @@ export function AppTabs() {
       })}
     >
       <Tab.Screen name="Lists" component={CategoriesStack} />
+      <Tab.Screen name="Rankings" component={RankingsStack} />
       <Tab.Screen name="Discover" component={DiscoveryStack} />
       <Tab.Screen
         name="Messages"

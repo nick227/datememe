@@ -2,7 +2,7 @@ import { pushNotificationJob } from './jobs/PushNotificationJob'
 import { db } from '@project/db'
 import { calculateMatchesJob } from './jobs/CalculateMatchesJob'
 import { updateTaxonomyJob } from './jobs/UpdateTaxonomyJob'
-import { listResultsRefreshJob } from './jobs/ListResultsRefreshJob'
+import { rankingsRebuildJob } from './jobs/RankingsRebuildJob'
 import { profileResultsRefreshJob } from './jobs/ProfileResultsRefreshJob'
 import { profileSocialInsightsRefreshJob } from './jobs/ProfileSocialInsightsRefreshJob'
 import { randomUUID } from 'crypto'
@@ -72,8 +72,11 @@ async function poll() {
       await updateTaxonomyJob(payload)
     } else if (job.type === 'SEND_PUSH_NOTIFICATION') {
       await pushNotificationJob(payload)
-    } else if (job.type === 'LIST_RESULTS_REFRESH') {
-      await listResultsRefreshJob(payload)
+    } else if (job.type === 'RANKINGS_REBUILD' || job.type === 'LIST_RESULTS_REFRESH') {
+      // LIST_RESULTS_REFRESH is the old per-category job (still enqueued by
+      // seed-staging) — any such job now just means "rebuild everything".
+      const result = await rankingsRebuildJob()
+      console.log(JSON.stringify({ event: 'RANKINGS_REBUILT', ...result }))
     } else if (job.type === 'PROFILE_RESULTS_REFRESH') {
       await profileResultsRefreshJob(payload)
     } else if (job.type === 'PROFILE_SOCIAL_INSIGHTS_REFRESH') {
@@ -138,6 +141,23 @@ function handleShutdown() {
 process.on('SIGTERM', handleShutdown)
 process.on('SIGINT', handleShutdown)
 
+// Rankings are rebuilt on a timer, not from write paths — the rebuild is
+// canonical and idempotent, so a duplicate enqueue from a second worker
+// racing this check is harmless (it just rebuilds twice).
+const RANKINGS_REFRESH_MS = Math.max(1, parseInt(process.env.RANKINGS_REFRESH_MINUTES || '15', 10)) * 60_000
+
+async function scheduleRankingsRebuild() {
+  if (isShuttingDown) return
+  try {
+    const inFlight = await db.jobQueue.findFirst({ where: { type: 'RANKINGS_REBUILD', status: { in: ['PENDING', 'RUNNING'] } }, select: { id: true } })
+    if (!inFlight) await db.jobQueue.create({ data: { type: 'RANKINGS_REBUILD', payload: {} } })
+  } catch (err) {
+    console.error('Error scheduling rankings rebuild:', err)
+  }
+}
+
 console.log(`Worker ${WORKER_ID} started. Polling for jobs...`)
 poll()
+scheduleRankingsRebuild()
+setInterval(scheduleRankingsRebuild, RANKINGS_REFRESH_MS)
 

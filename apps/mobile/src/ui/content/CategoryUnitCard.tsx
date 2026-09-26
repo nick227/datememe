@@ -175,7 +175,7 @@ function StatCard({ unit, variant, onPress }: { unit: ContentUnit; variant: Rend
                 style={[styles.topPickImage, isSpotlight && styles.topPickImageLarge]} 
               />
               <Typography variant={isSpotlight ? 'heading' : 'body'} style={styles.topPickLabel} numberOfLines={2}>
-                Most common #1: <Typography style={styles.bold}>{unit.entity.canonicalName}</Typography>
+                Site #1: <Typography style={styles.bold}>{unit.entity.canonicalName}</Typography>
               </Typography>
             </View>
           ) : (

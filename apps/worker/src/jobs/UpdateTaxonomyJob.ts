@@ -7,7 +7,7 @@ export async function updateTaxonomyJob(payload: {
   isCompleteDiff: 1 | -1 | 0
   currentEntityIds?: string[]
 }) {
-  const { addedEntities, removedEntities, categoryId, isCompleteDiff, currentEntityIds = [] } = payload
+  const { addedEntities, removedEntities, isCompleteDiff, currentEntityIds = [] } = payload
   let allAffectedEntities = Array.from(new Set([...addedEntities, ...removedEntities]))
 
   if (isCompleteDiff !== 0) {
@@ -49,22 +49,7 @@ export async function updateTaxonomyJob(payload: {
     })
   }
 
-  const completedListCount = await db.list.count({
-    where: { categoryId, isComplete: true }
-  })
-
-  // "Most common #1 pick" — the entity most often ranked first within this category.
-  const [topPick] = await db.listItem.groupBy({
-    by: ['entityId'],
-    where: { rank: 1, list: { categoryId } },
-    _count: { entityId: true },
-    orderBy: { _count: { entityId: 'desc' } },
-    take: 1,
-  })
-
-  await db.category.update({
-    where: { id: categoryId },
-    data: { popularityCount: completedListCount, topPickEntityId: topPick?.entityId ?? null }
-  })
+  // Category.popularityCount / topPickEntityId are owned by RankingsRebuildJob
+  // (one #1 across the app — the site ranking's), not recomputed here.
 }
 

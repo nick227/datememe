@@ -20,7 +20,7 @@ type Metric = {
   importance?: 'primary' | 'secondary' | 'tertiary'
 }
 
-function metric(type: string, label: string, value: string | number, importance?: Metric['importance']): Metric {
+export function metric(type: string, label: string, value: string | number, importance?: Metric['importance']): Metric {
   return importance ? { type, label, value, importance } : { type, label, value }
 }
 
@@ -36,7 +36,7 @@ function featuredScore(category: any) {
   return (category.matchAnswerMultiplier ?? 0) * 1000 + category.popularityCount
 }
 
-function toCategoryUnit(category: any, opts: { completed: boolean; previewEntities?: any[] }) {
+export function toCategoryUnit(category: any, opts: { completed: boolean; previewEntities?: any[] }) {
   const metrics: Metric[] = []
   if (category.popularityCount > 0) {
     metrics.push(metric('popularity', 'People ranked this', category.popularityCount, 'secondary'))
@@ -297,11 +297,11 @@ export class ContentFeedService {
               id: entry.id,
               kind: 'result',
               resultType: 'entity',
-              title: entry.entity.primaryAlias,
+              title: entry.entity.canonicalName,
               subtitle: `${entry.score} points`,
               imageUrl: entry.entity.imageUrl,
               rank: entry.rank,
-              trend: entry.previousRank ? (entry.previousRank > entry.rank ? `+${entry.previousRank - entry.rank}` : (entry.previousRank < entry.rank ? `${entry.previousRank - entry.rank}` : undefined)) : 'New',
+              trend: entry.previousRank ? (entry.previousRank > entry.rank ? `+${entry.previousRank - entry.rank}` : (entry.previousRank < entry.rank ? `${entry.previousRank - entry.rank}` : undefined)) : 'new',
               position: i2,
               metrics: [],
             })),
@@ -854,7 +854,7 @@ export class ContentFeedService {
               subtitle: `${entry.score} points`,
               imageUrl: entry.profile.photos?.[0]?.url || entry.profile.avatarUrl || null,
               rank: entry.rank,
-              trend: entry.previousRank ? (entry.previousRank > entry.rank ? `+${entry.previousRank - entry.rank}` : (entry.previousRank < entry.rank ? `${entry.previousRank - entry.rank}` : undefined)) : 'New',
+              trend: entry.previousRank ? (entry.previousRank > entry.rank ? `+${entry.previousRank - entry.rank}` : (entry.previousRank < entry.rank ? `${entry.previousRank - entry.rank}` : undefined)) : 'new',
               position: i2,
               metrics: [],
             })),

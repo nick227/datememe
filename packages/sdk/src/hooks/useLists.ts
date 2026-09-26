@@ -54,6 +54,10 @@ export function useUpsertList(categorySlug: string) {
       // Both Discover query keys — see useMatching.ts's useSwipe for why.
       queryClient.invalidateQueries({ queryKey: ['discovery'] })
       queryClient.invalidateQueries({ queryKey: ['discoverFeed'] })
+      // Only the viewer's own marks (viewerRank) are live — the aggregate
+      // numbers catch up on the worker's next RANKINGS_REBUILD tick.
+      queryClient.invalidateQueries({ queryKey: ['rankingsFeed'] })
+      queryClient.invalidateQueries({ queryKey: ['categoryRankings', categorySlug] })
     },
   })
 }

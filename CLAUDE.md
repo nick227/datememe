@@ -31,6 +31,7 @@ Phase 3 (Frontend Shell), adapted for Expo — built bottom-up through the full 
 - [ ] Admin / moderation panel (EntitySubmission + Report review queues exist in the DB, no UI)
 - [ ] Search-engine sync (Typesense/Meilisearch) — MVP autocomplete is MySQL prefix/FULLTEXT + in-process Levenshtein, per docs §6
 - [ ] Supporting marketing site (docs §10) — not started
+- [x] **Rankings tab** (site-wide aggregate answers) — see "Rankings" below
 - [ ] Rate limiting on auth endpoints (login, forgot-password, verify-email) — the 6-digit OTP codes are brute-forceable without it; noted, not built this pass
 
 ## Deviations from Defaults
@@ -94,6 +95,26 @@ Added three backend tracks the user explicitly approved (safety baseline, photo 
 **Process-management gotcha hit repeatedly this session, worth knowing:** backgrounding `pnpm --filter server dev` with `(... &)` and then relaunching after an edit does **not** reliably kill the previous `tsx watch` process in this sandbox — `pkill -f "tsx watch src/index.ts"` silently failed to match multiple times, leaving up to *four* stale server processes racing on `EADDRINUSE` simultaneously, one of which was still serving requests from before dependencies were even installed. This produced a very confusing "bug" (persistent validation error that no code change could fix) that turned out to be a zombie process, not application code. **Before trusting any live-test result against this server, confirm exactly one process holds port 3002** (`ss -ltnp | grep 3002`, cross-check the PID) — don't just check that `/health` responds.
 
 **Mobile UI does not use any of the three new tracks yet** — see the "backend only" notes in Modules Built. That's the natural next step but wasn't part of what was asked for this round.
+
+## Rankings
+
+Fourth bottom tab (Lists · Rankings · Discover · Messages; Profile stays on the header avatar) answering "what did everybody pick?".
+
+- **One canonical, timed rebuild** — `apps/worker/src/jobs/RankingsRebuildJob.ts`. The worker enqueues `RANKINGS_REBUILD` every `RANKINGS_REFRESH_MINUTES` (default 15) unless one is in flight; it recomputes *every* category from scratch in two SQL aggregates (completed lists, active categories, approved entities with merges folded into their target, non-suspended/non-deleted users). List saves no longer enqueue anything for rankings — seeds, importers, merges and deletions are repaired by the next tick. The legacy `LIST_RESULTS_REFRESH` job type (still enqueued by `seed-staging.ts`) is treated as a rebuild. Run one inline with `apps/worker/src/scripts/rebuild-rankings.ts`.
+- **Scoring:** RANKED lists `maxItems - rank + 1`; UNRANKED lists 1 per pick (their "rank" is only tap order).
+- **Stored, not recomputed:** `ResultSet.takeCount`, `ResultEntry.rank/score/pickCount/firstPlaceCount/previousRank`. The API (`RankingsService`) only reads these; the viewer's own ranks are the only live values.
+- **Trend arrows** compare against a baseline rolled every 24h (`ResultSet.baselineAt`), not the last refresh.
+- **Publish threshold** `RANKINGS_MIN_TAKES` (3 in production, 1 in this dev `.env`): below it the category has no ResultSet at all (detail page: "Not enough answers yet") — a one-person "site ranking" would just expose that person's answers.
+- **One #1 across the app:** the rebuild also owns `Category.popularityCount` and `topPickEntityId` (= the ranking's #1, or null below the threshold); `UpdateTaxonomyJob` no longer writes them, and Lists cards label it "Site #1".
+- **Page shape:** rows first (`rankings-top-{slug}` river modules, top 5 each), a rail ("From lists you've taken", "Closest races") only after every 3rd block; filter chips only for groups with ≥1 published ranking. Entry points: a profile's list card ("View site rankings") and the list builder's post-save sheet.
+- **Group dedupe:** `seed.ts` originally created `food`/`lifestyle`; the importers use `food-drink`/`lifestyle-hobbies`. `seed.ts` now uses the importer slugs and `apps/worker/src/scripts/merge-category-groups.ts` (idempotent) folds the old groups in — **run it against production too**.
+- `tsx watch` does not watch `.env` — touch `apps/worker/src/index.ts` after changing `RANKINGS_*` vars.
+
+## Known Issues (outside Rankings, logged 2026-09-26)
+
+- **Server tests: `TypeError: Invalid URL` in `src/providers/localStorageConfig.ts`** — 5 suites (admin-security, admin-users, catalog, openApiResponseContract, userContext) fail at import under vitest; the uploads public-base URL env isn't valid in the test environment.
+- **Discover cursor regression** — `contentFeed.test.ts` › "getDiscoverFeed never repeats a candidate… and terminates" fails with `Invalid discovery cursor`; coincides with the in-progress, uncommitted `DiscoveryService`/`CalculateMatchesJob` (`Profile.matchesUpdatedAt`) work.
+- **Test fixtures write to the dev database** — leftover `combo-group-*` / `disco-taste-group-*` CategoryGroups and their categories come from test runs.
 
 ## Last Session Summary
 

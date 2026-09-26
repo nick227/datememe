@@ -11,6 +11,7 @@ export type MainStackParamList = {
 
 export type AppTabsParamList = {
   Lists: undefined
+  Rankings: undefined
   Discover: undefined
   Messages: undefined
   ProfileTab: undefined
@@ -19,6 +20,11 @@ export type AppTabsParamList = {
 export type CategoriesStackParamList = {
   Categories: undefined
   ListBuilder: { categorySlug: string; shortLabel: string }
+}
+
+export type RankingsStackParamList = {
+  Rankings: undefined
+  CategoryRanking: { categorySlug: string; shortLabel: string }
 }
 
 export type MatchInsight = { icon: string; title: string; description: string }
