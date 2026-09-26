@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "groupSlug": "food",
+  "entityTypeSlug": "snack",
+  "title": "Favorite Snacks",
+  "prompt": "What are your go-to snacks?",
+  "axes": ["food", "snacks"],
+  "values": [
+    "Doritos",
+    "Cheetos",
+    "Oreos",
+    "Goldfish",
+    "Pringles",
+    "Pretzels",
+    "Popcorn",
+    "Gummy Bears",
+    "Snickers",
+    "M&Ms",
+    "Skittles",
+    "Kit Kat",
+    "Trail Mix",
+    "Beef Jerky",
+    "Potato Chips"
+  ],
+  "isAbstract": true
+}

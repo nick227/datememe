@@ -17,11 +17,6 @@ export function TopNavigation({ testID, title, subtitle, alignment = 'center', l
   return (
     <View testID={testID} style={styles.container}>
 
-      <View style={[styles.center, alignment === 'left' && styles.centerLeft]}>
-        {title ? <Typography variant={alignment === 'center' ? 'heading' : 'title'}>{title}</Typography> : null}
-        {subtitle ? <Typography variant="bodyMuted">{subtitle}</Typography> : null}
-      </View>
-
       {(leftAction || alignment === 'center') && (
         <View style={styles.side}>
           {leftAction && (
@@ -31,6 +26,11 @@ export function TopNavigation({ testID, title, subtitle, alignment = 'center', l
           )}
         </View>
       )}
+
+      <View style={[styles.center, alignment === 'left' && styles.centerLeft]}>
+        {title ? <Typography variant={alignment === 'center' ? 'heading' : 'title'}>{title}</Typography> : null}
+        {subtitle ? <Typography variant="bodyMuted">{subtitle}</Typography> : null}
+      </View>
 
       {(rightElement || alignment === 'center') && (
         <View style={[styles.side, styles.sideRight]}>

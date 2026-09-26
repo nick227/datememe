@@ -55,6 +55,7 @@ export type ProfileStackParamList = {
 export type AdminStackParamList = {
   AdminDashboard: undefined
   AdminContent: undefined
+  AdminContentListDetail: { draftId: string }
   AdminModeration: undefined
   AdminUsers: undefined
   AdminUserDetail: { userId: string }

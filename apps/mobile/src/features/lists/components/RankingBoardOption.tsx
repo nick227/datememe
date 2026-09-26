@@ -1,5 +1,5 @@
 import { Image, Pressable, StyleSheet, View } from 'react-native'
-import { GripVertical, X } from 'lucide-react-native'
+import { GripVertical, X, ImageIcon } from 'lucide-react-native'
 import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated'
 import { Typography } from '../../../ui/Typography'
@@ -73,7 +73,9 @@ export function RankingBoardOption({ testID, rank, name, imageUrl, onRemove, onR
       {imageUrl ? (
         <Image source={{ uri: imageUrl }} style={styles.thumbnail} />
       ) : (
-        <View style={styles.thumbnailPlaceholder} />
+        <View style={styles.thumbnailPlaceholder}>
+          <ImageIcon size={20} color={colors.inkMuted} opacity={0.3} />
+        </View>
       )}
 
       {/* Title */}
@@ -124,6 +126,10 @@ const styles = StyleSheet.create({
     borderRadius: radius.sm,
     backgroundColor: colors.surfaceMuted,
     marginHorizontal: spacing.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   name: {
     flex: 1,

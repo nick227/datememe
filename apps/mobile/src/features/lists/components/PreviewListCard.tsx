@@ -1,94 +1,151 @@
-import { Image, StyleSheet, View } from 'react-native'
+import { Image, StyleSheet, View, TouchableOpacity } from 'react-native'
+import { ImageIcon, ChevronRight } from 'lucide-react-native'
 import { Typography } from '../../../ui/Typography'
 import { borderWidth, colors, radius, spacing } from '../../../theme'
 
 type Props = {
-  list: any
-  // Default usage is a FlatList grid cell, where `flex: 1` makes the card
-  // fill its numColumns row evenly. A full-width single-column stack (see
-  // ProfileDetailScreen) needs that cancelled so the card sizes to its own
-  // content instead of stretching to fill an unbounded auto-height parent.
+  // If list is passed, it represents a completed list (yours or someone else's)
+  list?: any
+  // If category is passed, it represents an uncompleted list
+  category?: any
+  
+  // Overrides for contextual metadata
+  matchContext?: string
+  
+  onPress?: () => void
   style?: any
 }
 
-export function PreviewListCard({ list, style }: Props) {
-  // Sort items 1 to 5
-  const sortedItems = list.items.slice().sort((a: any, b: any) => a.rank - b.rank)
-  const categoryTitle = list.category?.shortLabel ?? 'List'
+function formatCount(num: number) {
+  if (num >= 1000) return (num / 1000).toFixed(1) + 'k'
+  return num.toString()
+}
 
-  // Try to find a thumbnail from the first item
-  const thumbnail = sortedItems[0]?.entity?.imageUrl
+export function PreviewListCard({ list, category, matchContext, onPress, style }: Props) {
+  const isCompleted = !!list
+  
+  // Determine data sources
+  const cat = category ?? list?.category
+  const categoryTitle = cat?.shortLabel ?? 'List'
+  const participationCount = cat?.popularityCount ?? 0
+  const prompt = cat?.prompt ?? `Rank the ${categoryTitle.toLowerCase()} you love most.`
+
+  let thumbnail = null
+  let subtitle = prompt
+  let actionLabel = 'Rank yours'
+
+  if (isCompleted) {
+    const sortedItems = list.items?.slice().sort((a: any, b: any) => a.rank - b.rank)
+    thumbnail = sortedItems?.[0]?.entity?.imageUrl
+    
+    const topPickName = sortedItems?.[0]?.entity?.canonicalName
+    if (topPickName) {
+      subtitle = `Your #1: ${topPickName}`
+    }
+    actionLabel = 'View rankings'
+  } else {
+    // For uncompleted, could use the category's top entity image if available
+    thumbnail = cat?.topPickEntity?.imageUrl
+  }
+
+  // Build metadata string
+  const rankedStr = `${formatCount(participationCount)} ranked`
+  const metadataPieces = [rankedStr]
+  
+  if (matchContext) {
+    metadataPieces.push(matchContext)
+  } else if (!isCompleted && cat?.topPickEntity?.canonicalName) {
+    metadataPieces.push(`Most common #1: ${cat.topPickEntity.canonicalName}`)
+  }
+
+  const metadataText = metadataPieces.join(' · ')
 
   return (
-    <View style={[styles.card, style]}>
+    <TouchableOpacity 
+      style={[styles.card, style]} 
+      onPress={onPress} 
+      activeOpacity={onPress ? 0.7 : 1}
+      disabled={!onPress}
+    >
       <View style={styles.header}>
         {thumbnail ? (
           <Image source={{ uri: thumbnail }} style={styles.thumbnail} />
         ) : (
-          <View style={[styles.thumbnail, styles.thumbnailFallback]} />
+          <View style={[styles.thumbnail, styles.thumbnailFallback]}>
+            <ImageIcon size={20} color={colors.primary} opacity={0.5} />
+          </View>
         )}
-        <Typography variant="label" numberOfLines={2} style={styles.title}>
-          {categoryTitle}
-        </Typography>
+        <View style={styles.titleStack}>
+          <Typography variant="label" numberOfLines={1} style={styles.title}>
+            {categoryTitle}
+          </Typography>
+          <Typography variant="body" numberOfLines={1} style={styles.subtitle}>
+            {subtitle}
+          </Typography>
+        </View>
       </View>
 
-      <View style={styles.itemsList}>
-        {sortedItems.slice(0, 5).map((item: any, index: number) => (
-          <View key={item.id} style={styles.itemRow}>
-            <Typography variant="label" style={styles.itemNumber}>
-              {index + 1}
-            </Typography>
-            <Typography variant="body" numberOfLines={1} style={styles.itemName}>
-              {item.entity.canonicalName}
-            </Typography>
-          </View>
-        ))}
+      <Typography variant="bodyMuted" style={styles.metadata}>
+        {metadataText}
+      </Typography>
+
+      <View style={styles.ctaRow}>
+        <Typography variant="label" style={styles.ctaText}>
+          {actionLabel}
+        </Typography>
+        <ChevronRight size={16} color={colors.primary} />
       </View>
-    </View>
+    </TouchableOpacity>
   )
 }
 
 const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.surface,
-    padding: spacing.md,
+    padding: spacing.lg,
+    borderRadius: radius.md,
     marginBottom: spacing.sm,
     borderWidth: borderWidth.thin,
     borderColor: colors.border,
+    gap: spacing.md,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
-    marginBottom: spacing.sm,
+    gap: spacing.md,
   },
   thumbnail: {
-    width: 32,
-    height: 32,
+    width: 48,
+    height: 48,
     borderRadius: radius.sm,
     backgroundColor: colors.surfaceMuted,
   },
   thumbnailFallback: {
     backgroundColor: colors.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  titleStack: {
+    flex: 1,
+    gap: 2,
   },
   title: {
-    flex: 1,
     color: colors.ink,
+    fontSize: 16,
   },
-  itemsList: {
-    gap: 4,
-  },
-  itemRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  itemNumber: {
-    width: 12, // Fixed width for alignment
+  subtitle: {
     color: colors.inkMuted,
   },
-  itemName: {
-    flex: 1,
+  metadata: {
     fontSize: 13,
+  },
+  ctaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: spacing.xs,
+  },
+  ctaText: {
+    color: colors.primary,
   },
 })

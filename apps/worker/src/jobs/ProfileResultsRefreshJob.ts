@@ -17,7 +17,7 @@ export async function profileResultsRefreshJob(payload: { metric: ResultMetric, 
       score: (agg._count as any).targetProfileId ?? 0
     })).sort((a, b) => b.score - a.score || a.profileId.localeCompare(b.profileId))
     
-    await updateGenericResultSet('PROFILE', 'MOST_LIKED', 'GLOBAL', null, window, sortedProfiles, 0)
+    await updateGenericResultSet('PROFILE', 'MOST_LIKED', 'GLOBAL', '_GLOBAL_', window, sortedProfiles, 0)
     
   } else if (metric === 'MOST_ACTIVE') {
     const listAgg = await db.list.groupBy({
@@ -33,49 +33,11 @@ export async function profileResultsRefreshJob(payload: { metric: ResultMetric, 
       score: (agg._count as any).profileId ?? 0
     })).sort((a, b) => b.score - a.score || a.profileId.localeCompare(b.profileId))
     
-    await updateGenericResultSet('PROFILE', 'MOST_ACTIVE', 'GLOBAL', null, window, sortedProfiles, 0)
+    await updateGenericResultSet('PROFILE', 'MOST_ACTIVE', 'GLOBAL', '_GLOBAL_', window, sortedProfiles, 0)
     
-  } else if (metric === 'RISING') {
-    // POC: Profiles created recently or gaining recent likes (Mocked for POC by reusing MOST_LIKED with a "velocity" twist)
-    const swipeAgg = await db.swipe.groupBy({
-      by: ['targetProfileId'],
-      where: { action: 'LIKE' },
-      _count: { targetProfileId: true },
-      orderBy: { _count: { targetProfileId: 'desc' } },
-      take: 100
-    })
-    
-    // For MVP, reuse MOST_LIKED cleanly (no random velocity mutation for determinism)
-    const sortedProfiles = swipeAgg.map((agg, i) => ({
-      profileId: agg.targetProfileId,
-      score: (agg._count as any).targetProfileId ?? 0
-    })).sort((a, b) => b.score - a.score || a.profileId.localeCompare(b.profileId))
-    
-    await updateGenericResultSet('PROFILE', 'RISING', 'GLOBAL', null, window, sortedProfiles, 0)
-
-  } else if (metric === 'MOST_COMPATIBLE') {
-    // POC: Count profiles with the most shared lists deterministically
-    const lists = await db.list.findMany({ where: { isComplete: true }, select: { profileId: true } })
-    const counts = new Map<string, number>()
-    lists.forEach(l => counts.set(l.profileId, (counts.get(l.profileId) || 0) + 1))
-    
-    const sortedProfiles = Array.from(counts.entries())
-      .map(([profileId, score]) => ({ profileId, score }))
-      .sort((a, b) => b.score - a.score || a.profileId.localeCompare(b.profileId)).slice(0, 100)
-      
-    await updateGenericResultSet('PROFILE', 'MOST_COMPATIBLE', 'GLOBAL', null, window, sortedProfiles, 0)
-
-  } else if (metric === 'MOST_DISTINCTIVE') {
-    // POC: Profiles with lists that deviate deterministically
-    const lists = await db.list.findMany({ where: { isComplete: true }, select: { profileId: true } })
-    const counts = new Map<string, number>()
-    lists.forEach(l => counts.set(l.profileId, (counts.get(l.profileId) || 0) + 1))
-    
-    const sortedProfiles = Array.from(counts.entries())
-      .map(([profileId, score]) => ({ profileId, score }))
-      .sort((a, b) => b.score - a.score || a.profileId.localeCompare(b.profileId)).slice(0, 100)
-      
-    await updateGenericResultSet('PROFILE', 'MOST_DISTINCTIVE', 'GLOBAL', null, window, sortedProfiles, 0)
+  } else if (metric === 'RISING' || metric === 'MOST_COMPATIBLE' || metric === 'MOST_DISTINCTIVE') {
+    // Do not surface these global rankings as authoritative yet. They are POC approximations.
+    return
   }
 }
 

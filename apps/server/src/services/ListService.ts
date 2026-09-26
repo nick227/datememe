@@ -111,7 +111,7 @@ export class ListService {
       const jobsToCreate: any[] = [
         {
           type: 'UPDATE_TAXONOMY',
-          payload: { addedEntities: added, removedEntities: removed, categoryId: category.id, isCompleteDiff }
+          payload: { addedEntities: added, removedEntities: removed, categoryId: category.id, isCompleteDiff, currentEntityIds: entityIds }
         },
         {
           type: 'CALCULATE_MATCHES',

@@ -1,5 +1,5 @@
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native'
-import { Plus } from 'lucide-react-native'
+import { Plus, ImageIcon } from 'lucide-react-native'
 import { colors, radius, spacing, type } from '../../../theme'
 import { Typography } from '../../../ui/Typography'
 
@@ -27,7 +27,7 @@ export function FastPickTile({ testID, name, imageUrl, isPending, pickedRank, on
         <Image source={{ uri: imageUrl }} style={styles.thumb} />
       ) : (
         <View style={[styles.thumb, styles.thumbFallback]}>
-          <Text style={styles.thumbInitial}>{name.charAt(0).toUpperCase()}</Text>
+          <ImageIcon size={20} color={colors.inkMuted} opacity={0.3} />
         </View>
       )}
       
@@ -81,6 +81,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surfaceMuted,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   thumbInitial: { ...type.heading, color: colors.inkMuted },
   textCol: { 

@@ -1,0 +1,40 @@
+
+--- favorite-sports-teams ---
+WITH MEDIA (8): Real Madrid, Manchester United, New England Patriots, Chicago Bulls, FC Barcelona, Arsenal FC, Scuderia Ferrari, Mercedes-AMG Petronas F1 Team
+WITHOUT MEDIA (9): Los Angeles Lakers, Golden State Warriors, New York Yankees, Boston Red Sox, Dallas Cowboys, Green Bay Packers, Los Angeles Dodgers, Toronto Maple Leafs, Chicago Cubs
+
+--- top-athletes ---
+WITH MEDIA (20): LeBron James, Michael Jordan, Kobe Bryant, Stephen Curry, Giannis Antetokounmpo, Nikola Jokić, Luka Dončić, Lionel Messi, Cristiano Ronaldo, Neymar Jr, Kylian Mbappé, Erling Haaland, Diego Maradona, Pelé, Serena Williams, Tiger Woods, Roger Federer, Usain Bolt, Muhammad Ali, Simone Biles
+WITHOUT MEDIA (1): Kevin Durant
+
+--- favorite-books ---
+WITH MEDIA (6): Dune, 1984, The Hobbit, The Great Gatsby, Pride and Prejudice, The Catcher in the Rye
+WITHOUT MEDIA (18): The Hitchhiker's Guide to the Galaxy, Ender's Game, Foundation, The Martian, Neuromancer, Snow Crash, The Lord of the Rings, Harry Potter, A Game of Thrones, The Name of the Wind, Mistborn, The Way of Kings, Fahrenheit 451, Brave New World, The Left Hand of Darkness, Hyperion, To Kill a Mockingbird, The Kite Runner
+
+--- favorite-scifi-books ---
+WITH MEDIA (6): Dune, 1984, The Hobbit, The Great Gatsby, Pride and Prejudice, The Catcher in the Rye
+WITHOUT MEDIA (18): The Hitchhiker's Guide to the Galaxy, Ender's Game, Foundation, The Martian, Neuromancer, Snow Crash, The Lord of the Rings, Harry Potter, A Game of Thrones, The Name of the Wind, Mistborn, The Way of Kings, Fahrenheit 451, Brave New World, The Left Hand of Darkness, Hyperion, To Kill a Mockingbird, The Kite Runner
+
+--- favorite-board-games ---
+WITH MEDIA (5): Catan, Chess, Carcassonne, Pandemic, Betrayal at House on the Hill
+WITHOUT MEDIA (10): Ticket to Ride, Monopoly, Dungeons & Dragons, Scrabble, Wingspan, Risk, Secret Hitler, Codenames, Scythe, Terraforming Mars
+
+--- top-sitcoms ---
+WITH MEDIA (4): Severance, The Sopranos, Friends, It's Always Sunny in Philadelphia
+WITHOUT MEDIA (28): The Bear, Succession, White Lotus, Breaking Bad, The Wire, Game of Thrones, Stranger Things, The Office, Seinfeld, Mad Men, Better Call Saul, Fargo, Parks and Recreation, Brooklyn Nine-Nine, How I Met Your Mother, Arrested Development, The Simpsons, Modern Family, Schitt's Creek, Cheers, Frasier, True Detective, Chernobyl, Peaky Blinders, The Last of Us, Black Mirror, Scrubs, Community
+
+--- favorite-national-parks ---
+WITH MEDIA (6): Yellowstone, Yosemite, Grand Canyon, Zion, Glacier, Denali
+WITHOUT MEDIA (6): Rocky Mountain, Acadia, Arches, Olympic, Great Smoky Mountains, Joshua Tree
+
+--- favorite-movie-directors ---
+WITH MEDIA (18): Christopher Nolan, Steven Spielberg, Quentin Tarantino, Martin Scorsese, Greta Gerwig, Denis Villeneuve, Stanley Kubrick, Alfred Hitchcock, Francis Ford Coppola, Wes Anderson, Bong Joon Ho, Ridley Scott, Peter Jackson, James Cameron, George Lucas, David Fincher, Sofia Coppola, Guillermo del Toro
+WITHOUT MEDIA (1): Jordan Peele
+
+--- favorite-video-games ---
+WITH MEDIA (2): The Witcher 3: Wild Hunt, Minecraft
+WITHOUT MEDIA (16): Marvel's Spider-Man 2, God of War Ragnarök, Returnal, Ghost of Tsushima, Demon's Souls, Elden Ring, The Last of Us Part I, Horizon Forbidden West, Cyberpunk 2077, Final Fantasy XVI, Red Dead Redemption 2, Grand Theft Auto V, Super Mario Odyssey, The Legend of Zelda: Breath of the Wild, Halo: Combat Evolved, Half-Life 2
+
+--- top-tv-shows ---
+WITH MEDIA (4): Severance, The Sopranos, Friends, It's Always Sunny in Philadelphia
+WITHOUT MEDIA (28): The Bear, Succession, White Lotus, Breaking Bad, The Wire, Game of Thrones, Stranger Things, The Office, Seinfeld, Mad Men, Better Call Saul, Fargo, Parks and Recreation, Brooklyn Nine-Nine, How I Met Your Mother, Arrested Development, The Simpsons, Modern Family, Schitt's Creek, Cheers, Frasier, True Detective, Chernobyl, Peaky Blinders, The Last of Us, Black Mirror, Scrubs, Community

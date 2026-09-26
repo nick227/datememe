@@ -180,7 +180,7 @@ export function AdminListDetailScreen({ route, navigation }: Props) {
   ]
 
   return (
-    <ScreenContainer testID="screen.admin-list-detail" width="wide" padded={false}>
+    <ScreenContainer testID="screen.admin-list-detail" width="wide">
       <TopNavigation testID="admin-list-detail.header"
         alignment="left"
         leftAction="back"
@@ -214,8 +214,12 @@ export function AdminListDetailScreen({ route, navigation }: Props) {
           </View>
 
           <View style={styles.row}>
-            <TextField testID="admin-list-detail.min-items" label="Min items" value={form.minItems} onChangeText={(v) => setForm((f) => ({ ...f, minItems: v }))} keyboardType="number-pad" style={styles.rowField} />
-            <TextField testID="admin-list-detail.max-items" label="Max items" value={form.maxItems} onChangeText={(v) => setForm((f) => ({ ...f, maxItems: v }))} keyboardType="number-pad" style={styles.rowField} />
+            <View style={styles.rowField}>
+              <TextField testID="admin-list-detail.min-items" label="Min items" value={form.minItems} onChangeText={(v) => setForm((f) => ({ ...f, minItems: v }))} keyboardType="number-pad" />
+            </View>
+            <View style={styles.rowField}>
+              <TextField testID="admin-list-detail.max-items" label="Max items" value={form.maxItems} onChangeText={(v) => setForm((f) => ({ ...f, maxItems: v }))} keyboardType="number-pad" />
+            </View>
           </View>
           <SelectField testID="admin-list-detail.ordering-mode" label="Ordering" value={form.orderingMode} options={ORDERING_OPTIONS} onSelect={(v) => setForm((f) => ({ ...f, orderingMode: v as 'RANKED' | 'UNRANKED' }))} />
 
@@ -517,15 +521,14 @@ function CuratedValuesEditor({
 
 const styles = StyleSheet.create({
   scrollContent: {
-    paddingHorizontal: spacing.lg,
     paddingBottom: spacing.xxl,
     gap: spacing.lg,
   },
   card: {
     backgroundColor: colors.surface,
     borderRadius: radius.lg,
-    borderWidth: borderWidth.thick,
-    borderColor: colors.ink,
+    borderWidth: borderWidth.thin,
+    borderColor: colors.border,
     padding: spacing.lg,
   },
   cardTitle: { marginBottom: spacing.md },

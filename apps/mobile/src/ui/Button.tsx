@@ -46,15 +46,16 @@ export function Button({ testID, label, onPress, disabled, loading, variant = 'p
 const styles = StyleSheet.create({
   base: {
     backgroundColor: colors.primary,
-    borderRadius: radius.pill,
-    borderWidth: borderWidth.thick,
-    borderColor: colors.ink,
-    paddingVertical: spacing.md + 2,
+    borderRadius: radius.md,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
     alignItems: 'center',
     justifyContent: 'center',
   },
   secondary: {
     backgroundColor: colors.surface,
+    borderWidth: borderWidth.thin,
+    borderColor: colors.border,
   },
   danger: {
     backgroundColor: colors.danger,

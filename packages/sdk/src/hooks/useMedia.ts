@@ -4,7 +4,7 @@ import type { components } from '../generated/types'
 
 type MediaResult = components['schemas']['MediaResult']
 
-/** The shape React Native's FormData expects for a picked file — not a browser File object. */
+/** Picker metadata. The native app supplies a Blob adapter for local file URIs. */
 export interface UploadableFile {
   uri: string
   name: string
@@ -20,18 +20,18 @@ export interface UploadableFile {
 export function useUploadMedia() {
   return useMutation({
     mutationFn: async (file: UploadableFile): Promise<MediaResult> => {
-      const { baseUrl, getToken } = getClientConfig()
+      const { baseUrl, getToken, resolveUploadFile } = getClientConfig()
 
       const body = new FormData()
       if (file.uri.startsWith('blob:') || file.uri.startsWith('data:')) {
-        // Web (incl. Expo web): the picker hands back a blob:/data: URI, and a real
-        // browser FormData needs an actual Blob. React Native's FormData special-cases
-        // the {uri,name,type} shape below, but only on native — this branch is decided
-        // by the URI scheme alone so the SDK never has to import 'react-native'.
+        // Browser picker URIs already resolve to real Blob data.
         const blob = await (await fetch(file.uri)).blob()
         body.append('file', blob, file.name)
       } else {
-        body.append('file', file as unknown as Blob)
+        // Expo SDK 57's global fetch requires a Blob/File multipart part;
+        // the legacy React Native { uri, name, type } object is unsupported.
+        if (!resolveUploadFile) throw new Error('Configure resolveUploadFile for native uploads')
+        body.append('file', await resolveUploadFile(file.uri), file.name)
       }
 
       const headers: Record<string, string> = {}

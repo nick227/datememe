@@ -1,15 +1,13 @@
-import { FlatList, Pressable, StyleSheet, View } from 'react-native'
+import { FlatList, StyleSheet, View } from 'react-native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { useCurrentUser, useMyLists } from '@project/sdk'
 import { ScreenContainer } from '../../../ui/ScreenContainer'
-import { TopNavigation } from '../../../ui/TopNavigation'
 import { ProfileGalleryHero } from '../../../ui/ProfileGalleryHero'
 import { Button } from '../../../ui/Button'
 import { EmptyState } from '../../../ui/EmptyState'
 import { PreviewListCard } from '../../lists/components/PreviewListCard'
 import { PreviewListCardSkeleton } from '../../lists/components/PreviewListCardSkeleton'
 import { Skeleton } from '../../../ui/Skeleton'
-import { Icon } from '../../../ui/Icon'
 import { borderWidth, colors, spacing } from '../../../theme'
 import { useIsDesktop } from '../../../lib/useResponsive'
 import type { ProfileStackParamList } from '../../../navigation/types'
@@ -28,7 +26,7 @@ export function ProfileScreen({ navigation }: Props) {
 
   return (
     <ScreenContainer testID="screen.profile" padded={false} width="wide">
-      <View style={styles.column}>
+      <View style={styles.container}>
 
         <FlatList
           key={numColumns}
@@ -68,7 +66,7 @@ export function ProfileScreen({ navigation }: Props) {
             </View>
           }
           ListEmptyComponent={<EmptyState testID="profile.empty" title="No completed lists yet" subtitle="Head to the Favorites tab to start." />}
-          renderItem={({ item }) => (typeof item === 'number' ? <PreviewListCardSkeleton /> : <PreviewListCard style={styles.column} list={item} />)}
+          renderItem={({ item }) => (typeof item === 'number' ? <PreviewListCardSkeleton style={{ flex: 1 }} /> : <PreviewListCard style={{ width: "100%" }} list={item} />)}
         />
       </View>
     </ScreenContainer>
@@ -77,9 +75,10 @@ export function ProfileScreen({ navigation }: Props) {
 
 const CONTENT_WIDTH = 640
 const styles = StyleSheet.create({
+  container: { flex: 1, width: '100%', maxWidth: CONTENT_WIDTH, alignSelf: 'center' },
   heroNameRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   heroName: { color: colors.white },
-  column: { width: '100%', maxWidth: CONTENT_WIDTH, alignSelf: 'center', paddingHorizontal: spacing.lg, paddingTop: spacing.lg },
+  column: { width: '100%', paddingHorizontal: spacing.lg, paddingTop: spacing.lg },
   heroUsername: { color: 'rgba(255,255,255,0.75)', marginTop: 2 },
   premiumBadge: { backgroundColor: colors.accent, borderWidth: borderWidth.thin, borderColor: colors.white, paddingHorizontal: spacing.sm, paddingVertical: 2 },
   premiumBadgeText: { color: colors.white },

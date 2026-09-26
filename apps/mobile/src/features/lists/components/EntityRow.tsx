@@ -1,4 +1,5 @@
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native'
+import { ImageIcon } from 'lucide-react-native'
 import { colors, radius, spacing, type } from '../../../theme'
 import { Typography } from '../../../ui/Typography'
 
@@ -19,7 +20,7 @@ export function EntityRow({ name, imageUrl, isPending, pickedRank, onToggle, dis
         <Image source={{ uri: imageUrl }} style={styles.thumb} />
       ) : (
         <View style={[styles.thumb, styles.thumbFallback]}>
-          <Text style={styles.thumbInitial}>{name.charAt(0).toUpperCase()}</Text>
+          <ImageIcon size={20} color={colors.inkMuted} opacity={0.3} />
         </View>
       )}
       <View style={styles.textCol}>
@@ -57,6 +58,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surfaceMuted,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   thumbInitial: { ...type.heading, color: colors.inkMuted },
   textCol: { flex: 1, marginRight: spacing.sm },

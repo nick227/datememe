@@ -4,6 +4,7 @@ import type { paths } from './generated/types'
 type ClientConfig = {
   baseUrl: string
   getToken?: () => string | null // only for native apps; web uses httpOnly cookies
+  resolveUploadFile?: (uri: string) => Blob | Promise<Blob>
 }
 
 let _client: ReturnType<typeof createClient<paths>> | null = null

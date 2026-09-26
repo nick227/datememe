@@ -36,6 +36,7 @@ describe('authenticated navigation state', () => {
     client.setQueryData(['me'], { id: 'expired-user' })
     get.mockResolvedValue({ error: { error: 'Unauthorized' }, response: { status: 401 } })
     const { result, unmount } = renderHook(() => useCurrentUser(), { wrapper })
+    expect(result.current.data).toEqual({ id: 'expired-user' })
     await act(async () => { await result.current.refetch() })
     await waitFor(() => expect(result.current.data).toBeNull())
     unmount()

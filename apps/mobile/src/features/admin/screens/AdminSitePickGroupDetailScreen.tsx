@@ -121,7 +121,7 @@ export function AdminSitePickGroupDetailScreen({ route, navigation }: Props) {
   }
 
   return (
-    <ScreenContainer testID="screen.admin-site-pick-group-detail" width="wide" padded={false}>
+    <ScreenContainer testID="screen.admin-site-pick-group-detail" width="wide">
       <TopNavigation testID="admin-site-pick-group-detail.header"
         alignment="left"
         leftAction="back"
@@ -284,15 +284,14 @@ function CuratedListsEditor({
 
 const styles = StyleSheet.create({
   scrollContent: {
-    paddingHorizontal: spacing.lg,
     paddingBottom: spacing.xxl,
     gap: spacing.lg,
   },
   card: {
     backgroundColor: colors.surface,
     borderRadius: radius.lg,
-    borderWidth: borderWidth.thick,
-    borderColor: colors.ink,
+    borderWidth: borderWidth.thin,
+    borderColor: colors.border,
     padding: spacing.lg,
   },
   cardTitle: { marginBottom: spacing.md },

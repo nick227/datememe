@@ -24,7 +24,7 @@ export function GlobalHeader({ showAvatar = false }: { showAvatar?: boolean }) {
         justifyContent="space-between"
         paddingHorizontal="xxl"
         paddingVertical="sm"
-        maxWidth={1310}
+        maxWidth={1230}
         width="100%"
         style={{
           marginLeft: 'auto',

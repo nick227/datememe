@@ -309,6 +309,7 @@ model Entity {
   externalRefs         EntityExternalRef[]
   candidates           EntityCandidate[]
   facets               EntityFacet[]
+  categoryStats        EntityCategoryStat[]
 
   parentId String?
   parent   Entity?  @relation("EntityHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
@@ -471,6 +472,7 @@ model Category {
   groupId         String
   entityTypeId    String
   slug            String           @unique
+  axes            Json?
   prompt          String
   shortLabel      String
   minItems        Int              @default(1)
@@ -497,6 +499,7 @@ model Category {
   lists            List[]
   mediaAssets      MediaAsset[]
   sitePickItems    SitePickItem[]
+  entityStats      EntityCategoryStat[]
 
   @@index([groupId])
   @@index([isActive])
@@ -530,6 +533,17 @@ model CategoryEntity {
   @@id([categoryId, entityId])
 }
 
+model EntityCategoryStat {
+  entityId   String
+  categoryId String
+  usageCount Int      @default(0)
+
+  entity     Entity   @relation(fields: [entityId], references: [id], onDelete: Cascade)
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([entityId, categoryId])
+}
+
 enum ResultSubjectType {
   ENTITY
   PROFILE
@@ -561,7 +575,7 @@ model ResultSet {
   subjectType ResultSubjectType
   metric      ResultMetric
   scopeType   ResultScopeType
-  scopeValue  String?
+  scopeValue  String
   window      ResultWindow      @default(ALL_TIME)
   takeCount   Int               @default(0) // Generalized participant/sample size
   updatedAt   DateTime          @updatedAt

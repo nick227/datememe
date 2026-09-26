@@ -60,6 +60,8 @@ async function upsertCategory(opts: {
   orderingMode?: 'RANKED' | 'UNRANKED'
   requiredTagIds?: string[]
   metadata?: any
+  axes?: string[]
+  isActive?: boolean
 }) {
   const category = await db.category.upsert({
     where: { slug: opts.slug },
@@ -74,6 +76,8 @@ async function upsertCategory(opts: {
       maxItems: opts.maxItems ?? 5,
       orderingMode: opts.orderingMode ?? 'RANKED',
       metadata: opts.metadata,
+      axes: opts.axes ?? [],
+      isActive: opts.isActive ?? true,
     },
   })
   for (const tagId of opts.requiredTagIds ?? []) {
@@ -127,11 +131,7 @@ async function main() {
   const fastFood = await upsertEntityType('fast-food-chain', 'Fast Food Chain', 'Fast Food Chains', 'burger')
   const coffeeChain = await upsertEntityType('coffee-chain', 'Coffee Chain', 'Coffee Chains', 'coffee')
   const clothingBrand = await upsertEntityType('clothing-brand', 'Clothing Brand', 'Clothing Brands', 'shirt')
-  const hotelChain = await upsertEntityType('hotel-chain', 'Hotel Chain', 'Hotel Chains', 'hotel')
-  const retailStore = await upsertEntityType('retail-store', 'Retail Store', 'Retail Stores', 'shopping-bag')
-  const programmingLanguage = await upsertEntityType('programming-language', 'Programming Language', 'Programming Languages', 'code')
-  const airline = await upsertEntityType('airline', 'Airline', 'Airlines', 'plane')
-  const carBrand = await upsertEntityType('car-brand', 'Car Brand', 'Car Brands', 'car')
+
   const socialMedia = await upsertEntityType('social-media', 'Social Media', 'Social Media Apps', 'smartphone')
   const streamingService = await upsertEntityType('streaming-service', 'Streaming Service', 'Streaming Services', 'play')
   const gymChain = await upsertEntityType('gym-chain', 'Gym Chain', 'Gym Chains', 'activity')
@@ -148,7 +148,7 @@ async function main() {
   const country = await upsertEntityType('country', 'Country', 'Countries', 'map')
   const craftMedium = await upsertEntityType('craft-medium', 'Craft Medium', 'Craft Mediums', 'pen-tool')
   const bookGenre = await upsertEntityType('book-genre', 'Book Genre', 'Book Genres', 'book-open')
-  const weekendActivity = await upsertEntityType('weekend-activity', 'Weekend Activity', 'Weekend Activities', 'sun')
+
   const musicalInstrument = await upsertEntityType('musical-instrument', 'Musical Instrument', 'Musical Instruments', 'music')
   const movieDirector = await upsertEntityType('movie-director', 'Movie Director', 'Movie Directors', 'film')
   const cuisine = await upsertEntityType('cuisine', 'Cuisine', 'Cuisines', 'globe')
@@ -197,76 +197,63 @@ async function main() {
     await upsertEntity(band.id, name, { tagIds: [genreHipHop.id] })
   }
 
-  const movies = ['Inception', 'The Godfather', 'Pulp Fiction', 'Parasite', 'The Dark Knight', 'Get Out', 'Hereditary', 'The Shining']
+  const movies = ['Inception', 'The Godfather', 'Pulp Fiction', 'The Dark Knight', 'The Shining', 'The Exorcist', 'Scream', 'The Thing', 'Interstellar', 'Parasite', 'Goodfellas', 'Fight Club', 'The Matrix', 'Spirited Away', 'Star Wars: A New Hope', 'Jurassic Park', 'Forrest Gump', 'The Lord of the Rings: The Fellowship of the Ring', 'Gladiator', 'Titanic', 'The Silence of the Lambs', 'Alien', 'Terminator 2: Judgment Day', 'Schindler\'s List']
   for (const name of movies) {
-    const tagIds = ['Get Out', 'Hereditary', 'The Shining'].includes(name) ? [genreHorror.id] : []
+    const tagIds = ['The Shining', 'The Exorcist', 'Scream', 'The Thing'].includes(name) ? [genreHorror.id] : []
     await upsertEntity(movie.id, name, { tagIds })
   }
 
-  const fruits = ['Mango', 'Strawberry', 'Pineapple', 'Blueberry', 'Watermelon', 'Peach', 'Fig', 'Dragonfruit', 'Banana', 'Apple', 'Kiwi', 'Pomegranate', 'Orange', 'Grapes']
-  for (const name of fruits) await upsertEntity(fruit.id, name)
+  const jobs = [
+    { name: 'Software Engineer', icon: 'monitor' },
+    { name: 'Marine Biologist', icon: 'fish' },
+    { name: 'Pastry Chef', icon: 'croissant' },
+    { name: 'Architect', icon: 'pencil-ruler' },
+    { name: 'Park Ranger', icon: 'trees' },
+    { name: 'Graphic Designer', icon: 'palette' },
+    { name: 'Data Scientist', icon: 'bar-chart' },
+    { name: 'Registered Nurse', icon: 'stethoscope' },
+    { name: 'Electrician', icon: 'zap' },
+    { name: 'Teacher', icon: 'book-open' },
+    { name: 'Plumber', icon: 'wrench' },
+    { name: 'Financial Analyst', icon: 'trending-up' }
+  ]
+  for (const item of jobs) await upsertEntity(jobTitle.id, item.name, { metadata: { icon: item.icon } })
+  
 
-  const jobs = ['Software Engineer', 'Marine Biologist', 'Pastry Chef', 'Architect', 'Park Ranger', 'Graphic Designer', 'Data Scientist', 'Registered Nurse', 'Electrician', 'Teacher', 'Plumber', 'Financial Analyst']
-  for (const name of jobs) await upsertEntity(jobTitle.id, name)
 
-  const states = ['Colorado', 'California', 'Vermont', 'Texas', 'Hawaii', 'Montana', 'New York', 'Florida', 'Washington', 'Illinois', 'Michigan', 'North Carolina', 'Oregon']
-  for (const name of states) await upsertEntity(usState.id, name)
 
-  const ides = ['Visual Studio Code', 'JetBrains WebStorm', 'Neovim', 'Xcode', 'Sublime Text', 'Zed', 'Eclipse', 'Vim', 'IntelliJ IDEA', 'PyCharm', 'Android Studio', 'Notepad++']
-  for (const name of ides) await upsertEntity(ide.id, name)
-
-  const sewingMachines = ['Singer Heavy Duty 4423', 'Brother CS6000i', 'Janome HD3000', 'Bernina 350', 'Juki TL-2010Q', 'Pfaff Ambition 610', 'Husqvarna Viking Jade 20', 'Brother PE800']
-  for (const name of sewingMachines) await upsertEntity(sewingMachine.id, name)
-
-  const mobileDevices = ['iPhone 15 Pro', 'Samsung Galaxy S24', 'Google Pixel 8', 'iPhone SE', 'Google Pixel 7a', 'Samsung Galaxy Z Fold 5', 'iPhone 13 mini', 'OnePlus 12', 'Motorola Edge']
-  for (const name of mobileDevices) await upsertEntity(mobileDevice.id, name)
-
-  const ps5ActionGames = ["Marvel's Spider-Man 2", 'God of War Ragnarök', 'Returnal', 'Ghost of Tsushima', 'Demon\'s Souls', 'Elden Ring', 'The Last of Us Part I', 'Horizon Forbidden West', 'Cyberpunk 2077', 'Final Fantasy XVI']
-  for (const name of ps5ActionGames) await upsertEntity(videoGame.id, name, { tagIds: [platformPs5.id, genreAction.id] })
+  const videoGames = ["Marvel's Spider-Man 2", 'God of War Ragnarök', 'Returnal', 'Ghost of Tsushima', 'Demon\'s Souls', 'Elden Ring', 'The Last of Us Part I', 'Horizon Forbidden West', 'Cyberpunk 2077', 'Final Fantasy XVI', 'The Witcher 3: Wild Hunt', 'Red Dead Redemption 2', 'Minecraft', 'Grand Theft Auto V', 'Super Mario Odyssey', 'The Legend of Zelda: Breath of the Wild', 'Halo: Combat Evolved', 'Half-Life 2', 'Pac-Man', 'Tetris', 'Doom', 'Pong', 'Space Invaders', 'The Legend of Zelda: Ocarina of Time', 'Super Mario Bros.', 'Street Fighter II']
+  for (const name of videoGames) await upsertEntity(videoGame.id, name)
 
   const youtubers = ['MrBeast', 'Marques Brownlee', 'Emma Chamberlain', 'Kurzgesagt', 'PewDiePie', 'Jacksepticeye', 'Markiplier', 'MKBHD', 'Casey Neistat', 'Linus Tech Tips']
   for (const name of youtubers) await upsertEntity(youtuber.id, name)
 
-  const streamers = ['Ninja', 'Pokimane', 'shroud', 'xQc', 'Kai Cenat', 'HasanAbi', 'Summit1g', 'Valkyrae', 'Ludwig', 'Asmongold']
-  for (const name of streamers) await upsertEntity(twitchStreamer.id, name)
 
-  const authors19th = ['Jane Austen', 'Charles Dickens', 'Mark Twain', 'Fyodor Dostoevsky', 'Emily Brontë', 'Leo Tolstoy', 'Victor Hugo', 'Herman Melville', 'Edgar Allan Poe', 'Oscar Wilde']
-  for (const name of authors19th) await upsertEntity(author.id, name, { tagIds: [era19thCentury.id] })
 
-  const tvShows = ['The Bear', 'Succession', 'White Lotus', 'Love Is Blind', 'Severance', 'Fleabag', 'I Think You Should Leave', 'The Sopranos', 'Bojack Horseman', 'Abbott Elementary', 'True Detective', 'Gilmore Girls']
+  const authors = ['Jane Austen', 'Charles Dickens', 'Mark Twain', 'Fyodor Dostoevsky', 'Leo Tolstoy', 'Stephen King', 'J.K. Rowling', 'George R.R. Martin', 'Agatha Christie', 'Toni Morrison']
+  for (const name of authors) await upsertEntity(author.id, name)
+
+  const tvShows = ['The Bear', 'Succession', 'White Lotus', 'Severance', 'The Sopranos', 'Breaking Bad', 'The Wire', 'Game of Thrones', 'Stranger Things', 'Mad Men', 'Better Call Saul', 'Fargo', 'True Detective', 'Chernobyl', 'Peaky Blinders', 'The Last of Us', 'Black Mirror', 'The X-Files', 'Twin Peaks', 'Doctor Who', 'Star Trek: The Next Generation', 'The Twilight Zone', 'Buffy the Vampire Slayer']
   for (const name of tvShows) await upsertEntity(tvShow.id, name)
 
-  const albums = ['Blonde - Frank Ocean', 'Rumours - Fleetwood Mac', 'SOS - SZA', 'Brat - Charli xcx', 'Songs in the Key of Life - Stevie Wonder', 'To Pimp a Butterfly - Kendrick Lamar', 'Renaissance - Beyoncé', 'In Rainbows - Radiohead', 'Igor - Tyler, the Creator']
+  const albums = ['Blonde - Frank Ocean', 'Rumours - Fleetwood Mac', 'SOS - SZA', 'Brat - Charli xcx', 'Songs in the Key of Life - Stevie Wonder', 'To Pimp a Butterfly - Kendrick Lamar', 'Renaissance - Beyoncé', 'In Rainbows - Radiohead', 'Igor - Tyler, the Creator', 'Thriller - Michael Jackson', 'Abbey Road - The Beatles', 'Nevermind - Nirvana', 'The Miseducation of Lauryn Hill - Lauryn Hill', 'Purple Rain - Prince', 'Illmatic - Nas', 'Back to Black - Amy Winehouse', 'Lemonade - Beyoncé', 'My Beautiful Dark Twisted Fantasy - Kanye West', 'OK Computer - Radiohead', 'The Dark Side of the Moon - Pink Floyd']
   for (const name of albums) await upsertEntity(album.id, name)
 
-  const groceryStores = ['Whole Foods', 'Trader Joe\'s', 'Aldi', 'Kroger', 'Publix', 'H-E-B', 'Safeway', 'Wegmans', 'Meijer']
+  const groceryStores = ['Trader Joe\'s', 'Kroger', 'H-E-B', 'Safeway', 'Target', 'Costco', 'Whole Foods', 'Aldi']
   for (const name of groceryStores) await upsertEntity(groceryStore.id, name)
 
-  const fastFoods = ['Sweetgreen', 'In-N-Out', 'Shake Shack', 'Taco Bell', 'Cava', 'Popeyes', 'Chipotle', 'Culver\'s', 'Waffle House']
+  const fastFoods = ['McDonald\'s', 'In-N-Out', 'Shake Shack', 'Chipotle', 'Wendy\'s', 'Chick-fil-A', 'Burger King', 'Popeyes', 'Culver\'s', 'Waffle House', 'Subway', 'Five Guys']
   for (const name of fastFoods) await upsertEntity(fastFood.id, name)
 
-  const coffeeChains = ['Starbucks', 'Peet\'s Coffee', 'Dunkin\'', 'Philz Coffee', 'Blue Bottle Coffee', 'Dutch Bros', 'Tim Hortons', 'Caribou Coffee', 'Costa Coffee']
+  const coffeeChains = ['Starbucks', 'Dunkin\'', 'Philz Coffee', 'Blue Bottle Coffee', 'Tim Hortons', 'Costa Coffee', 'Pret A Manger', 'Panera Bread']
   for (const name of coffeeChains) await upsertEntity(coffeeChain.id, name)
 
-  const clothingBrands = ['Patagonia', 'Nike', 'Zara', 'Carhartt', 'Lululemon', 'Uniqlo', 'The North Face', 'Levi\'s', 'Adidas', 'Everlane']
+  const clothingBrands = ['Nike', 'Zara', 'Uniqlo', 'The North Face', 'Levi\'s', 'Adidas', 'H&M', 'Gucci', 'Vans', 'Lululemon', 'Patagonia', 'Carhartt', 'Supreme', 'Balenciaga', 'New Balance', 'Converse', 'Puma', 'Gap', 'Abercrombie & Fitch', 'Champion']
   for (const name of clothingBrands) await upsertEntity(clothingBrand.id, name)
 
-  const hotelChains = ['Marriott', 'Hilton', 'Hyatt', 'Four Seasons', 'Ritz-Carlton', 'IHG', 'Wyndham', 'Airbnb', 'Motel 6']
-  for (const name of hotelChains) await upsertEntity(hotelChain.id, name)
 
-  const retailStores = ['Target', 'IKEA', 'Costco', 'Sephora', 'Apple Store', 'Home Depot', 'Muji', 'Barnes & Noble']
-  for (const name of retailStores) await upsertEntity(retailStore.id, name)
 
-  const programmingLanguages = ['TypeScript', 'Rust', 'Go', 'Python', 'Elixir', 'Ruby on Rails', 'Zig', 'OCaml']
-  for (const name of programmingLanguages) await upsertEntity(programmingLanguage.id, name)
-
-  const airlines = ['Delta', 'United', 'Southwest', 'JetBlue', 'American Airlines', 'Alaska Airlines', 'Emirates', 'Qatar Airways', 'Singapore Airlines']
-  for (const name of airlines) await upsertEntity(airline.id, name)
-
-  const carBrands = ['Toyota', 'Honda', 'Subaru', 'Tesla', 'Ford', 'BMW', 'Volvo', 'Porsche', 'Mazda', 'Rivian']
-  for (const name of carBrands) await upsertEntity(carBrand.id, name)
-
-  const socialMedias = ['Instagram', 'TikTok', 'Twitter / X', 'Reddit', 'LinkedIn', 'Pinterest', 'Snapchat', 'BeReal', 'YouTube']
+  const socialMedias = ['Instagram', 'Twitter / X', 'LinkedIn', 'Snapchat', 'YouTube', 'Facebook', 'TikTok', 'Pinterest', 'Reddit']
   for (const name of socialMedias) await upsertEntity(socialMedia.id, name)
 
   const streamingServices = ['Netflix', 'Max', 'Hulu', 'Spotify', 'Apple Music', 'Disney+', 'Prime Video', 'Crunchyroll', 'Peacock']
@@ -278,35 +265,58 @@ async function main() {
   const basketballPlayers = ['LeBron James', 'Michael Jordan', 'Kobe Bryant', 'Stephen Curry', 'Kevin Durant', 'Giannis Antetokounmpo', 'Nikola Jokić', 'Luka Dončić']
   for (const name of basketballPlayers) await upsertEntity(athlete.id, name, { tagIds: [sportBasketball.id] })
 
-  const soccerPlayers = ['Lionel Messi', 'Cristiano Ronaldo', 'Neymar Jr', 'Kylian Mbappé', 'Erling Haaland', 'Diego Maradona', 'Pelé']
+  const soccerPlayers = ['Lionel Messi', 'Cristiano Ronaldo', 'Pelé']
   for (const name of soccerPlayers) await upsertEntity(athlete.id, name, { tagIds: [sportSoccer.id] })
 
-  const sportsTeams = ['Los Angeles Lakers', 'Golden State Warriors', 'Real Madrid', 'Manchester United', 'New York Yankees', 'Boston Red Sox', 'Dallas Cowboys', 'New England Patriots']
+  const otherAthletes = ['Serena Williams', 'Tiger Woods', 'Roger Federer', 'Usain Bolt', 'Muhammad Ali', 'Simone Biles']
+  for (const name of otherAthletes) await upsertEntity(athlete.id, name)
+
+  const sportsTeams = ['Los Angeles Lakers', 'Golden State Warriors', 'Real Madrid', 'Manchester United', 'New York Yankees', 'Boston Red Sox', 'Toronto Maple Leafs', 'Chicago Cubs', 'Chicago Bulls', 'FC Barcelona', 'Green Bay Packers', 'Los Angeles Dodgers', 'Arsenal FC', 'Scuderia Ferrari', 'Mercedes-AMG Petronas F1 Team']
   for (const name of sportsTeams) await upsertEntity(sportsTeam.id, name)
 
-  const scifiBooks = ['Dune', 'The Hitchhiker\'s Guide to the Galaxy', 'Ender\'s Game', '1984', 'Foundation', 'The Martian', 'Neuromancer', 'Snow Crash']
+  const scifiBooks = ['Dune', 'The Hitchhiker\'s Guide to the Galaxy', 'Ender\'s Game', '1984', 'Foundation', 'The Martian', 'Neuromancer', 'Snow Crash', 'Fahrenheit 451', 'Brave New World', 'The Left Hand of Darkness', 'Hyperion', 'Do Androids Dream of Electric Sheep?', 'Solaris', 'The Time Machine', 'Twenty Thousand Leagues Under the Sea']
   for (const name of scifiBooks) await upsertEntity(book.id, name, { tagIds: [genreSciFi.id] })
 
   const fantasyBooks = ['The Hobbit', 'The Lord of the Rings', 'Harry Potter', 'A Game of Thrones', 'The Name of the Wind', 'Mistborn', 'The Way of Kings']
   for (const name of fantasyBooks) await upsertEntity(book.id, name, { tagIds: [genreFantasy.id] })
 
-  const podcastsList = ['The Joe Rogan Experience', 'Serial', 'My Favorite Murder', 'Huberman Lab', 'Crime Junkie', 'The Daily', 'This American Life', 'SmartLess']
+  const fictionBooks = ['To Kill a Mockingbird', 'The Great Gatsby', 'Pride and Prejudice', 'The Catcher in the Rye', 'The Kite Runner', 'Moby-Dick', 'War and Peace', 'The Odyssey', 'Jane Eyre']
+  for (const name of fictionBooks) await upsertEntity(book.id, name)
+
+  const podcastsList = ['The Joe Rogan Experience', 'Serial', 'My Favorite Murder', 'Huberman Lab', 'Crime Junkie', 'The Daily', 'This American Life', 'SmartLess', 'Call Her Daddy', 'Stuff You Should Know', 'Radiolab', 'Conan O\'Brien Needs a Friend', 'Pod Save America', 'The Diary Of A CEO', 'Armchair Expert', 'Lex Fridman Podcast', 'Hidden Brain', 'Up First', 'Fresh Air', 'On Purpose with Jay Shetty']
   for (const name of podcastsList) {
     const tagIds = ['Serial', 'My Favorite Murder', 'Crime Junkie'].includes(name) ? [genreTrueCrime.id] : (['SmartLess'].includes(name) ? [genreComedy.id] : [])
     await upsertEntity(podcast.id, name, { tagIds })
   }
 
-  const boardGamesList = ['Catan', 'Ticket to Ride', 'Monopoly', 'Dungeons & Dragons', 'Chess', 'Scrabble', 'Carcassonne', 'Pandemic', 'Wingspan', 'Risk']
+  const boardGamesList = ['Catan', 'Ticket to Ride', 'Monopoly', 'Dungeons & Dragons', 'Chess', 'Scrabble', 'Carcassonne', 'Pandemic', 'Wingspan', 'Risk', 'Betrayal at House on the Hill', 'Secret Hitler', 'Codenames', 'Scythe', 'Terraforming Mars', 'Backgammon', 'Go', 'Cluedo', 'Mahjong', 'Dominoes']
   for (const name of boardGamesList) await upsertEntity(boardGame.id, name)
 
-  const festivals = ['Coachella', 'Glastonbury', 'Lollapalooza', 'Tomorrowland', 'Bonnaroo', 'EDC']
+  const festivals = ['Coachella', 'Glastonbury', 'Lollapalooza', 'Tomorrowland', 'Bonnaroo', 'EDC', 'Rolling Loud', 'SXSW', 'Burning Man', 'Pitchfork']
   for (const name of festivals) await upsertEntity(musicFestival.id, name)
 
-  const sitcoms = ['Friends', 'The Office', 'Seinfeld', 'Parks and Recreation', 'Brooklyn Nine-Nine', 'How I Met Your Mother', 'Arrested Development', 'The Simpsons', 'Modern Family', 'Schitt\'s Creek', 'Cheers', 'Frasier']
+  const sitcoms = ['Friends', 'The Office', 'Seinfeld', 'Parks and Recreation', 'Brooklyn Nine-Nine', 'How I Met Your Mother', 'Arrested Development', 'The Simpsons', 'Modern Family', 'Schitt\'s Creek', 'Cheers', 'Frasier', 'It\'s Always Sunny in Philadelphia', 'Scrubs', 'Community']
   for (const name of sitcoms) await upsertEntity(tvShow.id, name, { tagIds: [genreSitcom.id] })
 
-  const toppings = ['Pepperoni', 'Mushrooms', 'Onions', 'Sausage', 'Bacon', 'Extra cheese', 'Black olives', 'Green peppers', 'Pineapple', 'Jalapeños', 'Prosciutto', 'Spinach', 'Garlic', 'Anchovies', 'Basil']
-  for (const name of toppings) await upsertEntity(pizzaTopping.id, name)
+  const toppings = [
+    { name: 'Pepperoni', icon: 'circle-dot' },
+    { name: 'Mushrooms', icon: 'mushroom' },
+    { name: 'Onions', icon: 'circle' },
+    { name: 'Sausage', icon: 'circle-dashed' },
+    { name: 'Bacon', icon: 'bacon' },
+    { name: 'Extra cheese', icon: 'cheese' },
+    { name: 'Black olives', icon: 'circle' },
+    { name: 'Green peppers', icon: 'bell' },
+    { name: 'Pineapple', icon: 'sun' },
+    { name: 'Jalapeños', icon: 'flame' },
+    { name: 'Prosciutto', icon: 'beef' },
+    { name: 'Spinach', icon: 'leaf' },
+    { name: 'Garlic', icon: 'garlic' },
+    { name: 'Anchovies', icon: 'fish' },
+    { name: 'Basil', icon: 'leafy-green' }
+  ]
+  for (const item of toppings) await upsertEntity(pizzaTopping.id, item.name, { metadata: { icon: item.icon } })
+  
 
   const perks = ['Remote Work', 'Flexible Hours', 'Unlimited PTO', '401k Match', 'Health Insurance', 'Free Snacks', 'Four-Day Workweek', 'Free Lunch', 'Commuter Benefits', 'Gym Membership', 'Stock Options', 'Pet-Friendly Office']
   for (const name of perks) await upsertEntity(workplacePerk.id, name)
@@ -320,29 +330,40 @@ async function main() {
   const eduTubers = ['Kurzgesagt', 'Veritasium', 'Vsauce', 'Mark Rober', '3Blue1Brown', 'Tom Scott', 'SmarterEveryDay']
   for (const name of eduTubers) await upsertEntity(youtuber.id, name, { tagIds: [genreEducation.id] })
 
-  const countries = ['Japan', 'Italy', 'Australia', 'New Zealand', 'Iceland', 'Switzerland', 'Greece', 'Spain']
+  const countries = ['Japan', 'Italy', 'France', 'Iceland', 'New Zealand', 'Australia', 'Greece', 'Brazil', 'Thailand', 'South Africa', 'Peru', 'Canada']
   for (const name of countries) await upsertEntity(country.id, name)
 
-  const mediums = ['Watercolor', 'Acrylic Paint', 'Clay', 'Yarn', 'Wood', 'Fabric', 'Digital (Procreate/Photoshop)']
+  const mediums = ['Watercolor', 'Acrylic Paint', 'Clay', 'Yarn', 'Wood', 'Fabric', 'Digital (Procreate/Photoshop)', 'Oil Paint', 'Charcoal']
   for (const name of mediums) await upsertEntity(craftMedium.id, name)
 
   const genres = ['Science Fiction', 'Fantasy', 'Mystery', 'Romance', 'Historical Fiction', 'Thriller', 'Non-fiction', 'Horror']
   for (const name of genres) await upsertEntity(bookGenre.id, name)
 
-  const activities = ['Hiking', 'Reading', 'Sleeping in', 'Going to the movies', 'Visiting museums', 'Brunch', 'Video Games']
-  for (const name of activities) await upsertEntity(weekendActivity.id, name)
+
 
   const instruments = ['Guitar', 'Piano', 'Drums', 'Violin', 'Saxophone', 'Bass', 'Flute', 'Cello']
   for (const name of instruments) await upsertEntity(musicalInstrument.id, name)
 
-  const directors = ['Christopher Nolan', 'Steven Spielberg', 'Quentin Tarantino', 'Martin Scorsese', 'Greta Gerwig', 'Denis Villeneuve', 'Stanley Kubrick', 'Alfred Hitchcock', 'Francis Ford Coppola', 'Wes Anderson', 'Bong Joon Ho', 'Ridley Scott']
+  const directors = ['Christopher Nolan', 'Steven Spielberg', 'Quentin Tarantino', 'Martin Scorsese', 'Greta Gerwig', 'Denis Villeneuve', 'Stanley Kubrick', 'Alfred Hitchcock', 'Francis Ford Coppola', 'Wes Anderson', 'Bong Joon Ho', 'Ridley Scott', 'Peter Jackson', 'James Cameron', 'David Fincher', 'Sofia Coppola', 'Guillermo del Toro', 'Jordan Peele']
   for (const name of directors) await upsertEntity(movieDirector.id, name)
 
-  const cuisines = ['Italian', 'Mexican', 'Japanese', 'Indian', 'Thai', 'Chinese', 'French', 'Mediterranean']
+  const cuisines = ['Italian', 'Mexican', 'Japanese', 'Thai', 'Indian', 'Mediterranean', 'Chinese', 'French', 'Korean', 'Vietnamese', 'Peruvian', 'Lebanese', 'Spanish']
   for (const name of cuisines) await upsertEntity(cuisine.id, name)
 
-  const peeves = ['Micro-management', 'Meaningless Meetings', 'Reply-All Emails', 'Coworkers chewing loudly', 'Slow Wi-Fi', 'Office politics', 'Microwaving Fish', 'Leaving the printer jammed', 'Taking credit for others\' work', 'Last-minute meetings']
-  for (const name of peeves) await upsertEntity(petPeeve.id, name)
+  const peeves = [
+    { name: 'Micro-management', icon: 'eye' },
+    { name: 'Meaningless Meetings', icon: 'calendar-x' },
+    { name: 'Reply-All Emails', icon: 'mail-warning' },
+    { name: 'Coworkers chewing loudly', icon: 'ear-off' },
+    { name: 'Slow Wi-Fi', icon: 'wifi-off' },
+    { name: 'Office politics', icon: 'users' },
+    { name: 'Microwaving Fish', icon: 'fish' },
+    { name: 'Leaving the printer jammed', icon: 'printer' },
+    { name: 'Taking credit for others\' work', icon: 'user-minus' },
+    { name: 'Last-minute meetings', icon: 'clock' }
+  ]
+  for (const item of peeves) await upsertEntity(petPeeve.id, item.name, { metadata: { icon: item.icon } })
+  
 
   const gadgets = ['Smartphone', 'Noise-canceling headphones', 'Smartwatch', 'E-reader', 'Tablet', 'Laptop', 'Power bank', 'VR Headset', 'Mechanical Keyboard', 'Drone', 'Smart Home Hub', 'Action Camera']
   for (const name of gadgets) await upsertEntity(techGadget.id, name)
@@ -350,16 +371,16 @@ async function main() {
   const vgGenres = ['RPGs', 'First-Person Shooters', 'Puzzle', 'Strategy', 'Platformers', 'Survival', 'Battle Royale', 'MMORPG']
   for (const name of vgGenres) await upsertEntity(videoGameGenre.id, name)
 
-  const formats = ['Long-form video essays', 'Short-form (TikToks/Reels)', 'Podcasts', 'Newsletters', 'Live streams', 'Vlogs']
+  const formats = ['Long-form video essays', 'Short-form (TikToks/Reels)', 'Podcasts', 'Newsletters', 'Live streams', 'Vlogs', 'Documentaries', 'Audiobooks']
   for (const name of formats) await upsertEntity(contentFormat.id, name)
 
-  const parks = ['Yellowstone', 'Yosemite', 'Grand Canyon', 'Zion', 'Glacier', 'Rocky Mountain', 'Acadia', 'Arches', 'Olympic', 'Great Smoky Mountains', 'Joshua Tree', 'Denali']
+  const parks = ['Yellowstone', 'Yosemite', 'Grand Canyon', 'Zion', 'Glacier', 'Rocky Mountain', 'Acadia', 'Arches', 'Olympic', 'Great Smoky Mountains', 'Joshua Tree', 'Denali', 'Everglades', 'Death Valley', 'Sequoia', 'Mount Rainier']
   for (const name of parks) await upsertEntity(nationalPark.id, name)
 
   const artStyles = ['Impressionism', 'Surrealism', 'Abstract', 'Pop Art', 'Realism', 'Cubism', 'Minimalism', 'Baroque', 'Renaissance', 'Rococo', 'Expressionism', 'Romanticism']
   for (const name of artStyles) await upsertEntity(artStyle.id, name)
 
-  const universes = ['Harry Potter', 'Lord of the Rings', 'Star Wars', 'Marvel Cinematic Universe', 'Star Trek', 'Percy Jackson', 'Dune']
+  const universes = ['Harry Potter', 'Lord of the Rings', 'Star Wars', 'Marvel Cinematic Universe', 'Star Trek', 'Percy Jackson', 'Dune', 'Doctor Who', 'DC Universe', 'Cyberpunk', 'Game of Thrones / Westeros', 'Avatar: The Last Airbender', 'The Hunger Games', 'Fallout', 'The Witcher', 'Pokémon', 'The Matrix', 'Stephen King Universe (Castle Rock)', 'Elden Ring / Lands Between']
   for (const name of universes) await upsertEntity(fictionalUniverse.id, name)
 
   const workouts = ['Weightlifting', 'Running', 'Yoga', 'Cycling', 'Swimming', 'Pilates', 'HIIT', 'Hiking']
@@ -370,6 +391,7 @@ async function main() {
     groupId: groups.music.id,
     entityTypeId: band.id,
     slug: 'top-90s-bands',
+    axes: ["music","nostalgia"],
     prompt: 'What are your top 5 90s bands?',
     shortLabel: 'Top 90s Bands',
     maxItems: 5,
@@ -379,6 +401,7 @@ async function main() {
     groupId: groups.music.id,
     entityTypeId: band.id,
     slug: 'top-rock-bands',
+    axes: ["music","rock"],
     prompt: 'What are your favorite rock bands?',
     shortLabel: 'Top Rock Bands',
     maxItems: 5,
@@ -388,6 +411,7 @@ async function main() {
     groupId: groups.music.id,
     entityTypeId: band.id,
     slug: 'top-pop-artists',
+    axes: ["music","pop"],
     prompt: 'Who are your favorite pop artists?',
     shortLabel: 'Top Pop Artists',
     maxItems: 5,
@@ -398,6 +422,7 @@ async function main() {
     groupId: groups.music.id,
     entityTypeId: band.id,
     slug: 'top-hiphop-artists',
+    axes: ["music","hip-hop"],
     prompt: 'Who are your favorite hip hop artists?',
     shortLabel: 'Top Hip Hop Artists',
     maxItems: 5,
@@ -407,8 +432,9 @@ async function main() {
     groupId: groups.music.id,
     entityTypeId: band.id,
     slug: 'favorite-artists-all-time',
+      axes: ["music"],
     prompt: 'Who are your favorite music artists of all time?',
-    shortLabel: 'Favorite Artists',
+    shortLabel: 'Artists',
     maxItems: 5,
     // No required tags, so ANY band/artist can be selected here.
   })
@@ -416,114 +442,60 @@ async function main() {
     groupId: groups.filmTv.id,
     entityTypeId: movie.id,
     slug: 'top-movies',
+    axes: ["film-tv","movies"],
     prompt: 'What are your top 5 movies of all time?',
     shortLabel: 'Top Movies',
     maxItems: 5,
   })
-  await upsertCategory({
-    groupId: groups.filmTv.id,
-    entityTypeId: movie.id,
-    slug: 'favorite-horror-movies',
-    prompt: 'What are your favorite horror movies?',
-    shortLabel: 'Horror Movies',
-    maxItems: 5,
-    requiredTagIds: [genreHorror.id],
-  })
-  await upsertCategory({
-    groupId: groups.food.id,
-    entityTypeId: fruit.id,
-    slug: 'top-fruits',
-    prompt: 'What are your top 3 fruits?',
-    shortLabel: 'Top Fruits',
-    maxItems: 3,
-    orderingMode: 'UNRANKED',
-  })
+
   await upsertCategory({
     groupId: groups.career.id,
     entityTypeId: jobTitle.id,
-    slug: 'dream-job',
+    slug: 'dream-job',metadata: { mediaKind: 'ICON' },
+    isActive: true,
+
+    axes: ["career","aspirations"],
     prompt: 'What is your dream job?',
     shortLabel: 'Dream Job',
     minItems: 1,
     maxItems: 1,
   })
-  await upsertCategory({
-    groupId: groups.geography.id,
-    entityTypeId: usState.id,
-    slug: 'favorite-state',
-    prompt: 'What is your favorite state to live in?',
-    shortLabel: 'Favorite State',
-    minItems: 1,
-    maxItems: 1,
-  })
-  await upsertCategory({
-    groupId: groups.tech.id,
-    entityTypeId: ide.id,
-    slug: 'favorite-ide',
-    prompt: 'What is your favorite IDE or editor?',
-    shortLabel: 'Favorite IDE',
-    minItems: 1,
-    maxItems: 1,
-  })
-  await upsertCategory({
-    groupId: groups.craft.id,
-    entityTypeId: sewingMachine.id,
-    slug: 'favorite-sewing-machine',
-    prompt: 'What is your favorite sewing machine?',
-    shortLabel: 'Favorite Sewing Machine',
-    minItems: 1,
-    maxItems: 1,
-  })
-  await upsertCategory({
-    groupId: groups.tech.id,
-    entityTypeId: mobileDevice.id,
-    slug: 'current-phone',
-    prompt: 'What phone do you currently use?',
-    shortLabel: 'Current Phone',
-    minItems: 1,
-    maxItems: 1,
-  })
+
   await upsertCategory({
     groupId: groups.gaming.id,
     entityTypeId: videoGame.id,
-    slug: 'top-ps5-action-games',
-    prompt: 'What are your top 5 PS5 action games?',
-    shortLabel: 'Top PS5 Action Games',
+    slug: 'favorite-video-games',
+    axes: ["gaming"],
+    prompt: 'What are your top 5 favorite video games?',
+    shortLabel: 'Video Games',
     maxItems: 5,
-    requiredTagIds: [platformPs5.id, genreAction.id],
   })
   await upsertCategory({
     groupId: groups.creators.id,
     entityTypeId: youtuber.id,
     slug: 'favorite-youtubers',
+    axes: ["creators","entertainment"],
     prompt: 'Who are your favorite YouTubers?',
-    shortLabel: 'Favorite YouTubers',
+    shortLabel: 'YouTubers',
     maxItems: 5,
     orderingMode: 'UNRANKED',
   })
-  await upsertCategory({
-    groupId: groups.creators.id,
-    entityTypeId: twitchStreamer.id,
-    slug: 'favorite-twitch-streamers',
-    prompt: 'Who are your favorite Twitch streamers?',
-    shortLabel: 'Favorite Twitch Streamers',
-    maxItems: 5,
-    orderingMode: 'UNRANKED',
-  })
+
   const authorsCategory = await upsertCategory({
     groupId: groups.literature.id,
     entityTypeId: author.id,
-    slug: 'favorite-19th-century-authors',
-    prompt: 'Who are your favorite 19th-century authors?',
-    shortLabel: '19th-Century Authors',
+    slug: 'favorite-authors',
+    axes: ["literature","books"],
+    prompt: 'Who are your favorite authors?',
+    shortLabel: 'Authors',
     maxItems: 5,
-    requiredTagIds: [era19thCentury.id],
   })
 
   await upsertCategory({
     groupId: groups.filmTv.id,
     entityTypeId: tvShow.id,
     slug: 'top-tv-shows',
+    axes: ["film-tv","tv"],
     prompt: 'What are your top 5 TV shows of all time?',
     shortLabel: 'Top TV Shows',
     maxItems: 5,
@@ -532,6 +504,7 @@ async function main() {
     groupId: groups.music.id,
     entityTypeId: album.id,
     slug: 'top-albums',
+    axes: ["music"],
     prompt: 'What are your top 5 albums of all time?',
     shortLabel: 'Top Albums',
     maxItems: 5,
@@ -540,8 +513,9 @@ async function main() {
     groupId: groups.food.id,
     entityTypeId: groceryStore.id,
     slug: 'favorite-grocery-store',
+    axes: ["food","shopping"],
     prompt: 'What is your favorite grocery store?',
-    shortLabel: 'Favorite Grocery Store',
+    shortLabel: 'Grocery Stores',
     maxItems: 3,
     orderingMode: 'UNRANKED',
     metadata: { insightTags: ['foodie', 'domestic'] },
@@ -550,6 +524,7 @@ async function main() {
     groupId: groups.food.id,
     entityTypeId: fastFood.id,
     slug: 'go-to-fast-food',
+    axes: ["food","dining","casual"],
     prompt: 'What is your go-to fast food chain?',
     shortLabel: 'Go-To Fast Food',
     minItems: 1,
@@ -559,6 +534,7 @@ async function main() {
     groupId: groups.food.id,
     entityTypeId: coffeeChain.id,
     slug: 'go-to-coffee-chain',
+    axes: ["food","coffee"],
     prompt: 'What is your go-to coffee chain?',
     shortLabel: 'Go-To Coffee Chain',
     maxItems: 3,
@@ -568,58 +544,22 @@ async function main() {
     groupId: groups.lifestyle.id,
     entityTypeId: clothingBrand.id,
     slug: 'favorite-clothing-brands',
+    axes: ["lifestyle","shopping","fashion"],
     prompt: 'What are your favorite clothing brands?',
-    shortLabel: 'Favorite Clothing Brands',
+    shortLabel: 'Clothing Brands',
     maxItems: 5,
     orderingMode: 'UNRANKED',
   })
-  await upsertCategory({
-    groupId: groups.travel.id,
-    entityTypeId: hotelChain.id,
-    slug: 'go-to-hotel-chain',
-    prompt: 'What is your preferred hotel chain?',
-    shortLabel: 'Go-To Hotel Chain',
-    maxItems: 3,
-  })
-  await upsertCategory({
-    groupId: groups.lifestyle.id,
-    entityTypeId: retailStore.id,
-    slug: 'favorite-retail-stores',
-    prompt: 'What are your favorite retail stores?',
-    shortLabel: 'Favorite Retail Stores',
-    maxItems: 5,
-  })
-  await upsertCategory({
-    groupId: groups.tech.id,
-    entityTypeId: programmingLanguage.id,
-    slug: 'go-to-programming-language',
-    prompt: 'What is your go-to programming language?',
-    shortLabel: 'Go-To Language',
-    minItems: 1,
-    maxItems: 3,
-  })
-  await upsertCategory({
-    groupId: groups.travel.id,
-    entityTypeId: airline.id,
-    slug: 'preferred-airline',
-    prompt: 'What is your preferred airline?',
-    shortLabel: 'Preferred Airline',
-    maxItems: 3,
-    orderingMode: 'UNRANKED',
-  })
-  await upsertCategory({
-    groupId: groups.lifestyle.id,
-    entityTypeId: carBrand.id,
-    slug: 'favorite-car-brands',
-    prompt: 'What are your favorite car brands?',
-    shortLabel: 'Favorite Car Brands',
-    maxItems: 3,
-    orderingMode: 'UNRANKED',
-  })
+
+
+
+
+
   await upsertCategory({
     groupId: groups.tech.id,
     entityTypeId: socialMedia.id,
     slug: 'most-used-social-media',
+    axes: ["tech","social"],
     prompt: 'Which social media do you use most?',
     shortLabel: 'Most Used Social Media',
     maxItems: 3,
@@ -629,8 +569,9 @@ async function main() {
     groupId: groups.filmTv.id,
     entityTypeId: streamingService.id,
     slug: 'essential-streaming-services',
+    axes: ["tech","entertainment"],
     prompt: 'What are your essential streaming services?',
-    shortLabel: 'Essential Streaming Services',
+    shortLabel: 'Most Used Streaming Services',
     maxItems: 4,
     orderingMode: 'UNRANKED',
   })
@@ -638,8 +579,9 @@ async function main() {
     groupId: groups.lifestyle.id,
     entityTypeId: gymChain.id,
     slug: 'favorite-gym-chain',
+      axes: ["lifestyle","fitness"],
     prompt: 'What is your go-to gym chain?',
-    shortLabel: 'Go-To Gym Chain',
+    shortLabel: 'Gym Chains',
     maxItems: 1,
     metadata: { insightTags: ['active', 'fitness'] },
   })
@@ -647,8 +589,9 @@ async function main() {
     groupId: groups.sports.id,
     entityTypeId: sportsTeam.id,
     slug: 'favorite-sports-teams',
+    axes: ["sports"],
     prompt: 'What are your favorite sports teams?',
-    shortLabel: 'Favorite Sports Teams',
+    shortLabel: 'Sports Teams',
     maxItems: 5,
     orderingMode: 'UNRANKED',
   })
@@ -656,6 +599,7 @@ async function main() {
     groupId: groups.sports.id,
     entityTypeId: athlete.id,
     slug: 'top-athletes',
+    axes: ["sports"],
     prompt: 'Who are your top 3 favorite athletes?',
     shortLabel: 'Top Athletes',
     maxItems: 3,
@@ -664,16 +608,18 @@ async function main() {
     groupId: groups.literature.id,
     entityTypeId: book.id,
     slug: 'favorite-books',
+    axes: ["literature","books"],
     prompt: 'What are your top 5 favorite books?',
-    shortLabel: 'Favorite Books',
+    shortLabel: 'Books',
     maxItems: 5,
   })
   await upsertCategory({
     groupId: groups.literature.id,
     entityTypeId: book.id,
     slug: 'favorite-scifi-books',
+      axes: ["literature","books","sci-fi"],
     prompt: 'What are your favorite Sci-Fi books?',
-    shortLabel: 'Favorite Sci-Fi Books',
+    shortLabel: 'Sci-Fi Books',
     maxItems: 5,
     requiredTagIds: [genreSciFi.id],
   })
@@ -681,6 +627,7 @@ async function main() {
     groupId: groups.podcasts.id,
     entityTypeId: podcast.id,
     slug: 'top-podcasts',
+    axes: ["podcasts","entertainment"],
     prompt: 'What are your must-listen podcasts?',
     shortLabel: 'Top Podcasts',
     maxItems: 5,
@@ -690,8 +637,9 @@ async function main() {
     groupId: groups.tabletop.id,
     entityTypeId: boardGame.id,
     slug: 'favorite-board-games',
-    prompt: 'What are your top 5 favorite board games?',
-    shortLabel: 'Favorite Board Games',
+    axes: ["gaming","tabletop"],
+    prompt: 'What are your top 5 favorite tabletop games?',
+    shortLabel: 'Tabletop Games',
     maxItems: 5,
   })
   
@@ -699,32 +647,41 @@ async function main() {
     groupId: groups.music.id,
     entityTypeId: musicFestival.id,
     slug: 'favorite-music-festivals',
+    axes: ["music","events"],
     prompt: 'What are your favorite music festivals?',
-    shortLabel: 'Favorite Music Festivals',
+    shortLabel: 'Music Festivals',
     maxItems: 5,
   })
   await upsertCategory({
     groupId: groups.filmTv.id,
     entityTypeId: tvShow.id,
     slug: 'top-sitcoms',
+      axes: ["film-tv","tv","comedy"],
     prompt: 'What are your top 5 favorite sitcoms?',
-    shortLabel: 'Favorite Sitcoms',
+    shortLabel: 'Best Sitcoms',
     maxItems: 5,
     requiredTagIds: [genreSitcom.id],
+    isActive: false,
   })
   await upsertCategory({
     groupId: groups.food.id,
     entityTypeId: pizzaTopping.id,
-    slug: 'essential-pizza-toppings',
+    slug: 'essential-pizza-toppings',metadata: { mediaKind: 'ICON' },
+    isActive: true,
+
+    axes: ["food"],
     prompt: 'What are your essential pizza toppings?',
-    shortLabel: 'Pizza Toppings',
+    shortLabel: 'Best Pizza Toppings',
     maxItems: 5,
     orderingMode: 'UNRANKED',
   })
   await upsertCategory({
     groupId: groups.career.id,
     entityTypeId: workplacePerk.id,
-    slug: 'favorite-workplace-perks',
+    slug: 'favorite-workplace-perks',metadata: { mediaKind: 'ICON' },
+    isActive: true,
+
+      axes: ["career"],
     prompt: 'What workplace perks matter most to you?',
     shortLabel: 'Workplace Perks',
     maxItems: 5,
@@ -734,6 +691,7 @@ async function main() {
     groupId: groups.tech.id,
     entityTypeId: webBrowser.id,
     slug: 'primary-web-browser',
+    axes: ["tech","software"],
     prompt: 'What is your primary web browser?',
     shortLabel: 'Primary Browser',
     minItems: 1,
@@ -743,16 +701,18 @@ async function main() {
     groupId: groups.gaming.id,
     entityTypeId: gameConsole.id,
     slug: 'favorite-game-consoles',
+    axes: ["gaming","tech"],
     prompt: 'What is your favorite video game console of all time?',
-    shortLabel: 'Favorite Console',
+    shortLabel: 'Game Consoles',
     maxItems: 3,
   })
   await upsertCategory({
     groupId: groups.creators.id,
     entityTypeId: youtuber.id,
     slug: 'favorite-edutubers',
+      axes: ["creators","education"],
     prompt: 'Who are your favorite educational YouTubers?',
-    shortLabel: 'Educational YouTubers',
+    shortLabel: 'EduTubers',
     maxItems: 5,
     requiredTagIds: [genreEducation.id],
   })
@@ -760,44 +720,45 @@ async function main() {
     groupId: groups.geography.id,
     entityTypeId: country.id,
     slug: 'dream-travel-destinations',
+    axes: ["travel","aspirations"],
     prompt: 'What are your dream travel destinations?',
-    shortLabel: 'Dream Travel Destinations',
+    shortLabel: 'Dream Destinations',
     maxItems: 5,
     orderingMode: 'UNRANKED',
   })
   await upsertCategory({
     groupId: groups.craft.id,
     entityTypeId: craftMedium.id,
-    slug: 'favorite-craft-medium',
+    slug: 'favorite-craft-medium',metadata: { mediaKind: 'ICON' },
+    isActive: true,
+
+      axes: ["hobbies","art"],
     prompt: 'What is your favorite craft medium to work with?',
-    shortLabel: 'Craft Medium',
+    shortLabel: 'Craft Mediums',
     maxItems: 3,
     orderingMode: 'UNRANKED',
   })
   await upsertCategory({
     groupId: groups.literature.id,
     entityTypeId: bookGenre.id,
-    slug: 'favorite-book-genres',
+    slug: 'favorite-book-genres',metadata: { mediaKind: 'ICON' },
+    isActive: true,
+
+      axes: ["literature","books"],
     prompt: 'What are your favorite book genres?',
     shortLabel: 'Book Genres',
     maxItems: 5,
     orderingMode: 'UNRANKED',
   })
-  await upsertCategory({
-    groupId: groups.lifestyle.id,
-    entityTypeId: weekendActivity.id,
-    slug: 'ideal-weekend-activity',
-    prompt: 'What is your ideal weekend activity?',
-    shortLabel: 'Weekend Activity',
-    maxItems: 3,
-    orderingMode: 'UNRANKED',
-  })
+
 
   // Wave 2 Polls
   await upsertCategory({
     groupId: groups.music.id,
     entityTypeId: musicalInstrument.id,
-    slug: 'musical-instruments-played',
+    slug: 'musical-instruments-played',metadata: { mediaKind: 'ICON' },
+    isActive: true,
+
     prompt: 'What musical instruments do you play (or wish you could)?',
     shortLabel: 'Musical Instruments',
     maxItems: 3,
@@ -807,23 +768,27 @@ async function main() {
     groupId: groups.filmTv.id,
     entityTypeId: movieDirector.id,
     slug: 'favorite-movie-directors',
+      axes: ["film-tv","movies"],
     prompt: 'Who are your favorite movie directors?',
-    shortLabel: 'Favorite Directors',
+    shortLabel: 'Directors',
     maxItems: 5,
   })
   await upsertCategory({
     groupId: groups.food.id,
     entityTypeId: cuisine.id,
     slug: 'favorite-cuisines',
+    axes: ["food","dining"],
     prompt: 'What are your favorite cuisines?',
-    shortLabel: 'Favorite Cuisines',
+    shortLabel: 'Cuisines',
     maxItems: 5,
     orderingMode: 'UNRANKED',
   })
   await upsertCategory({
     groupId: groups.career.id,
     entityTypeId: petPeeve.id,
-    slug: 'biggest-workplace-pet-peeves',
+    slug: 'biggest-workplace-pet-peeves',metadata: { mediaKind: 'ICON' },
+    isActive: true,
+
     prompt: 'What are your biggest workplace pet peeves?',
     shortLabel: 'Workplace Pet Peeves',
     maxItems: 3,
@@ -833,26 +798,33 @@ async function main() {
     groupId: groups.tech.id,
     entityTypeId: techGadget.id,
     slug: 'essential-tech-gadgets',
+    axes: ["tech","hardware"],
     prompt: 'What tech gadgets can\'t you live without?',
-    shortLabel: 'Essential Gadgets',
+    shortLabel: 'Tech Gadgets',
     maxItems: 3,
     orderingMode: 'UNRANKED',
   })
   await upsertCategory({
     groupId: groups.gaming.id,
     entityTypeId: videoGameGenre.id,
-    slug: 'favorite-video-game-genres',
+    slug: 'favorite-video-game-genres',metadata: { mediaKind: 'ICON' },
+    isActive: true,
+
+    axes: ["gaming"],
     prompt: 'What are your favorite video game genres?',
-    shortLabel: 'Favorite Game Genres',
+    shortLabel: 'Video Game Genres',
     maxItems: 3,
     orderingMode: 'UNRANKED',
   })
   await upsertCategory({
     groupId: groups.creators.id,
     entityTypeId: contentFormat.id,
-    slug: 'favorite-content-formats',
+    slug: 'favorite-content-formats',metadata: { mediaKind: 'ICON' },
+    isActive: true,
+
+    axes: ["creators","media"],
     prompt: 'What is your favorite type of content to consume?',
-    shortLabel: 'Favorite Content Formats',
+    shortLabel: 'Content Formats',
     maxItems: 3,
     orderingMode: 'UNRANKED',
   })
@@ -860,17 +832,21 @@ async function main() {
     groupId: groups.geography.id,
     entityTypeId: nationalPark.id,
     slug: 'favorite-national-parks',
+    axes: ["travel","outdoors"],
     prompt: 'What are your favorite US National Parks?',
-    shortLabel: 'Favorite National Parks',
+    shortLabel: 'National Parks',
     maxItems: 5,
     orderingMode: 'UNRANKED',
   })
   await upsertCategory({
     groupId: groups.craft.id,
     entityTypeId: artStyle.id,
-    slug: 'favorite-art-styles',
+    slug: 'favorite-art-styles',metadata: { mediaKind: 'ICON' },
+    isActive: true,
+
+    axes: ["hobbies","art"],
     prompt: 'What are your favorite art styles?',
-    shortLabel: 'Favorite Art Styles',
+    shortLabel: 'Art Styles',
     maxItems: 3,
     orderingMode: 'UNRANKED',
   })
@@ -885,9 +861,12 @@ async function main() {
   await upsertCategory({
     groupId: groups.lifestyle.id,
     entityTypeId: workoutType.id,
-    slug: 'favorite-workouts',
+    slug: 'favorite-workouts',metadata: { mediaKind: 'ICON' },
+    isActive: true,
+
+    axes: ["lifestyle","fitness"],
     prompt: 'What are your favorite ways to exercise?',
-    shortLabel: 'Favorite Workouts',
+    shortLabel: 'Workouts',
     maxItems: 3,
     orderingMode: 'UNRANKED',
   })
@@ -905,7 +884,7 @@ async function main() {
   // too would double it up (site-picks-site-picks-music).
   const sitePicksGroups: { slug: string; label: string; categorySlugs: string[] }[] = [
     { slug: 'music', label: 'Music', categorySlugs: ['top-90s-bands', 'top-rock-bands', 'top-pop-artists', 'top-hiphop-artists'] },
-    { slug: 'film-tv', label: 'Video', categorySlugs: ['top-movies', 'favorite-horror-movies', 'top-tv-shows', 'top-sitcoms'] },
+    { slug: 'film-tv', label: 'Video', categorySlugs: ['top-movies', 'top-tv-shows', 'top-sitcoms'] },
     { slug: 'food', label: 'Food & drink', categorySlugs: ['go-to-fast-food', 'go-to-coffee-chain', 'essential-pizza-toppings', 'favorite-cuisines'] },
     { slug: 'gaming', label: 'Gaming', categorySlugs: ['top-ps5-action-games', 'favorite-board-games', 'favorite-game-consoles', 'favorite-video-game-genres'] },
     { slug: 'tech', label: 'Tech', categorySlugs: ['favorite-ide', 'go-to-programming-language', 'primary-web-browser', 'essential-tech-gadgets'] },

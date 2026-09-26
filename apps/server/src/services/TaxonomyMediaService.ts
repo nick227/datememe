@@ -148,6 +148,13 @@ export class TaxonomyMediaService {
       const source = sharp(buffer, { limitInputPixels: 40_000_000 })
       const metadata = await source.metadata()
       if (!metadata.width || !metadata.height) throw new Error('Missing image dimensions')
+      if (metadata.width < 200 || metadata.height < 200) {
+        throw { statusCode: 415, message: 'Image fails quality gate: must be at least 200x200 pixels' }
+      }
+      const aspectRatio = metadata.width / metadata.height
+      if (aspectRatio < 0.4 || aspectRatio > 2.5) {
+        throw { statusCode: 415, message: 'Image fails quality gate: extreme aspect ratio' }
+      }
       const output = await source.rotate().resize({ width: 1000, height: 1000, fit: 'inside', withoutEnlargement: true }).webp({ quality: 82 }).toBuffer()
       return { buffer: output, width: metadata.width, height: metadata.height }
     } catch {
@@ -182,6 +189,20 @@ export class TaxonomyMediaService {
         provider: (data.provider as string) ?? null,
         sourceId: (data.sourceId as string) ?? null,
       } })
+
+      if (data.sha256 && !sameSource) {
+        const otherEntity = await tx.mediaAsset.findFirst({ 
+          where: { 
+            sha256: data.sha256 as string,
+            entityId: { not: target.entityId ?? null },
+            isPrimary: true
+          } 
+        })
+        if (otherEntity) {
+          throw { statusCode: 409, message: 'Image fails quality gate: duplicate image across unrelated entities' }
+        }
+      }
+
       const values = { ...target, ...data, ...reusableStorage, isPrimary: true } as any
       const created = sameSource
         ? await tx.mediaAsset.update({ where: { id: sameSource.id }, data: values })
