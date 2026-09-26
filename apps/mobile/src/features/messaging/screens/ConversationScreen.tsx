@@ -37,16 +37,17 @@ export function ConversationScreen({ route, navigation }: Props) {
   const sendMessage = useSendMessage(conversationId)
   const uploadMedia = useUploadMedia()
   const markAsRead = useMarkAsRead(conversationId)
+  const { mutate: markAsReadMutate } = markAsRead
   const conversations = useConversations()
   const unmatchConversation = useUnmatchConversation()
   const submitReport = useSubmitReport()
   const sheet = useActionSheet()
   const [draft, setDraft] = useState('')
   const [attachment, setAttachment] = useState<ImagePicker.ImagePickerAsset | null>(null)
-
+  
   useEffect(() => {
-    markAsRead.mutate()
-  }, [markAsRead])
+    markAsReadMutate()
+  }, [markAsReadMutate])
   const headerHeight = useHeaderHeight()
 
   // Get the conversation to access the avatar
