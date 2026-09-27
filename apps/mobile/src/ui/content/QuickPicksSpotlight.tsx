@@ -6,6 +6,7 @@ import { PressableScale } from '../PressableScale'
 import { Skeleton } from '../Skeleton'
 import { EmptyState } from '../EmptyState'
 import { colors, spacing } from '../../theme'
+import { SHOW_VALUE_IMAGES } from '../mediaPolicy'
 
 type Entity = { id: string; imageUrl: string | null; canonicalName: string }
 type Representative = { profileId: string; displayName: string; avatarUrl: string | null }
@@ -117,7 +118,7 @@ function QuickPickOption({
   const percent = result ? (result.winnerEntityId === entity.id ? result.winnerPercent : result.loserPercent) : null
   const overallWinRate = result ? (result.winnerEntityId === entity.id ? result.winnerOverallWinRate : result.loserOverallWinRate) : null
 
-  const photoUrl = representative?.avatarUrl ?? entity.imageUrl
+  const photoUrl = representative?.avatarUrl ?? (SHOW_VALUE_IMAGES ? entity.imageUrl : null)
   const initial = (representative?.displayName ?? entity.canonicalName).charAt(0).toUpperCase()
 
   return (

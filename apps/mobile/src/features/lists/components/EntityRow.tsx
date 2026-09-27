@@ -2,6 +2,7 @@ import { Image, Pressable, StyleSheet, View } from 'react-native'
 import { ImageIcon } from 'lucide-react-native'
 import { colors, radius, spacing, type } from '../../../theme'
 import { Typography } from '../../../ui/Typography'
+import { SHOW_VALUE_IMAGES } from '../../../ui/mediaPolicy'
 
 type Props = {
   name: string
@@ -16,7 +17,7 @@ export function EntityRow({ name, imageUrl, isPending, pickedRank, onToggle, dis
   const isPicked = pickedRank != null
   return (
     <View style={styles.row}>
-      {imageUrl ? (
+      {!SHOW_VALUE_IMAGES ? null : imageUrl ? (
         <Image source={{ uri: imageUrl }} style={styles.thumb} />
       ) : (
         <View style={[styles.thumb, styles.thumbFallback]}>

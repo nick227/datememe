@@ -77,7 +77,8 @@ export function PreviewListCard({ list, category, matchContext, ownerName, viewe
   const sortedItems: any[] = isCompleted ? list.items?.slice().sort((a: any, b: any) => a.rank - b.rank) ?? [] : []
 
   if (isCompleted) {
-    thumbnail = sortedItems?.[0]?.entity?.imageUrl
+    // The list's cover, not its #1 value's image (see ui/mediaPolicy.ts).
+    thumbnail = cat?.imageUrl ?? null
     
     const topPickName = sortedItems?.[0]?.entity?.canonicalName
     if (topPickName) {
@@ -85,8 +86,7 @@ export function PreviewListCard({ list, category, matchContext, ownerName, viewe
     }
     actionLabel = expanded ? 'Hide answers' : 'View answers'
   } else {
-    // For uncompleted, could use the category's top entity image if available
-    thumbnail = cat?.topPick?.imageUrl
+    thumbnail = cat?.imageUrl ?? null
   }
 
   // Build metadata string

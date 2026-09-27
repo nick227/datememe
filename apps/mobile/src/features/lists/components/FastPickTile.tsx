@@ -2,6 +2,7 @@ import { Image, Pressable, StyleSheet, View } from 'react-native'
 import { Plus, ImageIcon } from 'lucide-react-native'
 import { colors, radius, spacing, type } from '../../../theme'
 import { Typography } from '../../../ui/Typography'
+import { SHOW_VALUE_IMAGES } from '../../../ui/mediaPolicy'
 
 type Props = {
   testID?: string
@@ -23,7 +24,7 @@ export function FastPickTile({ testID, name, imageUrl, isPending, pickedRank, on
       disabled={disabled && !isPicked}
       style={[styles.tile, isPicked && styles.tilePicked, disabled && !isPicked && styles.tileDisabled]}
     >
-      {imageUrl ? (
+      {!SHOW_VALUE_IMAGES ? null : imageUrl ? (
         <Image source={{ uri: imageUrl }} style={styles.thumb} />
       ) : (
         <View style={[styles.thumb, styles.thumbFallback]}>

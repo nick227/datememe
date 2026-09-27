@@ -5,6 +5,7 @@ import { SmartImage } from './SmartImage'
 import { MicroBadge } from './MicroBadge'
 import { Box, colors, spacing } from '../../theme'
 import type { ResultUnit } from './types'
+import { SHOW_VALUE_IMAGES } from '../mediaPolicy'
 
 type Props = {
   unit: ResultUnit
@@ -21,7 +22,7 @@ export function ResultUnitCard({ unit, onPress }: Props) {
           #{unit.rank}
         </Typography>
       </Box>
-      <SmartImage uri={unit.imageUrl} fallbackText={unit.title} width={48} height={48} round />
+      {SHOW_VALUE_IMAGES ? <SmartImage uri={unit.imageUrl} fallbackText={unit.title} width={48} height={48} round /> : null}
       
       <View style={styles.content}>
         <Typography variant="heading" style={styles.title} numberOfLines={1}>

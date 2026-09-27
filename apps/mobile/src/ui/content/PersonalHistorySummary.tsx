@@ -73,7 +73,7 @@ export function PersonalHistorySummary({ testID, title, items, state, itemNoun, 
 
 function HistoryRow({ testID, unit, onPress }: { testID?: string; unit: ContentUnit; onPress: () => void }) {
   const previewEntities = unit.previewEntities ?? []
-  const thumbnail = unit.imageUrl ?? previewEntities[0]?.imageUrl
+  const thumbnail = unit.imageUrl
   const isComplete = !!unit.relationship?.completed
   const matchMetric = unit.metrics?.find((m) => m.type === 'overlap')
   const trailing =
