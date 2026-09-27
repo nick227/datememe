@@ -3,7 +3,7 @@ import Fastify from 'fastify'
 import openapiGlue from 'fastify-openapi-glue'
 import { resolve } from 'path'
 import { db } from '@project/db'
-import { CatalogService } from '../services/CatalogService'
+import { CatalogService, key } from '../services/CatalogService'
 import { OpenAIService } from '../services/OpenAIService'
 import { renderCatalogPrompts } from '../services/CatalogPrompts'
 import { ListService } from '../services/ListService'
@@ -150,6 +150,16 @@ describe('local admin content factory', () => {
     await expect(service.publish(d.id)).rejects.toMatchObject({ statusCode: 400 })
     expect(await db.entity.findUnique({ where: { entityTypeId_slug: { entityTypeId: type.id, slug: c!.slug } } })).toBeNull()
     expect((await db.categoryDraft.findUniqueOrThrow({ where: { id: d.id } })).publishedCategoryId).toBeNull()
+  })
+  it('derives candidate identity keys from the name, never from model output', async () => {
+    mockOutput([{ title: `${prefix} Keys`, prompt: 'Top two?', minItems: 1, maxItems: 2, orderingMode: 'RANKED' }])
+    const op = await queue('LIST_IDEAS', [concept.id]); await service.execute(op.id); vi.restoreAllMocks()
+    const d = await db.categoryDraft.findFirstOrThrow({ where: { generationOperationId: op.id } })
+    await service.updateDraft(d.id, { approvalState: 'APPROVED', groupId: group.id, entityTypeId: type.id })
+    const [c] = await values([{ name: `${prefix} Radiohead`, slug: 'model-chosen-id-42', details: 'band' }], d.id)
+    expect(c!.slug).toBe(key(`${prefix} Radiohead`))
+    const renamed = await service.reviewCandidate(c!.id, { reviewState: 'PENDING', name: `${prefix} Radiohead (band)` })
+    expect(renamed.slug).toBe(key(`${prefix} Radiohead (band)`))
   })
   it('rejects stale outputs after the approved List changes', async () => {
     const d = await db.categoryDraft.findFirstOrThrow({ where: { conceptId: concept.id, publishedCategoryId: null } })

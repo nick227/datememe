@@ -112,7 +112,7 @@ Fourth bottom tab (Lists · Rankings · Discover · Messages; Profile stays on t
 
 ## Known Issues (outside Rankings, logged 2026-09-26)
 
-- **Server tests: `TypeError: Invalid URL` in `src/providers/localStorageConfig.ts`** — 5 suites (admin-security, admin-users, catalog, openApiResponseContract, userContext) fail at import under vitest; the uploads public-base URL env isn't valid in the test environment.
+- ~~Server tests: `TypeError: Invalid URL`~~ — fixed 2026-09-27: Vite sets `process.env.BASE_URL='/'`; `vitest.config.ts` now sets `BASE_URL` explicitly.
 - **Discover cursor regression** — `contentFeed.test.ts` › "getDiscoverFeed never repeats a candidate… and terminates" fails with `Invalid discovery cursor`; coincides with the in-progress, uncommitted `DiscoveryService`/`CalculateMatchesJob` (`Profile.matchesUpdatedAt`) work.
 - **Test fixtures write to the dev database** — leftover `combo-group-*` / `disco-taste-group-*` CategoryGroups and their categories come from test runs.
 

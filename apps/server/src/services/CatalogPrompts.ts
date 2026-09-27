@@ -17,7 +17,7 @@ const object = (properties: Record<string, unknown>) => ({ type: 'object', prope
 export function catalogOutputSchema(kind: GenerationKind) {
   const item = kind === 'CONCEPTS' ? object({ label: str })
     : kind === 'LIST_IDEAS' ? object({ title: str, prompt: str, minItems: { type: 'integer' }, maxItems: { type: 'integer' }, orderingMode: { type: 'string', enum: ['RANKED', 'UNRANKED'] } })
-    : kind === 'VALUES' ? object({ name: str, slug: str, details: str })
+    : kind === 'VALUES' ? object({ name: str, details: str })
     : object({ axis: str, value: str, reason: str })
   return object({ items: { type: 'array', items: item } })
 }

@@ -122,7 +122,9 @@ export class CatalogService {
           const existingNames = new Set((await tx.entityCandidate.findMany({ where: { categoryDraftId: draft.id } })).map(c => key(c.name)))
           for (const item of items) {
             if (existingNames.has(key(item.name))) continue
-            await tx.entityCandidate.upsert({ where: { categoryDraftId_slug: { categoryDraftId: draft.id, slug: item.slug } }, update: {}, create: { categoryDraftId: draft.id, generationOperationId: id, name: item.name, slug: item.slug, details: item.details } })
+            // The model proposes a name; the identity key is always derived here.
+            const slug = key(item.name)
+            await tx.entityCandidate.upsert({ where: { categoryDraftId_slug: { categoryDraftId: draft.id, slug } }, update: {}, create: { categoryDraftId: draft.id, generationOperationId: id, name: item.name, slug, details: item.details } })
             existingNames.add(key(item.name))
           }
         }
@@ -137,7 +139,7 @@ export class CatalogService {
     for (const item of output.items) {
       if (kind === 'CONCEPTS') { text(item.label, 'Concept', 100); if (!key(item.label)) fail('Invalid concept key') }
       if (kind === 'LIST_IDEAS') { text(item.title, 'Title', 150); text(item.prompt, 'Prompt', 1000); rulesFor(item); if (!key(item.title)) fail('Invalid title key') }
-      if (kind === 'VALUES') { text(item.name, 'Name', 180); text(item.slug, 'Slug', 180); if (key(item.slug) !== item.slug) fail('Invalid candidate slug'); if (typeof item.details !== 'string' || item.details.length > 2000) fail('Invalid details') }
+      if (kind === 'VALUES') { text(item.name, 'Name', 180); if (!key(item.name)) fail('Invalid candidate name'); if (typeof item.details !== 'string' || item.details.length > 2000) fail('Invalid details') }
       if (kind === 'FACETS' && (!facetValid(item) || typeof item.reason !== 'string')) fail('Unknown facet')
     }
     return output.items
@@ -179,7 +181,8 @@ export class CatalogService {
       const d = await tx.categoryDraft.findUniqueOrThrow({ where: { id: c.categoryDraftId } })
       const reviewState = body.reviewState
       if (!['PENDING', 'APPROVED', 'REJECTED'].includes(reviewState)) fail('Invalid review decision')
-      const name = text(body.name ?? c.name, 'Name', 180), slug = text(body.slug ?? c.slug, 'Slug', 180)
+      // An admin may set a disambiguated key; renaming without one re-derives it.
+      const name = text(body.name ?? c.name, 'Name', 180), slug = text(body.slug ?? (body.name ? key(body.name) : c.slug), 'Slug', 180)
       if (key(slug) !== slug) fail('Invalid slug')
       let resolutionState = 'UNRESOLVED', resolvedEntityId: string | null = null
       if (reviewState === 'APPROVED') {
@@ -270,7 +273,8 @@ export class CatalogService {
         for (const candidateId of this.ids(b.ids)) {
           const c = await db.entityCandidate.findUniqueOrThrow({ where: { id: candidateId }, include: { draft: true } })
           if (!c.draft.entityTypeId) continue
-          const matches = await db.entity.findMany({ where: { entityTypeId: c.draft.entityTypeId, canonicalName: c.name, slug: c.slug, status: 'APPROVED', mergedIntoId: null } })
+          // Auto-resolve only an unambiguous exact name or alias match.
+          const matches = await db.entity.findMany({ where: { entityTypeId: c.draft.entityTypeId, status: 'APPROVED', mergedIntoId: null, OR: [{ canonicalName: c.name }, { aliases: { some: { alias: c.name } } }] } })
           if (matches.length === 1) {
             await this.reviewCandidate(c.id, { reviewState: 'APPROVED', resolvedEntityId: matches[0]!.id }); approved++
           }

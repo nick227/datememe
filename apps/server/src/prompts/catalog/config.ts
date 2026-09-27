@@ -6,7 +6,7 @@ export const catalogConfig = {
   FACETS: { template: 'facets', count: 5, max: 10 },
 } as const
 export type GenerationKind = keyof typeof catalogConfig
-export const promptVersion = '2'
+export const promptVersion = '3'
 export const generationModel = process.env.CATALOG_MODEL || 'gpt-4o-mini'
 export const generationTimeoutMs = 60000
 export const facetVocabulary = {

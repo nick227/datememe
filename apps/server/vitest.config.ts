@@ -11,5 +11,8 @@ export default defineConfig({
     // file's transient fixture rows shift another file's live pagination
     // mid-run, causing real but non-reproducible-in-isolation flakiness.
     fileParallelism: false,
+    // Vite sets process.env.BASE_URL to its public base path ('/'), which
+    // localStorageConfig then rejects as an invalid URL at import time.
+    env: { BASE_URL: 'http://localhost:3002' },
   },
 })
