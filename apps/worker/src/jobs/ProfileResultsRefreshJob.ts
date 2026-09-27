@@ -45,7 +45,7 @@ async function updateGenericResultSet(
   subjectType: ResultSubjectType,
   metric: ResultMetric,
   scopeType: ResultScopeType,
-  scopeValue: string | null,
+  scopeValue: string, // '_GLOBAL_' sentinel for unscoped sets; the column is non-null
   window: ResultWindow,
   sortedSubjects: Array<{ profileId: string, score: number }>,
   takeCount: number
@@ -67,7 +67,7 @@ async function updateGenericResultSet(
     // Upsert the result set safely preventing duplicate constraints concurrently
     const resultSet = await tx.resultSet.upsert({
       where: { 
-        idx_result_set_unique: { subjectType, metric, scopeType, scopeValue: scopeValue as any, window }
+        idx_result_set_unique: { subjectType, metric, scopeType, scopeValue, window }
       },
       update: { takeCount },
       create: { subjectType, metric, scopeType, scopeValue, window, takeCount }

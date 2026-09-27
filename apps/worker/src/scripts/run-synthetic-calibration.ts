@@ -6,7 +6,7 @@ import * as crypto from 'crypto'
 const NUM_USERS = 200
 const NUM_CLUSTERS = 3
 const LAUNCH_SCALE = 100 // completed lists per category average
-const TARGET_SCORE_RANGE = [60, 80] // "strong same-cluster match lands at 60-80"
+const TARGET_SCORE_RANGE = [60, 80] as const // "strong same-cluster match lands at 60-80"
 
 function randomInt(max: number) { return Math.floor(Math.random() * max) }
 function randomNormal(mean: number, stdDev: number) {
@@ -93,7 +93,7 @@ async function runCalibration() {
        while (selectedEntities.size < cat.minItems && selectedEntities.size < entities.length) {
          let idx = sampleZipf(1.5, entities.length)
          idx = (idx + offset) % entities.length
-         selectedEntities.add(entities[idx])
+         selectedEntities.add(entities[idx]!)
        }
        
        let rank = 1

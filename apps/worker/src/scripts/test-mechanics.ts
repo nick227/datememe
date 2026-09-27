@@ -13,8 +13,8 @@ async function runTests() {
   for (let i = 0; i < profiles.length; i++) {
     for (let j = i + 1; j < profiles.length; j++) {
       totalPairs++
-      const pA = profiles[i].id
-      const pB = profiles[j].id
+      const pA = profiles[i]!.id
+      const pB = profiles[j]!.id
 
       // Calculate A -> B
       await calculateMatchesJob({ profileId: pA })
