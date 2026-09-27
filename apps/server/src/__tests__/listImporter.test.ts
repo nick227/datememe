@@ -21,6 +21,7 @@ describe('ListImporterService', () => {
     const types = await db.entityType.findMany({ where: { slug: { startsWith: prefix } } })
     const categories = await db.category.findMany({ where: { groupId: group.id } })
     await db.sitePickItem.deleteMany({ where: { categoryId: { in: categories.map((c) => c.id) } } })
+    await db.categoryEntity.deleteMany({ where: { categoryId: { in: categories.map((c) => c.id) } } })
     await db.category.deleteMany({ where: { groupId: group.id } })
     await db.entity.deleteMany({ where: { entityTypeId: { in: types.map((t) => t.id) } } })
     await db.entityType.deleteMany({ where: { id: { in: types.map((t) => t.id) } } })
@@ -56,6 +57,32 @@ describe('ListImporterService', () => {
     expect(badGroup.status).toBe('ERROR')
     expect(await db.category.count({ where: { slug: { in: [key(`${prefix} Dup`), key(`${prefix} Typo`), key(`${prefix} Group`)] } } })).toBe(0)
     expect(await db.entityType.count({ where: { slug: `${prefix}-snakc` } })).toBe(0)
+  })
+
+  it("scopes a list's choices to its values by default, and adds new values on re-import", async () => {
+    const input = list({ title: `${prefix} Curated`, values: values(`${prefix} Salsa`, `${prefix} Hummus`) })
+    await importer.importList(input)
+    const category = await db.category.findFirstOrThrow({ where: { slug: key(`${prefix} Curated`) }, include: { curatedEntities: { include: { entity: true }, orderBy: { sortOrder: 'asc' } } } })
+    expect(category.poolMode).toBe('CURATED')
+    expect(category.curatedEntities.map((c) => c.entity.canonicalName)).toEqual(values(`${prefix} Salsa`, `${prefix} Hummus`))
+    const again = await importer.importList({ ...input, values: [...values(`${prefix} Salsa`, `${prefix} Hummus`), `${prefix} Guac`] })
+    expect(again).toMatchObject({ status: 'SUCCESS', choicesAdded: 1, entitiesCreated: [`${prefix} Guac`] })
+    expect(await db.categoryEntity.count({ where: { categoryId: category.id } })).toBe(9)
+  })
+
+  it("offers the whole type only when the list opts in with pool: 'entity-type'", async () => {
+    await importer.importList(list({ title: `${prefix} Broad`, pool: 'entity-type' }))
+    const category = await db.category.findFirstOrThrow({ where: { slug: key(`${prefix} Broad`) }, include: { _count: { select: { curatedEntities: true } } } })
+    expect(category.poolMode).toBe('FILTERED')
+    expect(category._count.curatedEntities).toBe(0)
+  })
+
+  it('refuses a title that matches an existing category of another type', async () => {
+    const other = await db.entityType.create({ data: { slug: `${prefix}-other`, label: 'Other', pluralLabel: 'Others' } })
+    const report = await importer.importList(list({ title: `${prefix} Curated`, entityTypeSlug: other.slug }))
+    expect(report.status).toBe('ERROR')
+    expect(report.errors.join()).toMatch(/matches existing category .* of type/)
+    expect(await db.entity.count({ where: { entityTypeId: other.id } })).toBe(0)
   })
 
   it('creates a new entity type only when declared', async () => {

@@ -75,7 +75,7 @@
   {
     "schemaVersion": 1,
     "groupSlug": "lifestyle-hobbies",
-    "entityTypeSlug": "video-game-console",
+    "entityTypeSlug": "game-console",
     "title": "Favorite Game Consoles",
     "prompt": "What are the greatest video game consoles ever?",
     "axes": [

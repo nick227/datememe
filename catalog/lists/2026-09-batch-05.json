@@ -77,7 +77,7 @@
   {
     "schemaVersion": 1,
     "groupSlug": "music",
-    "entityTypeSlug": "festival",
+    "entityTypeSlug": "music-festival",
     "title": "Favorite Music Festivals",
     "prompt": "What are your dream music festivals to attend?",
     "axes": [
@@ -127,7 +127,7 @@
   {
     "schemaVersion": 1,
     "groupSlug": "entertainment",
-    "entityTypeSlug": "social-media-creator",
+    "entityTypeSlug": "youtuber",
     "title": "Favorite YouTubers",
     "prompt": "Who are your favorite YouTube creators?",
     "axes": [

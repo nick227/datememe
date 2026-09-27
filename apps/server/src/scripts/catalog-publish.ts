@@ -62,7 +62,8 @@ async function main() {
 
   for (const r of reports) {
     if (r.status === 'ERROR') console.log(`✗ ${r.title ?? '(invalid)'} [${r.file.split('/').pop()}]\n    ${r.errors.join('\n    ')}`)
-    else if (r.categoryCreated || r.entitiesCreated.length) console.log(`${dryRun ? '+' : '✓'} ${r.title}: ${r.categoryCreated ? 'new category, ' : ''}${r.entitiesCreated.length} new / ${r.entitiesReused.length} existing entities`)
+    else if (r.categoryCreated || r.entitiesCreated.length || r.choicesAdded) console.log(`${dryRun ? '+' : '✓'} ${r.title}: ${r.categoryCreated ? 'new category, ' : ''}${r.entitiesCreated.length} new / ${r.entitiesReused.length} existing entities${r.choicesAdded ? `, ${r.choicesAdded} choices added` : ''}`)
+    for (const w of r.status === 'ERROR' ? [] : r.warnings) console.log(`! ${r.title}: ${w}`)
   }
   const summary = {
     mode: dryRun ? 'validate' : invalid.length ? 'aborted' : 'publish',
@@ -71,7 +72,9 @@ async function main() {
     errors: invalid.length,
     newCategories: reports.filter((r) => r.status !== 'ERROR' && r.categoryCreated).length,
     newEntities: reports.reduce((n, r) => n + (r.status === 'ERROR' ? 0 : r.entitiesCreated.length), 0),
-    unchangedLists: reports.filter((r) => r.status !== 'ERROR' && !r.categoryCreated && !r.entitiesCreated.length).length,
+    choicesAdded: reports.reduce((n, r) => n + (r.status === 'ERROR' ? 0 : r.choicesAdded), 0),
+    warnings: reports.reduce((n, r) => n + (r.status === 'ERROR' ? 0 : r.warnings.length), 0),
+    unchangedLists: reports.filter((r) => r.status !== 'ERROR' && !r.categoryCreated && !r.entitiesCreated.length && !r.choicesAdded).length,
   }
   console.log(`CATALOG ${JSON.stringify(summary)}`)
   if (invalid.length) process.exitCode = 1

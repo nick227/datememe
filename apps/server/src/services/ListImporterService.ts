@@ -19,6 +19,8 @@ export const ListSeedInputV1 = z.object({
   values: z.array(valueName).min(8).describe('Entity names to pre-populate (minimum 8)'),
   isAbstract: z.boolean().default(false).describe('Whether this category uses ICON media instead of photos'),
   requiredTags: z.array(z.string()).optional().describe('Optional tags required for this category'),
+  pool: z.enum(['curated', 'entity-type']).default('curated')
+    .describe("'curated' (default): the list's values are its choices. 'entity-type': every entity of the type — only for deliberately broad lists like Movies"),
 })
 
 export type ListSeedInput = z.input<typeof ListSeedInputV1>
@@ -30,6 +32,9 @@ export type ImportReport = {
   categoryCreated: boolean
   entitiesCreated: string[]
   entitiesReused: string[]
+  /** Values newly added to a curated category's choices. */
+  choicesAdded: number
+  warnings: string[]
   errors: string[]
 }
 
@@ -47,9 +52,13 @@ export type BatchManifest = {
 }
 
 export class ListImporterService {
-  /** Validates and imports one list atomically. Safe to re-run: existing categories and entities are reused, never modified. */
+  /**
+   * Validates and imports one list atomically. Safe to re-run: existing
+   * categories and entities are reused, never modified — except that a curated
+   * category gains any of the file's values it doesn't offer yet (additive only).
+   */
   async importList(input: ListSeedInput, dryRun = false, batchManifest?: BatchManifest): Promise<ImportReport> {
-    const report: ImportReport = { status: dryRun ? 'DRY_RUN' : 'SUCCESS', categoryCreated: false, entitiesCreated: [], entitiesReused: [], errors: [] }
+    const report: ImportReport = { status: dryRun ? 'DRY_RUN' : 'SUCCESS', categoryCreated: false, entitiesCreated: [], entitiesReused: [], choicesAdded: 0, warnings: [], errors: [] }
     const parsed = ListSeedInputV1.safeParse(input)
     if (!parsed.success) {
       report.status = 'ERROR'
@@ -82,24 +91,42 @@ export class ListImporterService {
         const existing = await tx.category.findFirst({ where: { slug: { in: [...new Set([key(data.title), legacyAsciiKey(data.title)])] } } })
         if (existing) report.categorySlug = existing.slug
         report.categoryCreated = !existing
+        // Reusing a same-titled category of another type would put this list's
+        // values somewhere the category never offers them.
+        if (existing && existing.entityTypeId !== entityType?.id) {
+          const actual = await tx.entityType.findUnique({ where: { id: existing.entityTypeId }, select: { slug: true } })
+          report.errors.push(`Title matches existing category "${existing.shortLabel}" of type '${actual?.slug}', not '${data.entityTypeSlug}'; use that type or rename the list`)
+          return
+        }
+        const curated = existing ? existing.poolMode === 'CURATED' : data.pool === 'curated'
+        if (existing && !curated && data.pool === 'curated') {
+          report.warnings.push(`"${existing.shortLabel}" offers every ${data.entityTypeSlug} instead of this list's values; run catalog-backfill-pools.ts`)
+        }
 
         const names = [...seen.values()]
         const resolved = entityType ? await this.resolveEntities(tx, entityType.id, names, report) : new Map<string, string>()
         if (report.errors.length) return
         for (const name of names) (resolved.has(name) ? report.entitiesReused : report.entitiesCreated).push(name)
+        const offered = existing && curated
+          ? new Set((await tx.categoryEntity.findMany({ where: { categoryId: existing.id }, select: { entityId: true } })).map((c) => c.entityId))
+          : new Set<string>()
+        if (curated) report.choicesAdded = names.filter((n) => !offered.has(resolved.get(n) ?? '')).length
         if (dryRun) return
 
         if (!entityType) {
           entityType = await tx.entityType.create({ data: { slug: data.entityTypeSlug, label: data.createEntityType!.label, pluralLabel: data.createEntityType!.pluralLabel, icon: 'box' } })
         }
+        let categoryId = existing?.id
         if (!existing) {
           const category = await tx.category.create({
             data: {
               groupId: group!.id, entityTypeId: entityType.id, slug: report.categorySlug!, prompt: data.prompt, shortLabel: data.title,
               minItems: 1, maxItems: 5, orderingMode: 'RANKED', axes: data.axes, isActive: true,
+              poolMode: data.pool === 'curated' ? 'CURATED' : 'FILTERED',
               metadata: data.isAbstract ? { mediaKind: 'ICON' } : {},
             },
           })
+          categoryId = category.id
           const sitePickGroup = SITE_PICK_GROUPS[group!.slug] && await tx.sitePickGroup.findUnique({ where: { slug: SITE_PICK_GROUPS[group!.slug] } })
           if (sitePickGroup) {
             await tx.sitePickItem.upsert({
@@ -110,7 +137,16 @@ export class ListImporterService {
           }
         }
         for (const name of report.entitiesCreated) {
-          await tx.entity.create({ data: { entityTypeId: entityType.id, canonicalName: name, slug: key(name), sourceType: 'SEEDED', status: 'APPROVED' } })
+          const entity = await tx.entity.create({ data: { entityTypeId: entityType.id, canonicalName: name, slug: key(name), sourceType: 'SEEDED', status: 'APPROVED' } })
+          resolved.set(name, entity.id)
+        }
+        if (curated) {
+          // The list's values are the category's choices, in the file's order.
+          const start = ((await tx.categoryEntity.aggregate({ where: { categoryId }, _max: { sortOrder: true } }))._max.sortOrder ?? -1) + 1
+          await tx.categoryEntity.createMany({
+            data: names.filter((n) => !offered.has(resolved.get(n)!)).map((n, i) => ({ categoryId: categoryId!, entityId: resolved.get(n)!, sortOrder: start + i })),
+            skipDuplicates: true,
+          })
         }
       }
       if (dryRun) await run(db as unknown as Tx)
