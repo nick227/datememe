@@ -36,9 +36,22 @@ function sh(cmd: string, cmdArgs: string[]) {
   return execFileSync(cmd, cmdArgs, { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] })
 }
 
+/** One line per stage, so a run can be judged at a glance. Stages that didn't run are omitted. */
+function report() {
+  const s = summary as any
+  const lines = [`environment: ${envName} @ ${s.deployedCommit ?? '?'}`]
+  const catalog = s.publish ?? s.validate
+  if (catalog) lines.push(`catalog:     ${catalog.lists} lists checked, ${catalog.newCategories} new categories, ${catalog.newEntities} new entities, ${catalog.errors} errors${s.publish ? '' : ' (validate only)'}`)
+  if (s.review) lines.push(`review:      ${s.review.applied} decisions applied, ${s.review.stillPending} still pending`)
+  if (s.identify) lines.push(`identity:    ${s.identify.autoAccepted} accepted, ${s.identify.toReview} to review, ${s.identify.remaining} not yet checked${s.identify.stoppedEarly ? ' (rate-limited, resumes next run)' : ''}; ${s.identify.verified} already verified`)
+  if (s.media) lines.push(`media:       ${s.media.imported} imported, ${s.media.noImage} no image, ${s.media.rejected} rejected, ${s.media.failed} failed, ${s.media.remaining} remaining (${s.media.rounds} rounds); ${s.media.withImage} with image`)
+  if (s.derived) lines.push(`rankings:    ${s.derived.rankingsRebuild}`)
+  if (s.audit) lines.push(`audit:       ${s.audit}`)
+  return lines.join('\n')
+}
+
 function fail(message: string): never {
-  console.error(`\n✗ ${message}`)
-  console.error(JSON.stringify(summary, null, 2))
+  console.error(`\n✗ ${message}\n${report()}`)
   process.exit(1)
 }
 
@@ -88,7 +101,7 @@ async function main() {
   const validate = await stage('catalog:validate', 'pnpm', local('catalog-publish.ts', ['--dry-run']), 'CATALOG', env)
   summary.validate = validate.result
   if (validate.code) fail('Catalog validation failed; fix the files above')
-  if (flag('--dry-run')) return console.log(`\n✓ dry run\n${JSON.stringify(summary, null, 2)}`)
+  if (flag('--dry-run')) return console.log(`\n✓ dry run\n${report()}`)
 
   const publish = await stage('catalog:publish', 'pnpm', local('catalog-publish.ts'), 'CATALOG', env)
   summary.publish = publish.result
@@ -106,11 +119,15 @@ async function main() {
     if (identify.code && !identify.result?.stoppedEarly) fail('Identity resolution failed')
     if (identify.result?.stoppedEarly) console.log('  (identify stopped early on Wikidata rate limits — continuing; re-run later to resume)')
 
-    const rounds: unknown[] = []
+    const media = { rounds: 0, imported: 0, noImage: 0, rejected: 0, failed: 0, remaining: 0, withImage: 0 }
+    summary.media = media
     for (let round = 1; round <= MAX_SYNC_ROUNDS; round++) {
       const sync = await stage(`media:sync (round ${round}, in container)`, 'railway', remote('media-sync.ts'), 'MEDIA_SYNC')
-      rounds.push(sync.result)
-      summary.mediaSync = { rounds: rounds.length, last: sync.result }
+      const r = sync.result ?? {}
+      media.rounds = round
+      for (const k of ['imported', 'noImage', 'rejected', 'failed'] as const) media[k] += r[k] ?? 0
+      media.remaining = r.remaining ?? media.remaining
+      media.withImage = (r.withImage ?? 0) + (r.imported ?? 0)
       if (sync.code) fail('Media sync hit unexpected failures (see above); re-run later to resume')
       if (!sync.result?.remaining || !sync.result?.processed) break
     }
@@ -121,11 +138,11 @@ async function main() {
   if (derived.code) fail('Could not queue the rankings rebuild')
 
   const audit = await stage('audit (in container)', 'railway', remote('audit-media.ts'), '')
-  summary.audit = audit.code ? 'FAIL' : 'OK'
+  summary.audit = audit.code ? 'FAIL' : 'PASS'
   if (audit.code) fail('Media audit failed — see findings above (repair-taxonomy-media.ts fixes them)')
 
   const pending = (summary.identify as any)?.reviewFile
-  console.log(`\n✓ ${envName} catalog published\n${JSON.stringify(summary, null, 2)}`)
+  console.log(`\n✓ ${envName} catalog published\n${report()}`)
   if (pending) console.log(`\nIdentities awaiting your review: ${pending}\nDecide each entry, then run: pnpm prod:publish-catalog --apply-review`)
 }
 
