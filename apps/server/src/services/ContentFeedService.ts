@@ -81,7 +81,10 @@ function categoryUnitFor(category: any, index: number, myListByCategoryId: Map<s
 }
 
 function toPersonUnit(candidate: any, index: number, alsoInto: any[] = []) {
-  const metrics: Metric[] = [metric('overlap', 'Match', `${candidate.matchPercentage}%`, 'primary')]
+  const metrics: Metric[] = []
+  if (candidate.matchPercentage !== undefined) {
+    metrics.push(metric('overlap', 'Match', `${candidate.matchPercentage}%`, 'primary'))
+  }
   if (candidate.sharedItemsCount) {
     metrics.push(metric('popularity', 'Shared favorites', candidate.sharedItemsCount, 'secondary'))
   }
@@ -585,11 +588,39 @@ export class ContentFeedService {
     // each of those used to resolve it independently, doubling that cost on
     // every first-page Discover request for the same viewer.
     const fullPhotoAccess = (await resolveEntitlements(viewerUserId))['profile.fullPhotoAccess']
-    const page = await discoveryService.getDiscoveryFeed(viewerUserId, viewerProfileId, {
+
+    const [completedListsCount, scoredCandidatesCount] = await Promise.all([
+      db.list.count({ where: { profileId: viewerProfileId, isComplete: true } }),
+      db.compatibilityScore.count({ where: { OR: [{ profileIdA: viewerProfileId }, { profileIdB: viewerProfileId }] } })
+    ])
+    const MIN_LISTS = 3
+    const MIN_CANDIDATES = 10
+    const hasEnoughEvidence = completedListsCount >= MIN_LISTS && scoredCandidatesCount >= MIN_CANDIDATES
+
+    if (hasEnoughEvidence) {
+      const viewer = await db.profile.findUnique({ where: { id: viewerProfileId }, select: { matchesUpdatedAt: true } })
+      const isStale = !viewer?.matchesUpdatedAt || (Date.now() - viewer.matchesUpdatedAt.getTime() > 12 * 60 * 60 * 1000)
+      if (isStale) {
+        const existingJob = await db.jobQueue.findFirst({
+          where: { type: 'CALCULATE_MATCHES', status: { in: ['PENDING', 'RUNNING'] }, payload: { equals: { profileId: viewerProfileId } } }
+        })
+        if (!existingJob) {
+          await db.jobQueue.create({
+            data: { type: 'CALCULATE_MATCHES', payload: { profileId: viewerProfileId } }
+          })
+        }
+      }
+    }
+
+    const discoveryArgs = {
       ...opts,
       taste: opts.groupSlugs?.length ? opts.groupSlugs.map((slug) => `group:${slug}`) : undefined,
       fullPhotoAccess,
-    })
+    }
+
+    const page = hasEnoughEvidence
+      ? await discoveryService.getDiscoveryFeed(viewerUserId, viewerProfileId, discoveryArgs)
+      : await discoveryService.getFallbackFeed(viewerUserId, viewerProfileId, discoveryArgs)
 
     const alsoIntoByProfileId = await this.getAlsoIntoByProfileId(page.data)
     const candidateUnits = page.data.map((c: any, i: number) => toPersonUnit(c, i, alsoIntoByProfileId.get(c.profile.id) ?? []))
@@ -735,18 +766,41 @@ export class ContentFeedService {
 
       // Build conditional variety modules first so we can interleave them.
       let highlightModule: any = null
+      let improveMatchesModule: any = null
+
       if (isFirstPage) {
-        const topCandidate = page.data[0]
-        if (topCandidate && topCandidate.matchPercentage >= 90) {
-          highlightModule = {
-            moduleKind: 'collection',
-            id: 'highly-compatible',
-            type: 'recommendations',
-            title: 'Highly compatible',
-            suggestedStructure: 'spotlight',
-            items: [
-              { ...toPersonUnit(topCandidate, 0, alsoIntoByProfileId.get(topCandidate.profile.id) ?? []), position: 0 },
-            ],
+        if (!hasEnoughEvidence) {
+          const categories = await taxonomyService.listCategories(viewerProfileId)
+          const myLists = await listService.getMyLists(viewerProfileId)
+          const myListByCategoryId = new Set(myLists.map((l: any) => l.categoryId))
+          const incompleteSorted = categories
+            .filter((c: any) => !myListByCategoryId.has(c.id))
+            .sort((a: any, b: any) => featuredScore(b) - featuredScore(a))
+
+          if (incompleteSorted.length) {
+            improveMatchesModule = {
+              moduleKind: 'collection',
+              id: 'improve-matches',
+              type: 'prompt',
+              title: 'Answer lists to see matches',
+              context: { reason: 'We need to learn your taste before we can score your compatibility' },
+              suggestedStructure: 'rail',
+              items: incompleteSorted.slice(0, 6).map((c: any, i2: number) => ({ ...toCategoryUnit(c, { completed: false }), position: i2 })),
+            }
+          }
+        } else {
+          const topCandidate = page.data[0]
+          if (topCandidate && topCandidate.matchPercentage !== undefined && topCandidate.matchPercentage >= 90) {
+            highlightModule = {
+              moduleKind: 'collection',
+              id: 'highly-compatible',
+              type: 'recommendations',
+              title: 'Highly compatible',
+              suggestedStructure: 'spotlight',
+              items: [
+                { ...toPersonUnit(topCandidate, 0, alsoIntoByProfileId.get(topCandidate.profile.id) ?? []), position: 0 },
+              ],
+            }
           }
         }
       }
@@ -809,7 +863,7 @@ export class ContentFeedService {
       // Build the Explore beat list: chunked people modules interleaved
       // with variety modules at natural positions.
       const exploreBeats: any[] = []
-      const chunks = []
+      const chunks: any[] = []
       for (let i = 0; i < candidateUnits.length; i += CHUNK_SIZE) {
         chunks.push(candidateUnits.slice(i, i + CHUNK_SIZE))
       }
@@ -864,6 +918,7 @@ export class ContentFeedService {
 
         // Interleave variety modules at natural positions between chunks.
         if (chunkIdx === 0 && highlightModule) exploreBeats.push(highlightModule)
+        if (chunkIdx === 0 && improveMatchesModule) exploreBeats.push(improveMatchesModule)
         if (chunkIdx === 0 && isFirstPage) {
           exploreBeats.push({ moduleKind: 'collection', id: 'quick-picks-quiz-0', type: 'quiz', title: 'Quick Picks', suggestedStructure: 'spotlight', items: [] })
         }
@@ -901,6 +956,7 @@ export class ContentFeedService {
         // Interests river) keep their structure.
         if (beat.id?.startsWith('similar-taste')) continue
         if (beat.id?.startsWith('shared-interest')) continue
+        if (beat.id === 'improve-matches') continue
 
         const structure = EXPLORE_STRUCTURES[exploreIndex % EXPLORE_STRUCTURES.length]
         beat.suggestedStructure = structure

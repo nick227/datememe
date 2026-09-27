@@ -107,7 +107,7 @@ export function DiscoverFeedScreen({ navigation }: Props) {
     }
     list.push(...exploreModules.map((m) => ({ rowId: m.id, kind: 'module' as const, module: m })))
     return list
-  }, [modules, isFiltered, feed.hasNextPage])
+  }, [modules, isFiltered, hasPeople, feed.hasNextPage])
 
   function onPressItem(unit: ContentUnit) {
     // Site Picks cards are lists presented inside Discover, not people

@@ -20,6 +20,7 @@ type Props = {
  * relocate the rigidity this system exists to remove.
  */
 export function ContentUnitCard({ unit, variant, zone, onPress }: Props) {
+  console.log(unit.kind)
   switch (unit.kind) {
     case 'result':
       return <ResultUnitCard unit={unit as any} onPress={onPress} />

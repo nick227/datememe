@@ -63,7 +63,7 @@ export class ListImporterService {
              data: { slug: data.entityTypeSlug, label: data.entityTypeSlug, pluralLabel: data.entityTypeSlug + 's', icon: 'box' }
            })
         } else {
-           entityType = { id: 'dry-run-id', slug: data.entityTypeSlug, label: data.entityTypeSlug, pluralLabel: data.entityTypeSlug + 's', icon: 'box', createdAt: new Date(), updatedAt: new Date() }
+           entityType = { id: 'dry-run-id', slug: data.entityTypeSlug, label: data.entityTypeSlug, pluralLabel: data.entityTypeSlug + 's', icon: 'box', createdAt: new Date(), metadataSchema: null, isActive: true, parentId: null }
         }
       }
 
@@ -91,9 +91,51 @@ export class ListImporterService {
             metadata: data.isAbstract ? { mediaKind: 'ICON' } : {},
           }
         })
+
+        // Auto-assign to Site Picks
+        const GROUP_MAPPINGS: Record<string, string> = {
+          'entertainment': 'film-tv',
+          'film-tv': 'film-tv',
+          'music': 'music',
+          'food-drink': 'food',
+          'food': 'food',
+          'lifestyle-hobbies': 'craft',
+          'lifestyle': 'craft',
+          'tech': 'tech',
+          'creators': 'creators',
+          'gaming': 'gaming',
+          'career': 'career',
+          'travel': 'travel',
+          'sports': 'sports',
+          'literature': 'books',
+          'books': 'books',
+          'craft': 'craft'
+        }
+
+        const sitePickSlug = GROUP_MAPPINGS[group!.slug]
+        if (sitePickSlug) {
+          const sitePickGroup = await db.sitePickGroup.findUnique({ where: { slug: sitePickSlug } })
+          if (sitePickGroup) {
+            const existing = await db.sitePickItem.findUnique({
+              where: {
+                groupId_categoryId: { groupId: sitePickGroup.id, categoryId: category.id }
+              }
+            })
+            if (!existing) {
+              await db.sitePickItem.create({
+                data: {
+                  groupId: sitePickGroup.id,
+                  categoryId: category.id,
+                  sortOrder: 0
+                }
+              })
+            }
+          }
+        }
       }
 
       for (const val of data.values) {
+
         const entitySlug = this.slugify(val)
         
         const entity = await db.entity.findUnique({

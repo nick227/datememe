@@ -175,6 +175,9 @@ importers:
       sharp:
         specifier: ^0.35.4
         version: 0.35.4(@types/node@20.19.43)
+      zod:
+        specifier: ^3.22.4
+        version: 3.25.76
     devDependencies:
       '@apidevtools/swagger-parser':
         specifier: ^10.1.0

@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { StyleSheet } from 'react-native'
 import Animated, { FadeIn } from 'react-native-reanimated'
 import { Box, colors } from '../../theme'
-import { Typography } from '../Typography'
 import { Image as ImageIcon } from 'lucide-react-native'
 
 type Props = {
@@ -17,11 +16,9 @@ type Props = {
 }
 
 export function SmartImage({ uri, fallbackText, aspectRatio = 16 / 9, width = '100%', height, round, testID, style }: Props) {
-  const [loaded, setLoaded] = useState(false)
   const [error, setError] = useState(false)
 
   const showFallback = !uri || error
-  const initial = (fallbackText || '?').charAt(0).toUpperCase()
   
   // Scale typography down if it's a tiny thumbnail (like River row)
   const isTiny = height !== undefined && typeof height === 'number' && height <= 60
@@ -51,7 +48,6 @@ export function SmartImage({ uri, fallbackText, aspectRatio = 16 / 9, width = '1
             source={{ uri }}
             style={StyleSheet.absoluteFill}
             resizeMode="cover"
-            onLoad={() => setLoaded(true)}
             onError={() => setError(true)}
             entering={FadeIn.duration(400)}
           />

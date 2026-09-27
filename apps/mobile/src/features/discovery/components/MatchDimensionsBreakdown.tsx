@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native'
 import type { MatchInsight } from '../../../navigation/types'
 import { Typography } from '../../../ui/Typography'
-import { colors, radius, spacing, type } from '../../../theme'
+import { colors, spacing, type } from '../../../theme'
 
 type Props = {
   insights: MatchInsight[]
@@ -12,7 +12,6 @@ export function MatchDimensionsBreakdown({ insights }: Props) {
 
   return (
     <View style={styles.container}>
-      <Typography variant="label" style={styles.sectionLabel}>MATCH DIMENSIONS</Typography>
       <View style={styles.grid}>
         {insights.map((insight, idx) => (
           <View key={idx} style={styles.card}>

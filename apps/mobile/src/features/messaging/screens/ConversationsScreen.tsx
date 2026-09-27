@@ -172,7 +172,6 @@ export function ConversationsScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   listContent: { paddingBottom: spacing.xxl },
   headerContainer: {
-    maxWidth: 800,
     width: '100%',
     alignSelf: 'center',
   },
@@ -187,7 +186,6 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: colors.border,
     marginLeft: 56 + spacing.md + spacing.lg,
-    maxWidth: 800 - (56 + spacing.md + spacing.lg),
     width: '100%',
     alignSelf: 'center',
   }

@@ -148,7 +148,7 @@ export function PreviewListCard({ list, category, matchContext, ownerName, viewe
           ) : (
             <Pressable onPress={onPressTitle} disabled={!onPressTitle} hitSlop={6}>
               <Typography variant="label" style={styles.compareNotTaken}>
-                You haven't taken this{onPressTitle ? ' — take it' : ''}
+                You haven&apos;t taken this{onPressTitle ? ' — take it' : ''}
               </Typography>
             </Pressable>
           )}

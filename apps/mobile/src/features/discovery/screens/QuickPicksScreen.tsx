@@ -21,7 +21,7 @@ import { hapticSuccess, hapticMedium, hapticHeavy } from '../../../lib/haptics'
 import type { DiscoveryStackParamList } from '../../../navigation/types'
 import { Typography } from '../../../ui/Typography'
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window')
+const { width: SCREEN_WIDTH } = Dimensions.get('window')
 const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.3
 
 type Props = NativeStackScreenProps<DiscoveryStackParamList, 'QuickPicks'>

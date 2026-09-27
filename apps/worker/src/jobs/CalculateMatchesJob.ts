@@ -326,4 +326,9 @@ export async function calculateMatchesJob(payload: { profileId: string }) {
       await db.$transaction(deletePromises.slice(i, i + chunkSize))
     }
   }
+
+  await db.profile.update({
+    where: { id: profileId },
+    data: { matchesUpdatedAt: new Date() }
+  })
 }

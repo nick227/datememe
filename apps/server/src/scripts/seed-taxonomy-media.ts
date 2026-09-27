@@ -333,7 +333,7 @@ const fixtures = [
 
 // Reviewed fallback titles: retain this provider's own identity and credit.
 // These are image IDs, never external identities for the taxonomy entity.
-const fallbacks = [] as const
+const fallbacks: { name: string; type: string; id: string; title: string }[] = []
 
 const media = new TaxonomyMediaService()
 const report: object[] = []
@@ -367,7 +367,13 @@ async function main() {
     report.push({ label, status: 'imported', provider: candidate.provider, sourceId: candidate.externalId, sha256: asset.sha256 })
   }
 
-  for (const fixture of fixtures) {
+  const start = parseInt(process.env.START || '0', 10)
+  const limit = parseInt(process.env.LIMIT || '50', 10)
+  const batch = fixtures.slice(start, start + limit)
+  
+  console.log(`Processing batch of ${batch.length} fixtures (Start: ${start}, Limit: ${limit})...`)
+
+  for (const fixture of batch) {
     const type = await db.entityType.findUnique({ where: { slug: fixture.type } })
     const entity = type && await db.entity.findFirst({ where: { entityTypeId: type.id, canonicalName: fixture.name } })
     if (!type || !entity) { report.push({ label: fixture.name, status: 'missing-taxonomy-record' }); continue }

@@ -45,10 +45,19 @@ async function run() {
   execSync(`env DATABASE_URL="${dbUrl}" npx tsx apps/server/src/scripts/import-batch6.ts`, { stdio: 'inherit' })
 
   console.log('\n=======================================')
+  console.log('🚀 STEP 3.8: Importing Batch 7 Lists (Memes & Internet Culture)')
+  console.log('=======================================')
+  execSync(`env DATABASE_URL="${dbUrl}" npx tsx apps/server/src/scripts/import-batch7.ts`, { stdio: 'inherit' })
+
+  console.log('\n=======================================')
+  console.log('🚀 STEP 3.9: Importing Batch 8 Lists (Sports & Politics)')
+  console.log('=======================================')
+  execSync(`env DATABASE_URL="${dbUrl}" npx tsx apps/server/src/scripts/import-batch8.ts`, { stdio: 'inherit' })
+
+  console.log('\n=======================================')
   console.log('🚀 STEP 4: Fetching Wikipedia/Wikidata Media (This might take a minute)')
   console.log('=======================================')
   execSync(`env DATABASE_URL="${dbUrl}" npx tsx apps/server/src/scripts/seed-taxonomy-media.ts`, { stdio: 'inherit' })
-
 
   console.log('\n✅ All production seed steps completed successfully!')
 }

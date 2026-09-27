@@ -1,7 +1,7 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native'
+import { Pressable, StyleSheet, View } from 'react-native'
 import { Typography } from './Typography'
 import { Icon } from './Icon'
-import { spacing, type } from '../theme'
+import { spacing } from '../theme'
 
 type Props = {
   testID?: string

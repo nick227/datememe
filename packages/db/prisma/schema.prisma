@@ -140,6 +140,7 @@ model Profile {
   onboardingStep  Int      @default(0)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+  matchesUpdatedAt DateTime?
 
   user                   User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
   seekingGenders         ProfileSeekingGender[]

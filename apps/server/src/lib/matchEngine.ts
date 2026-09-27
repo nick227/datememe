@@ -72,12 +72,12 @@ export async function computeCompatibility(profileIdA: string, profileIdB: strin
   const sortedAxes = Array.from(sharedAxesMap.entries()).sort((a, b) => b[1] - a[1]);
   
   if (sortedAxes.length > 0) {
-    const topAxis = sortedAxes[0][0];
+    const topAxis = sortedAxes[0]![0];
     const capitalizedTopAxis = topAxis.charAt(0).toUpperCase() + topAxis.slice(1);
     insights.push(`Strongest overlap: ${capitalizedTopAxis}`);
     
     if (sortedAxes.length > 1) {
-      const secondAxis = sortedAxes[1][0];
+      const secondAxis = sortedAxes[1]![0];
       const capitalizedSecondAxis = secondAxis.charAt(0).toUpperCase() + secondAxis.slice(1);
       insights.push(`Shared interests: ${capitalizedTopAxis}, ${capitalizedSecondAxis}`);
     }
@@ -112,17 +112,17 @@ export async function updateAllMatches() {
   
   for (let i = 0; i < profiles.length; i++) {
     for (let j = i + 1; j < profiles.length; j++) {
-      const pA = profiles[i].id;
-      const pB = profiles[j].id;
+      const pA = profiles[i]!.id;
+      const pB = profiles[j]!.id;
       
       const { score, sharedItemsCount, sharedFavorites, insights } = await computeCompatibility(pA, pB);
       
       const [idA, idB] = [pA, pB].sort();
       
       await db.compatibilityScore.upsert({
-        where: { profileIdA_profileIdB: { profileIdA: idA, profileIdB: idB } },
+        where: { profileIdA_profileIdB: { profileIdA: idA!, profileIdB: idB! } },
         update: { score, sharedItemsCount, sharedFavorites, insights },
-        create: { profileIdA: idA, profileIdB: idB, score, sharedItemsCount, sharedFavorites, insights },
+        create: { profileIdA: idA!, profileIdB: idB!, score, sharedItemsCount, sharedFavorites, insights },
       });
       updatedCount++;
     }

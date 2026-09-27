@@ -212,4 +212,102 @@ export class DiscoveryService {
 
     return { data, meta: { hasMore, nextCursor }, ...(filterNotice ? { filterNotice } : {}) }
   }
+
+  async getFallbackFeed(viewerUserId: string, viewerProfileId: string, opts: DiscoveryFilters) {
+    const limit = normalizeLimit(opts.limit)
+    const cursorStr = opts.cursor ? Buffer.from(opts.cursor, 'base64url').toString('utf8') : null
+    const cursorObj = cursorStr ? JSON.parse(cursorStr) : null
+
+    const viewer = await db.profile.findUnique({
+      where: { id: viewerProfileId },
+      select: {
+        genderIdentity: true,
+        locationLat: true,
+        locationLng: true,
+        birthdate: true,
+        preferredMinAge: true,
+        preferredMaxAge: true,
+        seekingGenders: { select: { gender: true } },
+      },
+    })
+    if (opts.nearMe && (viewer?.locationLat == null || viewer?.locationLng == null)) {
+      return { data: [], meta: { hasMore: false, nextCursor: null }, filterNotice: 'Add your location in your profile to use Near Me.' }
+    }
+    const viewerSeekingGenders = viewer?.seekingGenders.map((g) => g.gender) ?? []
+    const viewerAge = viewer ? computeAge(viewer.birthdate) : null
+
+    let tasteWhitelist: string[] | null = null
+    const facets = (opts.taste ?? []).map(parseTasteFacet).filter((f): f is NonNullable<typeof f> => !!f)
+    if (facets.length) {
+      const engagedSets = await Promise.all(facets.map((f) => getTasteEngagedProfileIds(f)))
+      tasteWhitelist = [...new Set(engagedSets.flat())].filter((id) => id !== viewerProfileId)
+      if (!tasteWhitelist.length) return { data: [], meta: { hasMore: false, nextCursor: null } }
+    }
+
+    let birthdateWhere: DateRange | undefined
+    if (viewer && viewerAge !== null) {
+      birthdateWhere = ageRangeForPreference(viewer.preferredMinAge, viewer.preferredMaxAge)
+      if (opts.ageBucket) birthdateWhere = intersectDateRange(birthdateWhere, ageBucketToBirthdateRange(opts.ageBucket))
+    } else if (opts.ageBucket) {
+      birthdateWhere = ageBucketToBirthdateRange(opts.ageBucket)
+    }
+
+    const candidates = await db.profile.findMany({
+      where: {
+        id: { not: viewerProfileId },
+        isDiscoverable: true,
+        ...(tasteWhitelist ? { id: { in: tasteWhitelist } } : {}),
+        ...(viewerSeekingGenders.length ? { genderIdentity: { in: viewerSeekingGenders } } : {}),
+        ...(viewer?.genderIdentity ? { seekingGenders: { some: { gender: viewer.genderIdentity } } } : {}),
+        ...(birthdateWhere ? { birthdate: birthdateWhere } : {}),
+        ...(viewerAge !== null ? { preferredMinAge: { lte: viewerAge }, preferredMaxAge: { gte: viewerAge } } : {}),
+        NOT: [
+          { swipesReceived: { some: { actorProfileId: viewerProfileId } } },
+          { blocksMade: { some: { blockedProfileId: viewerProfileId } } },
+          { blocksReceived: { some: { blockerProfileId: viewerProfileId } } },
+        ],
+        ...(cursorObj ? { createdAt: { lt: new Date(cursorObj.createdAt) } } : {})
+      },
+      select: { ...PROFILE_FULL_SELECT, birthdate: true, locationLat: true, locationLng: true, createdAt: true },
+      orderBy: { createdAt: 'desc' },
+      take: limit + 1
+    })
+
+    let filterNotice: string | undefined
+    let withinRange = candidates
+    if (opts.nearMe) {
+      if (viewer?.locationLat == null || viewer?.locationLng == null) {
+        withinRange = []
+        filterNotice = 'Add your location in your profile to use Near Me.'
+      } else {
+        withinRange = candidates.filter(
+          (c: any) =>
+            c.locationLat != null &&
+            c.locationLng != null &&
+            haversineKm(viewer.locationLat!, viewer.locationLng!, c.locationLat, c.locationLng) <= DISCOVERY_POLICY.nearMeRadiusKm,
+        )
+      }
+    }
+
+    const fullPhotoAccess = opts.fullPhotoAccess ?? (await resolveEntitlements(viewerUserId))['profile.fullPhotoAccess']
+
+    const hasMore = withinRange.length > limit
+    const pageProfiles = withinRange.slice(0, limit)
+    
+    const data = pageProfiles.map(profile => ({
+      profile: serializeProfile(profile, { revealPhoto: fullPhotoAccess }),
+      age: computeAge(profile.birthdate),
+      sharedItemsCount: 0,
+      sharedFavorites: [],
+      matchPercentage: undefined, // No match score in fallback mode!
+      insights: []
+    }))
+
+    const last = pageProfiles[pageProfiles.length - 1]
+    const nextCursor = hasMore && last
+      ? Buffer.from(JSON.stringify({ createdAt: last.createdAt.toISOString() })).toString('base64url')
+      : null
+
+    return { data, meta: { hasMore, nextCursor }, ...(filterNotice ? { filterNotice } : {}) }
+  }
 }

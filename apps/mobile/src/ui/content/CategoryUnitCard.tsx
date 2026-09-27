@@ -74,11 +74,12 @@ function CompactGridCard({ unit, onPress }: { unit: ContentUnit; onPress: () => 
               <Typography style={styles.compactDot}>{'● '}</Typography>
               {metric.value} {metric.label.toLowerCase()}
             </Typography>
-          ) : (
+          ) : null}
+          {unit.subtitle ? (
             <Typography variant="bodyMuted" style={styles.compactMeta} numberOfLines={1}>
               {unit.subtitle || ' '}
             </Typography>
-          )}
+          ) : null}
         </View>
         <ImageCredit credit={imageCredit} />
       </CardShell.Body>
@@ -258,8 +259,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 8,
     elevation: 2,
+    marginBottom: 20,
   },
-  compactImageWrap: { position: 'relative', aspectRatio: 4 / 3, width: '100%', overflow: 'hidden' },
+  compactImageWrap: { position: 'relative', aspectRatio: 16 / 9, width: '100%', overflow: 'hidden' },
   compactBody: {
     borderTopWidth: 0,
     padding: spacing.md,
@@ -267,7 +269,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'space-between',
   },
-  compactTitle: { fontSize: 18, lineHeight: 22, marginBottom: 0, fontWeight: '700', minHeight: 44 },
+  compactTitle: { fontSize: 18, lineHeight: 22, marginBottom: 0, fontWeight: '700' },
   compactMeta: { fontSize: 13, minHeight: 20 },
   compactDot: { color: colors.accent },
   denseStat: { fontSize: 12 },

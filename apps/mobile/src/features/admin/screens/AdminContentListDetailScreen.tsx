@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { ScrollView, StyleSheet, View } from 'react-native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { useQueryClient } from '@tanstack/react-query'
@@ -11,6 +11,7 @@ import { TextField } from '../../../ui/TextField'
 import { SelectField } from '../../../ui/SelectField'
 import { colors, radius, spacing } from '../../../theme'
 import type { AdminStackParamList } from '../../../navigation/types'
+import { runCatalogOperations, describeCatalogRun } from '../runCatalogOperations'
 
 type Props = NativeStackScreenProps<AdminStackParamList, 'AdminContentListDetail'>
 export function AdminContentListDetailScreen({ navigation, route }: Props) {
@@ -24,26 +25,16 @@ export function AdminContentListDetailScreen({ navigation, route }: Props) {
 
   const [title, setTitle] = useState(draft?.title || '')
   const [groupId, setGroupId] = useState(draft?.groupId || '')
-
-  useEffect(() => {
-    if (draft) {
-      setTitle(draft.title)
-      setGroupId(draft.groupId || '')
-    }
-  }, [draft?.title, draft?.groupId])
+  // Seed the form once per draft (the draft arrives after the first render),
+  // so background refetches never clobber what the admin is typing.
+  const [seededDraftId, setSeededDraftId] = useState(draft?.id)
+  if (draft && draft.id !== seededDraftId) {
+    setSeededDraftId(draft.id)
+    setTitle(draft.title)
+    setGroupId(draft.groupId || '')
+  }
 
   const refresh = () => queryClient.invalidateQueries({ queryKey: ['admin', 'catalog'] })
-
-  const executeBackground = async (ops: CatalogOperation[]) => {
-    let completed = 0, failed = 0
-    for (const op of ops) {
-      try {
-        const result = await catalogCommand<CatalogOperation>({ action: 'execute', id: op.id })
-        if (result.status === 'SUCCEEDED') completed++; else failed++
-      } catch { failed++ }
-      await refresh()
-    }
-  }
 
   const saveDraft = async (updates: Partial<CatalogCommand>) => {
     if (!draft) return
@@ -71,7 +62,7 @@ export function AdminContentListDetailScreen({ navigation, route }: Props) {
       await saveDraft({ title, groupId, entityTypeId: typeId, approvalState: 'APPROVED' })
       
       const ops = await catalogCommand<CatalogOperation[]>({ action: 'enqueue', kind: 'VALUES', ids: [draft.id], count: 20 })
-      await executeBackground(ops)
+      const summary = await runCatalogOperations(ops, refresh)
       
       // Auto-resolve values
       const candidates = state.data?.draft?.candidates || []
@@ -85,7 +76,7 @@ export function AdminContentListDetailScreen({ navigation, route }: Props) {
         }
       }
       
-      setMessage('')
+      setMessage(describeCatalogRun(summary))
     } catch (e) {
       setMessage(e instanceof Error ? e.message : String(e))
     } finally {

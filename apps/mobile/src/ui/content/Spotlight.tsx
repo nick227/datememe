@@ -1,7 +1,5 @@
-import { StyleSheet, View } from 'react-native'
-import { Box, spacing } from '../../theme'
+import { Box } from '../../theme'
 import { Typography } from '../Typography'
-import { Skeleton } from '../Skeleton'
 import { ErrorState } from '../ErrorState'
 import { ContentUnitCard } from './ContentUnitCard'
 import { CardSkeleton } from './CardSkeleton'

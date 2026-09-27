@@ -1,7 +1,6 @@
 import { StyleSheet, View } from 'react-native'
 import { Typography } from '../Typography'
 import { PressableScale } from '../PressableScale'
-import { CardShell } from './CardShell'
 import { SmartImage } from './SmartImage'
 import { MicroBadge } from './MicroBadge'
 import { Box, colors, spacing } from '../../theme'

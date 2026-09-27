@@ -1,5 +1,4 @@
 import { StyleSheet, View } from 'react-native'
-import { Typography } from '../Typography'
 import { borderWidth, colors, spacing } from '../../theme'
 
 /**
@@ -11,10 +10,6 @@ import { borderWidth, colors, spacing } from '../../theme'
 export function ExploreBoundary() {
   return (
     <View testID="explore-boundary" style={styles.row}>
-      <View style={styles.rule} />
-      <Typography variant="label" style={styles.label}>
-        Explore more
-      </Typography>
       <View style={styles.rule} />
     </View>
   )

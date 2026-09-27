@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Pressable, StyleSheet, Text, View } from 'react-native'
+import { Pressable, StyleSheet, Text } from 'react-native'
 import { borderWidth, colors, radius, spacing, type, modalHeight } from '../theme'
 import { AnimatedSheet } from './AnimatedSheet'
 

@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Box, colors } from '../theme'
 
-const MAX_WIDTH = { narrow: 440, wide: 960 }
+const MAX_WIDTH = { narrow: 960, wide: 1340 }
 
 type Props = {
   testID?: string

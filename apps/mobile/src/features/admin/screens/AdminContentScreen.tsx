@@ -9,6 +9,7 @@ import { Typography } from '../../../ui/Typography'
 import { Button } from '../../../ui/Button'
 import { colors, radius, spacing } from '../../../theme'
 import type { AdminStackParamList } from '../../../navigation/types'
+import { runCatalogOperations, describeCatalogRun } from '../runCatalogOperations'
 
 type Props = NativeStackScreenProps<AdminStackParamList, 'AdminContent'>
 export function AdminContentScreen({ navigation }: Props) {
@@ -20,24 +21,12 @@ export function AdminContentScreen({ navigation }: Props) {
 
   const refresh = () => queryClient.invalidateQueries({ queryKey: ['admin', 'catalog'] })
 
-  const executeBackground = async (ops: CatalogOperation[]) => {
-    let completed = 0, failed = 0
-    for (const op of ops) {
-      try {
-        const result = await catalogCommand<CatalogOperation>({ action: 'execute', id: op.id })
-        if (result.status === 'SUCCEEDED') completed++; else failed++
-      } catch { failed++ }
-      await refresh()
-    }
-  }
-
   const generateConcepts = async () => {
     setBusy(true)
     setMessage('Generating concepts...')
     try {
       const ops = await catalogCommand<CatalogOperation[]>({ action: 'enqueue', kind: 'CONCEPTS', count: 50, brief: 'Everyday interests, culture, and things people love' })
-      await executeBackground(ops)
-      setMessage('')
+      setMessage(describeCatalogRun(await runCatalogOperations(ops, refresh)))
     } catch (e) {
       setMessage(e instanceof Error ? e.message : String(e))
     } finally {
@@ -54,8 +43,7 @@ export function AdminContentScreen({ navigation }: Props) {
       await catalogCommand({ action: 'concept-status', ids: selectedConcepts, status: 'USE' })
       
       const ops = await catalogCommand<CatalogOperation[]>({ action: 'enqueue', kind: 'LIST_IDEAS', ids: selectedConcepts, count: 10 })
-      await executeBackground(ops)
-      setMessage('')
+      setMessage(describeCatalogRun(await runCatalogOperations(ops, refresh)))
       setSelectedConcepts([])
     } catch (e) {
       setMessage(e instanceof Error ? e.message : String(e))

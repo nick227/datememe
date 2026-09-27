@@ -1,7 +1,6 @@
 import { FlatList, StyleSheet, View } from 'react-native'
 import { colors, radius, spacing } from '../../../theme'
 import { FastPickTile } from './FastPickTile'
-import { Typography } from '../../../ui/Typography'
 
 type Entity = {
   id: string

@@ -1,4 +1,4 @@
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native'
+import { Image, Pressable, StyleSheet, View } from 'react-native'
 import { Plus, ImageIcon } from 'lucide-react-native'
 import { colors, radius, spacing, type } from '../../../theme'
 import { Typography } from '../../../ui/Typography'

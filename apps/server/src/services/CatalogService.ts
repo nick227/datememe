@@ -74,7 +74,7 @@ export class CatalogService {
     const brief = body.brief === undefined ? '' : text(body.brief, 'Brief', 2000)
     const ids: (string | null)[] = kind === 'CONCEPTS' ? [null] : this.ids(body.ids)
     // Validate all targets before creating any jobs in the batch.
-    const data = []
+    const data: any[] = []
     for (const targetId of ids) {
       const input = await this.context(kind, targetId, brief, count)
       data.push({ kind, targetId, input, ...renderCatalogPrompts(kind, input), requestedByUserId: actor })

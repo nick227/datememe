@@ -83,7 +83,7 @@ export function CategoryRankingScreen({ route, navigation }: Props) {
               </>
             ) : (
               <>
-                <Typography variant="heading">You haven't taken this yet</Typography>
+                <Typography variant="heading">You haven&apos;t taken this yet</Typography>
                 <Button testID="category-ranking.take" label="Take this list" onPress={openListBuilder} />
               </>
             )}

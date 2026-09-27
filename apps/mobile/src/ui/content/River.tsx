@@ -1,6 +1,6 @@
-import { StyleSheet, View } from 'react-native'
+import { View } from 'react-native'
 import Animated, { FadeInDown } from 'react-native-reanimated'
-import { Box, spacing } from '../../theme'
+import { Box } from '../../theme'
 import { Typography } from '../Typography'
 import { Skeleton } from '../Skeleton'
 import { EmptyState } from '../EmptyState'
@@ -61,5 +61,3 @@ function RiverSkeleton() {
     </Box>
   )
 }
-
-const styles = StyleSheet.create({})
