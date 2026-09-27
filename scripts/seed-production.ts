@@ -54,12 +54,13 @@ async function run() {
   console.log('=======================================')
   execSync(`env DATABASE_URL="${dbUrl}" npx tsx apps/server/src/scripts/import-batch8.ts`, { stdio: 'inherit' })
 
-  console.log('\n=======================================')
-  console.log('🚀 STEP 4: Fetching Wikipedia/Wikidata Media (This might take a minute)')
-  console.log('=======================================')
-  execSync(`env DATABASE_URL="${dbUrl}" npx tsx apps/server/src/scripts/seed-taxonomy-media.ts`, { stdio: 'inherit' })
-
   console.log('\n✅ All production seed steps completed successfully!')
+  // Media is deliberately not seeded from here: this script runs on your
+  // machine, so imported files would land on your disk while production
+  // records their URLs. Import media inside the server container instead:
+  //   railway ssh --service server -- pnpm --filter server seed:taxonomy-media
+  console.log('ℹ️  Media not imported. Run inside the server container:')
+  console.log('   railway ssh --service server -- pnpm --filter server seed:taxonomy-media')
 }
 
 run().catch((e) => {

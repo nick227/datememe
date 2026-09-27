@@ -2,6 +2,7 @@ import { createHash } from 'crypto'
 import sharp from 'sharp'
 import { db } from '@project/db'
 import { createStorageProvider } from '../providers/storage'
+import { assertMediaWritesAreServable, isServableAsset } from '../lib/mediaIntegrity'
 import { getImageProvider, imageProviders, type ImageCandidate } from './imageProviders'
 
 const storage = createStorageProvider()
@@ -163,8 +164,12 @@ export class TaxonomyMediaService {
   }
 
   private async storeNormalized(buffer: Buffer, originalName: string) {
+    assertMediaWritesAreServable()
     const sha256 = createHash('sha256').update(buffer).digest('hex')
-    const existing = await db.mediaAsset.findFirst({ where: { sha256, storageKey: { not: null } } })
+    // Share bytes with an identical earlier import, but only if that copy is
+    // actually served by this deployment — never inherit a dead URL.
+    const existing = (await db.mediaAsset.findMany({ where: { sha256, storageKey: { not: null } }, orderBy: { createdAt: 'asc' } }))
+      .find(isServableAsset)
     if (existing?.storageKey && existing.publicUrl) {
       return { key: existing.storageKey, url: existing.publicUrl, mimeType: existing.mimeType!, size: existing.byteSize! }
     }
@@ -175,12 +180,6 @@ export class TaxonomyMediaService {
     const where = targetWhere(target)
     const asset = await db.$transaction(async (tx) => {
       await tx.mediaAsset.updateMany({ where: { ...where, isPrimary: true }, data: { isPrimary: false } })
-      const duplicate = data.sha256
-        ? await tx.mediaAsset.findFirst({ where: { sha256: data.sha256 as string }, orderBy: { createdAt: 'asc' } })
-        : null
-      const reusableStorage = duplicate
-        ? { storageKey: duplicate.storageKey, publicUrl: duplicate.publicUrl, mimeType: duplicate.mimeType, byteSize: duplicate.byteSize }
-        : {}
       // Re-importing the same source for the same target is idempotent. Separate
       // targets retain separate provenance rows while sharing the stored bytes.
       const sameSource = await tx.mediaAsset.findFirst({ where: {
@@ -190,11 +189,13 @@ export class TaxonomyMediaService {
         sourceId: (data.sourceId as string) ?? null,
       } })
 
-      if (data.sha256 && !sameSource) {
+      // Only entities compete for an image: a type or list cover deliberately
+      // reuses one of its entities' images.
+      if (data.sha256 && !sameSource && target.entityId) {
         const otherEntity = await tx.mediaAsset.findFirst({ 
           where: { 
             sha256: data.sha256 as string,
-            entityId: { not: target.entityId ?? null },
+            entityId: { not: target.entityId },
             isPrimary: true
           } 
         })
@@ -203,7 +204,7 @@ export class TaxonomyMediaService {
         }
       }
 
-      const values = { ...target, ...data, ...reusableStorage, isPrimary: true } as any
+      const values = { ...target, ...data, isPrimary: true } as any
       const created = sameSource
         ? await tx.mediaAsset.update({ where: { id: sameSource.id }, data: values })
         : await tx.mediaAsset.create({ data: values })
