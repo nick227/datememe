@@ -55,7 +55,10 @@ async function main() {
   const invalid = reports.filter((r) => r.status === 'ERROR')
 
   if (!dryRun && !invalid.length) {
-    for (const [i, { list }] of lists.entries()) reports[i] = { ...(await importer.importList(list)), file: reports[i]!.file }
+    // Lists that create an entity type go first, so a list relying on that
+    // type (validated via the batch manifest) finds it regardless of file order.
+    const order = [...lists.keys()].sort((a, b) => Number(!lists[a]!.list.createEntityType) - Number(!lists[b]!.list.createEntityType))
+    for (const i of order) reports[i] = { ...(await importer.importList(lists[i]!.list)), file: reports[i]!.file }
   }
 
   for (const r of reports) {
