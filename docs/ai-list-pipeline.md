@@ -82,7 +82,9 @@ Everything else goes to `catalog/review/identities.<environment>.json` (`identit
 Allowed classes live in `catalog/identity-classes.json`; `media:identify` reads `identity-classes.generated.json`, which adds every P279* subclass (so "action role-playing game" counts as a video game). *Human* and *literary work* are deliberately not expanded — their subclasses are roles and comics/songs, not people or books. After editing the source, regenerate: `pnpm --filter server exec tsx src/scripts/generate-identity-classes.ts` (identify refuses a stale generated file).
 
 ### List covers
-Every list shows its **own** cover, and no two active lists share one. `media:sync` assigns covers from each list's choices (in list order; a broad list uses its type's most-used entities), reusing the stored file. A list with no unused image among its choices shows the placeholder — never another list's photo, never its type's photo. `audit:media` fails on a shared cover.
+Lists carry the imagery; values are shown as text (mobile `ui/mediaPolicy.ts`, `SHOW_VALUE_IMAGES = false`). A list's cover is **picked by a person**: `covers:propose` searches Openverse with the list's brief in `catalog/cover-briefs.json` (2–3 words; every word must match) for reusable wide images from approved hosts (StockSnap, Rawpixel, Wikimedia, Flickr; CC0 first) and writes 6 candidates per list to `catalog/review/covers.<env>.json` plus a `.html` contact sheet. Set `"approve"` to a number (1–6), an Openverse id, or `"none"`, then `pnpm prod:publish-catalog --apply-review`; `media:sync` downloads approved covers in the container at up to 1600px with their credit. New lists need a brief.
+
+Every list shows its **own** cover, and no two active lists share one. Until a person picks one, `media:sync` assigns a cover from each list's choices (in list order; a broad list uses its type's most-used entities), reusing the stored file. A list with no unused image among its choices shows the placeholder — never another list's photo, never its type's photo. `audit:media` fails on a shared cover.
 
 ## Production Safety
 19. All stages must be idempotent.

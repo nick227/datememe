@@ -19,7 +19,8 @@ import { assignCategoryCovers } from '../lib/categoryCovers'
 //   2. fetches an image for up to LIMIT verified identities that don't yet have
 //      a servable one, skipping known no-image items for RECHECK_DAYS
 //   3. attaches the fixture type/list covers that are missing
-//   4. gives every other list its own cover from its choices, never a repeat
+//   4. downloads list covers a person approved (covers:propose)
+//   5. gives every other list its own cover from its choices, never a repeat
 // Unverified identities are never touched. The last line is a machine-readable
 // `MEDIA_SYNC {…}` summary with `remaining`; run again until it is 0.
 // Exit 1 only for unexpected failures (rate limits, deleted items, bugs).
@@ -172,8 +173,31 @@ async function main() {
     }
   }
 
-  // 4. Every other list gets its own cover from its choices — never a repeat.
-  const covers = await assignCategoryCovers()
+  // 4. Covers a person approved (covers:propose), downloaded at cover quality.
+  const approvedCovers = { imported: 0, rejected: 0, failed: 0 }
+  for (const c of await db.category.findMany({ where: { isActive: true }, select: { id: true, slug: true, metadata: true } })) {
+    const cover = (c.metadata as any)?.cover
+    if (cover?.status !== 'approved') continue
+    const current = await db.mediaAsset.findFirst({ where: { categoryId: c.id, isPrimary: true, provider: cover.provider, sourceId: cover.id } })
+    if (current && isServableAsset(current)) continue
+    try {
+      await media.importAndAttach({ categoryId: c.id }, {
+        provider: cover.provider, externalId: cover.id, title: cover.title, previewUrl: cover.url, sourceUrl: cover.url, landingUrl: cover.landingUrl,
+        creator: cover.creator, license: cover.license, licenseUrl: cover.licenseUrl, attribution: cover.attribution,
+        importRule: 'IMPORT_ALLOWED', metadata: { approvedCover: true, source: cover.source },
+      }, actor.id, actor.role, { maxDimension: 1600 })
+      approvedCovers.imported++
+      results.push({ label: `cover:${c.slug}`, status: 'imported' })
+    } catch (error: any) {
+      const reason = error?.message ?? String(error)
+      isExpectedRejection(error) ? approvedCovers.rejected++ : (approvedCovers.failed++, counts.failed++)
+      results.push({ label: `cover:${c.slug}`, status: isExpectedRejection(error) ? 'rejected' : 'failed', reason })
+    }
+    await new Promise((resolve) => setTimeout(resolve, 1000))
+  }
+
+  // 5. Every other list gets its own cover from its choices — never a repeat.
+  const covers = { approved: approvedCovers, ...(await assignCategoryCovers()) }
 
   for (const r of results) console.log(`${r.status.padEnd(22)} ${r.label}${r.reason ? ` — ${r.reason}` : ''}`)
   console.log(`MEDIA_SYNC ${JSON.stringify({ ...counts, covers })}`)

@@ -9,6 +9,7 @@
     "catalog:validate": "tsx src/scripts/catalog-publish.ts --dry-run",
     "catalog:publish": "tsx src/scripts/catalog-publish.ts",
     "media:identify": "tsx src/scripts/media-identify.ts",
+    "covers:propose": "tsx src/scripts/covers-propose.ts",
     "media:sync": "tsx src/scripts/media-sync.ts",
     "derived:enqueue": "tsx src/scripts/derived-enqueue.ts",
     "audit:media": "tsx src/scripts/audit-media.ts",

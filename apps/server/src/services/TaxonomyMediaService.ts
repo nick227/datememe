@@ -4,6 +4,7 @@ import { db } from '@project/db'
 import { createStorageProvider } from '../providers/storage'
 import { assertMediaWritesAreServable, isServableAsset } from '../lib/mediaIntegrity'
 import { mergeRefMetadata, verification, verificationOf } from '../lib/wikidataIdentity'
+import { isApprovedImageHost } from '../lib/imageHosts'
 import { getImageProvider, imageProviders, type ImageCandidate } from './imageProviders'
 
 const storage = createStorageProvider()
@@ -74,7 +75,8 @@ export class TaxonomyMediaService {
     }, input.actorUserId, input.actorRole)
   }
 
-  async importAndAttach(target: Target, candidate: ImageCandidate, actorUserId: string, actorRole: string) {
+  /** `maxDimension`: list covers keep more resolution (1600) than value images (1000). */
+  async importAndAttach(target: Target, candidate: ImageCandidate, actorUserId: string, actorRole: string, opts: { maxDimension?: number } = {}) {
     assertTarget(target)
     if (!getImageProvider(candidate.provider)) {
       throw { statusCode: 400, message: 'Unknown image provider' }
@@ -89,11 +91,7 @@ export class TaxonomyMediaService {
     } catch {
       throw { statusCode: 400, message: 'Image source URL is invalid' }
     }
-    const allowedHosts: Record<string, string[]> = {
-      wikimedia: ['upload.wikimedia.org', 'thumb.wikimedia.org', 'commons.wikimedia.org'],
-      openverse: ['api.openverse.org'],
-    }
-    if (!allowedHosts[candidate.provider]?.includes(parsedUrl.hostname)) {
+    if (!isApprovedImageHost(candidate.provider, parsedUrl.hostname)) {
       throw { statusCode: 400, message: 'Image source is not an approved provider host' }
     }
     const response = await fetch(parsedUrl, { signal: AbortSignal.timeout(30000), headers: { 'User-Agent': 'Datememe/1.0 (taxonomy image importer)' } })
@@ -103,7 +101,7 @@ export class TaxonomyMediaService {
     const buffer = Buffer.from(await response.arrayBuffer())
     if (buffer.length > MAX_REMOTE_BYTES) throw { statusCode: 413, message: 'Remote image exceeds the import limit' }
 
-    const normalized = await this.normalize(buffer, response.headers.get('content-type') ?? 'image/jpeg')
+    const normalized = await this.normalize(buffer, response.headers.get('content-type') ?? 'image/jpeg', opts.maxDimension)
     const stored = await this.storeNormalized(normalized.buffer, `${candidate.provider}-${candidate.externalId}.webp`)
     return this.attachAsset(target, {
       sourceType: 'PROVIDER_IMPORT',
@@ -148,7 +146,7 @@ export class TaxonomyMediaService {
     }, actorUserId, actorRole)
   }
 
-  private async normalize(buffer: Buffer, mimeType: string) {
+  private async normalize(buffer: Buffer, mimeType: string, maxDimension = 1000) {
     const baseMimeType = mimeType.split(';')[0] ?? ''
     if (!['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif'].includes(baseMimeType)) {
       throw { statusCode: 415, message: 'Only raster image formats can be used for taxonomy thumbnails' }
@@ -164,7 +162,7 @@ export class TaxonomyMediaService {
       if (aspectRatio < 0.4 || aspectRatio > 2.5) {
         throw { statusCode: 415, message: 'Image fails quality gate: extreme aspect ratio' }
       }
-      const output = await source.rotate().resize({ width: 1000, height: 1000, fit: 'inside', withoutEnlargement: true }).webp({ quality: 82 }).toBuffer()
+      const output = await source.rotate().resize({ width: maxDimension, height: maxDimension, fit: 'inside', withoutEnlargement: true }).webp({ quality: 82 }).toBuffer()
       return { buffer: output, width: metadata.width, height: metadata.height }
     } catch (error: any) {
       // Keep the quality-gate reason (size, aspect ratio) rather than

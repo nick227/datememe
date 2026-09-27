@@ -15,13 +15,17 @@ import { resolve } from 'path'
 //   catalog:publish    local -> Railway MySQL (DB-only work may run locally)
 //   media:identify     local -> Railway MySQL + Wikidata; unsure cases go to
 //                      catalog/review/identities.<env>.json and never block
+//   covers:propose     local -> Railway MySQL + Openverse; cover candidates for
+//                      lists without one go to catalog/review/covers.<env>.json
+//                      (+ .html contact sheet) for a person to pick
 //   media:sync         inside the server container (writes image files, so it
 //                      must run where the volume is), repeated until done
 //   derived:enqueue    local -> Railway MySQL (the worker does the rebuild)
 //   audit              inside the server container
 //
 // --dry-run stops after validation. --skip-media skips identify + sync.
-// --apply-review first applies your decisions in catalog/review/identities.<env>.json.
+// --apply-review first applies your decisions in catalog/review/identities.<env>.json
+// and catalog/review/covers.<env>.json.
 
 const root = resolve(__dirname, '..')
 const args = process.argv.slice(2)
@@ -45,6 +49,8 @@ function report() {
   if (catalog) lines.push(`catalog:     ${catalog.lists} lists checked, ${catalog.newCategories} new categories, ${catalog.newEntities} new entities, ${catalog.errors} errors${s.publish ? '' : ' (validate only)'}`)
   if (s.review) lines.push(`review:      ${s.review.applied} decisions applied, ${s.review.stillPending} still pending`)
   if (s.identify) lines.push(`identity:    ${s.identify.autoAccepted} accepted, ${s.identify.toReview} to review, ${s.identify.remaining} not yet checked${s.identify.stoppedEarly ? ' (rate-limited, resumes next run)' : ''}; ${s.identify.verified} already verified`)
+  if (s.coversReview) lines.push(`cover picks: ${s.coversReview.applied} applied, ${s.coversReview.stillPending} still pending`)
+  if (s.covers) lines.push(`covers:      ${s.covers.proposed} lists proposed, ${s.covers.awaitingReview} awaiting your pick, ${s.covers.decided} decided${s.covers.stoppedEarly ? ' (rate-limited, resumes next run)' : ''}`)
   if (s.media) lines.push(`media:       ${s.media.imported} imported, ${s.media.noImage} no image, ${s.media.rejected} rejected, ${s.media.failed} failed, ${s.media.remaining} remaining (${s.media.rounds} rounds); ${s.media.withImage} with image`)
   if (s.derived) lines.push(`rankings:    ${s.derived.rankingsRebuild}`)
   if (s.audit) lines.push(`audit:       ${s.audit}`)
@@ -124,11 +130,20 @@ async function main() {
       summary.review = applied.result
       if (applied.code) fail('Could not apply identity review decisions')
     }
+    if (flag('--apply-review')) {
+      const covers = await stage('covers:propose --apply-review', 'pnpm', local('covers-propose.ts', ['--apply-review']), 'COVERS_REVIEW', env)
+      summary.coversReview = covers.result
+      if (covers.code) fail('Could not apply cover decisions (see above)')
+    }
     const identify = await stage('media:identify', 'pnpm', local('media-identify.ts'), 'IDENTIFY', env)
     summary.identify = identify.result
     // A rate-limited identify run saves its progress; sync what is verified and resume next time.
     if (identify.code && !identify.result?.stoppedEarly) fail('Identity resolution failed')
     if (identify.result?.stoppedEarly) console.log('  (identify stopped early on Wikidata rate limits — continuing; re-run later to resume)')
+
+    const proposed = await stage('covers:propose', 'pnpm', local('covers-propose.ts'), 'COVERS', env)
+    summary.covers = proposed.result
+    if (proposed.code && !proposed.result?.stoppedEarly) fail('Cover proposal failed')
 
     const media = { rounds: 0, imported: 0, noImage: 0, rejected: 0, failed: 0, remaining: 0, withImage: 0 }
     summary.media = media
@@ -153,8 +168,11 @@ async function main() {
   if (audit.code) fail('Media audit failed — see findings above (repair-taxonomy-media.ts fixes them)')
 
   const pending = (summary.identify as any)?.reviewFile
+  const sheet = (summary.covers as any)?.contactSheet
   console.log(`\n✓ ${envName} catalog published\n${report()}`)
-  if (pending) console.log(`\nIdentities awaiting your review: ${pending}\nDecide each entry, then run: pnpm prod:publish-catalog --apply-review`)
+  if (pending) console.log(`\nIdentities awaiting your review: ${pending}`)
+  if (sheet) console.log(`\nCover candidates to pick from: ${sheet}`)
+  if (pending || sheet) console.log('Decide each entry, then run: pnpm prod:publish-catalog --apply-review')
 }
 
 main().catch((error) => fail(error?.message ?? String(error)))

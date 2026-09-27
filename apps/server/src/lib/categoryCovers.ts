@@ -35,17 +35,24 @@ export async function assignCategoryCovers(apply = true) {
   const categories = await db.category.findMany({
     where: { isActive: true },
     select: {
-      id: true, slug: true, poolMode: true, entityTypeId: true, popularityCount: true,
+      id: true, slug: true, poolMode: true, entityTypeId: true, popularityCount: true, metadata: true,
       mediaAssets: { where: { isPrimary: true }, orderBy: { createdAt: 'desc' }, take: 1 },
     },
   })
-  categories.sort((a, b) => b.popularityCount - a.popularityCount || a.slug.localeCompare(b.slug))
+  // A cover a person approved always keeps its image; then more popular lists choose first.
+  const decision = (c: { metadata: unknown }) => (c.metadata as any)?.cover?.status as 'approved' | 'none' | undefined
+  categories.sort((a, b) => Number(decision(b) === 'approved') - Number(decision(a) === 'approved') || b.popularityCount - a.popularityCount || a.slug.localeCompare(b.slug))
   counts.categories = categories.length
 
   const used = new Set<string>()
   const needCover: typeof categories = []
   for (const category of categories) {
     const cover = category.mediaAssets[0]
+    if (decision(category) === 'none') {
+      // A person decided this list shows the placeholder.
+      if (cover && cover.sourceType === DERIVED_COVER && apply) await db.mediaAsset.delete({ where: { id: cover.id } })
+      continue
+    }
     if (!cover || stale.has(cover.id) || !isServableAsset(cover)) {
       needCover.push(category)
     } else if (used.has(imageKey(cover))) {
