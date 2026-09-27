@@ -12,7 +12,7 @@ export const fixtures = [
   { type: 'movie', name: 'Pulp Fiction', qid: 'Q104123' },
   { type: 'movie', name: 'Get Out', qid: 'Q25136235' },
   { type: 'movie', name: 'Hereditary', qid: 'Q47524071' },
-  { type: 'movie', name: 'The Exorcist', qid: 'Q274167', cover: true, categories: ['favorite-horror-movies'] },
+  { type: 'movie', name: 'The Exorcist', qid: 'Q274167', categories: ['favorite-horror-movies'] },
   { type: 'movie', name: 'Halloween', qid: 'Q221103' },
   { type: 'movie', name: 'Scream', qid: 'Q27411' },
   { type: 'movie', name: 'A Nightmare on Elm Street', qid: 'Q329434' },
@@ -313,12 +313,20 @@ export const fixtures = [
 export type TaxonomyMediaFixture = (typeof fixtures)[number]
 
 // Fail fast if an edit reintroduces a duplicate: a repeated entry silently
-// overwrote the first one's QID on every run.
+// overwrote the first one's QID on every run, and a second cover for the same
+// type or list silently replaced the first.
 const keys = new Set<string>()
+const coverTargets = new Set<string>()
+function claimCover(target: string, name: string) {
+  if (coverTargets.has(target)) throw new Error(`Second taxonomy media cover for ${target}: ${name}`)
+  coverTargets.add(target)
+}
 for (const f of fixtures) {
   const key = `${f.type}:${f.name}`
   if (keys.has(key)) throw new Error(`Duplicate taxonomy media fixture: ${key}`)
   keys.add(key)
+  if ('cover' in f && f.cover) claimCover(`type:${f.type}`, f.name)
+  if ('categories' in f) for (const slug of f.categories) claimCover(`list:${slug}`, f.name)
 }
 
 // QIDs this list once used that turned out to name something else (a town, a

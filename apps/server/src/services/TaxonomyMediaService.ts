@@ -7,6 +7,13 @@ import { getImageProvider, imageProviders, type ImageCandidate } from './imagePr
 
 const storage = createStorageProvider()
 const MAX_REMOTE_BYTES = 12 * 1024 * 1024
+const VARCHAR_LIMIT = 191 // Prisma's default String length on MySQL
+
+// Commons credits can run to paragraphs; the column keeps a truncated copy and
+// metadata keeps the full text.
+function fitColumn(value: string | undefined) {
+  return value && value.length > VARCHAR_LIMIT ? `${value.slice(0, VARCHAR_LIMIT - 1)}…` : value
+}
 
 type Target = { entityId?: string; entityTypeId?: string; categoryId?: string }
 
@@ -103,7 +110,7 @@ export class TaxonomyMediaService {
       sourceId: candidate.externalId,
       sourceUrl: candidate.sourceUrl,
       landingUrl: candidate.landingUrl,
-      creator: candidate.creator,
+      creator: fitColumn(candidate.creator),
       license: candidate.license,
       licenseUrl: candidate.licenseUrl,
       attribution: candidate.attribution,
@@ -114,7 +121,7 @@ export class TaxonomyMediaService {
       publicUrl: stored.url,
       mimeType: stored.mimeType,
       byteSize: stored.size,
-      metadata: { ...candidate.metadata, title: candidate.title },
+      metadata: { ...candidate.metadata, title: candidate.title, creator: candidate.creator },
       sha256: createHash('sha256').update(normalized.buffer).digest('hex'),
     }, actorUserId, actorRole)
   }
@@ -130,13 +137,13 @@ export class TaxonomyMediaService {
       sourceId: candidate.externalId,
       sourceUrl: candidate.sourceUrl,
       landingUrl: candidate.landingUrl,
-      creator: candidate.creator,
+      creator: fitColumn(candidate.creator),
       license: candidate.license,
       licenseUrl: candidate.licenseUrl,
       attribution: candidate.attribution,
       importRule: candidate.importRule,
       publicUrl: candidate.previewUrl,
-      metadata: { ...candidate.metadata, title: candidate.title },
+      metadata: { ...candidate.metadata, title: candidate.title, creator: candidate.creator },
     }, actorUserId, actorRole)
   }
 
@@ -158,8 +165,11 @@ export class TaxonomyMediaService {
       }
       const output = await source.rotate().resize({ width: 1000, height: 1000, fit: 'inside', withoutEnlargement: true }).webp({ quality: 82 }).toBuffer()
       return { buffer: output, width: metadata.width, height: metadata.height }
-    } catch {
-      throw { statusCode: 415, message: 'Image could not be decoded or normalized' }
+    } catch (error: any) {
+      // Keep the quality-gate reason (size, aspect ratio) rather than
+      // reporting every rejection as a decode failure.
+      if (error?.statusCode) throw error
+      throw { statusCode: 415, message: `Image could not be decoded or normalized: ${error?.message ?? error}` }
     }
   }
 
