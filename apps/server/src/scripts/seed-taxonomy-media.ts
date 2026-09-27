@@ -12,11 +12,11 @@ const fallbacks: { name: string; type: string; id: string; title: string }[] = [
 const media = new TaxonomyMediaService()
 
 // Rejections the pipeline is designed to make — an image failing the quality
-// gate, or a source file Commons no longer has. Reported, but not a failed run;
-// anything else (rate limits, DB errors, bugs) is.
+// gate, or an image file Commons no longer serves. Reported, but not a failed
+// run; anything else (a deleted Wikidata item, rate limits, DB errors, bugs) is.
 function isExpectedRejection(error: any) {
   if ([409, 413, 415].includes(error?.statusCode)) return true
-  return /(request failed with|returned) (404|410)\b/.test(error?.message ?? '')
+  return /Image source returned (404|410)\b/.test(error?.message ?? '')
 }
 const report: object[] = []
 

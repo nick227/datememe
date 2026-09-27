@@ -9,6 +9,7 @@
     "seed:taxonomy-media": "tsx src/scripts/seed-taxonomy-media.ts",
     "audit:media": "tsx src/scripts/audit-media.ts",
     "repair:taxonomy-media": "tsx src/scripts/repair-taxonomy-media.ts",
+    "verify:media-fixtures": "tsx src/scripts/verify-media-fixtures.ts",
     "typecheck": "tsc --noEmit",
     "lint": "echo 'no lint configured for server'",
     "prompt:preview": "tsx src/scripts/preview-catalog-prompt.ts"

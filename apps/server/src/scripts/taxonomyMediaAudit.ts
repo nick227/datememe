@@ -57,7 +57,9 @@ export async function auditTaxonomyMedia() {
     const expected = a.entityId ? expectedQid.get(a.entityId) : undefined
     const servable = isServableAsset(a)
     if (servable && a.publicUrl) servableUrls.add(a.publicUrl)
-    if (a.provider === 'wikimedia' && expected && a.sourceId && /^Q\d+$/.test(a.sourceId) && a.sourceId !== expected) {
+    const wrongQid = a.provider === 'wikimedia' && a.sourceId && /^Q\d+$/.test(a.sourceId) &&
+      (expected ? a.sourceId !== expected : !!retiredQids[a.sourceId])
+    if (wrongQid) {
       assetFindings.push({ ...base, problem: 'wrong-identity', expectedQid: expected })
     } else if (!servable) {
       const foreign = !a.publicUrl || !a.publicUrl.startsWith(`${baseUrl}/`)

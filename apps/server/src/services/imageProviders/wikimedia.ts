@@ -70,7 +70,11 @@ async function searchCommonsImage(query: string): Promise<ImageCandidate | null>
 /** Resolve a reviewed identity without silently substituting a same-name subject. */
 export async function resolveWikidataImage(id: string): Promise<ImageCandidate | null> {
   if (!/^Q\d+$/.test(id)) throw new Error('Invalid Wikidata identity')
-  const data = await getJson(`https://www.wikidata.org/wiki/Special:EntityData/${id}.json`)
+  const response = await fetch(`https://www.wikidata.org/wiki/Special:EntityData/${id}.json`, { headers: { 'User-Agent': USER_AGENT, Accept: 'application/json' }, signal: AbortSignal.timeout(15000) })
+  // A deleted item is a broken identity, not a missing image — report it as such.
+  if (response.status === 404) throw new Error(`Wikidata item ${id} does not exist (deleted or merged away); fix the fixture`)
+  if (!response.ok) throw new Error(`Wikimedia request failed with ${response.status}`)
+  const data = await response.json() as any
   const entity = data.entities?.[id]
   const filename = entity?.claims?.P18?.[0]?.mainsnak?.datavalue?.value
   if (!filename) return null
