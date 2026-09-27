@@ -40,7 +40,7 @@ There is configuration drift: checked-in `railway.*.json` files declare Nixpacks
 | `pnpm db:seed` → `packages/db/prisma/seed.ts` | Types, tags, entities, category groups/definitions, Site Picks, subscription plans | Mostly insert-if-missing upserts; partial replay safety, no release tracking |
 | `pnpm --filter @project/db db:seed:users` | Demo users including an admin, sessions, subscription, profile lists, social fixtures | Development only; no production-target guard |
 | `apps/server/src/scripts/seed-cars.ts` | Hierarchical car taxonomy and two curated categories | Plain entity/category creates fail on rerun; errors nevertheless exit 0 |
-| `pnpm --filter server seed:taxonomy-media` | Reviewed external identities and downloaded images; quarantine old mismatches | Some replay checks and audit events, but external API dependencies and partial progress |
+| `pnpm --filter server media:sync` (was `seed:taxonomy-media`; see [ai-list-pipeline.md](ai-list-pipeline.md)) | Reviewed external identities and downloaded images; quarantine old mismatches | Some replay checks and audit events, but external API dependencies and partial progress |
 
 The core seed does not currently create demo users despite its unused `bcrypt`/`randomUUID` imports. Demo accounts live in the separate user script. It creates a known-password admin and updates roles of matching emails; keep that script out of production pipelines.
 
@@ -222,7 +222,7 @@ The first useful implementation is phase 2's small local pilot alongside phase 1
 Repository links below point to inspected implementation, rather than older design intent:
 
 - [Bootstrap](../scripts/bootstrap.ts), [root commands](../package.json), [DB commands](../packages/db/package.json), [CI](../.github/workflows/ci.yml).
-- [Core seed](../packages/db/prisma/seed.ts), [demo users](../packages/db/prisma/seed-users.ts), [cars seed](../apps/server/src/scripts/seed-cars.ts), [media seed](../apps/server/src/scripts/seed-taxonomy-media.ts).
+- [Core seed](../packages/db/prisma/seed.ts), [demo users](../packages/db/prisma/seed-users.ts), [cars seed](../apps/server/src/scripts/seed-cars.ts), [media sync](../apps/server/src/scripts/media-sync.ts).
 - [Schema and constraints](../packages/db/prisma/schema.prisma), [server config](../railway.server.json), [worker config](../railway.worker.json), [web config](../railway.web.json).
 - [Taxonomy search](../apps/server/src/services/TaxonomyService.ts), [answer write path](../apps/server/src/services/ListService.ts), [worker dispatcher](../apps/worker/src/index.ts), [counter reconciliation](../apps/worker/src/jobs/UpdateTaxonomyJob.ts).
 - [Category administration](../apps/server/src/handlers/adminCategories.ts), [Site Pick administration](../apps/server/src/handlers/adminSitePicks.ts), [storage factory](../apps/server/src/providers/storage.ts), [local uploads](../apps/server/src/providers/LocalStorageProvider.ts).

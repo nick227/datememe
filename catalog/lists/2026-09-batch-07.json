@@ -1,0 +1,205 @@
+[
+  {
+    "schemaVersion": 1,
+    "groupSlug": "creators",
+    "entityTypeSlug": "meme",
+    "createEntityType": {
+      "label": "Meme",
+      "pluralLabel": "Memes"
+    },
+    "title": "Favorite Classic Memes",
+    "prompt": "What are your all-time favorite classic memes?",
+    "axes": [
+      "internet-culture",
+      "comedy",
+      "nostalgia"
+    ],
+    "values": [
+      "Doge",
+      "Rickroll",
+      "Pepe the Frog",
+      "Nyan Cat",
+      "Harambe",
+      "Distracted Boyfriend",
+      "Trollface",
+      "Woman Yelling at a Cat",
+      "Success Kid",
+      "Grumpy Cat"
+    ],
+    "isAbstract": true
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "tech",
+    "entityTypeSlug": "internet-trend",
+    "createEntityType": {
+      "label": "Internet Trend",
+      "pluralLabel": "Internet Trends"
+    },
+    "title": "Favorite Internet Trends",
+    "prompt": "Which internet trends were actually fun to participate in?",
+    "axes": [
+      "internet-culture",
+      "social",
+      "tech"
+    ],
+    "values": [
+      "Ice Bucket Challenge",
+      "Harlem Shake",
+      "Mannequin Challenge",
+      "Planking",
+      "The Dress (Blue/Black vs White/Gold)",
+      "Bottle Cap Challenge",
+      "Wordle",
+      "Sea Shanties",
+      "Twitch Plays Pokémon",
+      "Brat Summer"
+    ],
+    "isAbstract": true
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "creators",
+    "entityTypeSlug": "tiktok-audio",
+    "createEntityType": {
+      "label": "TikTok Audio",
+      "pluralLabel": "TikTok Audios"
+    },
+    "title": "Favorite TikTok Audios",
+    "prompt": "What are the catchiest TikTok audios?",
+    "axes": [
+      "internet-culture",
+      "music",
+      "social"
+    ],
+    "values": [
+      "Oh No",
+      "Into The Thick Of It",
+      "Chrissy Wake Up",
+      "Jiggle Jiggle",
+      "It's Corn",
+      "Aesthetic",
+      "Spongebob Theme",
+      "Gimme More",
+      "Say So",
+      "Renegade"
+    ],
+    "isAbstract": true
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "gaming",
+    "entityTypeSlug": "emote",
+    "createEntityType": {
+      "label": "Emote",
+      "pluralLabel": "Emotes"
+    },
+    "title": "Favorite Twitch Emotes",
+    "prompt": "What are your most used Twitch emotes?",
+    "axes": [
+      "internet-culture",
+      "gaming",
+      "social"
+    ],
+    "values": [
+      "Kappa",
+      "PogChamp",
+      "MonkaS",
+      "KEKW",
+      "LUL",
+      "PepeHands",
+      "TriHard",
+      "BibleThump",
+      "Sadge",
+      "Kreygasm"
+    ],
+    "isAbstract": true
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "creators",
+    "entityTypeSlug": "reaction-gif",
+    "createEntityType": {
+      "label": "Reaction GIF",
+      "pluralLabel": "Reaction GIFs"
+    },
+    "title": "Favorite Reaction GIFs",
+    "prompt": "Which reaction GIFs do you use the most?",
+    "axes": [
+      "internet-culture",
+      "communication",
+      "comedy"
+    ],
+    "values": [
+      "Michael Jackson Eating Popcorn",
+      "Homer Backing Into Hedge",
+      "This Is Fine Dog",
+      "Blinking White Guy",
+      "Math Lady / Nazaré",
+      "Kermit Sipping Tea",
+      "Disappointed Cricket Fan",
+      "Elmo on Fire",
+      "Leonardo DiCaprio Toast",
+      "Confused Travolta"
+    ],
+    "isAbstract": true
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "lifestyle-hobbies",
+    "entityTypeSlug": "slang",
+    "createEntityType": {
+      "label": "Slang Term",
+      "pluralLabel": "Slang Terms"
+    },
+    "title": "Favorite Internet Slang",
+    "prompt": "What internet slang terms do you use ironically (or unironically)?",
+    "axes": [
+      "internet-culture",
+      "language",
+      "social"
+    ],
+    "values": [
+      "Based",
+      "Cringe",
+      "Rizz",
+      "Cap / No Cap",
+      "Bet",
+      "Slay",
+      "Sus",
+      "Yeet",
+      "Stan",
+      "Skibidi"
+    ],
+    "isAbstract": true
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "entertainment",
+    "entityTypeSlug": "viral-video",
+    "createEntityType": {
+      "label": "Viral Video",
+      "pluralLabel": "Viral Videos"
+    },
+    "title": "Favorite Viral Videos",
+    "prompt": "What are the best early internet viral videos?",
+    "axes": [
+      "internet-culture",
+      "nostalgia",
+      "video"
+    ],
+    "values": [
+      "Charlie Bit My Finger",
+      "David After Dentist",
+      "Numa Numa",
+      "Star Wars Kid",
+      "Chocolate Rain",
+      "Leave Britney Alone",
+      "Sneezing Panda",
+      "Keyboard Cat",
+      "Double Rainbow",
+      "Evolution of Dance"
+    ],
+    "isAbstract": true
+  }
+]

@@ -3,13 +3,15 @@ import { createHash } from 'crypto'
 import { OpenAIService } from './OpenAIService'
 import { renderCatalogPrompts } from './CatalogPrompts'
 import { catalogConfig, GenerationKind, facetVocabulary, generationTimeoutMs } from '../prompts/catalog/config'
+import { key } from '../lib/identityKey'
+
+export { key }
 
 export function fail(message: string, statusCode = 400): never { throw { statusCode, message } }
 export function text(value: unknown, label: string, max = 250): string {
   if (typeof value !== 'string' || !value.trim() || value.trim().length > max) fail(`${label} is required (max ${max} characters)`)
   return value.trim()
 }
-export function key(value: string) { return value.normalize('NFKC').toLowerCase().trim().replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-|-$/g, '') }
 const hash = (value: unknown) => createHash('sha256').update(JSON.stringify(value)).digest('hex')
 const rulesFor = (v: any) => {
   if (!v || !Number.isInteger(v.minItems) || !Number.isInteger(v.maxItems) || v.minItems < 1 || v.maxItems < v.minItems || v.maxItems > 10 || !['RANKED', 'UNRANKED'].includes(v.orderingMode)) fail('Rules require 1 ≤ minItems ≤ maxItems ≤ 10 and a valid ordering mode')

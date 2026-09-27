@@ -3,6 +3,7 @@ import sharp from 'sharp'
 import { db } from '@project/db'
 import { createStorageProvider } from '../providers/storage'
 import { assertMediaWritesAreServable, isServableAsset } from '../lib/mediaIntegrity'
+import { mergeRefMetadata, verification, verificationOf } from '../lib/wikidataIdentity'
 import { getImageProvider, imageProviders, type ImageCandidate } from './imageProviders'
 
 const storage = createStorageProvider()
@@ -220,11 +221,19 @@ export class TaxonomyMediaService {
         : await tx.mediaAsset.create({ data: values })
       if (target.entityId) await tx.entity.update({ where: { id: target.entityId }, data: { imageUrl: created.publicUrl } })
       if (target.entityId && created.sourceId && (created.provider === 'tmdb' || (created.provider === 'wikimedia' && /^Q\d+$/.test(created.sourceId)))) {
-        const refMetadata = created.metadata ?? undefined
+        const where = { entityId_provider: { entityId: target.entityId, provider: created.provider! } }
+        const existing = await tx.entityExternalRef.findUnique({ where })
+        const sameIdentity = existing?.externalId === created.sourceId
+        // Keep how the identity was verified; attaching an image for a
+        // different QID (admin UI) is itself the verification.
+        const metadata = mergeRefMetadata(existing?.metadata, {
+          ...(created.metadata as Record<string, unknown> ?? {}),
+          verification: (sameIdentity && verificationOf(existing?.metadata)) || verification('admin'),
+        }, sameIdentity)
         await tx.entityExternalRef.upsert({
-          where: { entityId_provider: { entityId: target.entityId, provider: created.provider! } },
-          update: { externalId: created.sourceId, metadata: refMetadata as any },
-          create: { entityId: target.entityId, provider: created.provider!, externalId: created.sourceId, metadata: refMetadata as any },
+          where,
+          update: { externalId: created.sourceId, metadata: metadata as any },
+          create: { entityId: target.entityId, provider: created.provider!, externalId: created.sourceId, metadata: metadata as any },
         })
       }
       return created

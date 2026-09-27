@@ -3,7 +3,7 @@ import { auditTaxonomyMedia } from './taxonomyMediaAudit'
 
 // Fixes what audit-media.ts reports, database-side only. Dry run by default;
 // pass --apply to write. Run inside the server container so file checks see
-// the real volume, then re-run seed:taxonomy-media there to re-import.
+// the real volume, then re-run media-sync.ts there to re-import.
 //
 //   - unservable/missing-file/wrong-identity assets: row deleted (files are
 //     left alone — the uploads directory also holds profile photos)
@@ -68,7 +68,7 @@ async function main() {
   const final = await auditTaxonomyMedia()
   console.log('\nAfter repair:')
   console.log(JSON.stringify(final.summary, null, 2))
-  console.log('\nNext: re-import inside the container — pnpm --filter server seed:taxonomy-media (START/LIMIT batches).')
+  console.log('\nNext: re-import inside the container — src/scripts/media-sync.ts (repeat until remaining is 0).')
 }
 
 function countBy(values: string[]) {

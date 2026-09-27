@@ -110,6 +110,10 @@ Fourth bottom tab (Lists · Rankings · Discover · Messages; Profile stays on t
 - **Group dedupe:** `seed.ts` originally created `food`/`lifestyle`; the importers use `food-drink`/`lifestyle-hobbies`. `seed.ts` now uses the importer slugs and `apps/worker/src/scripts/merge-category-groups.ts` (idempotent) folds the old groups in — **run it against production too**.
 - `tsx watch` does not watch `.env` — touch `apps/worker/src/index.ts` after changing `RANKINGS_*` vars.
 
+## Catalog + media publishing (2026-09-27)
+
+AI-generated lists live as data in `catalog/lists/*.json`; `pnpm prod:publish-catalog` validates, publishes (locally, through the Railway MySQL proxy), resolves Wikidata identities, syncs images **inside the server container**, queues a rankings rebuild and audits — each stage an idempotent command. Full design, file format and the identity rules: `docs/ai-list-pipeline.md`. Media writes are refused outside the container (`lib/mediaIntegrity.ts`). Never add first-search-result image or QID matching.
+
 ## Known Issues (outside Rankings, logged 2026-09-26)
 
 - ~~Server tests: `TypeError: Invalid URL`~~ — fixed 2026-09-27: Vite sets `process.env.BASE_URL='/'`; `vitest.config.ts` now sets `BASE_URL` explicitly.

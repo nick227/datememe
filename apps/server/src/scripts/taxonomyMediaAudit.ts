@@ -3,6 +3,7 @@ import { db } from '@project/db'
 import { isServableAsset } from '../lib/mediaIntegrity'
 import { localStorageConfig } from '../providers/localStorageConfig'
 import { fixtures, retiredQids } from './taxonomyMediaFixtures'
+import { verificationOf } from '../lib/wikidataIdentity'
 
 // Read-only consistency check between what the database says about taxonomy
 // media and what this deployment can actually serve. No network calls.
@@ -35,7 +36,7 @@ export async function auditTaxonomyMedia() {
       select: { id: true, entityId: true, entityTypeId: true, categoryId: true, provider: true, sourceId: true, storageKey: true, publicUrl: true, sha256: true, isPrimary: true, metadata: true },
     }),
     db.entity.findMany({ select: { id: true, canonicalName: true, imageUrl: true, entityType: { select: { slug: true } } } }),
-    db.entityExternalRef.findMany({ where: { provider: 'wikimedia' }, select: { id: true, entityId: true, externalId: true } }),
+    db.entityExternalRef.findMany({ where: { provider: 'wikimedia' }, select: { id: true, entityId: true, externalId: true, metadata: true } }),
   ])
 
   const entityById = new Map(entities.map((e) => [e.id, e]))
@@ -50,11 +51,19 @@ export async function auditTaxonomyMedia() {
     if (qid) expectedQid.set(e.id, qid)
   }
 
+  const verifiedQid = new Map(refs.filter((r) => verificationOf(r.metadata)).map((r) => [r.entityId, r.externalId]))
+  const identitiesByMethod: Record<string, number> = {}
+  for (const r of refs) {
+    const method = verificationOf(r.metadata)?.method ?? 'unverified'
+    identitiesByMethod[method] = (identitiesByMethod[method] ?? 0) + 1
+  }
+
   const assetFindings: AssetFinding[] = []
   const servableUrls = new Set<string>()
   for (const a of assets) {
     const base = { assetId: a.id, entityId: a.entityId, label: label(a.entityId), primary: a.isPrimary, publicUrl: a.publicUrl, sourceId: a.sourceId }
-    const expected = a.entityId ? expectedQid.get(a.entityId) : undefined
+    // An entity's image must match its reviewed fixture QID, else its verified identity.
+    const expected = a.entityId ? expectedQid.get(a.entityId) ?? verifiedQid.get(a.entityId) : undefined
     const servable = isServableAsset(a)
     if (servable && a.publicUrl) servableUrls.add(a.publicUrl)
     const wrongQid = a.provider === 'wikimedia' && a.sourceId && /^Q\d+$/.test(a.sourceId) &&
@@ -117,6 +126,7 @@ export async function auditTaxonomyMedia() {
     staleWikidataRefs: refFindings.filter((f) => f.problem === 'stale-ref').length,
     retiredWikidataRefs: refFindings.filter((f) => f.problem === 'retired-qid').length,
     sharedImageHashes: sharedHashes.length,
+    identitiesByMethod,
     fixtureEntitiesInDb: fixtureEntities,
     fixturesMissingFromDb: fixtures.length - fixtureEntities,
     unreferencedFilesOnDisk: unreferencedFiles,
