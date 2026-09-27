@@ -116,6 +116,7 @@ AI-generated lists live as data in `catalog/lists/*.json`; `pnpm prod:publish-ca
 
 ## Known Issues (outside Rankings, logged 2026-09-26)
 
+- **Production worker is stuck on `712d837` (2026-09-25)** — every worker deploy since fails `tsc` (9 errors: `ProfileResultsRefreshJob.ts`, `jobs/test.ts`, `scripts/run-synthetic-calibration.ts`, `scripts/test-mechanics.ts`). Production therefore has no Rankings rebuild (`Unknown job type: RANKINGS_REBUILD`), and its DB also lacks `ResultEntry.pickCount`/`firstPlaceCount` and `ResultSet.baselineAt` (prod schema is `db push`-managed; `prisma migrate diff --from-url <prod> --to-schema-datamodel` shows the drift). Logged 2026-09-27.
 - ~~Server tests: `TypeError: Invalid URL`~~ — fixed 2026-09-27: Vite sets `process.env.BASE_URL='/'`; `vitest.config.ts` now sets `BASE_URL` explicitly.
 - **Discover cursor regression** — `contentFeed.test.ts` › "getDiscoverFeed never repeats a candidate… and terminates" fails with `Invalid discovery cursor`; coincides with the in-progress, uncommitted `DiscoveryService`/`CalculateMatchesJob` (`Profile.matchesUpdatedAt`) work.
 - **Test fixtures write to the dev database** — leftover `combo-group-*` / `disco-taste-group-*` CategoryGroups and their categories come from test runs.
