@@ -31,6 +31,8 @@ async function main() {
     const parsed = JSON.parse(readFileSync(file, 'utf8'))
     for (const list of Array.isArray(parsed) ? parsed : [parsed]) lists.push({ file, list })
   }
+  // Lists that create an entity type publish first, so a list relying on that
+  // type (validated via the batch manifest) finds it regardless of file order.
   lists.sort((a, b) => (a.list.createEntityType ? 0 : 1) - (b.list.createEntityType ? 0 : 1))
 
   const importer = new ListImporterService()
@@ -55,10 +57,7 @@ async function main() {
   const invalid = reports.filter((r) => r.status === 'ERROR')
 
   if (!dryRun && !invalid.length) {
-    // Lists that create an entity type go first, so a list relying on that
-    // type (validated via the batch manifest) finds it regardless of file order.
-    const order = [...lists.keys()].sort((a, b) => Number(!lists[a]!.list.createEntityType) - Number(!lists[b]!.list.createEntityType))
-    for (const i of order) reports[i] = { ...(await importer.importList(lists[i]!.list)), file: reports[i]!.file }
+    for (const [i, { list }] of lists.entries()) reports[i] = { ...(await importer.importList(list)), file: reports[i]!.file }
   }
 
   for (const r of reports) {
