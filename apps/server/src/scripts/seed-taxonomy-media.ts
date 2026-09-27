@@ -10,6 +10,14 @@ import { fixtures } from './taxonomyMediaFixtures'
 const fallbacks: { name: string; type: string; id: string; title: string }[] = []
 
 const media = new TaxonomyMediaService()
+
+// Rejections the pipeline is designed to make — an image failing the quality
+// gate, or a source file Commons no longer has. Reported, but not a failed run;
+// anything else (rate limits, DB errors, bugs) is.
+function isExpectedRejection(error: any) {
+  if ([409, 413, 415].includes(error?.statusCode)) return true
+  return /(request failed with|returned) (404|410)\b/.test(error?.message ?? '')
+}
 const report: object[] = []
 
 async function openverse(id: string, expectedTitle: string): Promise<ImageCandidate> {
@@ -99,7 +107,7 @@ async function main() {
       const categories = await db.category.findMany({ where: { entityTypeId: type.id, ...( 'categories' in fixture ? { slug: { in: [...fixture.categories] } } : { id: '__none__' }) } })
       for (const category of categories) await attach({ categoryId: category.id }, candidate, `list:${category.slug}`)
     } catch (error: any) {
-      report.push({ label: fixture.name, status: 'failed-import', reason: error.message ?? String(error) })
+      report.push({ label: fixture.name, status: isExpectedRejection(error) ? 'rejected' : 'failed-import', reason: error.message ?? String(error) })
     } finally {
       // Avoid hammering public APIs — including after a `continue` above.
       // Failures stay visible, never become blind matches.
@@ -129,6 +137,11 @@ async function main() {
     await db.entityExternalRef.deleteMany({ where: { provider: 'openverse', entity: { canonicalName: f.name, entityType: { slug: f.type } } } })
   }
   console.log(JSON.stringify({ results: report, quarantined: wrong.length, primaryAssets: await db.mediaAsset.count({ where: { isPrimary: true } }) }, null, 2))
+  const summary = (report as { status: string }[]).reduce<Record<string, number>>((acc, r) => {
+    const status = r.status.replace(/ \(checked .*\)$/, '')
+    return { ...acc, [status]: (acc[status] ?? 0) + 1 }
+  }, {})
+  console.log('Summary:', JSON.stringify(summary))
   if (report.some((r: any) => r.status.startsWith('failed'))) process.exitCode = 1
 }
 
