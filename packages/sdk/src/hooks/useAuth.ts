@@ -2,11 +2,20 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getApiClient, ApiError } from '../client'
 
 export function useCurrentUser() {
+  const queryClient = useQueryClient()
   return useQuery({
     queryKey: ['me'],
     queryFn: async () => {
       const { data, error, response } = await getApiClient().GET('/auth/me')
-      if (response.status === 401) return null
+      if (response.status === 401) {
+        // Session expiry can return to Login without the explicit logout path.
+        // Discard the previous account's data before another account can sign in,
+        // and prevent its pending requests from repopulating the shared cache.
+        // Keep this auth query running so its existing observers receive null.
+        await queryClient.cancelQueries({ predicate: (query) => query.queryKey[0] !== 'me' })
+        queryClient.removeQueries({ predicate: (query) => query.queryKey[0] !== 'me' })
+        return null
+      }
       if (error) throw new ApiError(response.status, (error as any).error)
       return data!.data
     },
