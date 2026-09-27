@@ -90,9 +90,27 @@ async function writeIdentity(entityId: string, qid: string, method: 'auto-strict
   await db.entityExternalRef.upsert({ where, update: { externalId: qid, metadata }, create: { entityId, provider: IDENTITY_PROVIDER, externalId: qid, metadata } })
 }
 
+/**
+ * Drops review entries that no longer need a decision: the entity got a
+ * verified identity some other way (usually a fixture, recorded by media:sync)
+ * or was merged/deleted. Approving one of those would override a better source.
+ */
+async function pruneResolved(review: ReviewFile) {
+  if (!review.pending.length) return 0
+  const ids = review.pending.map((p) => p.entityId)
+  const live = new Set((await db.entity.findMany({ where: { id: { in: ids }, status: 'APPROVED', mergedIntoId: null }, select: { id: true } })).map((e) => e.id))
+  const verified = new Set((await db.entityExternalRef.findMany({ where: { provider: IDENTITY_PROVIDER, entityId: { in: ids } }, select: { entityId: true, metadata: true } }))
+    .filter((r) => verificationOf(r.metadata)).map((r) => r.entityId))
+  const before = review.pending.length
+  review.pending = review.pending.filter((p) => live.has(p.entityId) && !verified.has(p.entityId))
+  if (review.pending.length !== before) writeReview(review)
+  return before - review.pending.length
+}
+
 async function identify() {
   const allowed = loadIdentityClasses()
   const review = readReview()
+  const pruned = await pruneResolved(review)
   const pendingIds = new Set(review.pending.map((p) => p.entityId))
 
   const entities = await db.entity.findMany({
@@ -191,12 +209,13 @@ async function identify() {
   }
   counts.remaining = todo.length - counts.checked
   if (stoppedEarly) console.log(`Stopped early: ${stoppedEarly}. Progress is saved; re-run to resume.`)
-  console.log(`IDENTIFY ${JSON.stringify({ ...counts, stoppedEarly: !!stoppedEarly, reviewFile: review.pending.length ? REVIEW_FILE : null })}`)
+  console.log(`IDENTIFY ${JSON.stringify({ ...counts, prunedFromReview: pruned, stoppedEarly: !!stoppedEarly, reviewFile: review.pending.length ? REVIEW_FILE : null })}`)
   if (stoppedEarly) process.exitCode = 1
 }
 
 async function applyReview() {
   const review = readReview()
+  const pruned = await pruneResolved(review)
   const decided = review.pending.filter((p) => p.approve !== null && p.approve !== undefined)
   const approvals = decided.filter((p) => p.approve !== 'none')
   for (const p of approvals) if (!/^Q\d+$/.test(p.approve!)) throw new Error(`${p.name}: "approve" must be a QID, "none" or null — got ${JSON.stringify(p.approve)}`)
@@ -220,7 +239,7 @@ async function applyReview() {
   }
   review.pending = review.pending.filter((p) => p.approve === null || p.approve === undefined)
   writeReview(review)
-  console.log(`IDENTIFY_REVIEW ${JSON.stringify({ applied, stillPending: review.pending.length })}`)
+  console.log(`IDENTIFY_REVIEW ${JSON.stringify({ applied, prunedResolved: pruned, stillPending: review.pending.length })}`)
 }
 
 (process.argv.includes('--apply-review') ? applyReview() : identify())
