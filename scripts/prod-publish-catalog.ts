@@ -13,14 +13,14 @@ import { resolve } from 'path'
 //   catalog:validate   local -> Railway MySQL (read-only)
 //   catalog:publish    local -> Railway MySQL (DB-only work may run locally)
 //   media:identify     local -> Railway MySQL + Wikidata; unsure cases go to
-//                      catalog/review/identities.json and never block
+//                      catalog/review/identities.<env>.json and never block
 //   media:sync         inside the server container (writes image files, so it
 //                      must run where the volume is), repeated until done
 //   derived:enqueue    local -> Railway MySQL (the worker does the rebuild)
 //   audit              inside the server container
 //
 // --dry-run stops after validation. --skip-media skips identify + sync.
-// --apply-review first applies your decisions in catalog/review/identities.json.
+// --apply-review first applies your decisions in catalog/review/identities.<env>.json.
 
 const root = resolve(__dirname, '..')
 const args = process.argv.slice(2)
@@ -92,7 +92,7 @@ function preflight() {
     .split('\n').find((l) => l.startsWith('MYSQL_PUBLIC_URL='))?.slice('MYSQL_PUBLIC_URL='.length)
   if (!url) fail(`MySQL in ${envName} has no MYSQL_PUBLIC_URL (enable public networking)`)
   console.log(`  code matches deployed ${deployed.slice(0, 7)}; database ${new URL(url).host}`)
-  return { ...process.env, DATABASE_URL: url }
+  return { ...process.env, DATABASE_URL: url, REVIEW_ENV: envName }
 }
 
 async function main() {

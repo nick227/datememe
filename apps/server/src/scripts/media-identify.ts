@@ -3,6 +3,8 @@ import { dirname, resolve } from 'path'
 import { db } from '@project/db'
 import { key } from '../lib/identityKey'
 import { IDENTITY_PROVIDER, mergeRefMetadata, verification, verificationOf } from '../lib/wikidataIdentity'
+import { fixtures } from './taxonomyMediaFixtures'
+import { loadIdentityClasses } from '../lib/identityClasses'
 
 // Decides which Wikidata item each entity is, so media:sync can fetch its
 // image. DB-only (no files), so it runs locally against the target database.
@@ -13,24 +15,32 @@ import { IDENTITY_PROVIDER, mergeRefMetadata, verification, verificationOf } fro
 // Auto-accepts an item only when ALL hold — otherwise a human decides:
 //   - its English label or an alias equals the entity's name or alias (by key())
 //   - its "instance of" (P31) includes a class allowed for the entity type in
-//     catalog/identity-classes.json (a type not listed there is never automatic)
+//     catalog/identity-classes.json, or a subclass of one (identity-classes.generated.json);
+//     a type not listed there is never automatic
 //   - it is the only search result that passes both
-// Everything else lands in catalog/review/identities.json. Set "approve" to a
+// Everything else lands in catalog/review/identities.<REVIEW_ENV>.json (default local;
+// prod:publish-catalog sets it to the Railway environment). Set "approve" to a
 // QID or "none" per entry, then run --apply-review. No fuzzy fallback exists.
 
 const ROOT = resolve(__dirname, '../../../..')
-const CLASSES_FILE = resolve(ROOT, 'catalog/identity-classes.json')
-const REVIEW_FILE = resolve(ROOT, 'catalog/review/identities.json')
+// Entries are keyed by entity ID, which differs per database — one file per environment.
+const REVIEW_ENV = process.env.REVIEW_ENV || 'local'
+const REVIEW_FILE = resolve(ROOT, `catalog/review/identities.${REVIEW_ENV}.json`)
 const LIMIT = parseInt(process.env.LIMIT || '200', 10)
 const RECHECK_MS = parseInt(process.env.RECHECK_DAYS || '30', 10) * 86_400_000
 const FORCE = process.env.FORCE === '1'
 const USER_AGENT = 'Datememe/1.0 (catalog identity resolver)'
+// Only a match within Wikidata's top results may be auto-accepted. Search is
+// widened past this to find candidates, but a lone match deep in the results
+// is usually an obscure namesake of an entity Wikidata doesn't have — the
+// Catan -> Catania failure — so it goes to review instead.
+const AUTO_ACCEPT_RANK = 10
 
-type Candidate = { qid: string; label?: string; description?: string; classes: string[]; nameMatch: boolean; classMatch: boolean }
+type Candidate = { qid: string; rank: number; label?: string; description?: string; classes: string[]; nameMatch: boolean; classMatch: boolean }
 type ReviewEntry = { entityId: string; type: string; name: string; reason: string; candidates: Candidate[]; approve: string | null }
 type ReviewFile = { instructions: string; pending: ReviewEntry[] }
 
-const INSTRUCTIONS = 'Set "approve" to the correct QID (it need not be a listed candidate) or to "none" if the entity has no Wikidata identity, then run: pnpm --filter server media:identify --apply-review. Leave null to decide later. Judge by description, not label.'
+const INSTRUCTIONS = 'Entries are for ONE environment (see file name). Set "approve" to the correct QID (it need not be a listed candidate) or to "none" if the entity has no Wikidata identity, then run: pnpm --filter server media:identify --apply-review. Leave null to decide later. Judge by description, not label.'
 
 class RateLimited extends Error {}
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
@@ -79,8 +89,7 @@ async function writeIdentity(entityId: string, qid: string, method: 'auto-strict
 }
 
 async function identify() {
-  const allowed: Record<string, Record<string, string>> = JSON.parse(readFileSync(CLASSES_FILE, 'utf8'))
-  delete allowed.$comment
+  const allowed = loadIdentityClasses()
   const review = readReview()
   const pendingIds = new Set(review.pending.map((p) => p.entityId))
 
@@ -93,11 +102,14 @@ async function identify() {
     },
     orderBy: { id: 'asc' },
   })
-  const counts = { entities: entities.length, verified: 0, typeNotAllowlisted: 0, awaitingReview: 0, knownNoIdentity: 0, recentlyChecked: 0, checked: 0, autoAccepted: 0, toReview: 0, remaining: 0 }
+  // Fixture entities get their hand-reviewed QID from media:sync; looking them up here only spends API calls.
+  const fixtureKeys = new Set(fixtures.map((f) => `${f.type}:${f.name}`))
+  const counts = { entities: entities.length, verified: 0, fixture: 0, typeNotAllowlisted: 0, awaitingReview: 0, knownNoIdentity: 0, recentlyChecked: 0, checked: 0, autoAccepted: 0, toReview: 0, remaining: 0 }
   const todo: typeof entities = []
   for (const e of entities) {
     const check = (e.metadata as any)?.identityCheck
     if (e.externalRefs.some((r) => verificationOf(r.metadata))) counts.verified++
+    else if (fixtureKeys.has(`${e.entityType.slug}:${e.canonicalName}`)) counts.fixture++
     else if (!allowed[e.entityType.slug]) counts.typeNotAllowlisted++
     else if (pendingIds.has(e.id)) counts.awaitingReview++
     else if (!FORCE && check?.status === 'no-identity') counts.knownNoIdentity++
@@ -109,28 +121,41 @@ async function identify() {
   for (const e of todo.slice(0, LIMIT)) {
     const names = new Set([e.canonicalName, ...e.aliases.map((a) => a.alias)].map(key))
     const classes = allowed[e.entityType.slug]!
-    let search: any, details: Record<string, any>
+    let candidates: Candidate[] = []
+    let qualifying: Candidate[] = []
+    
     try {
-      search = await wikidata({ action: 'wbsearchentities', search: e.canonicalName, language: 'en', uselang: 'en', type: 'item', limit: '7' })
-      details = await describe((search.search ?? []).map((r: any) => r.id))
+      for (const limit of ['10', '25', '50']) {
+        const search = await wikidata({ action: 'wbsearchentities', search: e.canonicalName, language: 'en', uselang: 'en', type: 'item', limit })
+        const qids: string[] = (search.search ?? []).map((r: any) => r.id)
+        const newQids = qids.filter((qid) => !candidates.some((c) => c.qid === qid))
+
+        if (newQids.length > 0) {
+          const details = await describe(newQids)
+          const newCandidates = newQids.map((qid) => {
+            const d = details[qid]
+            const rank = qids.indexOf(qid)
+            const itemNames = [labelOf(d), ...(d?.aliases?.en ?? []).map((a: any) => a.value)].filter(Boolean).map(key)
+            const itemClasses = classesOf(d)
+            return {
+              qid, rank, label: labelOf(d), description: d?.descriptions?.en?.value, classes: itemClasses,
+              nameMatch: itemNames.some((n) => names.has(n)), classMatch: itemClasses.some((c) => classes[c]),
+            }
+          })
+          candidates.push(...newCandidates)
+          qualifying = candidates.filter((c) => c.nameMatch && c.classMatch)
+        }
+
+        if (qualifying.length > 0) break
+      }
     } catch (error) {
       if (!(error instanceof RateLimited)) throw error
       stoppedEarly = error.message
       break
     }
-    const qids: string[] = (search.search ?? []).map((r: any) => r.id)
-    const candidates: Candidate[] = qids.map((qid) => {
-      const d = details[qid]
-      const itemNames = [labelOf(d), ...(d?.aliases?.en ?? []).map((a: any) => a.value)].filter(Boolean).map(key)
-      const itemClasses = classesOf(d)
-      return {
-        qid, label: labelOf(d), description: d?.descriptions?.en?.value, classes: itemClasses,
-        nameMatch: itemNames.some((n) => names.has(n)), classMatch: itemClasses.some((c) => classes[c]),
-      }
-    })
-    const qualifying = candidates.filter((c) => c.nameMatch && c.classMatch)
+
     counts.checked++
-    if (qualifying.length === 1) {
+    if (qualifying.length === 1 && qualifying[0]!.rank < AUTO_ACCEPT_RANK) {
       const q = qualifying[0]!
       await writeIdentity(e.id, q.qid, 'auto-strict', `${q.label} — ${q.description ?? ''}`)
       await setEntityCheck(e.id, e.metadata, { status: 'auto', qid: q.qid })
@@ -139,9 +164,13 @@ async function identify() {
     } else {
       const reason = !candidates.length ? 'no search results'
         : qualifying.length > 1 ? `${qualifying.length} items match name and class`
+        : qualifying.length === 1 ? `only match is search result #${qualifying[0]!.rank + 1}, below the top ${AUTO_ACCEPT_RANK}`
         : candidates.some((c) => c.nameMatch) ? 'name matches, but no allowed class'
         : 'no exact name match'
-      review.pending.push({ entityId: e.id, type: e.entityType.slug, name: e.canonicalName, reason, candidates: candidates.slice(0, 5), approve: null })
+      // Most plausible first: name + class matches, then name matches, then search rank.
+      const score = (c: Candidate) => (c.nameMatch && c.classMatch ? 0 : c.nameMatch ? 1 : 2) * 1000 + c.rank
+      const shortlist = [...candidates].sort((a, b) => score(a) - score(b)).slice(0, 8)
+      review.pending.push({ entityId: e.id, type: e.entityType.slug, name: e.canonicalName, reason, candidates: shortlist, approve: null })
       await setEntityCheck(e.id, e.metadata, { status: 'review' })
       counts.toReview++
       console.log(`review    ${e.entityType.slug}:${e.canonicalName} — ${reason}`)

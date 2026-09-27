@@ -311,6 +311,7 @@ model Entity {
   candidates           EntityCandidate[]
   facets               EntityFacet[]
   categoryStats        EntityCategoryStat[]
+  mediaSyncClaim       MediaSyncClaim?
 
   parentId String?
   parent   Entity?  @relation("EntityHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
@@ -373,6 +374,15 @@ model MediaAsset {
   @@index([entityTypeId, isPrimary])
   @@index([categoryId, isPrimary])
   @@index([provider, sourceId])
+}
+
+model MediaSyncClaim {
+  entityId  String   @id
+  status    String
+  startedAt DateTime @default(now())
+  lockedBy  String?
+
+  entity    Entity   @relation(fields: [entityId], references: [id], onDelete: Cascade)
 }
 
 enum EntitySourceType {

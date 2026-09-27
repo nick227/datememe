@@ -1,3 +1,4 @@
+import { hostname } from 'os'
 import { db } from '@project/db'
 import { TaxonomyMediaService } from '../services/TaxonomyMediaService'
 import { resolveWikidataImage } from '../services/imageProviders/wikimedia'
@@ -25,6 +26,8 @@ const LIMIT = parseInt(process.env.LIMIT || '60', 10)
 const RECHECK_MS = parseInt(process.env.RECHECK_DAYS || '30', 10) * 86_400_000
 const FORCE = process.env.FORCE === '1'
 const DELAY_MS = 5000 // between Wikimedia fetches
+const CLAIM_TTL_MS = 15 * 60_000 // well above one image's fetch + normalize time
+const CLAIM_OWNER = `${process.env.RAILWAY_REPLICA_ID ?? hostname()}:${process.pid}`
 
 const media = new TaxonomyMediaService()
 const results: { label: string; status: string; reason?: string }[] = []
@@ -83,7 +86,7 @@ async function main() {
     orderBy: { entityId: 'asc' },
   })
   const verified = refs.filter((r) => verificationOf(r.metadata) && /^Q\d+$/.test(r.externalId))
-  const counts = { verifiedIdentities: verified.length, withImage: 0, knownNoImage: 0, processed: 0, imported: 0, rejected: 0, noImage: 0, failed: 0, remaining: 0 }
+  const counts = { verifiedIdentities: verified.length, withImage: 0, knownNoImage: 0, processed: 0, imported: 0, rejected: 0, noImage: 0, failed: 0, locked: 0, remaining: 0 }
   const todo: typeof verified = []
   for (const ref of verified) {
     const asset = await db.mediaAsset.findFirst({ where: { entityId: ref.entityId, isPrimary: true, provider: IDENTITY_PROVIDER, sourceId: ref.externalId } })
@@ -100,6 +103,22 @@ async function main() {
   })
   for (const ref of todo.slice(0, LIMIT)) {
     const label = `${ref.entity.entityType.slug}:${ref.entity.canonicalName}`
+
+    // Claim the entity so a concurrent sync doesn't fetch it too. A claim older
+    // than CLAIM_TTL_MS belongs to a run that died mid-image (SSH drop,
+    // redeploy) and is taken over rather than blocking the entity forever.
+    await db.mediaSyncClaim.deleteMany({ where: { entityId: ref.entityId, startedAt: { lt: new Date(Date.now() - CLAIM_TTL_MS) } } })
+    try {
+      await db.mediaSyncClaim.create({ data: { entityId: ref.entityId, status: 'RUNNING', lockedBy: CLAIM_OWNER } })
+    } catch (error: any) {
+      if (error.code === 'P2002') {
+        counts.locked++
+        results.push({ label, status: 'skipped-locked' })
+        continue
+      }
+      throw error
+    }
+
     counts.processed++
     try {
       const candidate = await resolveWikidataImage(ref.externalId)
@@ -122,6 +141,8 @@ async function main() {
         counts.failed++
         results.push({ label, status: 'failed', reason })
       }
+    } finally {
+      await db.mediaSyncClaim.deleteMany({ where: { entityId: ref.entityId, lockedBy: CLAIM_OWNER } })
     }
     await new Promise((resolve) => setTimeout(resolve, DELAY_MS))
   }

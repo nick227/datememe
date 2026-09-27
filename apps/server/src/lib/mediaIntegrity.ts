@@ -19,6 +19,15 @@ export function assertMediaWritesAreServable() {
   if (!usesLocalStorage() || !process.env.DATABASE_URL) return
   const dbHost = new URL(process.env.DATABASE_URL).hostname
   if (LOCAL_HOSTS.has(dbHost)) return
+
+  // A remote database with local-disk storage is only safe inside a deployed
+  // Railway container, where the volume is. RAILWAY_REPLICA_ID exists only
+  // there — `railway run` injects the service's variables (including
+  // RAILWAY_ENVIRONMENT_NAME) on a laptop, but never the replica ID.
+  if (!process.env.RAILWAY_REPLICA_ID) {
+    throw new Error(`Refusing media write: database is remote (${dbHost}) but this is not a deployed Railway container. Run media imports inside it (railway ssh --service server).`)
+  }
+
   const { directory, baseUrl } = localStorageConfig()
   if (LOCAL_HOSTS.has(new URL(baseUrl).hostname)) {
     throw new Error(`Refusing media write: database is remote (${dbHost}) but BASE_URL is ${baseUrl}. Run media imports inside the server container (railway ssh --service server).`)
