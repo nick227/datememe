@@ -3,7 +3,7 @@ import { resolve } from 'path'
 
 // The one command for getting catalog lists into a Railway environment:
 //
-//   pnpm prod:publish-catalog [--env production] [--dry-run] [--skip-media] [--apply-review]
+//   pnpm prod:publish-catalog [--env production] [--dry-run] [--skip-media] [--apply-review] [--identities]
 //
 // It only coordinates; each stage is its own idempotent command, and the run
 // stops at the first failure. Re-running after a failure is always safe.
@@ -13,7 +13,8 @@ import { resolve } from 'path'
 //                      schema.prisma; DB URL fetched from Railway
 //   catalog:validate   local -> Railway MySQL (read-only)
 //   catalog:publish    local -> Railway MySQL (DB-only work may run locally)
-//   media:identify     local -> Railway MySQL + Wikidata; unsure cases go to
+//   media:identify     (only with --identities: entity images are optional now)
+//                      local -> Railway MySQL + Wikidata; unsure cases go to
 //                      catalog/review/identities.<env>.json and never block
 //   covers:propose     local -> Railway MySQL + Openverse; cover candidates for
 //                      lists without one go to catalog/review/covers.<env>.json
@@ -135,11 +136,15 @@ async function main() {
       summary.coversReview = covers.result
       if (covers.code) fail('Could not apply cover decisions (see above)')
     }
-    const identify = await stage('media:identify', 'pnpm', local('media-identify.ts'), 'IDENTIFY', env)
-    summary.identify = identify.result
-    // A rate-limited identify run saves its progress; sync what is verified and resume next time.
-    if (identify.code && !identify.result?.stoppedEarly) fail('Identity resolution failed')
-    if (identify.result?.stoppedEarly) console.log('  (identify stopped early on Wikidata rate limits — continuing; re-run later to resume)')
+    // Entity images are optional (lists carry the imagery), so the slow Wikidata
+    // identity pass only runs when asked for.
+    if (flag('--identities')) {
+      const identify = await stage('media:identify', 'pnpm', local('media-identify.ts'), 'IDENTIFY', env)
+      summary.identify = identify.result
+      // A rate-limited identify run saves its progress; sync what is verified and resume next time.
+      if (identify.code && !identify.result?.stoppedEarly) fail('Identity resolution failed')
+      if (identify.result?.stoppedEarly) console.log('  (identify stopped early on Wikidata rate limits — continuing; re-run later to resume)')
+    }
 
     const proposed = await stage('covers:propose', 'pnpm', local('covers-propose.ts'), 'COVERS', env)
     summary.covers = proposed.result

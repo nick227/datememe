@@ -59,7 +59,7 @@ pnpm --filter server catalog:validate
 
 # 2. Deterministic, production: commit the file, then
 pnpm prod:publish-catalog --dry-run
-pnpm prod:publish-catalog
+pnpm prod:publish-catalog                 # add --identities to also resolve entity images (optional)
 ```
 
 ## Media Safety
