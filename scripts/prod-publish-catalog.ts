@@ -9,7 +9,8 @@ import { resolve } from 'path'
 // stops at the first failure. Re-running after a failure is always safe.
 //
 //   preflight          code on this machine == code Railway has deployed; the
-//                      catalog is committed; DB URL fetched from Railway
+//                      catalog is committed; the database schema matches
+//                      schema.prisma; DB URL fetched from Railway
 //   catalog:validate   local -> Railway MySQL (read-only)
 //   catalog:publish    local -> Railway MySQL (DB-only work may run locally)
 //   media:identify     local -> Railway MySQL + Wikidata; unsure cases go to
@@ -39,7 +40,7 @@ function sh(cmd: string, cmdArgs: string[]) {
 /** One line per stage, so a run can be judged at a glance. Stages that didn't run are omitted. */
 function report() {
   const s = summary as any
-  const lines = [`environment: ${envName} @ ${s.deployedCommit ?? '?'}`]
+  const lines = [`environment: ${envName} @ ${s.deployedCommit ?? '?'}${s.schema ? ', schema matches' : ''}`]
   const catalog = s.publish ?? s.validate
   if (catalog) lines.push(`catalog:     ${catalog.lists} lists checked, ${catalog.newCategories} new categories, ${catalog.newEntities} new entities, ${catalog.errors} errors${s.publish ? '' : ' (validate only)'}`)
   if (s.review) lines.push(`review:      ${s.review.applied} decisions applied, ${s.review.stillPending} still pending`)
@@ -91,7 +92,17 @@ function preflight() {
   const url = sh('railway', ['variables', '--service', 'MySQL', '--environment', envName, '--kv'])
     .split('\n').find((l) => l.startsWith('MYSQL_PUBLIC_URL='))?.slice('MYSQL_PUBLIC_URL='.length)
   if (!url) fail(`MySQL in ${envName} has no MYSQL_PUBLIC_URL (enable public networking)`)
-  console.log(`  code matches deployed ${deployed.slice(0, 7)}; database ${new URL(url).host}`)
+  // The environment's schema is `db push`-managed, so drift is silent: missing
+  // Rankings columns once went unnoticed for days. Refuse to publish onto it.
+  try {
+    execFileSync('pnpm', ['--filter', '@project/db', 'exec', 'prisma', 'migrate', 'diff', '--from-url', url, '--to-schema-datamodel', 'prisma/schema.prisma', '--exit-code'],
+      { cwd: root, stdio: ['ignore', 'pipe', 'pipe'], env: { ...process.env, DATABASE_URL: url } })
+  } catch (error: any) {
+    if (error.status === 2) fail(`${envName} database schema differs from packages/db/prisma/schema.prisma. Inspect: pnpm --filter @project/db exec prisma migrate diff --from-url "$(railway variables --service MySQL --environment ${envName} --kv | sed -n 's/^MYSQL_PUBLIC_URL=//p')" --to-schema-datamodel prisma/schema.prisma --script`)
+    fail(`Could not compare the ${envName} schema: ${String(error.stderr ?? error.message).trim().split('\n').pop()}`)
+  }
+  summary.schema = 'matches'
+  console.log(`  code matches deployed ${deployed.slice(0, 7)}; schema matches; database ${new URL(url).host}`)
   return { ...process.env, DATABASE_URL: url, REVIEW_ENV: envName }
 }
 
