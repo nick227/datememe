@@ -35,9 +35,17 @@ async function main() {
   const importer = new ListImporterService()
   const titles = new Map<string, string>()
   const reports: (ImportReport & { file: string })[] = []
+  
+  const batchManifest = {
+    entityTypeSlugs: new Set<string>()
+  }
+  for (const { list } of lists) {
+    if (list.createEntityType) batchManifest.entityTypeSlugs.add(list.entityTypeSlug)
+  }
+
   // Validate everything first so a bad file can't leave a half-published run.
   for (const { file, list } of lists) {
-    const report = { ...(await importer.importList(list, true)), file }
+    const report = { ...(await importer.importList(list, true, batchManifest)), file }
     const titleKey = key(String(list.title ?? ''))
     if (titles.has(titleKey)) report.errors.push(`Title duplicates "${titles.get(titleKey)}"`), report.status = 'ERROR'
     titles.set(titleKey, `${list.title} (${file.split('/').pop()})`)

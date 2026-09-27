@@ -42,9 +42,13 @@ const SITE_PICK_GROUPS: Record<string, string> = {
 
 type Tx = Parameters<Parameters<typeof db.$transaction>[0]>[0]
 
+export type BatchManifest = {
+  entityTypeSlugs: Set<string>
+}
+
 export class ListImporterService {
   /** Validates and imports one list atomically. Safe to re-run: existing categories and entities are reused, never modified. */
-  async importList(input: ListSeedInput, dryRun = false): Promise<ImportReport> {
+  async importList(input: ListSeedInput, dryRun = false, batchManifest?: BatchManifest): Promise<ImportReport> {
     const report: ImportReport = { status: dryRun ? 'DRY_RUN' : 'SUCCESS', categoryCreated: false, entitiesCreated: [], entitiesReused: [], errors: [] }
     const parsed = ListSeedInputV1.safeParse(input)
     if (!parsed.success) {
@@ -69,7 +73,7 @@ export class ListImporterService {
         const group = await tx.categoryGroup.findUnique({ where: { slug: data.groupSlug } })
         if (!group) report.errors.push(`Group '${data.groupSlug}' not found`)
         let entityType = await tx.entityType.findUnique({ where: { slug: data.entityTypeSlug } })
-        if (!entityType && !data.createEntityType) {
+        if (!entityType && !data.createEntityType && !batchManifest?.entityTypeSlugs.has(data.entityTypeSlug)) {
           report.errors.push(`Entity type '${data.entityTypeSlug}' not found; add createEntityType if it is meant to be new`)
         }
         if (report.errors.length) return
