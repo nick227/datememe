@@ -19,6 +19,7 @@ async function main() {
   show('Wikidata ref problems', audit.refFindings)
   show('Entity images that do not resolve', audit.deadEntityImages)
   show('Same image on multiple entities', audit.sharedHashes)
+  show('Same cover on multiple lists', audit.sharedCovers)
   console.log(audit.healthy ? '\nOK: media is consistent.' : '\nFAIL: media is inconsistent — see repair-taxonomy-media.ts')
   if (!audit.healthy) process.exitCode = 1
 }

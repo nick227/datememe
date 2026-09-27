@@ -36,13 +36,7 @@ function featuredScore(category: any) {
   return (category.matchAnswerMultiplier ?? 0) * 1000 + category.popularityCount
 }
 
-function stableHash(str: string) {
-  let hash = 0
-  for (let i = 0; i < str.length; i++) hash = (hash << 5) - hash + str.charCodeAt(i)
-  return Math.abs(hash)
-}
-
-export function toCategoryUnit(category: any, opts: { completed: boolean; previewEntities?: any[]; mediaCandidates?: any[]; usedMedia?: Set<string>; feedPage?: number }) {
+export function toCategoryUnit(category: any, opts: { completed: boolean; previewEntities?: any[] }) {
   const metrics: Metric[] = []
   if (category.popularityCount > 0) {
     metrics.push(metric('popularity', 'People ranked this', category.popularityCount, 'secondary'))
@@ -52,26 +46,11 @@ export function toCategoryUnit(category: any, opts: { completed: boolean; previe
       metric('community-position', 'Your matches answer this', `${category.matchAnswerMultiplier.toFixed(1)}× more`, 'primary'),
     )
   }
-  let imageUrl = category.imageUrl ?? category.topPick?.imageUrl ?? null
-  let imageCredit = category.imageCredit ?? category.topPick?.imageCredit ?? null
-
-  const candidates = opts.mediaCandidates ?? []
-  if (!category.imageUrl && candidates.length > 0 && opts.usedMedia) {
-    const startIndex = stableHash(category.id + (opts.feedPage ?? 0)) % candidates.length
-    let best = candidates[0]
-    for (let i = 0; i < candidates.length; i++) {
-      const candidate = candidates[(startIndex + i) % candidates.length]
-      if (candidate.imageUrl && !opts.usedMedia.has(candidate.imageUrl)) {
-        best = candidate
-        break
-      }
-    }
-    if (best?.imageUrl) {
-      imageUrl = best.imageUrl
-      imageCredit = best.imageCredit ?? null
-      opts.usedMedia.add(best.imageUrl)
-    }
-  }
+  // Only the list's own stored cover (unique per list — lib/categoryCovers.ts).
+  // No render-time fallback to its top pick or ranked entities: those images
+  // are other lists' covers, so falling back repeats photos across cards.
+  const imageUrl = category.imageUrl ?? null
+  const imageCredit = category.imageCredit ?? null
 
   return {
     id: category.slug,
@@ -93,19 +72,18 @@ export function toCategoryUnit(category: any, opts: { completed: boolean; previe
 // Discover (topic groups, "Your lists"/"Your favorites" history, and Site
 // Picks) so completed/in-progress state and ranked preview entities are
 // never computed two different ways in two different places.
-function categoryUnitFor(category: any, index: number, myListByCategoryId: Map<string, any>, mediaCandidates?: any[], usedMedia?: Set<string>, feedPage?: number) {
+function categoryUnitFor(category: any, index: number, myListByCategoryId: Map<string, any>) {
   const list = myListByCategoryId.get(category.id)
   if (list && list.items.length) {
     return {
       ...toCategoryUnit(list.category ?? category, {
         completed: list.isComplete,
         previewEntities: list.items.slice(0, 3).map((item: any) => item.entity),
-        mediaCandidates, usedMedia, feedPage
       }),
       position: index,
     }
   }
-  return { ...toCategoryUnit(category, { completed: false, mediaCandidates, usedMedia, feedPage }), position: index }
+  return { ...toCategoryUnit(category, { completed: false }), position: index }
 }
 
 function toPersonUnit(candidate: any, index: number, alsoInto: any[] = []) {
@@ -181,20 +159,13 @@ export class ContentFeedService {
     const resultEntities = await db.entity.findMany({ where: { id: { in: allResultEntityIds } }, select: ENTITY_SELECT })
     const entityById = new Map(resultEntities.map((e: any) => [e.id, serializeEntity(e)]))
     
-    // Each entry carries its entity for the Results rails below; a category's
-    // imaged entries double as fallback card art for a category with no image.
-    const mediaCandidatesByCategoryId = new Map<string, any[]>()
+    // Each entry carries its entity for the Results rails below.
     for (const rs of categoryResultSets) {
       for (const entry of rs.entries) (entry as any).entity = entityById.get(entry.subjectId)
-      const candidates = rs.entries.map((e: any) => e.entity).filter((e: any) => e?.imageUrl)
-      if (candidates.length > 0) mediaCandidatesByCategoryId.set(rs.scopeValue, candidates)
     }
 
-    const usedMedia = new Set<string>()
-    const feedPage = opts.cursor ? 1 : 0 // simplify feedPage for stability
-
     function unitFor(category: any, index: number) {
-      return categoryUnitFor(category, index, myListByCategoryId, mediaCandidatesByCategoryId.get(category.id), usedMedia, feedPage)
+      return categoryUnitFor(category, index, myListByCategoryId)
     }
 
     // Reuses the `categories`/`myListByCategoryId` already fetched above —

@@ -98,6 +98,17 @@ export async function auditTaxonomyMedia() {
   }
   const sharedHashes = [...byHash.entries()].filter(([, s]) => s.size > 1).map(([sha256, s]) => ({ sha256, entities: [...s] }))
 
+  // No two active lists may show the same cover.
+  const activeCategories = new Map((await db.category.findMany({ where: { isActive: true }, select: { id: true, slug: true } })).map((c) => [c.id, c.slug]))
+  const coversByImage = new Map<string, string[]>()
+  for (const a of assets) {
+    if (!a.isPrimary || !a.categoryId || !activeCategories.has(a.categoryId)) continue
+    const k = a.sha256 ?? a.publicUrl ?? a.id
+    coversByImage.set(k, [...(coversByImage.get(k) ?? []), activeCategories.get(a.categoryId)!])
+  }
+  const sharedCovers = [...coversByImage.values()].filter((lists) => lists.length > 1).map((lists) => ({ lists }))
+  const listsWithoutCover = [...activeCategories.keys()].filter((id) => !assets.some((a) => a.isPrimary && a.categoryId === id)).length
+
   // Files on disk no MediaAsset points at. Profile photos live in the same
   // directory, so this is informational, never a deletion list.
   let unreferencedFiles: number | null = null
@@ -126,11 +137,13 @@ export async function auditTaxonomyMedia() {
     staleWikidataRefs: refFindings.filter((f) => f.problem === 'stale-ref').length,
     retiredWikidataRefs: refFindings.filter((f) => f.problem === 'retired-qid').length,
     sharedImageHashes: sharedHashes.length,
+    sharedListCovers: sharedCovers.length,
+    listsWithoutCover,
     identitiesByMethod,
     fixtureEntitiesInDb: fixtureEntities,
     fixturesMissingFromDb: fixtures.length - fixtureEntities,
     unreferencedFilesOnDisk: unreferencedFiles,
   }
-  const healthy = !summary.deadEntityImages && !assetFindings.length && !refFindings.length && !sharedHashes.length
-  return { summary, healthy, assetFindings, refFindings, deadEntityImages, sharedHashes }
+  const healthy = !summary.deadEntityImages && !assetFindings.length && !refFindings.length && !sharedHashes.length && !sharedCovers.length
+  return { summary, healthy, assetFindings, refFindings, deadEntityImages, sharedHashes, sharedCovers }
 }

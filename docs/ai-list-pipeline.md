@@ -81,6 +81,9 @@ Everything else goes to `catalog/review/identities.<environment>.json` (`identit
 
 Allowed classes live in `catalog/identity-classes.json`; `media:identify` reads `identity-classes.generated.json`, which adds every P279* subclass (so "action role-playing game" counts as a video game). *Human* and *literary work* are deliberately not expanded — their subclasses are roles and comics/songs, not people or books. After editing the source, regenerate: `pnpm --filter server exec tsx src/scripts/generate-identity-classes.ts` (identify refuses a stale generated file).
 
+### List covers
+Every list shows its **own** cover, and no two active lists share one. `media:sync` assigns covers from each list's choices (in list order; a broad list uses its type's most-used entities), reusing the stored file. A list with no unused image among its choices shows the placeholder — never another list's photo, never its type's photo. `audit:media` fails on a shared cover.
+
 ## Production Safety
 19. All stages must be idempotent.
 20. Never bypass audit or repair guards.

@@ -92,7 +92,9 @@ export function serializeEntity(entity: any) {
 }
 
 export function serializeCategory(category: any) {
-  const asset = category.mediaAssets?.find((asset: any) => asset.isPrimary) ?? category.entityType?.mediaAssets?.[0]
+  // The category's own cover only — never its entity type's, which put one
+  // photo on every movie list (covers are assigned per category by media:sync).
+  const asset = category.mediaAssets?.find((asset: any) => asset.isPrimary)
   const primaryImage = asset?.publicUrl ?? null
   return {
     id: category.id,
@@ -118,7 +120,6 @@ export function serializeCategory(category: any) {
 
 export const CATEGORY_SELECT = {
   id: true,
-  entityType: { select: { mediaAssets: { where: { isPrimary: true }, orderBy: { createdAt: 'desc' as const }, take: 1 } } },
   slug: true,
   groupId: true,
   entityTypeId: true,

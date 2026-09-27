@@ -6,6 +6,7 @@ import type { ImageCandidate } from '../services/imageProviders'
 import { assertMediaWritesAreServable, isServableAsset } from '../lib/mediaIntegrity'
 import { IDENTITY_PROVIDER, mergeRefMetadata, verification, verificationOf } from '../lib/wikidataIdentity'
 import { fixtures } from './taxonomyMediaFixtures'
+import { assignCategoryCovers } from '../lib/categoryCovers'
 
 // Production media sync. Writes image files, so it runs only inside the
 // server container (the guard below refuses anywhere else):
@@ -18,6 +19,7 @@ import { fixtures } from './taxonomyMediaFixtures'
 //   2. fetches an image for up to LIMIT verified identities that don't yet have
 //      a servable one, skipping known no-image items for RECHECK_DAYS
 //   3. attaches the fixture type/list covers that are missing
+//   4. gives every other list its own cover from its choices, never a repeat
 // Unverified identities are never touched. The last line is a machine-readable
 // `MEDIA_SYNC {…}` summary with `remaining`; run again until it is 0.
 // Exit 1 only for unexpected failures (rate limits, deleted items, bugs).
@@ -160,7 +162,9 @@ async function main() {
     try {
       if (hasCover) await attach({ entityTypeId: types.get(f.type)! }, candidate, `type:${f.type}`)
       for (const category of await db.category.findMany({ where: { entityTypeId: types.get(f.type)!, slug: { in: categories } } })) {
-        await attach({ categoryId: category.id }, candidate, `list:${category.slug}`)
+        // One image per list: skip if another list already shows this one.
+        const taken = await db.mediaAsset.findFirst({ where: { isPrimary: true, sha256: asset.sha256, categoryId: { not: null }, NOT: { categoryId: category.id } } })
+        if (!taken) await attach({ categoryId: category.id }, candidate, `list:${category.slug}`)
       }
     } catch (error: any) {
       counts.failed++
@@ -168,8 +172,11 @@ async function main() {
     }
   }
 
+  // 4. Every other list gets its own cover from its choices — never a repeat.
+  const covers = await assignCategoryCovers()
+
   for (const r of results) console.log(`${r.status.padEnd(22)} ${r.label}${r.reason ? ` — ${r.reason}` : ''}`)
-  console.log(`MEDIA_SYNC ${JSON.stringify(counts)}`)
+  console.log(`MEDIA_SYNC ${JSON.stringify({ ...counts, covers })}`)
   if (counts.failed) process.exitCode = 1
 }
 
