@@ -36,8 +36,10 @@ const USER_AGENT = 'Datememe/1.0 (catalog identity resolver)'
 // Catan -> Catania failure — so it goes to review instead.
 const AUTO_ACCEPT_RANK = 10
 
-type Candidate = { qid: string; rank: number; label?: string; description?: string; classes: string[]; nameMatch: boolean; classMatch: boolean }
+type Candidate = { qid: string; rank: number; label?: string; description?: string; classes: string[]; nameMatch: boolean; nearMatch: boolean; classMatch: boolean }
 type ReviewEntry = { entityId: string; type: string; name: string; reason: string; candidates: Candidate[]; approve: string | null }
+
+const normalize = (s: string) => s.toLowerCase().replace(/^(the|a|an)\s+/i, '').replace(/[^\w\s]/g, '').replace(/\s+/g, ' ').trim()
 type ReviewFile = { instructions: string; pending: ReviewEntry[] }
 
 const INSTRUCTIONS = 'Entries are for ONE environment (see file name). Set "approve" to the correct QID (it need not be a listed candidate) or to "none" if the entity has no Wikidata identity, then run: pnpm --filter server media:identify --apply-review. Leave null to decide later. Judge by description, not label.'
@@ -120,6 +122,7 @@ async function identify() {
   let stoppedEarly: string | null = null
   for (const e of todo.slice(0, LIMIT)) {
     const names = new Set([e.canonicalName, ...e.aliases.map((a) => a.alias)].map(key))
+    const nearNames = new Set([e.canonicalName, ...e.aliases.map((a) => a.alias)].map(normalize))
     const classes = allowed[e.entityType.slug]!
     let candidates: Candidate[] = []
     let qualifying: Candidate[] = []
@@ -135,11 +138,14 @@ async function identify() {
           const newCandidates = newQids.map((qid) => {
             const d = details[qid]
             const rank = qids.indexOf(qid)
-            const itemNames = [labelOf(d), ...(d?.aliases?.en ?? []).map((a: any) => a.value)].filter(Boolean).map(key)
+            const itemNames = [labelOf(d), ...(d?.aliases?.en ?? []).map((a: any) => a.value)].filter(Boolean)
+            const itemNamesNormalized = itemNames.map(normalize)
             const itemClasses = classesOf(d)
             return {
               qid, rank, label: labelOf(d), description: d?.descriptions?.en?.value, classes: itemClasses,
-              nameMatch: itemNames.some((n) => names.has(n)), classMatch: itemClasses.some((c) => classes[c]),
+              nameMatch: itemNames.map(key).some((n) => names.has(n)),
+              nearMatch: itemNamesNormalized.some((n) => nearNames.has(n)),
+              classMatch: itemClasses.some((c) => classes[c]),
             }
           })
           candidates.push(...newCandidates)
@@ -167,8 +173,14 @@ async function identify() {
         : qualifying.length === 1 ? `only match is search result #${qualifying[0]!.rank + 1}, below the top ${AUTO_ACCEPT_RANK}`
         : candidates.some((c) => c.nameMatch) ? 'name matches, but no allowed class'
         : 'no exact name match'
-      // Most plausible first: name + class matches, then name matches, then search rank.
-      const score = (c: Candidate) => (c.nameMatch && c.classMatch ? 0 : c.nameMatch ? 1 : 2) * 1000 + c.rank
+      // Most plausible first: exact name + class matches, near name + class matches, then name matches, near name matches, then search rank.
+      const score = (c: Candidate) => (
+        c.nameMatch && c.classMatch ? 0 : 
+        c.nearMatch && c.classMatch ? 1 : 
+        c.nameMatch ? 2 : 
+        c.nearMatch ? 3 : 
+        4
+      ) * 1000 + c.rank
       const shortlist = [...candidates].sort((a, b) => score(a) - score(b)).slice(0, 8)
       review.pending.push({ entityId: e.id, type: e.entityType.slug, name: e.canonicalName, reason, candidates: shortlist, approve: null })
       await setEntityCheck(e.id, e.metadata, { status: 'review' })

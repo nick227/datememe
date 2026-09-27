@@ -31,6 +31,7 @@ async function main() {
     const parsed = JSON.parse(readFileSync(file, 'utf8'))
     for (const list of Array.isArray(parsed) ? parsed : [parsed]) lists.push({ file, list })
   }
+  lists.sort((a, b) => (a.list.createEntityType ? 0 : 1) - (b.list.createEntityType ? 0 : 1))
 
   const importer = new ListImporterService()
   const titles = new Map<string, string>()
