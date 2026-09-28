@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs'
 import { dirname, resolve } from 'path'
 import { db } from '@project/db'
 import { hashDistance, measureImage, NEAR_DUPLICATE, technicalQuality, type ImageMetrics } from '../lib/coverImage'
-import { combineScore, generateBriefs, rateImage, type ListContext, type VisionRating } from '../lib/coverScoring'
+import { combineScore, generateBriefs, RATING_VERSION, rateImage, subjectKey, type ListContext, type VisionRating } from '../lib/coverScoring'
 import { fetchThumbnail, searchOpenverse, usableCandidates, type CoverCandidate } from '../lib/openverse'
 import { mergeRefMetadata } from '../lib/wikidataIdentity'
 
@@ -110,21 +110,37 @@ async function main() {
   const scope = MODE === 'backfill' ? categories.filter((c) => !hasCover(c)) : categories.filter(hasCover)
   const outcomes: Outcome[] = []
   let stopped: string | null = null
+  const contextOf = (c: (typeof categories)[number]): ListContext =>
+    ({ title: c.shortLabel, prompt: c.prompt, values: c.curatedEntities.map((e) => e.entity.canonicalName), brief: briefs[c.slug] })
 
-  for (const c of scope.slice(0, LIMIT)) {
-    const list: ListContext = { title: c.shortLabel, prompt: c.prompt, values: c.curatedEntities.map((e) => e.entity.canonicalName), brief: briefs[c.slug] }
+  // Every current cover rated first (the same way as candidates: stored full-size
+  // metrics, our own copy of the image), so each list knows what the others show.
+  const currents = new Map<string, NonNullable<Outcome['current']>>()
+  const takenSubjects = new Map<string, string>()
+  try {
+    for (const c of categories.filter(hasCover)) {
+      const cover = coverOf(c.metadata)!
+      const stored = (asset(c)!.metadata as any)?.quality as ImageMetrics | undefined
+      const rated = await rate(`v${RATING_VERSION}:${c.slug}:current:${cover.id}`, contextOf(c), () => fetchThumbnail(asset(c)!.publicUrl!), stored)
+      if (!rated) continue
+      const s = combineScore(rated.rating, rated.metrics)
+      currents.set(c.slug, { url: (asset(c)!.metadata as any)?.card?.publicUrl ?? asset(c)!.publicUrl!, score: s.score, reason: s.rejected ?? rated.rating.reason, flags: s.flags })
+      takenSubjects.set(c.slug, subjectKey(rated.rating.subject))
+    }
+  } catch (error: any) {
+    if (!/429|quota|OPENAI_API_KEY/i.test(error?.message ?? '')) throw error
+    stopped = error.message
+  }
+
+  for (const c of stopped ? [] : scope.slice(0, LIMIT)) {
+    const list = contextOf(c)
     const outcome: Outcome = { slug: c.slug, title: c.shortLabel, categoryId: c.id, decision: 'nothing-good', note: '', rejected: {} }
     const reject = (why: string) => { outcome.rejected[why] = (outcome.rejected[why] ?? 0) + 1 }
     try {
-      // The current cover, rated the same way (its stored full-size metrics, our own copy of the image).
       if (MODE === 'improve') {
-        const cover = coverOf(c.metadata)!
-        const stored = (asset(c)!.metadata as any)?.quality as ImageMetrics | undefined
-        const rated = await rate(`${c.slug}:current:${cover.id}`, list, () => fetchThumbnail(asset(c)!.publicUrl!), stored)
-        if (!rated) { outcome.note = 'current cover could not be fetched'; outcomes.push(outcome); continue }
-        const s = combineScore(rated.rating, rated.metrics)
-        outcome.current = { url: (asset(c)!.metadata as any)?.card?.publicUrl ?? asset(c)!.publicUrl!, score: s.score, reason: s.rejected ?? rated.rating.reason, flags: s.flags }
-        if (s.score >= IMPROVE_BELOW) { outcome.decision = 'keep'; outcome.note = 'above threshold'; outcomes.push(outcome); continue }
+        outcome.current = currents.get(c.slug)
+        if (!outcome.current) { outcome.note = 'current cover could not be fetched'; outcomes.push(outcome); continue }
+        if (outcome.current.score >= IMPROVE_BELOW) { outcome.decision = 'keep'; outcome.note = 'above threshold'; outcomes.push(outcome); continue }
       }
 
       cache.briefs[c.slug] ??= await generateBriefs(list)
@@ -132,7 +148,13 @@ async function main() {
       const queries = [...new Set([list.brief, ...cache.briefs[c.slug]!].filter(Boolean) as string[])]
       const pool = new Map<string, CoverCandidate>()
       for (const q of queries) {
-        for (const r of usableCandidates(await search(q)).slice(0, PER_BRIEF)) {
+        let results: any[]
+        try { results = await search(q) } catch (error: any) {
+          // Openverse's firewall refuses some innocent queries (403 on "outdoor park"); only its rate limit stops the run.
+          if (/returned 429/.test(error?.message ?? '')) throw error
+          reject(`search "${q}" failed`); continue
+        }
+        for (const r of usableCandidates(results).slice(0, PER_BRIEF)) {
           const holder = takenIds.get(r.id)
           if (holder && holder !== c.slug) { reject('used by another list'); continue }
           if (r.id === coverOf(c.metadata)?.id) continue
@@ -158,10 +180,13 @@ async function main() {
 
       const scored: Scored[] = []
       for (const m of measured.sort((a, b) => b.technical - a.technical).slice(0, MAX_RATED)) {
-        const rated = await rate(`${c.slug}:${m.candidate.id}`, list, () => fetchThumbnail(m.candidate.thumbnail), m.metrics)
+        const rated = await rate(`v${RATING_VERSION}:${c.slug}:${m.candidate.id}`, list, () => fetchThumbnail(m.candidate.thumbnail), m.metrics)
         if (!rated) { reject('thumbnail unavailable'); continue }
         const s = combineScore(rated.rating, rated.metrics, { width: m.candidate.width, height: m.candidate.height })
         if (s.rejected) { reject(s.rejected); continue }
+        // Feed variety: a different picture of the same thing (two microphones) is still a repeat.
+        const subject = subjectKey(rated.rating.subject)
+        if ([...takenSubjects].some(([slug, taken]) => slug !== c.slug && taken === subject)) { reject(`same subject as another cover (${subject})`); continue }
         scored.push({ candidate: m.candidate, metrics: rated.metrics, rating: rated.rating, score: s.score, flags: s.flags })
       }
       scored.sort((a, b) => b.score - a.score)
@@ -178,9 +203,10 @@ async function main() {
         // Claim the picture now so no later list in this run can take it or a look-alike.
         takenIds.set(best.candidate.id, c.slug)
         takenHashes.set(c.slug, best.metrics.dhash)
+        takenSubjects.set(c.slug, subjectKey(best.rating.subject))
       }
     } catch (error: any) {
-      if (/Openverse returned|OPENAI|429|quota/i.test(error?.message ?? '')) { stopped = error.message; break }
+      if (/429|quota|OPENAI_API_KEY/i.test(error?.message ?? '')) { stopped = error.message; break }
       outcome.note = `error: ${error?.message ?? error}`
     }
     outcomes.push(outcome)
@@ -203,6 +229,10 @@ async function main() {
     const below = outcomes.filter((o) => o.current && o.current.score < IMPROVE_BELOW).length
     console.log(`\n${scope.length} existing covers / ${below} below ${IMPROVE_BELOW} / ${n('auto')} ${verb}improved / ${n('review')} review / ${collisions} duplicate collisions`)
   }
+  const bySubject = new Map<string, string[]>()
+  for (const [slug, subject] of takenSubjects) bySubject.set(subject, [...(bySubject.get(subject) ?? []), slug])
+  const shared = [...bySubject].filter(([, slugs]) => slugs.length > 1)
+  if (shared.length) console.log(`Shared subjects (informational): ${shared.map(([subject, slugs]) => `${subject} ×${slugs.length}`).join(', ')}`)
   if (stopped) console.log(`Stopped early: ${stopped}. Progress is cached; re-run to resume.`)
   console.log(`${APPLY ? 'Applied.' : 'Dry run — nothing written. Re-run with --apply.'} Details: ${REPORT_FILE}`)
 }
@@ -215,7 +245,7 @@ async function apply(outcomes: Outcome[], categories: { id: string; metadata: un
       const previous = coverOf(category.metadata)
       const cover = {
         status: 'approved', provider: 'openverse', ...o.best.candidate, at: new Date().toISOString(),
-        auto: { score: o.best.score, previousScore: o.current?.score ?? null, relevance: o.best.rating.relevance, reason: o.best.rating.reason, model: process.env.COVER_MODEL || 'gpt-4o-mini' },
+        auto: { score: o.best.score, previousScore: o.current?.score ?? null, relevance: o.best.rating.relevance, subject: subjectKey(o.best.rating.subject), reason: o.best.rating.reason, model: process.env.COVER_MODEL || 'gpt-4o-mini' },
         ...(previous ? { replaced: { ...previous, replaced: undefined } } : {}),
       }
       await db.category.update({ where: { id: o.categoryId }, data: { metadata: mergeRefMetadata(category.metadata, { cover }) } })

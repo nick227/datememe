@@ -30,23 +30,29 @@ export async function generateBriefs(list: ListContext): Promise<string[]> {
   return queries.map((q) => q.trim().toLowerCase()).filter((q) => q && q.split(/\s+/).length <= 3).slice(0, 3)
 }
 
+/** Bump when the rating prompt or schema changes, so cached ratings are redone. */
+export const RATING_VERSION = 3
+
 export type VisionRating = {
   relevance: number; cropSurvival: number; appeal: number
   isPhotograph: boolean; people: 'none' | 'incidental' | 'identifiable'; textOrLogo: 'none' | 'minor' | 'prominent'; sensitive: boolean
+  /** One lowercase singular noun for the main subject ("microphone", "cat") — two lists never share one. */
+  subject: string
   reason: string
 }
 
 const RATING_SCHEMA = {
   type: 'object', additionalProperties: false,
-  required: ['relevance', 'cropSurvival', 'appeal', 'isPhotograph', 'people', 'textOrLogo', 'sensitive', 'reason'],
+  required: ['relevance', 'cropSurvival', 'appeal', 'isPhotograph', 'people', 'textOrLogo', 'sensitive', 'subject', 'reason'],
   properties: {
-    relevance: { type: 'integer', description: '0-10: how clearly the image evokes this list at a glance' },
+    relevance: { type: 'integer', description: '0-10: how clearly the image evokes THIS list at a glance. 9-10 only when it could hardly be the cover of any other list; a generic stand-in that would fit many lists (a microphone, a crowd, a trophy, a starry sky, a pretty landscape) is at most 6' },
     cropSurvival: { type: 'integer', description: '0-10: does the second image (the 3:4 card crop) still show the subject well' },
     appeal: { type: 'integer', description: '0-10: would this make someone want to open the list (light, composition, mood)' },
-    isPhotograph: { type: 'boolean', description: 'a real photo (not illustration, clip art, render, screenshot or scan of a document)' },
+    isPhotograph: { type: 'boolean', description: 'false only for digital illustration, cartoon drawing, clip art, vector graphics, 3D renders and screenshots. A photo of anything (a painting, sculpture, toy, poster on a wall) is true' },
     people: { type: 'string', enum: ['none', 'incidental', 'identifiable'], description: 'identifiable = a recognizable face is a main subject' },
-    textOrLogo: { type: 'string', enum: ['none', 'minor', 'prominent'], description: 'visible text, signage, brand logos' },
+    textOrLogo: { type: 'string', enum: ['none', 'minor', 'prominent'], description: 'visible text, signage, brand logos, or trademarked characters and mascots (e.g. Mickey Mouse, Superman); prominent when they are a main subject' },
     sensitive: { type: 'boolean', description: 'tragedy, violence, protest, medical, suggestive or otherwise inappropriate for a friendly cover' },
+    subject: { type: 'string', description: 'the main subject as ONE lowercase singular noun, as generic as possible ("microphone", "cat", "trophy", "crowd", "graffiti")' },
     reason: { type: 'string', description: 'one short sentence' },
   },
 }
@@ -78,6 +84,8 @@ export type CoverScore = { score: number; rejected: string | null; flags: string
  * 0-100 from the vision rating (75%) and technical quality (25%), with fixed
  * penalties. Hard rejects are never auto-approved or proposed.
  */
+export const subjectKey = (subject: string) => subject.trim().toLowerCase().split(/\s+/).pop()!.replace(/(?<=[^s])s$/, '')
+
 export function combineScore(rating: VisionRating, metrics: ImageMetrics, realSize?: { width: number; height: number }): CoverScore {
   const technical = technicalQuality(realSize ? { ...metrics, ...realSize } : metrics)
   const flags = [...technical.issues]
