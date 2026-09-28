@@ -2,6 +2,13 @@
 
 Source: production (read-only), all **97 active categories**, not just the 54 lists in `catalog/lists/*.json` (the rest came from seed data, the in-app Content factory and older importers). Production has 11 profiles, so completion counts below are signals, not statistics.
 
+## Status (2026-09-28)
+
+- **Issue 1 fixed:** lists are curated by default; 53 existing lists backfilled.
+- **Issues 2–3 fixed:** 6 duplicate lists retired; groups merged (food→food-drink, lifestyle→lifestyle-hobbies, entertainment→film-tv, geography→travel); new History & Politics group; 3 orphan types deleted.
+- **Batch 1 published** (`catalog/lists/2026-09-batch-09-compatibility.json`): Perfect First Date, Ideal Date Night In, Green Flags (new Dating & Relationships group), Your Role at a Party, Ideal Sunday Morning, Late-Night Snack, Travel Style, Favorite Time of Year — each with a picked cover.
+- **Next batches:** still missing — home & living, nightlife, humor, values, pets, money habits, wellness; social habits and routines have one list each.
+
 ## Fix before generating more: 3 structural issues
 
 **1. Sub-genre lists offer the entire type (quality bug).** The JSON importer creates `FILTERED` categories with no required tags and no curated pool, so the choices are *every* entity of the type:
