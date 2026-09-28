@@ -164,6 +164,8 @@ async function main() {
     try {
       if (hasCover) await attach({ entityTypeId: types.get(f.type)! }, candidate, `type:${f.type}`)
       for (const category of await db.category.findMany({ where: { entityTypeId: types.get(f.type)!, slug: { in: categories } } })) {
+        // A cover a person picked (or declined) outranks the fixture's.
+        if ((category.metadata as any)?.cover?.status) continue
         // One image per list: skip if another list already shows this one.
         const taken = await db.mediaAsset.findFirst({ where: { isPrimary: true, sha256: asset.sha256, categoryId: { not: null }, NOT: { categoryId: category.id } } })
         if (!taken) await attach({ categoryId: category.id }, candidate, `list:${category.slug}`)
