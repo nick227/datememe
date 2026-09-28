@@ -214,8 +214,8 @@ Title · Question · Group · Value type (existing only) · Values (+ Add) · Co
 3. **3:4 upload crop.** It's currently 1:1.
 4. **One-list cover suggestion.** Extract `covers-auto`'s per-list logic into a function the API and worker can call. It runs as a `COVER_SUGGEST` job with cached results, records its outcome in `metadata.coverSuggest`, and is also used for auto-cover on new lists.
 5. **Importer respects admin edits** (decision 2).
-7. **+ Add with duplicate check and `metadata.origin`** (decision 7). This reuses `TaxonomyService`'s submission matching.
 6. **`firstLiveAt` stamp.** Written the first time a list goes Live.
+7. **+ Add with duplicate check and `metadata.origin`** (decision 7). This reuses `TaxonomyService`'s submission matching.
 
 Openverse allows ~200 anonymous searches a day, and each list's suggestion uses 4. That's fine for Phase 1 with caching. Register an Openverse API key before this is used heavily.
 
