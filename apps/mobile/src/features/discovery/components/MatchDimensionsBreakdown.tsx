@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 import type { MatchInsight } from '../../../navigation/types'
 import { Typography } from '../../../ui/Typography'
 import { colors, spacing, type } from '../../../theme'
@@ -16,7 +16,6 @@ export function MatchDimensionsBreakdown({ insights }: Props) {
         {insights.map((insight, idx) => (
           <View key={idx} style={styles.card}>
             <View style={styles.headerRow}>
-              <Text style={styles.icon}>{insight.icon}</Text>
               <Typography variant="heading" style={styles.title}>{insight.title}</Typography>
             </View>
             <Typography variant="bodyMuted" style={styles.description}>
@@ -48,10 +47,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: spacing.xs,
-  },
-  icon: {
-    fontSize: 18,
-    marginRight: spacing.sm,
   },
   title: {
     flex: 1,

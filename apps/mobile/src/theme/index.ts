@@ -17,7 +17,7 @@ export const colors = {
   accentPressed: '#2e1921ff',
   ink: '#000000',
   inkMuted: '#595959',
-  border: '#242424ff',
+  border: '#E5E7EB', // Substantially lighter border for a clean, flat aesthetic
   surface: '#FFFFFF',
   surfaceMuted: '#F0F0F0',
   canvas: '#FFFFFF',

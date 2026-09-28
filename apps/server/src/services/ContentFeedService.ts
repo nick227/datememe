@@ -7,7 +7,7 @@ import { normalizeSharedFavorites } from '../lib/sharedFavorites'
 import type { AgeBucket } from '../lib/geo'
 import { TaxonomyService } from './TaxonomyService'
 import { ListService } from './ListService'
-import { DiscoveryService, decodeDiscoveryCursor } from './DiscoveryService'
+import { DiscoveryService, readDiscoveryPage } from './DiscoveryService'
 
 const taxonomyService = new TaxonomyService()
 const listService = new ListService()
@@ -36,10 +36,12 @@ function featuredScore(category: any) {
   return (category.matchAnswerMultiplier ?? 0) * 1000 + category.popularityCount
 }
 
-export function toCategoryUnit(category: any, opts: { completed: boolean; previewEntities?: any[] }) {
+export function toCategoryUnit(category: any, opts: { completed: boolean; previewEntities?: any[]; hasAnswered?: boolean }) {
   const metrics: Metric[] = []
-  if (category.popularityCount > 0) {
-    metrics.push(metric('popularity', 'People ranked this', category.popularityCount, 'secondary'))
+  if (opts.hasAnswered) {
+    metrics.push(metric('status', 'Status', 'Completed', 'secondary'))
+  } else {
+    metrics.push(metric('status', 'Status', 'Take Poll', 'secondary'))
   }
   if (category.matchAnswerMultiplier && category.matchAnswerMultiplier >= 1.15) {
     metrics.push(
@@ -81,11 +83,12 @@ function categoryUnitFor(category: any, index: number, myListByCategoryId: Map<s
       ...toCategoryUnit(list.category ?? category, {
         completed: list.isComplete,
         previewEntities: list.items.slice(0, 3).map((item: any) => item.entity),
+        hasAnswered: true,
       }),
       position: index,
     }
   }
-  return { ...toCategoryUnit(category, { completed: false }), position: index }
+  return { ...toCategoryUnit(category, { completed: false, hasAnswered: false }), position: index }
 }
 
 function toPersonUnit(candidate: any, index: number, alsoInto: any[] = []) {
@@ -221,33 +224,7 @@ export class ContentFeedService {
       ...inProgressLists.slice().sort((a: any, b: any) => (b.updatedAt ?? '').localeCompare(a.updatedAt ?? '')),
       ...completedLists.slice().sort((a: any, b: any) => (b.completedAt ?? '').localeCompare(a.completedAt ?? '')),
     ]
-    if (historyLists.length) {
-      beats.push({
-        moduleKind: 'collection',
-        id: 'your-lists',
-        type: 'lists',
-        title: 'Your lists',
-        suggestedStructure: 'rail',
-        items: historyLists.map((l: any, i: number) => ({
-          ...toCategoryUnit(l.category, {
-            completed: l.isComplete,
-            previewEntities: l.items.slice(0, 3).map((item: any) => item.entity),
-          }),
-          position: i,
-        })),
-      })
-    } else if (incompleteSorted.length) {
-      // Empty state: introduce the action that will populate this collection
-      // rather than leaving it blank or faking history (proposal correction).
-      beats.push({
-        moduleKind: 'collection',
-        id: 'your-lists',
-        type: 'lists',
-        title: 'Answer your first list',
-        suggestedStructure: 'rail',
-        items: incompleteSorted.slice(0, 2).map((c: any, i: number) => ({ ...toCategoryUnit(c, { completed: false }), position: i })),
-      })
-    }
+
 
     // Quick Picks — a real, persisted, infinite feature (QuickPicksService),
     // not a visual placeholder. The feed only ever emits a marker; the
@@ -554,6 +531,7 @@ export class ContentFeedService {
         return toCategoryUnit(completedList.category ?? c, {
           completed: true,
           previewEntities: completedList.items.slice(0, 3).map((item: any) => item.entity),
+          hasAnswered: true,
         })
       }
       return toCategoryUnit(c, { completed: false })
@@ -588,7 +566,7 @@ export class ContentFeedService {
     // Grid→Rail→River shape on every page reads as a rigid rotation, not a
     // living feed). Not used for eligibility — DiscoveryService's own
     // offset/limit pagination is the source of truth for what's already seen.
-    const pageIndex = decodeDiscoveryCursor(opts.cursor)?.page ?? 0
+    const pageIndex = readDiscoveryPage(opts.cursor)
     // Resolved once and threaded through both call sites below that need it
     // (DiscoveryService's own candidate serialization, and
     // getFavoritedCandidates) — resolveEntitlements is a 4-query chain;
@@ -709,32 +687,6 @@ export class ContentFeedService {
           { id: 'age-50plus', label: '50+' },
           ...groups.map((g: any) => ({ id: g.slug, label: g.label })),
         ],
-      }
-
-      if (favorited.length) {
-        const favoritedAlsoInto = await this.getAlsoIntoByProfileId(favorited)
-        modules.push({
-          moduleKind: 'collection',
-          id: 'your-favorites',
-          type: 'favorites',
-          title: 'Your favorites',
-          suggestedStructure: 'rail',
-          items: favorited.map((c: any, i: number) => ({
-            ...toPersonUnit(c, i, favoritedAlsoInto.get(c.profile.id) ?? []),
-            relationship: { favorited: true },
-          })),
-        })
-      } else if (candidateUnits.length) {
-        // Empty state: introduce the action that populates this collection
-        // (liking someone) rather than leaving the slot blank (proposal correction).
-        modules.push({
-          moduleKind: 'collection',
-          id: 'your-favorites',
-          type: 'favorites',
-          title: 'Like people to start your favorites',
-          suggestedStructure: 'rail',
-          items: candidateUnits.slice(0, 3).map((u: any, i: number) => ({ ...u, position: i })),
-        })
       }
 
       // Site Picks (buildSitePicksModules) deliberately does NOT appear

@@ -17,7 +17,7 @@ export function AdminCouponRedemptionsScreen({ route, navigation }: Props) {
   const redemptions = useAdminCouponRedemptions(couponId)
 
   return (
-    <ScreenContainer testID="screen.admin-coupon-redemptions" width="wide">
+    <ScreenContainer testID="screen.admin-coupon-redemptions" width="standard">
       <TopNavigation testID="admin-coupon-redemptions.header" alignment="left" leftAction="back" onLeftAction={() => navigation.goBack()} title="Redemptions" subtitle={code} />
 
       {redemptions.isLoading ? (

@@ -39,7 +39,7 @@ export function AdminGrantsScreen({ navigation }: Props) {
   }
 
   return (
-    <ScreenContainer testID="screen.admin-grants" width="wide">
+    <ScreenContainer testID="screen.admin-grants" width="standard">
       <TopNavigation testID="admin-grants.header" alignment="left" leftAction="back" onLeftAction={() => navigation.goBack()} title="Grants" subtitle="Every membership grant issued" />
 
       {grants.isLoading ? (

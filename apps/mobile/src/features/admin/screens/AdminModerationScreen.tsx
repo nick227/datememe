@@ -147,7 +147,7 @@ export function AdminModerationScreen({ navigation }: Props) {
   const reportRows = reports.data?.pages.flatMap((p) => p.reports) ?? []
 
   return (
-    <ScreenContainer testID="screen.admin-moderation" width="wide">
+    <ScreenContainer testID="screen.admin-moderation" width="standard">
       <TopNavigation testID="admin-moderation.header" alignment="left" leftAction="back" onLeftAction={() => navigation.goBack()} title="Moderation" />
 
       <View style={styles.segmented}>

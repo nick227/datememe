@@ -1,6 +1,5 @@
 import { StyleSheet, View } from 'react-native'
 import { Typography } from '../Typography'
-import { ImageCredit } from './ImageCredit'
 import { CardShell } from './CardShell'
 import { SmartImage } from './SmartImage'
 import { MicroBadge } from './MicroBadge'
@@ -8,7 +7,8 @@ import { PressableScale } from '../PressableScale'
 import { borderWidth, colors, spacing } from '../../theme'
 import type { RenderVariant } from './renderBudgets'
 import type { ContentUnit } from './types'
-
+import { PosterCard } from './PosterCard'
+import { personToCardModel } from './cardAdapters'
 type Props = {
   unit: ContentUnit
   variant: RenderVariant
@@ -23,18 +23,17 @@ type Props = {
 // content anatomy differs, the geometry doesn't.
 export function PersonUnitCard({ unit, variant, zone, onPress }: Props) {
   // If we're strictly in the results zone, force the canonical poster card.
-  if (zone === 'results') return <CompactPersonCard unit={unit} onPress={onPress} />
+  if (zone === 'results') return <PosterCard model={personToCardModel(unit)} onPress={onPress} />
 
   // The People grid uses the same compact ~3:4 "poster" card as Lists'
   // topic/Site Picks grids (CategoryUnitCard's CompactGridCard) — one small
   // card language across the whole app instead of Discover's grid forking
   // into its own bigger, differently-proportioned shape.
-  if (variant === 'grid-square') return <CompactPersonCard unit={unit} onPress={onPress} />
+  if (variant === 'grid-square') return <PosterCard model={personToCardModel(unit)} onPress={onPress} />
 
   const isRail = variant === 'rail'
   const isRiver = variant === 'river'
   const matchMetric = unit.metrics?.find((m) => m.type === 'overlap')
-  const sharedCountMetric = unit.metrics?.find((m) => m.type === 'popularity')
   const sharedFavorites = unit.sharedFavorites ?? []
   const locationLine = unit.subtitle || ''
 
@@ -107,48 +106,7 @@ export function PersonUnitCard({ unit, variant, zone, onPress }: Props) {
   )
 }
 
-// Compact "poster" card — mirrors CategoryUnitCard's CompactGridCard
-// exactly: ~3:4 image on top, thick border instead of a shadow (stark
-// aesthetic), one meta line below. The corner badge carries the match
-// percentage instead of a Done/In-progress state.
-function CompactPersonCard({ unit, onPress }: { unit: ContentUnit; onPress: () => void }) {
-  const matchMetric = unit.metrics?.find((m) => m.type === 'overlap')
-  const sharedCountMetric = unit.metrics?.find((m) => m.type === 'popularity')
-  const locationLine = unit.subtitle || ''
-  const metaLine = locationLine
 
-  return (
-    <CardShell testID={`discover.profile.${unit.id}`} onPress={onPress} radius="grid" noBorder>
-      <CardShell.Media style={compactStyles.imageWrap}>
-        <SmartImage uri={unit.imageUrl} fallbackText={unit.title} aspectRatio={3/4} style={StyleSheet.absoluteFill} />
-        {matchMetric ? <MicroBadge label={`${matchMetric.value} match`} position="top-left" variant="neutral" /> : null}
-      </CardShell.Media>
-      <CardShell.Body style={compactStyles.body}>
-        <View style={{ gap: spacing.xs }}>
-          <Typography variant="heading" style={compactStyles.title} numberOfLines={1}>
-            {unit.title}
-          </Typography>
-          <Typography variant="label" style={compactStyles.meta} numberOfLines={1}>
-            {metaLine || ' '}
-          </Typography>
-        </View>
-        <ImageCredit credit={unit.imageCredit} />
-      </CardShell.Body>
-    </CardShell>
-  )
-}
-
-const compactStyles = StyleSheet.create({
-  imageWrap: { position: 'relative', aspectRatio: 3 / 4, width: '100%', overflow: 'hidden' },
-  body: {
-    borderTopWidth: 0,
-    padding: spacing.md,
-    flex: 1,
-    justifyContent: 'space-between',
-  },
-  title: { fontSize: 18, lineHeight: 22, marginBottom: 0, fontWeight: '700', minHeight: 22 },
-  meta: { fontSize: 13, color: colors.inkMuted, minHeight: 20 },
-})
 
 const riverStyles = StyleSheet.create({
   row: {

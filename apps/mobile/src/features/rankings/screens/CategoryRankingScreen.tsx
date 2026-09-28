@@ -61,7 +61,7 @@ export function CategoryRankingScreen({ route, navigation }: Props) {
           <Typography variant="bodyMuted">{data.category.prompt}</Typography>
           {data.isPublished ? (
             <Typography variant="label" style={styles.stats}>
-              {data.takeCount} answered
+              {data.takeCount} users ranked this
             </Typography>
           ) : null}
           <View style={styles.viewerBox}>

@@ -129,7 +129,7 @@ export function AdminTaxonomyScreen({ navigation }: Props) {
   const rootTypes = (types.data ?? []).filter((t) => !t.parentId)
 
   return (
-    <ScreenContainer testID="screen.admin-taxonomy" width="wide">
+    <ScreenContainer testID="screen.admin-taxonomy" width="standard">
       <TopNavigation testID="admin-taxonomy.header" alignment="left" leftAction="back" onLeftAction={() => navigation.goBack()} title="Taxonomy" subtitle="Types & values" />
 
       {types.isLoading ? (

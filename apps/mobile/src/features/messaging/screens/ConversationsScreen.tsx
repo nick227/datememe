@@ -1,9 +1,10 @@
 import { useState } from 'react'
-import { FlatList, StyleSheet, Text, View } from 'react-native'
+import { FlatList, StyleSheet, View } from 'react-native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { useConversations, useCurrentUser, useUnmatchConversation } from '@project/sdk'
 import { ScreenContainer } from '../../../ui/ScreenContainer'
 import { PageHeader } from '../../../ui/content/PageHeader'
+import { FilterChipsRow } from '../../../ui/content/FilterChipsRow'
 import { EmptyState } from '../../../ui/EmptyState'
 import { ErrorState } from '../../../ui/ErrorState'
 import { TextField } from '../../../ui/TextField'
@@ -26,6 +27,7 @@ export function ConversationsScreen({ navigation }: Props) {
   const unmatchConversation = useUnmatchConversation()
   const sheet = useActionSheet()
   const [search, setSearch] = useState('')
+  const [filter, setFilter] = useState('all')
   const allRows = conversations.data?.pages.flatMap((p) => p.data) ?? []
   
   // Enforce sort rule: unread human > recent human > unread system > recent system
@@ -47,7 +49,7 @@ export function ConversationsScreen({ navigation }: Props) {
   })
 
   const query = search.trim().toLowerCase()
-  const rows = query
+  let rows = query
     ? sortedRows.filter((item) => {
         const other = item.participants.find((p: any) => p.id !== myProfileId) ?? item.participants[0]
         return (
@@ -55,7 +57,11 @@ export function ConversationsScreen({ navigation }: Props) {
           item.lastMessageBody?.toLowerCase().includes(query)
         )
       })
-    : allRows
+    : sortedRows
+
+  if (filter === 'unread') {
+    rows = rows.filter((r) => r.hasUnread)
+  }
 
   const unreadCount = allRows.filter((r) => r.hasUnread).length
   const pageFacts = [
@@ -105,8 +111,6 @@ export function ConversationsScreen({ navigation }: Props) {
             <PageHeader
               title="Messages"
               facts={pageFacts}
-              sectionTitle="Conversations"
-              sectionAction={<Text style={styles.dropdownPlaceholder}>ALL ▾</Text>}
             />
             {!conversations.isLoading && allRows.length > 0 && (
               <View style={styles.searchContainer}>
@@ -119,13 +123,18 @@ export function ConversationsScreen({ navigation }: Props) {
                 />
               </View>
             )}
+            <FilterChipsRow 
+              chips={[{ id: 'all', label: 'All' }, { id: 'unread', label: 'Unread' }]}
+              selectedIds={[filter]}
+              onSelect={setFilter}
+            />
           </View>
         }
         ListEmptyComponent={
           query ? (
             <EmptyState testID="conversations.empty" title="No matches" subtitle={`No conversations match "${search.trim()}".`} />
           ) : (
-            <EmptyState testID="conversations.empty" title="No conversations yet" subtitle="When you match with someone, your conversations will appear here." />
+            <EmptyState testID="conversations.empty" title="No conversations yet" />
           )
         }
         ItemSeparatorComponent={() => <View style={styles.separator} />}
@@ -184,7 +193,6 @@ const styles = StyleSheet.create({
   },
   separator: {
     height: 1,
-    backgroundColor: colors.border,
     marginLeft: 56 + spacing.md + spacing.lg,
     width: '100%',
     alignSelf: 'center',

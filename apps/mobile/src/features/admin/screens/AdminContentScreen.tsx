@@ -56,7 +56,7 @@ export function AdminContentScreen({ navigation }: Props) {
   const toggleConcept = (id: string) => setSelectedConcepts(s => s.includes(id) ? s.filter(x => x !== id) : [...s, id])
 
   return (
-    <ScreenContainer testID="screen.admin-content" width="wide">
+    <ScreenContainer testID="screen.admin-content" width="standard">
       <TopNavigation testID="admin-content.header" alignment="left" leftAction="back" onLeftAction={() => navigation.goBack()} title="Content Factory" />
       <ScrollView contentContainerStyle={styles.content}>
         {!!message && <Typography variant="body" color="primary">{message}</Typography>}

@@ -103,7 +103,7 @@ export function ConversationScreen({ route, navigation }: Props) {
           message: err?.message ?? 'Your daily message allowance has been reached.',
           buttons: [
             { testID: 'conversation.dialog.not-now', text: 'Not now', style: 'cancel' },
-            { testID: 'conversation.dialog.go-premium', text: 'Go Premium', onPress: () => (navigation.getParent()?.navigate as any)('Profile', { screen: 'Paywall' }) },
+            { testID: 'conversation.dialog.go-premium', text: 'Go Premium', onPress: () => (navigation.getParent()?.navigate as any)('ProfileTab', { screen: 'Paywall' }) },
           ],
         })
       } else {
@@ -298,7 +298,7 @@ export function ConversationScreen({ route, navigation }: Props) {
                   <Pressable
                     testID={`conversation.message.${item.id}.unlock`}
                     style={styles.lockedContainer}
-                    onPress={() => (navigation.getParent()?.navigate as any)('Profile', { screen: 'Paywall' })}
+                    onPress={() => (navigation.getParent()?.navigate as any)('ProfileTab', { screen: 'Paywall' })}
                   >
                     <View style={[styles.bubble, styles.bubbleLocked]}>
                       <Icon name="Lock" size={16} color={colors.primary} />

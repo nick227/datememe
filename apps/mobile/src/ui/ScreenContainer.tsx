@@ -1,14 +1,14 @@
 import type { ReactNode } from 'react'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { Box, colors } from '../theme'
+import { Box, colors, CANVAS_WIDTH } from '../theme'
 
-const MAX_WIDTH = { narrow: 960, wide: 1340 }
+const MAX_WIDTH = { narrow: 1200, wide: 1200, standard: CANVAS_WIDTH }
 
 type Props = {
   testID?: string
   children: ReactNode
   padded?: boolean
-  width?: 'narrow' | 'wide' | 'full'
+  width?: 'narrow' | 'wide' | 'standard' | 'full'
 }
 
 export function ScreenContainer({ testID, children, padded = true, width = 'full' }: Props) {

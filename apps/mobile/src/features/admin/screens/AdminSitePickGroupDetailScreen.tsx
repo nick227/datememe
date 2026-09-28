@@ -104,7 +104,7 @@ export function AdminSitePickGroupDetailScreen({ route, navigation }: Props) {
 
   if (groupId && groups.isLoading) {
     return (
-      <ScreenContainer testID="screen.admin-site-pick-group-detail" width="wide">
+      <ScreenContainer testID="screen.admin-site-pick-group-detail" width="standard">
         <TopNavigation testID="admin-site-pick-group-detail.header" alignment="left" leftAction="back" onLeftAction={() => navigation.goBack()} title="Site Picks group" />
         <Skeleton height={300} />
       </ScreenContainer>
@@ -113,7 +113,7 @@ export function AdminSitePickGroupDetailScreen({ route, navigation }: Props) {
 
   if (groupId && (groups.isError || !group)) {
     return (
-      <ScreenContainer testID="screen.admin-site-pick-group-detail" width="wide">
+      <ScreenContainer testID="screen.admin-site-pick-group-detail" width="standard">
         <TopNavigation testID="admin-site-pick-group-detail.header" alignment="left" leftAction="back" onLeftAction={() => navigation.goBack()} title="Site Picks group" />
         <ErrorState testID="admin-site-pick-group-detail.error" subtitle="Couldn't load this group." onRetry={() => groups.refetch()} />
       </ScreenContainer>
@@ -121,7 +121,7 @@ export function AdminSitePickGroupDetailScreen({ route, navigation }: Props) {
   }
 
   return (
-    <ScreenContainer testID="screen.admin-site-pick-group-detail" width="wide">
+    <ScreenContainer testID="screen.admin-site-pick-group-detail" width="standard">
       <TopNavigation testID="admin-site-pick-group-detail.header"
         alignment="left"
         leftAction="back"

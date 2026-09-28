@@ -22,7 +22,7 @@ export function AdminDashboardScreen({ navigation }: Props) {
   const queue = useAdminQueueMetrics()
 
   return (
-    <ScreenContainer testID="screen.admin-dashboard" width="wide">
+    <ScreenContainer testID="screen.admin-dashboard" width="standard">
       <TopNavigation testID="admin-dashboard.header" alignment="left" leftAction="back" onLeftAction={() => navigation.goBack()} title="Admin" subtitle="Job queue health" />
 
       <Pressable testID="admin-dashboard.open-admin-moderation" style={styles.card} onPress={() => navigation.navigate('AdminModeration')}>
@@ -58,7 +58,6 @@ export function AdminDashboardScreen({ navigation }: Props) {
           <Typography variant="heading">Lists</Typography>
           <Icon name="ChevronRight" size={20} color={colors.inkMuted} />
         </View>
-        <Typography variant="bodyMuted">Find, fix and create lists</Typography>
       </Pressable>
 
       <Pressable testID="admin-dashboard.open-admin-site-picks" style={styles.card} onPress={() => navigation.navigate('AdminSitePicks')}>

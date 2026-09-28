@@ -16,7 +16,7 @@ export function AdminMembershipScreen({ navigation }: Props) {
   const overview = useAdminMembershipOverview()
 
   return (
-    <ScreenContainer testID="screen.admin-membership" width="wide">
+    <ScreenContainer testID="screen.admin-membership" width="standard">
       <TopNavigation testID="admin-membership.header" alignment="left" leftAction="back" onLeftAction={() => navigation.goBack()} title="Membership" subtitle="FREE / MEMBER" />
 
       {overview.isLoading ? (

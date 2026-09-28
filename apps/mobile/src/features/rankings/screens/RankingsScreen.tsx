@@ -119,7 +119,7 @@ export function RankingsScreen({ navigation }: Props) {
                 onPress={() => openCategory(module.id.slice(CATEGORY_MODULE_PREFIX.length), module.title ?? '')}
               >
                 <Typography variant="label" style={styles.viewFullText}>
-                  View full ranking{module.context?.reason ? ` · ${module.context.reason}` : ''}
+                  {module.context?.viewerHasAnswered ? 'Edit your answers' : 'Take the poll'}
                 </Typography>
                 <Icon name="ChevronRight" size={16} color={colors.ink} />
               </Pressable>

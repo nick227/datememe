@@ -28,9 +28,7 @@ export function RankingBoard({ items, maxItems, onRemove, onReorder }: RankingBo
 
   return (
     <View style={styles.container}>
-      <Typography variant="heading" style={styles.title}>
-        Your top {maxItems}
-      </Typography>
+
       
       <ScrollView style={styles.board} showsVerticalScrollIndicator={false}>
         {slots.map(({ rank, item }) => {
@@ -80,7 +78,6 @@ export function RankingBoard({ items, maxItems, onRemove, onReorder }: RankingBo
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
   },
   title: {
     marginBottom: spacing.md,

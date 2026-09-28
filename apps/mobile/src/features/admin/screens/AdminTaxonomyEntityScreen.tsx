@@ -61,7 +61,7 @@ export function AdminTaxonomyEntityScreen({ route, navigation }: Props) {
   ]
 
   return (
-    <ScreenContainer testID="screen.admin-taxonomy-entity" width="narrow">
+    <ScreenContainer testID="screen.admin-taxonomy-entity" width="standard">
       <TopNavigation testID="admin-taxonomy-entity.header"
         alignment="left"
         leftAction="back"

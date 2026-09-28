@@ -72,7 +72,7 @@ export function AdminCouponsScreen({ navigation }: Props) {
   }
 
   return (
-    <ScreenContainer testID="screen.admin-coupons" width="wide">
+    <ScreenContainer testID="screen.admin-coupons" width="standard">
       <TopNavigation testID="admin-coupons.header"
         alignment="left"
         leftAction="back"

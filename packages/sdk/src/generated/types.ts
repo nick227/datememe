@@ -1612,6 +1612,8 @@ export interface components {
             userId: string;
             username: string;
             displayName: string;
+            /** @description Age computed from the registered birthdate. The birthdate itself is never exposed. */
+            age: number | null;
             genderIdentity: string | null;
             /** @description Short optional tagline — not a bio essay, see docs §1/§3. */
             bio: string | null;
@@ -2074,6 +2076,8 @@ export interface components {
             id: string;
             type?: components["schemas"]["CollectionType"];
             title?: string | null;
+            imageUrl?: string | null;
+            imageCardUrl?: string | null;
             context?: components["schemas"]["ContentCollectionContext"];
             /**
              * @description Advisory only — the frontend has final say per viewport/context (proposal §1).

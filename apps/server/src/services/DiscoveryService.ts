@@ -46,6 +46,17 @@ export function decodeDiscoveryCursor(cursor?: string): DiscoveryCursor | null {
   }
 }
 
+/** Layout-only page index. Scored cursors carry `page`; the low-evidence fallback cursor carries `createdAt` and may too. Missing or foreign cursors read as page 0 — eligibility pagination validates its own shape. */
+export function readDiscoveryPage(cursor?: string): number {
+  if (!cursor) return 0
+  try {
+    const value = JSON.parse(Buffer.from(cursor, 'base64url').toString('utf8'))
+    return Number.isSafeInteger(value?.page) && value.page >= 1 ? value.page : 0
+  } catch {
+    return 0
+  }
+}
+
 export class DiscoveryService {
   async getDiscoveryFeed(viewerUserId: string, viewerProfileId: string, opts: DiscoveryFilters) {
     const limit = normalizeLimit(opts.limit)
@@ -215,8 +226,8 @@ export class DiscoveryService {
 
   async getFallbackFeed(viewerUserId: string, viewerProfileId: string, opts: DiscoveryFilters) {
     const limit = normalizeLimit(opts.limit)
-    const cursorStr = opts.cursor ? Buffer.from(opts.cursor, 'base64url').toString('utf8') : null
-    const cursorObj = cursorStr ? JSON.parse(cursorStr) : null
+    const cursorObj = opts.cursor ? JSON.parse(Buffer.from(opts.cursor, 'base64url').toString('utf8')) : null
+    const page = Number.isSafeInteger(cursorObj?.page) && cursorObj.page >= 1 ? cursorObj.page : 0
 
     const viewer = await db.profile.findUnique({
       where: { id: viewerProfileId },
@@ -305,7 +316,7 @@ export class DiscoveryService {
 
     const last = pageProfiles[pageProfiles.length - 1]
     const nextCursor = hasMore && last
-      ? Buffer.from(JSON.stringify({ createdAt: last.createdAt.toISOString() })).toString('base64url')
+      ? Buffer.from(JSON.stringify({ createdAt: last.createdAt.toISOString(), page: page + 1 })).toString('base64url')
       : null
 
     return { data, meta: { hasMore, nextCursor }, ...(filterNotice ? { filterNotice } : {}) }

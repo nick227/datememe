@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, View } from 'react-native'
+import { Pressable, StyleSheet, ScrollView } from 'react-native'
 import { Typography } from '../Typography'
 import { borderWidth, colors, spacing } from '../../theme'
 import type { FilterChip } from './types'
@@ -20,7 +20,11 @@ type Props = {
 // as chips "overflowing").
 export function FilterChipsRow({ chips, selectedIds, onSelect }: Props) {
   return (
-    <View style={styles.row}>
+    <ScrollView 
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={styles.row}
+    >
       {chips.map((chip) => {
         const selected = selectedIds.includes(chip.id)
         return (
@@ -31,18 +35,19 @@ export function FilterChipsRow({ chips, selectedIds, onSelect }: Props) {
           </Pressable>
         )
       })}
-    </View>
+    </ScrollView>
   )
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: spacing.lg, gap: spacing.sm, paddingBottom: spacing.lg },
+  row: { flexDirection: 'row', paddingHorizontal: spacing.lg, gap: spacing.sm, paddingBottom: spacing.lg },
   chip: {
     borderWidth: borderWidth.thin,
     borderColor: colors.border,
     paddingVertical: spacing.xs,
     paddingHorizontal: spacing.md,
     backgroundColor: colors.surface,
+    borderRadius: 100,
   },
   chipSelected: { backgroundColor: colors.ink, borderColor: colors.ink },
   label: { color: colors.ink },

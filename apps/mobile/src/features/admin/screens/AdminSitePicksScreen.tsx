@@ -17,7 +17,7 @@ export function AdminSitePicksScreen({ navigation }: Props) {
   const groups = useAdminSitePickGroups()
 
   return (
-    <ScreenContainer testID="screen.admin-site-picks" width="wide">
+    <ScreenContainer testID="screen.admin-site-picks" width="standard">
       <TopNavigation testID="admin-site-picks.header"
         alignment="left"
         leftAction="back"

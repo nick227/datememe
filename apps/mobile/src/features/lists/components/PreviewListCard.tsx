@@ -28,11 +28,6 @@ type Props = {
   style?: any
 }
 
-function formatCount(num: number) {
-  if (num >= 1000) return (num / 1000).toFixed(1) + 'k'
-  return num.toString()
-}
-
 // Client-side per-list agreement, shaped like the worker's per-item score
 // (CalculateMatchesJob: `0.5 + 0.5 * rankSim` per shared pick) minus the
 // rarity weighting — the viewer only has these two lists, not global usage
@@ -67,7 +62,6 @@ export function PreviewListCard({ list, category, matchContext, ownerName, viewe
   // Determine data sources
   const cat = category ?? list?.category
   const categoryTitle = cat?.shortLabel ?? 'List'
-  const participationCount = cat?.popularityCount ?? 0
   const prompt = cat?.prompt ?? `Rank the ${categoryTitle.toLowerCase()} you love most.`
 
   let thumbnail = null
@@ -90,8 +84,7 @@ export function PreviewListCard({ list, category, matchContext, ownerName, viewe
   }
 
   // Build metadata string
-  const rankedStr = `${formatCount(participationCount)} ranked`
-  const metadataPieces = [rankedStr]
+  const metadataPieces: string[] = []
   
   if (matchContext) {
     metadataPieces.push(matchContext)
@@ -132,9 +125,11 @@ export function PreviewListCard({ list, category, matchContext, ownerName, viewe
         </View>
       </View>
 
-      <Typography variant="bodyMuted" style={styles.metadata}>
-        {metadataText}
-      </Typography>
+      {metadataText ? (
+        <Typography variant="bodyMuted" style={styles.metadata}>
+          {metadataText}
+        </Typography>
+      ) : null}
 
       {comparing && isCompleted ? (
         <View style={styles.compareRow}>
@@ -148,7 +143,7 @@ export function PreviewListCard({ list, category, matchContext, ownerName, viewe
           ) : (
             <Pressable onPress={onPressTitle} disabled={!onPressTitle} hitSlop={6}>
               <Typography variant="label" style={styles.compareNotTaken}>
-                You haven&apos;t taken this{onPressTitle ? ' — take it' : ''}
+                {onPressTitle ? 'Take to compare' : 'Not taken'}
               </Typography>
             </Pressable>
           )}

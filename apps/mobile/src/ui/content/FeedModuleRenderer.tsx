@@ -56,7 +56,7 @@ export function FeedModuleRenderer({ module, state, onPressItem, onPressQuickPic
   // ── RESULTS = one compact, predictable grammar. ──────────────────────
   // Results are an editorial ranking, not just another set of stacked cards.
   if (zone === 'results') {
-    return <River {...shared} />
+    return <River {...shared} imageUrl={module.imageCardUrl || module.imageUrl} />
   }
 
   // ── CUSTOM REDESIGN: Tech Stack ──────────────────────────────────────
@@ -77,7 +77,7 @@ export function FeedModuleRenderer({ module, state, onPressItem, onPressQuickPic
       return <Spotlight {...shared} />
 
     case 'river':
-      return <River {...shared} />
+      return <River {...shared} imageUrl={module.imageCardUrl || module.imageUrl} />
 
     case 'grid':
     default:

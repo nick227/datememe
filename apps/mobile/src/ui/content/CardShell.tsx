@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { type ViewStyle, type StyleProp } from 'react-native'
 import { Box } from '../../theme'
-import { PressableScale } from '../PressableScale'
+import { Surface, type SurfaceVariant } from '../Surface'
 
 type BaseProps = { children: ReactNode; style?: StyleProp<ViewStyle> }
 
@@ -43,57 +43,24 @@ type CardShellProps = BaseProps & {
   containerStyle?: StyleProp<ViewStyle>
   radius?: keyof typeof import('../../theme').radius
   noBorder?: boolean
+  variant?: SurfaceVariant
 }
 
-export function CardShell({ children, onPress, testID, style, containerStyle, radius = 'sm', noBorder }: CardShellProps) {
-  const shadowStyle = noBorder ? {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 } as any,
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 3,
-  } : {}
-
-  if (!onPress) {
-    return (
-      <Box
-        backgroundColor="surface"
-        borderWidth={noBorder ? 0 : 1}
-        borderColor={noBorder ? 'transparent' : 'ink'}
-        borderRadius={radius as any}
-        flex={1}
-        flexDirection="column"
-        overflow="hidden"
-        style={[shadowStyle, containerStyle, style as any]}
-        testID={testID}
-      >
-        {children}
-      </Box>
-    )
-  }
+export function CardShell({ children, onPress, testID, style, containerStyle, radius = 'sm', noBorder, variant }: CardShellProps) {
+  const surfaceVariant = variant || (noBorder ? 'raised' : 'bordered')
 
   return (
-    <PressableScale
-      testID={testID}
+    <Surface
+      variant={surfaceVariant}
+      radius={radius}
       onPress={onPress}
-      style={[shadowStyle, containerStyle]}
-      scaleTo={0.98}
-      duration={100}
-      haptic="light"
+      testID={testID}
+      style={[containerStyle, style as any]}
     >
-      <Box
-        backgroundColor="surface"
-        borderWidth={noBorder ? 0 : 1}
-        borderColor={noBorder ? 'transparent' : 'ink'}
-        borderRadius={radius as any}
-        flex={1}
-        flexDirection="column"
-        overflow="hidden"
-        style={style as any}
-      >
+      <Box flex={1} flexDirection="column">
         {children}
       </Box>
-    </PressableScale>
+    </Surface>
   )
 }
 

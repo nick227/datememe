@@ -153,35 +153,7 @@ export function ListBuilderScreen({ route, navigation }: Props) {
         items: picked.map((p) => ({ entityId: p.entityId, rank: p.rank })),
         isComplete,
       })
-      if (!isComplete || !picked.length) {
-        navigation.goBack()
-        return
-      }
-      // The saved moment is the segue from "my answers" to "everyone's". The
-      // share comes from the last rankings rebuild (this save lands on the
-      // worker's next tick) — close enough for "how common is my #1".
-      const fresh = await rankings.refetch().catch(() => null)
-      const share = fresh?.data?.viewerTopPickPercent
-      const top = [...picked].sort((a, b) => a.rank - b.rank)[0]!
-      sheet.show({
-        title: 'Your ranking saved',
-        message: [`#1 ${top.name}`, share ? `${share}% of people put ${top.name} at #1` : null].filter(Boolean).join('\n'),
-        buttons: [
-          { testID: 'list-builder.dialog.done', text: 'Done', style: 'cancel', onPress: () => navigation.goBack() },
-          {
-            testID: 'list-builder.dialog.site-rankings',
-            text: 'View site rankings',
-            onPress: () => {
-              navigation.goBack()
-              ;(navigation.getParent()?.navigate as any)('Rankings', {
-                screen: 'CategoryRanking',
-                params: { categorySlug, shortLabel: category.data?.shortLabel ?? shortLabel },
-                initial: false,
-              })
-            },
-          },
-        ],
-      })
+      navigation.goBack()
     } catch (err: any) {
       // The inline error banner (rendered below, with its own retry action)
       // is the real feedback here — it already worked on web; a second,
@@ -203,7 +175,7 @@ export function ListBuilderScreen({ route, navigation }: Props) {
   const LeftPane = (
     <View style={styles.leftPane}>
       <View style={styles.searchWrapper}>
-        <SearchBar testID="list-builder.search" value={query} onChangeText={setQuery} placeholder={`Type an artist name...`} />
+        <SearchBar testID="list-builder.search" value={query} onChangeText={setQuery} placeholder={`Type your own...`} />
         {isOverlayVisible && (
           <AutocompleteOverlay
             query={query}
@@ -216,15 +188,7 @@ export function ListBuilderScreen({ route, navigation }: Props) {
         )}
       </View>
       
-      {category.data && category.data.requiredTags.length > 0 && (
-        <View style={styles.filterRow}>
-          {category.data.requiredTags.map((tag) => (
-            <View testID={`list-builder.tag.${tag.id}`} key={tag.id} style={styles.filterChip}>
-              <Typography variant="label" style={styles.filterChipText}>{tag.label}</Typography>
-            </View>
-          ))}
-        </View>
-      )}
+
 
       <FlatList
         data={fastPicks}
@@ -258,8 +222,6 @@ export function ListBuilderScreen({ route, navigation }: Props) {
     <ScreenContainer testID="screen.list-builder" width="narrow">
       <TopNavigation testID="list-builder.header"
         alignment="left"
-        leftAction="back"
-        onLeftAction={() => navigation.goBack()}
         title={category.data?.prompt ?? shortLabel}
       />
       <View style={styles.content}>
@@ -298,11 +260,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   rightPane: {
-    minHeight: 350,
     zIndex: 1,
   },
   searchWrapper: {
-    marginBottom: spacing.md,
+    marginTop: spacing.md,
     zIndex: 100,
   },
   fastPicksList: {

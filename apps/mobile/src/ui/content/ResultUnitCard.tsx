@@ -22,7 +22,7 @@ export function ResultUnitCard({ unit, onPress }: Props) {
           #{unit.rank}
         </Typography>
       </Box>
-      {SHOW_VALUE_IMAGES ? <SmartImage uri={unit.imageUrl} fallbackText={unit.title} width={48} height={48} round /> : null}
+      {SHOW_VALUE_IMAGES ? <SmartImage uri={unit.imageUrl} fallbackText={unit.title} width={40} height={40} round /> : null}
       
       <View style={styles.content}>
         <Typography variant="heading" style={styles.title} numberOfLines={1}>
@@ -62,39 +62,45 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
     paddingVertical: spacing.md,
+    paddingHorizontal: spacing.xs,
   },
   rowTop3: {
     backgroundColor: 'rgba(0,0,0,0.02)',
   },
   rankNumber: {
-    fontSize: 24,
+    fontSize: 20,
+    fontWeight: '600',
     color: colors.inkMuted,
   },
   content: {
     flex: 1,
+    justifyContent: 'center',
     gap: 2,
     paddingRight: spacing.sm,
   },
   meta: {
     alignItems: 'flex-end',
-    minWidth: 60,
+    justifyContent: 'center',
+    minWidth: 50,
   },
   title: {
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: '600',
+    color: colors.ink,
   },
   subtitle: {
     fontSize: 13,
+    color: colors.inkMuted,
   },
   trend: {
-    fontSize: 12,
+    fontSize: 13,
+    fontWeight: '500',
   },
   trendUp: {
     color: colors.ink,
-    fontWeight: 'bold',
   },
   trendDown: {
     color: colors.inkMuted,

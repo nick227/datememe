@@ -9,18 +9,18 @@ import { useUploadMedia } from '@project/sdk'
  * delegates to `useUploadMedia` from `@project/sdk` so there's exactly one upload
  * implementation.
  */
-export function usePhotoPicker() {
+export function usePhotoPicker({ crop = true }: { crop?: boolean } = {}) {
   const upload = useUploadMedia()
 
   async function pick(): Promise<string | null> {
     // Permission prompts are a no-op on web; harmless to call unconditionally.
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync()
-    if (!permission.granted) return null
+    if (!permission.granted) throw new Error('Allow photo library access in your device settings to add a photo.')
 
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
       quality: 0.8,
-      allowsEditing: true,
+      allowsEditing: crop,
       aspect: [1, 1],
     })
     const asset = result.assets?.[0]

@@ -70,7 +70,7 @@ export function AdminTaxonomyGenerateScreen({ route, navigation }: Props) {
   }
 
   return (
-    <ScreenContainer testID="screen.admin-taxonomy-generate" width="narrow">
+    <ScreenContainer testID="screen.admin-taxonomy-generate" width="standard">
       <TopNavigation testID="admin-taxonomy-generate.header"
         alignment="left"
         leftAction="back"

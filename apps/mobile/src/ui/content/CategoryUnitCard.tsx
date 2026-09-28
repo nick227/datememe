@@ -5,10 +5,10 @@ import { SmartImage } from './SmartImage'
 import { MicroBadge } from './MicroBadge'
 import { PressableScale } from '../PressableScale'
 import { Box, borderWidth, colors, spacing, radius } from '../../theme'
-import { pickMetrics, RENDER_BUDGETS, type RenderVariant } from './renderBudgets'
+import { pickMetrics, type RenderVariant } from './renderBudgets'
 import type { ContentUnit } from './types'
-
-
+import { PosterCard } from './PosterCard'
+import { categoryToCardModel } from './cardAdapters'
 type Props = {
   unit: ContentUnit
   variant: RenderVariant
@@ -22,12 +22,12 @@ type Props = {
 export function CategoryUnitCard({ unit, variant, zone, onPress }: Props) {
   // Results zone: always the compact poster card, regardless of variant.
   if (zone === 'results') {
-    return <CompactGridCard unit={unit} onPress={onPress} />
+    return <PosterCard model={categoryToCardModel(unit)} onPress={onPress} />
   }
 
   // Variant-driven dispatch — no data-quality branching.
   if (variant === 'grid-square') {
-    return <CompactGridCard unit={unit} onPress={onPress} />
+    return <PosterCard model={categoryToCardModel(unit)} onPress={onPress} />
   }
   if (variant === 'grid-dense') {
     return <DenseCard unit={unit} onPress={onPress} />
@@ -40,41 +40,7 @@ export function CategoryUnitCard({ unit, variant, zone, onPress }: Props) {
   return <StatCard unit={unit} variant={variant} onPress={onPress} />
 }
 
-// Compact "poster" card — ~3:4 image on top, one meta line below, a thick
-// border instead of a shadow (stark aesthetic, no Material elevation). Same
-// shell whether the category is unanswered, in progress, or complete; only
-// the corner badge and meta line change.
-function CompactGridCard({ unit, onPress }: { unit: ContentUnit; onPress: () => void }) {
-  const items = unit.previewEntities ?? []
-  // The list's own cover only; its values' images would repeat across cards.
-  const imageUrl = unit.imageUrl
-  const isComplete = !!unit.relationship?.completed
-  const inProgress = !isComplete && items.length > 0
-  const metric = pickMetrics(unit.metrics, 'grid-square')[0]
 
-  return (
-    <CardShell testID={`categories.card.${unit.id}`} containerStyle={styles.compactCardOverwrite} onPress={onPress} radius="grid" noBorder={true}>
-      <CardShell.Media style={styles.compactImageWrap}>
-        <SmartImage uri={imageUrl} fallbackText={unit.title} style={StyleSheet.absoluteFill} />
-        {isComplete ? (
-          <MicroBadge label="DONE" variant="neutral" position="top-left" />
-        ) : inProgress ? (
-          <MicroBadge label="IN PROGRESS" variant="accent" position="top-left" />
-        ) : null}
-      </CardShell.Media>
-      <CardShell.Body style={styles.compactBody}>
-        <View style={{ gap: spacing.xs }}>
-          <Typography variant="heading" style={styles.compactTitle} numberOfLines={2}>
-            {unit.title}
-          </Typography>
-          <Typography variant="label" style={styles.compactMeta} numberOfLines={1}>
-            {metric?.value || 0} Rankings
-          </Typography>
-        </View>
-      </CardShell.Body>
-    </CardShell>
-  )
-}
 
 function CompletedListCard({ unit, onPress }: { unit: ContentUnit; onPress: () => void }) {
   const items = unit.previewEntities ?? []
@@ -110,10 +76,8 @@ function CompletedListCard({ unit, onPress }: { unit: ContentUnit; onPress: () =
 }
 
 function StatCard({ unit, variant, onPress }: { unit: ContentUnit; variant: RenderVariant; onPress: () => void }) {
-  const budget = RENDER_BUDGETS[variant]
   const metrics = pickMetrics(unit.metrics, variant)
   const isSpotlight = variant === 'spotlight'
-  const hasImage = !!unit.imageUrl
   const { width } = useWindowDimensions()
   const isWide = width >= 768
 
@@ -133,23 +97,25 @@ function StatCard({ unit, variant, onPress }: { unit: ContentUnit; variant: Rend
         />
       ) : null}
 
+      {!(isSpotlight && isWide) ? (
+        <CardShell.Media style={{ width: '100%', overflow: 'hidden' }}>
+          <SmartImage 
+            uri={unit.imageUrl} 
+            fallbackText={unit.title}
+            style={[styles.coverImage, isSpotlight && styles.spotlightImage]} 
+          />
+        </CardShell.Media>
+      ) : null}
+
       <CardShell.Body style={[isSpotlight && isWide && styles.spotlightBodyWide, !isSpotlight && styles.railBody]}>
         <View style={{ gap: spacing.xs }}>
           <Typography variant={isSpotlight ? 'display' : 'heading'} style={[styles.statTitle, !isSpotlight && styles.railTitle]} numberOfLines={isSpotlight ? undefined : 2}>
             {unit.title}
           </Typography>
           <Typography variant="label" style={styles.compactMeta} numberOfLines={1}>
-            {metrics[0]?.value || 0} Rankings
+            {metrics[0]?.value ? String(metrics[0].value) : ''}
           </Typography>
         </View>
-
-        {!(isSpotlight && isWide) ? (
-          <SmartImage 
-            uri={unit.imageUrl} 
-            fallbackText={unit.title}
-            style={[styles.coverImage, isSpotlight && styles.spotlightImage]} 
-          />
-        ) : null}
       </CardShell.Body>
     </CardShell>
   )
@@ -164,7 +130,7 @@ function DenseCard({ unit, onPress }: { unit: ContentUnit; onPress: () => void }
         {unit.title}
       </Typography>
       <Typography variant="bodyMuted" style={styles.denseStat}>
-        {primary?.value || 0} Rankings
+        {primary?.value ? String(primary.value) : ''}
       </Typography>
     </PressableScale>
   )
@@ -175,13 +141,13 @@ const styles = StyleSheet.create({
   // edge as its boundary instead of a drawn border (proposal correction —
   // borders are for text-only prompt cards, not decoration on every card).
   noBorder: { borderWidth: 0 },
-  coverImage: { width: '100%', aspectRatio: 16 / 9, borderRadius: 8, backgroundColor: colors.surfaceMuted },
+  coverImage: { width: '100%', aspectRatio: 16 / 9, backgroundColor: colors.surfaceMuted },
   spotlightCard: { maxHeight: 380 },
   spotlightImage: { aspectRatio: 2.5, maxHeight: 160 },
   spotlightRow: { flexDirection: 'row', alignItems: 'center', maxHeight: 380 },
   spotlightImageWide: { width: '45%', height: '100%', maxHeight: 380, aspectRatio: undefined },
   spotlightBodyWide: { width: '55%', paddingHorizontal: spacing.xl },
-  railBody: { paddingVertical: spacing.md, justifyContent: 'space-between', flex: 1 },
+  railBody: { padding: spacing.md, gap: spacing.xs },
   railTitle: { fontSize: 16, lineHeight: 20 },
   statTitle: { marginBottom: 0 },
   statPrompt: { marginBottom: 0 },
@@ -209,25 +175,6 @@ const styles = StyleSheet.create({
   },
   denseTitle: { fontWeight: '700', marginBottom: spacing.xs },
 
-  compactCardOverwrite: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-    marginBottom: 20,
-  },
-  compactImageWrap: { position: 'relative', aspectRatio: 16 / 9, width: '100%', overflow: 'hidden' },
-  compactBody: {
-    borderTopWidth: 0,
-    padding: spacing.md,
-    gap: spacing.sm,
-    flex: 1,
-    justifyContent: 'space-between',
-  },
-  compactTitle: { fontSize: 18, lineHeight: 22, marginBottom: 0, fontWeight: '700' },
-  compactMeta: { fontSize: 13, minHeight: 20 },
-  compactDot: { color: colors.accent },
   denseStat: { fontSize: 12 },
 
   previewHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.sm },

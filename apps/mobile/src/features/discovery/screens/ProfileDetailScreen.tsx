@@ -3,12 +3,12 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'reac
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { useConversations, useDiscoverFeed, useMyLists, useProfile, useProfileLists, useSwipe } from '@project/sdk'
 import { ScreenContainer } from '../../../ui/ScreenContainer'
-import { ProfileGalleryHero } from '../../../ui/ProfileGalleryHero'
+import { ProfileImageGallery } from '../../../ui/content/ProfileImageGallery'
+import { ProfileBasicInfo } from '../../../ui/content/ProfileBasicInfo'
 import { Icon } from '../../../ui/Icon'
 import { EmptyState } from '../../../ui/EmptyState'
-import { MatchPercentageBadge } from '../components/MatchPercentageBadge'
 import { MatchDimensionsBreakdown } from '../components/MatchDimensionsBreakdown'
-import { PreviewListCard } from '../../lists/components/PreviewListCard'
+import { ProfileListResponseCard } from '../components/ProfileListResponseCard'
 import { PreviewListCardSkeleton } from '../../lists/components/PreviewListCardSkeleton'
 import { ActionSheet, useActionSheet } from '../../../ui/ActionSheet'
 import { Rail } from '../../../ui/content/Rail'
@@ -47,7 +47,6 @@ export function ProfileDetailScreen({ route, navigation }: Props) {
   // wrongly showed "Go premium" to a premium viewer on a photo-less profile).
   const locked = !!profile.data?.photosLocked
   const photos = profile.data ? Array.from(new Set([profile.data.avatarUrl, ...(profile.data.photos ?? [])].filter((u): u is string => !!u))) : []
-  const nameLine = [displayName, age].filter(Boolean).join(', ')
 
   // Reuses Discover's own feed query/cache (same 'discoverFeed' key) — pull
   // the person units out of whatever modules already came back, skip this
@@ -156,7 +155,7 @@ export function ProfileDetailScreen({ route, navigation }: Props) {
   // gesture/button retraces every profile actually visited, which is what
   // makes the rail worth clicking through instead of a dead end.
   function onPressRelated(unit: ContentUnit) {
-    if (!unit.profile) return
+    if (unit.kind !== 'person' || !unit.profile) return
     const overlap = unit.metrics?.find((m) => m.type === 'overlap')
     const matchPct = overlap ? parseInt(String(overlap.value), 10) : undefined
     navigation.push('ProfileDetail', {
@@ -173,62 +172,63 @@ export function ProfileDetailScreen({ route, navigation }: Props) {
       <ScrollView testID="profile-detail.scroll" contentContainerStyle={styles.scrollContent}>
         <View style={styles.column}>
           <View style={styles.heroFrame}>
-            <ProfileGalleryHero
-              testID="profile-detail.gallery"
+            <ProfileImageGallery
               photos={photos}
+              layout="profile"
               placeholderInitial={(displayName || '?').charAt(0)}
               locked={locked}
               lockedMessage="Go premium to see their photos"
-              topRight={matchPercentage != null ? <MatchPercentageBadge percentage={matchPercentage} /> : undefined}
-            >
-              <Typography variant="title" style={styles.heroName}>{nameLine}</Typography>
-              {profile.data?.locationLabel ? (
-                <View style={styles.locationRow}>
-                  <Icon name="MapPin" color="rgba(255,255,255,0.75)" size={14} />
-                  <Typography variant="bodyMuted" style={styles.heroLocation}>{profile.data.locationLabel}</Typography>
-                </View>
-              ) : null}
-            </ProfileGalleryHero>
+              matchPercentage={matchPercentage}
+            />
           </View>
 
+          <View style={styles.quickActionsRow}>
+            <Pressable
+              testID="profile-detail.action.pass"
+              style={[styles.actionBtn, styles.passBtn, myAction === 'LIKE' && styles.actionBtnFaded]}
+              onPress={() => handleSwipe('PASS')}
+              disabled={isSwiping || !!myAction}
+            >
+              <Icon name="X" size={16} color={colors.inkMuted} />
+              <Typography variant="label" style={styles.actionLabelPass}>{myAction === 'PASS' ? 'Passed' : 'Pass'}</Typography>
+            </Pressable>
+            <Pressable
+              testID="profile-detail.action.like"
+              style={[styles.actionBtn, styles.likeBtn, myAction === 'PASS' && styles.actionBtnFaded]}
+              onPress={() => handleSwipe('LIKE')}
+              disabled={isSwiping || !!myAction}
+            >
+              {isSwiping && !myAction ? (
+                <ActivityIndicator size="small" color={colors.white} />
+              ) : (
+                <Icon name="Heart" size={16} color={colors.white} />
+              )}
+              <Typography variant="label" style={styles.actionLabelLike}>{myAction === 'LIKE' ? 'Liked' : 'Like'}</Typography>
+            </Pressable>
+            <Pressable
+              testID="profile-detail.action.message"
+              style={[styles.actionBtn, styles.messageBtn, !existingConversation && styles.actionBtnFaded]}
+              onPress={onPressMessage}
+            >
+              <Icon name={existingConversation ? 'MessageCircle' : 'Lock'} size={16} color={colors.ink} />
+              <Typography variant="label" style={styles.actionLabelPass}>Message</Typography>
+            </Pressable>
+          </View>
+
+          <ProfileBasicInfo
+            displayName={displayName}
+            age={age}
+            genderIdentity={profile.data?.genderIdentity}
+            locationLabel={profile.data?.locationLabel}
+            seekingGenders={profile.data?.seekingGenders}
+          />
+
           <View style={styles.body}>
-            <View style={styles.quickActionsRow}>
-              <Pressable
-                testID="profile-detail.action.pass"
-                style={[styles.actionBtn, styles.passBtn, myAction === 'LIKE' && styles.actionBtnFaded]}
-                onPress={() => handleSwipe('PASS')}
-                disabled={isSwiping || !!myAction}
-              >
-                <Icon name="X" size={16} color={colors.inkMuted} />
-                <Typography variant="label" style={styles.actionLabelPass}>{myAction === 'PASS' ? 'Passed' : 'Pass'}</Typography>
-              </Pressable>
-              <Pressable
-                testID="profile-detail.action.like"
-                style={[styles.actionBtn, styles.likeBtn, myAction === 'PASS' && styles.actionBtnFaded]}
-                onPress={() => handleSwipe('LIKE')}
-                disabled={isSwiping || !!myAction}
-              >
-                {isSwiping && !myAction ? (
-                  <ActivityIndicator size="small" color={colors.white} />
-                ) : (
-                  <Icon name="Heart" size={16} color={colors.white} />
-                )}
-                <Typography variant="label" style={styles.actionLabelLike}>{myAction === 'LIKE' ? 'Liked' : 'Like'}</Typography>
-              </Pressable>
-              <Pressable
-                testID="profile-detail.action.message"
-                style={[styles.actionBtn, styles.messageBtn, !existingConversation && styles.actionBtnFaded]}
-                onPress={onPressMessage}
-              >
-                <Icon name={existingConversation ? 'MessageCircle' : 'Lock'} size={16} color={colors.ink} />
-                <Typography variant="label" style={styles.actionLabelPass}>Message</Typography>
-              </Pressable>
-            </View>
 
             {profile.data?.bio ? (
-              <View style={styles.section}>
-                <Typography variant="label" style={styles.sectionLabel}>About</Typography>
-                <Typography variant="body">{profile.data.bio}</Typography>
+              <View style={styles.bioSection}>
+                <Typography variant="label" style={styles.sectionLabelTight}>About</Typography>
+                <Typography variant="body" style={styles.bioText}>{profile.data.bio}</Typography>
               </View>
             ) : null}
 
@@ -238,10 +238,8 @@ export function ProfileDetailScreen({ route, navigation }: Props) {
                 a 2-up grid cell. */}
             <View style={styles.section}>
               <View style={styles.listsHeaderRow}>
-                <Typography variant="label" style={styles.sectionLabelTight}>Favorite lists</Typography>
-                {lists.data?.length ? (
-                  <Typography variant="bodyMuted">{lists.data.length} ranked</Typography>
-                ) : null}
+                <Typography variant="title" style={styles.listsTitle}>{displayName}’s lists</Typography>
+                {lists.isSuccess ? <Typography variant="bodyMuted">{lists.data?.filter((l: any) => l.items?.length > 0).length ?? 0} lists</Typography> : null}
               </View>
 
               {lists.isLoading ? (
@@ -249,19 +247,18 @@ export function ProfileDetailScreen({ route, navigation }: Props) {
                   <PreviewListCardSkeleton />
                   <PreviewListCardSkeleton />
                 </View>
-              ) : lists.data?.length ? (
+              ) : lists.data?.filter((l: any) => l.items?.length > 0).length ? (
                 <View style={styles.listsStack}>
-                  {lists.data.map((list: any) => (
-                    <PreviewListCard
+                  {lists.data.filter((l: any) => l.items?.length > 0).map((list: any) => (
+                    <ProfileListResponseCard
                       key={list.id}
                       list={list}
                       ownerName={displayName}
                       // Hold off comparing until the viewer's lists load, so
                       // it doesn't flash "You haven't taken this".
                       viewerList={myLists.isSuccess ? myListByCategory.get(list.categoryId) ?? null : undefined}
-                      onPressTitle={() => openListBuilder(list)}
+                      onTakePoll={() => openListBuilder(list)}
                       onPressRankings={() => openSiteRankings(list)}
-                      style={styles.listCard}
                     />
                   ))}
                 </View>
@@ -296,13 +293,12 @@ export function ProfileDetailScreen({ route, navigation }: Props) {
 
 const styles = StyleSheet.create({
   scrollContent: { paddingBottom: spacing.section },
-  column: { width: '100%', maxWidth: CONTENT_WIDTH, alignSelf: 'center', paddingHorizontal: spacing.lg, paddingTop: spacing.lg },
-  heroFrame: { borderWidth: borderWidth.thick, borderColor: colors.ink, overflow: 'hidden' },
-  heroName: { color: colors.white },
-  locationRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
-  heroLocation: { color: 'rgba(255,255,255,0.75)' },
-  body: { paddingTop: spacing.lg },
-  quickActionsRow: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.xl },
+  column: { width: '100%', maxWidth: CONTENT_WIDTH, alignSelf: 'center', paddingHorizontal: spacing.lg, paddingTop: spacing.md },
+  heroFrame: { overflow: 'hidden', borderRadius: 16, backgroundColor: colors.surfaceMuted },
+  body: { paddingTop: spacing.sm },
+  bioSection: { marginBottom: spacing.xl },
+  bioText: { fontSize: 17, lineHeight: 26, color: colors.ink },
+  quickActionsRow: { flexDirection: 'row', gap: spacing.sm, marginVertical: spacing.md },
   actionBtn: {
     flex: 1,
     flexDirection: 'row',
@@ -312,6 +308,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     borderWidth: borderWidth.thick,
     borderColor: colors.ink,
+    borderRadius: 24,
   },
   passBtn: { backgroundColor: colors.surface },
   likeBtn: { backgroundColor: colors.ink },
@@ -319,10 +316,11 @@ const styles = StyleSheet.create({
   actionBtnFaded: { opacity: 0.4 },
   actionLabelPass: { color: colors.inkMuted },
   actionLabelLike: { color: colors.white },
-  section: { marginBottom: spacing.xl },
+  section: { marginBottom: spacing.xl, marginTop: spacing.md, paddingTop: spacing.xl, borderTopWidth: 1, borderTopColor: colors.border },
   sectionLabel: { marginBottom: spacing.sm },
   sectionLabelTight: { marginBottom: spacing.xs },
   listsHeaderRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: spacing.sm },
-  listsStack: { gap: spacing.sm },
-  listCard: { backgroundColor: colors.surface },
+  listsStack: { gap: spacing.xl },
+  listsTitle: { flex: 1, fontSize: 24 },
+  listsIntro: { marginBottom: spacing.xl },
 })

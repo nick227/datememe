@@ -88,7 +88,7 @@ export function AdminMembershipsScreen({ navigation }: Props) {
   }
 
   return (
-    <ScreenContainer testID="screen.admin-memberships" width="wide">
+    <ScreenContainer testID="screen.admin-memberships" width="standard">
       <TopNavigation testID="admin-memberships.header" alignment="left" leftAction="back" onLeftAction={() => navigation.goBack()} title="Memberships" />
 
       {!isCreating && (

@@ -58,7 +58,7 @@ export function AdminMemberFeaturesScreen({ navigation }: Props) {
 
   if (policy.isLoading) {
     return (
-      <ScreenContainer testID="screen.admin-member-features" width="wide">
+      <ScreenContainer testID="screen.admin-member-features" width="standard">
         <TopNavigation testID="admin-member-features.header" alignment="left" leftAction="back" onLeftAction={() => navigation.goBack()} title="Member Features" />
         <Skeleton height={300} />
       </ScreenContainer>
@@ -67,7 +67,7 @@ export function AdminMemberFeaturesScreen({ navigation }: Props) {
 
   if (policy.isError || !policy.data) {
     return (
-      <ScreenContainer testID="screen.admin-member-features" width="wide">
+      <ScreenContainer testID="screen.admin-member-features" width="standard">
         <TopNavigation testID="admin-member-features.header" alignment="left" leftAction="back" onLeftAction={() => navigation.goBack()} title="Member Features" />
         <ErrorState testID="admin-member-features.error" subtitle="Couldn't load the policy." onRetry={() => policy.refetch()} />
       </ScreenContainer>
@@ -75,7 +75,7 @@ export function AdminMemberFeaturesScreen({ navigation }: Props) {
   }
 
   return (
-    <ScreenContainer testID="screen.admin-member-features" width="wide">
+    <ScreenContainer testID="screen.admin-member-features" width="standard">
       <TopNavigation testID="admin-member-features.header" alignment="left" leftAction="back" onLeftAction={() => navigation.goBack()} title="Member Features" subtitle="FREE / MEMBER entitlement policy" />
       <ScrollView>
         <Typography variant="bodyMuted" style={{ marginBottom: spacing.md }}>

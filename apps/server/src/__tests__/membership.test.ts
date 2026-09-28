@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest'
+import { describe, it, expect, beforeAll, beforeEach, afterAll, afterEach } from 'vitest'
 import { db } from '@project/db'
 import { resolveEntitlements, resolveMembership, snapshotMemberFloor } from '../lib/entitlements'
 import { MembershipService } from '../services/MembershipService'
@@ -31,11 +31,14 @@ describe('Phase 7 — membership', () => {
     user = await makeUser(`membership-${Date.now()}@example.com`)
   })
 
-  afterEach(async () => {
-    // Reset any per-test grants/policy overrides so tests don't bleed into each other.
+  async function resetMembershipState() {
     await db.membershipGrant.deleteMany({ where: { userId: { in: cleanupUserIds } } })
     await db.entitlementPolicy.deleteMany({})
-  })
+  }
+
+  beforeEach(resetMembershipState)
+
+  afterEach(resetMembershipState)
 
   afterAll(async () => {
     await db.couponRedemption.deleteMany({ where: { userId: { in: cleanupUserIds } } })

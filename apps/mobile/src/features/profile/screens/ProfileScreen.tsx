@@ -1,89 +1,78 @@
-import { FlatList, StyleSheet, View } from 'react-native'
+import { ScrollView, StyleSheet, View } from 'react-native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { useCurrentUser, useMyLists } from '@project/sdk'
 import { ScreenContainer } from '../../../ui/ScreenContainer'
-import { ProfileGalleryHero } from '../../../ui/ProfileGalleryHero'
 import { Button } from '../../../ui/Button'
 import { EmptyState } from '../../../ui/EmptyState'
-import { PreviewListCard } from '../../lists/components/PreviewListCard'
-import { PreviewListCardSkeleton } from '../../lists/components/PreviewListCardSkeleton'
 import { Skeleton } from '../../../ui/Skeleton'
-import { borderWidth, colors, spacing } from '../../../theme'
-import { useIsDesktop } from '../../../lib/useResponsive'
-import type { ProfileStackParamList } from '../../../navigation/types'
 import { Typography } from '../../../ui/Typography'
+import { ProfileListResponseCard } from '../../discovery/components/ProfileListResponseCard'
+import { PreviewListCardSkeleton } from '../../lists/components/PreviewListCardSkeleton'
+import { ProfilePhotoEditor } from '../components/ProfilePhotoEditor'
+import { ProfileDetailsEditor } from '../components/ProfileDetailsEditor'
+import { ProfileAccountSettings } from '../components/ProfileAccountSettings'
+import { colors, spacing } from '../../../theme'
+import type { ProfileStackParamList } from '../../../navigation/types'
 
 type Props = NativeStackScreenProps<ProfileStackParamList, 'Profile'>
 
 export function ProfileScreen({ navigation }: Props) {
   const me = useCurrentUser()
   const lists = useMyLists()
-
   const profile = me.data?.profile
-  const isPremium = !!me.data?.membership && me.data.membership.state !== 'FREE'
-  const numColumns = useIsDesktop() ? 3 : 2
-  const photos = profile ? Array.from(new Set([profile.avatarUrl, ...(profile.photos ?? [])].filter((u): u is string => !!u))) : []
+  const completedLists = (lists.data ?? []).filter(list => list.isComplete && list.items?.length)
+
+  function openList(list: typeof completedLists[number], rankings = false) {
+    ;(navigation.getParent()?.navigate as any)(rankings ? 'Rankings' : 'Lists', {
+      screen: rankings ? 'CategoryRanking' : 'ListBuilder',
+      params: { categorySlug: list.category.slug, shortLabel: list.category.shortLabel },
+      ...(rankings ? { initial: false } : {}),
+    })
+  }
 
   return (
-    <ScreenContainer testID="screen.profile" padded={false} width="wide">
-      <View style={styles.container}>
-
-        <FlatList
-          key={numColumns}
-          data={(lists.isLoading ? [1, 2] : (lists.data ?? []).filter((l) => l.isComplete)) as any[]}
-          keyExtractor={(item) => (typeof item === 'number' ? String(item) : item.id)}
-          numColumns={numColumns}
-          columnWrapperStyle={{ gap: spacing.sm }}
-          contentContainerStyle={styles.listContent}
-          ListHeaderComponent={
-            <View>
-              {me.isLoading ? (
-                <Skeleton variant="rect" width="100%" height={320} />
-              ) : (
-                <ProfileGalleryHero
-                  testID="profile.gallery"
-                  photos={photos}
-                  placeholderInitial={(profile?.displayName || '?').charAt(0)}
-                >
-                  <View style={styles.heroNameRow}>
-                    <Typography variant="title" style={styles.heroName}>{profile?.displayName}</Typography>
-                    {isPremium ? (
-                      <View style={styles.premiumBadge}>
-                        <Typography variant="label" style={styles.premiumBadgeText}>Premium</Typography>
-                      </View>
-                    ) : null}
-                  </View>
-                  <Typography variant="bodyMuted" style={styles.heroUsername}>@{profile?.username}</Typography>
-                </ProfileGalleryHero>
-              )}
-
-              <View style={styles.body}>
-                {profile?.bio ? <Typography variant="title" style={styles.bio}>{profile.bio}</Typography> : null}
-                <Button testID="profile.open-account" label="Settings" variant="secondary" onPress={() => navigation.navigate('Account')} />
-                <Button testID="profile.edit-profile" label="Edit profile" variant="secondary" onPress={() => navigation.navigate('EditProfile')} />
-                <Typography variant="label" style={styles.sectionLabel}>Your lists</Typography>
+    <ScreenContainer testID="screen.profile" padded={false} width="full">
+      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.scroll}>
+        <View style={styles.column}>
+          <View style={styles.header}>
+            <Typography variant="display">Your profile</Typography>
+            <Typography variant="bodyMuted">Your photos, your details, your kind of people.</Typography>
+            {profile?.username ? <Typography style={styles.username}>@{profile.username}</Typography> : null}
+          </View>
+          {me.isLoading ? <Skeleton variant="rect" width="100%" height={320} /> : profile ? (
+            <>
+              <ProfilePhotoEditor key={`photos-${profile.id}`} avatarUrl={profile.avatarUrl} photos={profile.photos} />
+              <View style={styles.section}><ProfileDetailsEditor key={`details-${profile.id}`} profile={profile} /></View>
+              <View style={styles.section}><ProfileAccountSettings onPremium={() => navigation.navigate('Paywall')} onVerify={() => navigation.navigate('VerifyEmail')} onAdmin={() => navigation.navigate('Admin')} /></View>
+              <View style={styles.section}>
+                <View style={styles.headingRow}><Typography variant="title">Your favorites</Typography></View>
+                <View style={styles.stack}>
+                  <EmptyState title="Favorites coming soon" subtitle="This section is being moved here from Discover." />
+                </View>
               </View>
-            </View>
-          }
-          ListEmptyComponent={<EmptyState testID="profile.empty" title="No completed lists yet" subtitle="Head to the Favorites tab to start." />}
-          renderItem={({ item }) => (typeof item === 'number' ? <PreviewListCardSkeleton style={{ flex: 1 }} /> : <PreviewListCard style={{ width: "100%" }} list={item} />)}
-        />
-      </View>
+              <View style={styles.section}>
+                <View style={styles.headingRow}><Typography variant="title">Your lists</Typography>{lists.isSuccess ? <Typography variant="bodyMuted">{completedLists.length} {completedLists.length === 1 ? 'list' : 'lists'}</Typography> : null}</View>
+                <View style={styles.stack}>
+                  {lists.isLoading ? <><PreviewListCardSkeleton /><PreviewListCardSkeleton /></> : lists.isError ? <><Typography>Could not load your lists.</Typography><Button label="Try again" variant="secondary" onPress={() => { void lists.refetch() }} /></> : completedLists.length ? completedLists.map(list => (
+                    <ProfileListResponseCard key={list.id} list={list} ownerName={profile.displayName} isOwn onTakePoll={() => openList(list)} onPressRankings={() => openList(list, true)} />
+                  )) : <><EmptyState testID="profile.empty" title="Your taste belongs here" subtitle="Take your first poll to start sharing what you love." /><Button label="Explore polls" onPress={() => { (navigation.getParent()?.navigate as any)('Lists') }} /></>}
+                </View>
+              </View>
+            </>
+          ) : <View style={styles.stack}><EmptyState title="Could not load your profile" subtitle="Try again to manage your photos and details." /><Button label="Try again" onPress={() => { void me.refetch() }} /></View>}
+        </View>
+      </ScrollView>
     </ScreenContainer>
   )
 }
 
-const CONTENT_WIDTH = 640
 const styles = StyleSheet.create({
-  container: { flex: 1, width: '100%', maxWidth: CONTENT_WIDTH, alignSelf: 'center' },
-  heroNameRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  heroName: { color: colors.white },
-  column: { width: '100%', paddingHorizontal: spacing.lg, paddingTop: spacing.lg },
-  heroUsername: { color: 'rgba(255,255,255,0.75)', marginTop: 2 },
-  premiumBadge: { backgroundColor: colors.accent, borderWidth: borderWidth.thin, borderColor: colors.white, paddingHorizontal: spacing.sm, paddingVertical: 2 },
-  premiumBadgeText: { color: colors.white },
-  body: { paddingTop: spacing.lg, gap: spacing.md },
-  bio: { marginBottom: spacing.xxl },
-  sectionLabel: { marginTop: spacing.sm, marginBottom: spacing.sm },
-  listContent: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xxl },
+  scroll: { paddingBottom: spacing.section },
+  column: { width: '100%', maxWidth: 640, alignSelf: 'center', paddingHorizontal: spacing.lg, paddingTop: spacing.xl },
+  header: { gap: spacing.sm, marginBottom: spacing.xxl },
+  username: { color: colors.accent, fontSize: 13 },
+  section: { marginTop: spacing.xxl, paddingTop: spacing.xxl, borderTopWidth: 1, borderTopColor: colors.border },
+  headingRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: spacing.sm },
+  intro: { marginTop: spacing.sm, marginBottom: spacing.xl },
+  stack: { gap: spacing.xl },
 })

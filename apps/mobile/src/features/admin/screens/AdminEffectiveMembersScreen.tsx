@@ -17,7 +17,7 @@ export function AdminEffectiveMembersScreen({ navigation }: Props) {
   const rows = members.data?.pages.flatMap((p) => p.members) ?? []
 
   return (
-    <ScreenContainer testID="screen.admin-effective-members" width="wide">
+    <ScreenContainer testID="screen.admin-effective-members" width="standard">
       <TopNavigation testID="admin-effective-members.header" alignment="left" leftAction="back" onLeftAction={() => navigation.goBack()} title="Effective Members" subtitle="Currently MEMBER, and why" />
 
       {members.isLoading ? (

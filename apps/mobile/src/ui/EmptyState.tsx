@@ -15,9 +15,6 @@ export function EmptyState({ testID, title, subtitle, action }: Props) {
       testID={testID}
       padding="lg"
       marginVertical="md"
-      backgroundColor="surfaceMuted"
-      borderWidth={1}
-      borderColor="ink"
       alignItems="flex-start"
     >
       <Typography variant="heading">{title}</Typography>

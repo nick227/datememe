@@ -37,7 +37,7 @@ export function AdminListDetailScreen({ route, navigation }: Props) {
   if (!listId) return <NewList navigation={navigation} />
   if (list.isLoading) {
     return (
-      <ScreenContainer testID="screen.admin-list-detail" width="wide">
+      <ScreenContainer testID="screen.admin-list-detail" width="standard">
         <TopNavigation testID="admin-list-detail.header" alignment="left" leftAction="back" onLeftAction={() => navigation.goBack()} title="List" />
         <Skeleton height={300} />
       </ScreenContainer>
@@ -45,7 +45,7 @@ export function AdminListDetailScreen({ route, navigation }: Props) {
   }
   if (list.isError || !list.data) {
     return (
-      <ScreenContainer testID="screen.admin-list-detail" width="wide">
+      <ScreenContainer testID="screen.admin-list-detail" width="standard">
         <TopNavigation testID="admin-list-detail.header" alignment="left" leftAction="back" onLeftAction={() => navigation.goBack()} title="List" />
         <ErrorState testID="admin-list-detail.error" subtitle="Couldn't load this list." onRetry={() => list.refetch()} />
       </ScreenContainer>
@@ -103,7 +103,7 @@ function EditList({ list, onBack }: { list: AdminListDetail; onBack: () => void 
   const suggesting = list.coverSuggest?.status === 'running'
 
   return (
-    <ScreenContainer testID="screen.admin-list-detail" width="wide">
+    <ScreenContainer testID="screen.admin-list-detail" width="standard">
       <TopNavigation testID="admin-list-detail.header" alignment="left" leftAction="back" onLeftAction={onBack} title={list.title} subtitle={status}
         rightElement={
           <Pressable testID="admin-list-detail.save" hitSlop={12} disabled={!dirty || update.isPending} onPress={save}>
@@ -209,7 +209,7 @@ function NewList({ navigation }: { navigation: Props['navigation'] }) {
   const ready = form.title.trim() && form.prompt.trim() && form.groupId && form.entityTypeId
 
   return (
-    <ScreenContainer testID="screen.admin-list-new" width="wide">
+    <ScreenContainer testID="screen.admin-list-new" width="standard">
       <TopNavigation testID="admin-list-new.header" alignment="left" leftAction="back" onLeftAction={() => navigation.goBack()} title="New list" subtitle="Starts hidden" />
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <TextField testID="admin-list-new.title" label="Title" value={form.title} onChangeText={(title) => setForm((f) => ({ ...f, title }))} placeholder="Favorite Road Trip Snacks" />
@@ -242,7 +242,7 @@ function Section({ title, action, children }: { title: string; action?: React.Re
 }
 
 const styles = StyleSheet.create({
-  content: { gap: spacing.xl, paddingBottom: spacing.xxl },
+  content: { gap: spacing.xl, paddingBottom: spacing.xxl, paddingHorizontal: spacing.lg },
   section: { gap: spacing.sm },
   sectionHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderBottomWidth: borderWidth.thick, borderBottomColor: colors.ink, paddingBottom: spacing.xs, marginBottom: spacing.xs },
   coverRow: { flexDirection: 'row', gap: spacing.lg },

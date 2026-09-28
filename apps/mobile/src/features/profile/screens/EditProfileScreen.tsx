@@ -60,7 +60,7 @@ export function EditProfileScreen({ navigation }: Props) {
   }
 
   return (
-    <ScreenContainer testID="screen.edit-profile" width="narrow">
+    <ScreenContainer testID="screen.edit-profile" width="standard">
       <TopNavigation testID="edit-profile.header" alignment="left" leftAction="back" onLeftAction={() => navigation.goBack()} title="Edit profile" />
       <ScrollView keyboardShouldPersistTaps="handled">
         <View style={{ alignItems: 'center', marginBottom: spacing.lg }}>

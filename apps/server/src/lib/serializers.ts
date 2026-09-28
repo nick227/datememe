@@ -1,11 +1,14 @@
 // Shared response shaping — kept here (not duplicated per service) so the Entity/Category
 // JSON shape can't drift between the taxonomy and list endpoints.
 
+import { computeAge } from './age'
+
 export const PROFILE_FULL_SELECT = {
   id: true,
   userId: true,
   username: true,
   displayName: true,
+  birthdate: true,
   genderIdentity: true,
   bio: true,
   locationLabel: true,
@@ -31,6 +34,7 @@ export function serializeProfile(profile: any, opts: { revealPhoto: boolean }) {
     userId: profile.userId,
     username: profile.username,
     displayName: profile.displayName,
+    age: profile.birthdate ? computeAge(new Date(profile.birthdate)) : null,
     genderIdentity: profile.genderIdentity,
     bio: profile.bio,
     seekingGenders: (profile.seekingGenders ?? []).map((g: any) => g.gender),

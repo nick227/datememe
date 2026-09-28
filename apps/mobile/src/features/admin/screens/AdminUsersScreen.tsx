@@ -21,7 +21,7 @@ export function AdminUsersScreen({ navigation }: Props) {
   const rows = users.data?.pages.flatMap((p) => p.users) ?? []
 
   return (
-    <ScreenContainer testID="screen.admin-users" width="wide">
+    <ScreenContainer testID="screen.admin-users" width="standard">
       <TopNavigation testID="admin-users.header" alignment="left" leftAction="back" onLeftAction={() => navigation.goBack()} title="Users" />
 
       <TextField testID="admin-users.search"

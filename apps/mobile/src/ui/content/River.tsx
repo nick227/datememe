@@ -6,11 +6,13 @@ import { Skeleton } from '../Skeleton'
 import { EmptyState } from '../EmptyState'
 import { ErrorState } from '../ErrorState'
 import { ContentUnitCard } from './ContentUnitCard'
+import { SmartImage } from './SmartImage'
 import type { ContentUnit, StructureState } from './types'
 
 type Props = {
   testID?: string
   title?: string | null
+  imageUrl?: string | null
   items: ContentUnit[]
   state: StructureState
   zone?: string
@@ -18,11 +20,14 @@ type Props = {
   onRetry?: () => void
 }
 
-export function River({ testID, title, items, state, zone, onPressItem, onRetry }: Props) {
+export function River({ testID, title, imageUrl, items, state, zone, onPressItem, onRetry }: Props) {
   return (
     <Box testID={testID} paddingHorizontal="lg" marginBottom="xl">
       {title ? (
-        <Box marginBottom="md">
+        <Box marginBottom="md" flexDirection="row" alignItems="center" gap="md">
+          {imageUrl ? (
+            <SmartImage uri={imageUrl} fallbackText={title} width={40} aspectRatio={3 / 4} style={{ borderRadius: 4 }} />
+          ) : null}
           <Typography variant="heading">{title}</Typography>
         </Box>
       ) : null}

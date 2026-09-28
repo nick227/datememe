@@ -51,7 +51,7 @@ export function AdminTaxonomyTypeScreen({ route, navigation }: Props) {
 
   if (types.isLoading) {
     return (
-      <ScreenContainer testID="screen.admin-taxonomy-type" width="narrow">
+      <ScreenContainer testID="screen.admin-taxonomy-type" width="standard">
         <TopNavigation testID="admin-taxonomy-type.header" alignment="left" leftAction="back" onLeftAction={() => navigation.goBack()} title="Edit type" />
         <Skeleton height={200} />
       </ScreenContainer>
@@ -60,7 +60,7 @@ export function AdminTaxonomyTypeScreen({ route, navigation }: Props) {
 
   if (types.isError || !type) {
     return (
-      <ScreenContainer testID="screen.admin-taxonomy-type" width="narrow">
+      <ScreenContainer testID="screen.admin-taxonomy-type" width="standard">
         <TopNavigation testID="admin-taxonomy-type.header" alignment="left" leftAction="back" onLeftAction={() => navigation.goBack()} title="Edit type" />
         <ErrorState testID="admin-taxonomy-type.error" subtitle="Couldn't load this type." onRetry={() => types.refetch()} />
       </ScreenContainer>
@@ -68,7 +68,7 @@ export function AdminTaxonomyTypeScreen({ route, navigation }: Props) {
   }
 
   return (
-    <ScreenContainer testID="screen.admin-taxonomy-type" width="narrow">
+    <ScreenContainer testID="screen.admin-taxonomy-type" width="standard">
       <TopNavigation testID="admin-taxonomy-type.header" alignment="left" leftAction="back" onLeftAction={() => navigation.goBack()} title="Edit Type" />
 
       <ScrollView>

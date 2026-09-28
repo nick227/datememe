@@ -58,7 +58,7 @@ export function AdminListsScreen({ navigation }: Props) {
   const groupOptions = [{ label: 'All groups', value: '' }, ...(lists.data?.groups ?? []).map((g) => ({ label: `${g.label} (${g.count})`, value: g.id }))]
 
   return (
-    <ScreenContainer testID="screen.admin-lists" width="wide">
+    <ScreenContainer testID="screen.admin-lists" width="standard">
       <TopNavigation testID="admin-lists.header"
         alignment="left"
         leftAction="back"

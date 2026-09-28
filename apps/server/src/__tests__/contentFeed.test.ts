@@ -13,7 +13,11 @@ import { QuickPickService } from '../services/QuickPickService'
 describe('ContentFeedService', () => {
   const feedService = new ContentFeedService()
   const createdUserIds: string[] = []
+  const createdProfileIds: string[] = []
   const createdScoreIds: string[] = []
+  const createdCategoryIds: string[] = []
+  let createdGroupId: string | undefined
+  let createdEntityTypeId: string | undefined
 
   async function makeProfile(label: string) {
     const now = Date.now() + Math.random()
@@ -26,6 +30,7 @@ describe('ContentFeedService', () => {
       include: { profile: true },
     })
     createdUserIds.push(user.id)
+    createdProfileIds.push(user.profile!.id)
     return user
   }
 
@@ -154,8 +159,21 @@ describe('ContentFeedService', () => {
 
     it('getDiscoverFeed never repeats a candidate in the people-grid backbone across pages, and terminates', async () => {
       const viewerUser = await makeProfile('discover-pager')
-      const candidates = await Promise.all([0, 1, 2, 3, 4].map((i) => makeProfile(`discover-pager-candidate-${i}`)))
+      const candidates = await Promise.all([0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => makeProfile(`discover-pager-candidate-${i}`)))
       await Promise.all(candidates.map((c, i) => linkScore(viewerUser.profile!.id, c.profile!.id, 90 - i)))
+      // Scored pagination starts only after 3 completed lists and 10 scored candidates.
+      const now = Date.now()
+      const entityType = await db.entityType.create({ data: { slug: `pager-type-${now}`, label: 'Pager', pluralLabel: 'Pagers' } })
+      createdEntityTypeId = entityType.id
+      const group = await db.categoryGroup.create({ data: { slug: `pager-group-${now}`, label: 'Pager' } })
+      createdGroupId = group.id
+      const categories = await Promise.all([0, 1, 2].map((i) => db.category.create({
+        data: { groupId: group.id, entityTypeId: entityType.id, slug: `pager-cat-${i}-${now}`, prompt: 'p', shortLabel: 's', isActive: true },
+      })))
+      createdCategoryIds.push(...categories.map((c) => c.id))
+      await Promise.all(categories.map((category) => db.list.create({
+        data: { profileId: viewerUser.profile!.id, categoryId: category.id, isComplete: true },
+      })))
 
       const gridIdsPerPage: string[][] = []
       const moduleIds: string[] = []
@@ -180,9 +198,17 @@ describe('ContentFeedService', () => {
   })
 
   afterAll(async () => {
+    if (createdProfileIds.length) {
+      await db.jobQueue.deleteMany({
+        where: { type: 'CALCULATE_MATCHES', OR: createdProfileIds.map((profileId) => ({ payload: { equals: { profileId } } })) },
+      })
+    }
     await db.compatibilityScore.deleteMany({ where: { id: { in: createdScoreIds } } })
     await db.session.deleteMany({ where: { userId: { in: createdUserIds } } })
     await db.profile.deleteMany({ where: { userId: { in: createdUserIds } } })
     await db.user.deleteMany({ where: { id: { in: createdUserIds } } })
+    if (createdCategoryIds.length) await db.category.deleteMany({ where: { id: { in: createdCategoryIds } } })
+    if (createdGroupId) await db.categoryGroup.delete({ where: { id: createdGroupId } })
+    if (createdEntityTypeId) await db.entityType.delete({ where: { id: createdEntityTypeId } })
   })
 })

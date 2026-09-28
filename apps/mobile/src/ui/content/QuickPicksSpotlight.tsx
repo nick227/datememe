@@ -52,9 +52,6 @@ export function QuickPicksSpotlight({ moduleId, peopleMode = false }: { moduleId
 
   return (
     <View testID={`feed.module.${moduleId}`} style={styles.section}>
-      <Typography variant="label" style={styles.eyebrow}>
-        Quick Picks
-      </Typography>
 
       {prompt.isLoading ? (
         <Skeleton variant="rect" width="100%" height={380} />
@@ -66,7 +63,7 @@ export function QuickPicksSpotlight({ moduleId, peopleMode = false }: { moduleId
         const data: any = prompt.data
         return (
         <>
-          <Typography variant="heading" style={styles.prompt}>
+          <Typography variant="title" style={styles.prompt}>
             {data.prompt}
           </Typography>
           <View style={styles.optionsRow}>
@@ -116,7 +113,6 @@ function QuickPickOption({
 }) {
   const isThisPicked = picked?.id === entity.id
   const percent = result ? (result.winnerEntityId === entity.id ? result.winnerPercent : result.loserPercent) : null
-  const overallWinRate = result ? (result.winnerEntityId === entity.id ? result.winnerOverallWinRate : result.loserOverallWinRate) : null
 
   const photoUrl = representative?.avatarUrl ?? (SHOW_VALUE_IMAGES ? entity.imageUrl : null)
   const initial = (representative?.displayName ?? entity.canonicalName).charAt(0).toUpperCase()
@@ -139,11 +135,11 @@ function QuickPickOption({
       )}
 
       {representative ? (
-        <Typography variant="heading" style={styles.optionName} numberOfLines={1}>
+        <Typography variant="title" style={styles.optionName} numberOfLines={1}>
           {representative.displayName}
         </Typography>
       ) : (
-        <Typography variant="heading" style={styles.optionName} numberOfLines={2}>
+        <Typography variant="title" style={styles.optionName} numberOfLines={2}>
           {entity.canonicalName}
         </Typography>
       )}
@@ -153,20 +149,6 @@ function QuickPickOption({
           <Typography variant="display" style={[styles.percent, isThisPicked && styles.percentPicked]}>
             {percent}%
           </Typography>
-          <Typography variant="label" style={styles.percentLabel}>
-            {representative
-              ? isThisPicked
-                ? `agree with ${representative.displayName}, like you`
-                : `agree with ${representative.displayName}`
-              : isThisPicked
-                ? 'picked this, like you'
-                : 'picked this'}
-          </Typography>
-          {overallWinRate !== null ? (
-            <Typography variant="bodyMuted" style={styles.overallLine}>
-              Wins {overallWinRate}% of its matchups overall
-            </Typography>
-          ) : null}
         </View>
       ) : null}
     </PressableScale>
@@ -177,21 +159,22 @@ const styles = StyleSheet.create({
   // A full-bleed band with its own generous vertical rhythm — reads as a
   // genuinely different beat from the surrounding Grid/Rail sections.
   section: {
-    paddingVertical: spacing.xl,
+    minHeight: 460,
+    paddingVertical: spacing.xxl,
     paddingHorizontal: spacing.lg,
-    marginVertical: spacing.md,
+    marginVertical: spacing.xl,
     justifyContent: 'center',
     borderTopWidth: 1,
     borderBottomWidth: 1,
     borderColor: colors.border,
   },
   eyebrow: { color: colors.accent, marginBottom: spacing.sm, textAlign: 'center' },
-  prompt: { color: colors.ink, textAlign: 'center', marginBottom: spacing.lg },
-  optionsRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, maxWidth: 600, alignSelf: 'center', width: '100%' },
-  option: { flex: 1, backgroundColor: colors.surface, padding: spacing.md, alignItems: 'center', borderRadius: 14, borderWidth: 1, borderColor: colors.ink },
-  optionSelected: { borderColor: colors.accent, backgroundColor: colors.surfaceMuted, transform: [{ scale: 1.02 }] },
+  prompt: { color: colors.ink, textAlign: 'center', marginBottom: spacing.xl },
+  optionsRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg, maxWidth: 640, alignSelf: 'center', width: '100%' },
+  option: { flex: 1, backgroundColor: colors.surface, padding: spacing.lg, alignItems: 'center', borderRadius: 16, borderWidth: 1, borderColor: colors.border },
+  optionSelected: { borderColor: colors.accent, backgroundColor: colors.surface, transform: [{ scale: 1.02 }] },
   optionNotPicked: { opacity: 0.5, borderColor: colors.border },
-  optionImage: { width: 80, height: 80, borderRadius: 40, marginBottom: spacing.md, backgroundColor: colors.surfaceMuted },
+  optionImage: { width: 100, height: 100, borderRadius: 50, marginBottom: spacing.md, backgroundColor: colors.surfaceMuted },
   optionImageFallback: { alignItems: 'center', justifyContent: 'center' },
   optionInitial: { color: colors.inkMuted },
   optionName: { textAlign: 'center' },
@@ -199,9 +182,7 @@ const styles = StyleSheet.create({
   or: { color: colors.ink, opacity: 0.5, marginTop: spacing.xl },
   emptyWrap: { backgroundColor: colors.surface, padding: spacing.xl },
   sampleSize: { color: colors.ink, opacity: 0.6, textAlign: 'center', marginTop: spacing.lg },
-  resultBlock: { marginTop: spacing.md, alignItems: 'center', borderTopWidth: 1, borderColor: colors.border, paddingTop: spacing.md, width: '100%' },
+  resultBlock: { marginTop: spacing.xl, alignItems: 'center', borderTopWidth: 1, borderColor: colors.border, paddingTop: spacing.lg, width: '100%' },
   percent: { color: colors.ink },
   percentPicked: { color: colors.accent },
-  percentLabel: { color: colors.inkMuted, marginTop: 2 },
-  overallLine: { marginTop: spacing.xs, textAlign: 'center' },
 })

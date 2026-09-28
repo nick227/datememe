@@ -78,7 +78,7 @@ export class RankingsService {
     function categoryUnit(rs: (typeof sets)[number], index: number, subtitle?: string) {
       const top = entityById.get(rs.entries[0]!.subjectId)!
       return {
-        ...toCategoryUnit({ ...rs.category, topPick: top }, { completed: takenCategoryIds.has(rs.category.id) }),
+        ...toCategoryUnit({ ...rs.category, topPick: top }, { completed: takenCategoryIds.has(rs.category.id), hasAnswered: takenCategoryIds.has(rs.category.id) }),
         subtitle: subtitle ?? `#1 ${top.canonicalName}`,
         metrics: [metric('popularity', 'answered', rs.takeCount, 'primary')],
         position: index,
@@ -93,7 +93,9 @@ export class RankingsService {
       type: 'results',
       // shortLabel already reads as a title ("Top Athletes", "Favorite Authors").
       title: rs.category.shortLabel,
-      context: { zone: 'results', reason: `${rs.takeCount} answered` },
+      imageCardUrl: rs.category.imageCardUrl || null,
+      imageUrl: rs.category.imageUrl || null,
+      context: { zone: 'results', viewerHasAnswered: takenCategoryIds.has(rs.category.id) },
       suggestedStructure: 'river',
       items: rs.entries.map((entry, i) => {
         const entity = entityById.get(entry.subjectId)!

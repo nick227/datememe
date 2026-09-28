@@ -26,7 +26,7 @@ export function AccountScreen({ navigation }: Props) {
 
   if (me.isLoading) {
     return (
-      <ScreenContainer testID="screen.account" width="narrow">
+      <ScreenContainer testID="screen.account" width="standard">
         <TopNavigation testID="account.header" alignment="left" leftAction="back" onLeftAction={() => navigation.goBack()} title="Account" />
         <ActivityIndicator style={{ marginTop: spacing.xl }} color={colors.primary} />
       </ScreenContainer>
@@ -34,7 +34,7 @@ export function AccountScreen({ navigation }: Props) {
   }
 
   return (
-    <ScreenContainer testID="screen.account" width="narrow">
+    <ScreenContainer testID="screen.account" width="standard">
       <TopNavigation testID="account.header" alignment="left" leftAction="back" onLeftAction={() => navigation.goBack()} title="Account" />
 
       <View style={styles.card}>

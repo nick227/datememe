@@ -99,7 +99,7 @@ export function AdminUserDetailScreen({ route, navigation }: Props) {
 
   if (detail.isLoading) {
     return (
-      <ScreenContainer testID="screen.admin-user-detail" width="narrow">
+      <ScreenContainer testID="screen.admin-user-detail" width="standard">
         <TopNavigation testID="admin-user-detail.header" alignment="left" leftAction="back" onLeftAction={() => navigation.goBack()} title="User" />
         <View style={{ gap: spacing.md }}>
           <Skeleton height={140} />
@@ -111,7 +111,7 @@ export function AdminUserDetailScreen({ route, navigation }: Props) {
 
   if (detail.isError || !detail.data) {
     return (
-      <ScreenContainer testID="screen.admin-user-detail" width="narrow">
+      <ScreenContainer testID="screen.admin-user-detail" width="standard">
         <TopNavigation testID="admin-user-detail.header" alignment="left" leftAction="back" onLeftAction={() => navigation.goBack()} title="User" />
         <ErrorState testID="admin-user-detail.error" subtitle="Couldn't load this user." onRetry={() => detail.refetch()} />
       </ScreenContainer>
@@ -123,7 +123,7 @@ export function AdminUserDetailScreen({ route, navigation }: Props) {
   const isGrantActive = (g: (typeof user.membershipGrants)[number]) => !g.revokedAt && (!g.expiresAt || new Date(g.expiresAt).getTime() > new Date().getTime())
 
   return (
-    <ScreenContainer testID="screen.admin-user-detail" width="narrow">
+    <ScreenContainer testID="screen.admin-user-detail" width="standard">
       <TopNavigation testID="admin-user-detail.header"
         alignment="left"
         leftAction="back"

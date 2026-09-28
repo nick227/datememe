@@ -109,7 +109,7 @@ export function AdminContentListDetailScreen({ navigation, route }: Props) {
   const locked = !!draft.publishedCategoryId
 
   return (
-    <ScreenContainer testID="screen.admin-content-list-detail" width="wide">
+    <ScreenContainer testID="screen.admin-content-list-detail" width="standard">
       <TopNavigation testID="admin-content-list-detail.header" alignment="left" leftAction="back" onLeftAction={() => navigation.goBack()} title={draft.title} subtitle="List Details" />
       <ScrollView contentContainerStyle={styles.content}>
         {!!message && <Typography variant="body" color="primary">{message}</Typography>}

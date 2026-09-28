@@ -43,7 +43,7 @@ export function AdminSignupPromotionsScreen({ navigation }: Props) {
   const sheet = useActionSheet()
 
   return (
-    <ScreenContainer testID="screen.admin-signup-promotions" width="wide">
+    <ScreenContainer testID="screen.admin-signup-promotions" width="standard">
       <TopNavigation testID="admin-signup-promotions.header" alignment="left" leftAction="back" onLeftAction={() => navigation.goBack()} title="Signup Promotions" />
       <ScrollView>
         <SignupPromotionsSection sheet={sheet} />
