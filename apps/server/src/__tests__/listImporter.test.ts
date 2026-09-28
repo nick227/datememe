@@ -18,6 +18,11 @@ describe('ListImporterService', () => {
     type = await db.entityType.create({ data: { slug: prefix, label: 'Snack', pluralLabel: 'Snacks' } })
   })
   afterAll(async () => {
+    const extraGroups = await db.categoryGroup.findMany({ where: { slug: { startsWith: `${prefix}-` } } })
+    const extraCats = await db.category.findMany({ where: { groupId: { in: extraGroups.map((g) => g.id) } } })
+    await db.categoryEntity.deleteMany({ where: { categoryId: { in: extraCats.map((c) => c.id) } } })
+    await db.category.deleteMany({ where: { id: { in: extraCats.map((c) => c.id) } } })
+    await db.categoryGroup.deleteMany({ where: { id: { in: extraGroups.map((g) => g.id) } } })
     const types = await db.entityType.findMany({ where: { slug: { startsWith: prefix } } })
     const categories = await db.category.findMany({ where: { groupId: group.id } })
     await db.sitePickItem.deleteMany({ where: { categoryId: { in: categories.map((c) => c.id) } } })
@@ -83,6 +88,14 @@ describe('ListImporterService', () => {
     expect(report.status).toBe('ERROR')
     expect(report.errors.join()).toMatch(/matches existing category .* of type/)
     expect(await db.entity.count({ where: { entityTypeId: other.id } })).toBe(0)
+  })
+
+  it('creates a new group only when declared', async () => {
+    const bad = await importer.importList(list({ title: `${prefix} No Group`, groupSlug: `${prefix}-grp` }))
+    expect(bad.errors.join()).toMatch(/not found; add createGroup/)
+    const ok = await importer.importList(list({ title: `${prefix} New Group`, groupSlug: `${prefix}-grp`, createGroup: { label: 'Importer Group' } }))
+    expect(ok.status).toBe('SUCCESS')
+    expect(await db.categoryGroup.findUnique({ where: { slug: `${prefix}-grp` } })).toMatchObject({ label: 'Importer Group' })
   })
 
   it('creates a new entity type only when declared', async () => {

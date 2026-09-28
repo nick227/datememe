@@ -33,17 +33,19 @@ async function main() {
   }
   // Lists that create an entity type publish first, so a list relying on that
   // type (validated via the batch manifest) finds it regardless of file order.
-  lists.sort((a, b) => (a.list.createEntityType ? 0 : 1) - (b.list.createEntityType ? 0 : 1))
+  lists.sort((a, b) => (a.list.createEntityType || a.list.createGroup ? 0 : 1) - (b.list.createEntityType || b.list.createGroup ? 0 : 1))
 
   const importer = new ListImporterService()
   const titles = new Map<string, string>()
   const reports: (ImportReport & { file: string })[] = []
   
   const batchManifest = {
-    entityTypeSlugs: new Set<string>()
+    entityTypeSlugs: new Set<string>(),
+    groupSlugs: new Set<string>(),
   }
   for (const { list } of lists) {
     if (list.createEntityType) batchManifest.entityTypeSlugs.add(list.entityTypeSlug)
+    if (list.createGroup) batchManifest.groupSlugs.add(list.groupSlug)
   }
 
   // Validate everything first so a bad file can't leave a half-published run.

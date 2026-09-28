@@ -1,0 +1,91 @@
+[
+  {
+    "schemaVersion": 1,
+    "groupSlug": "dating-relationships",
+    "createGroup": { "label": "Dating & Relationships" },
+    "entityTypeSlug": "date-idea",
+    "createEntityType": { "label": "Date Idea", "pluralLabel": "Date Ideas" },
+    "title": "Perfect First Date",
+    "prompt": "What makes the perfect first date?",
+    "axes": ["dating", "social", "lifestyle"],
+    "values": ["Coffee shop", "Dinner at a nice restaurant", "Drinks at a cocktail bar", "Museum or gallery", "Picnic in the park", "Mini golf", "Live music", "Cooking together", "A hike", "Bowling or arcade", "Comedy club", "Farmers market stroll"],
+    "isAbstract": true
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "dating-relationships",
+    "entityTypeSlug": "date-night-in",
+    "createEntityType": { "label": "Date Night In", "pluralLabel": "Date Nights In" },
+    "title": "Ideal Date Night In",
+    "prompt": "What's your ideal night in together?",
+    "axes": ["dating", "home", "comfort"],
+    "values": ["Cooking dinner together", "Movie marathon", "Board games", "Takeout and a new show", "Baking dessert", "Wine and cheese", "Video games", "Doing a puzzle", "Living-room karaoke", "At-home spa night", "Stargazing", "Reading side by side"],
+    "isAbstract": true
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "dating-relationships",
+    "entityTypeSlug": "green-flag",
+    "createEntityType": { "label": "Green Flag", "pluralLabel": "Green Flags" },
+    "title": "Green Flags",
+    "prompt": "Which green flags do you notice first?",
+    "axes": ["dating", "values", "communication"],
+    "values": ["Asks follow-up questions", "Texts back when they said they would", "Kind to servers and staff", "Makes real plans, not \"let's hang sometime\"", "Has long-time close friends", "Apologizes without excuses", "Can laugh at themselves", "Respects your time", "Has their own hobbies", "Introduces you to their friends", "Curious about new things", "Keeps small promises"],
+    "isAbstract": true
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "lifestyle-hobbies",
+    "entityTypeSlug": "party-role",
+    "createEntityType": { "label": "Party Role", "pluralLabel": "Party Roles" },
+    "title": "Your Role at a Party",
+    "prompt": "Who are you at a party?",
+    "axes": ["social", "personality"],
+    "values": ["The DJ", "The host", "In the kitchen", "On the dance floor", "Knows everyone", "Deep-conversation corner", "By the snack table", "Taking all the photos", "Leaves early", "Last one standing", "Befriends the pets", "Starts the games"],
+    "isAbstract": true
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "lifestyle-hobbies",
+    "entityTypeSlug": "sunday-morning",
+    "createEntityType": { "label": "Sunday Morning", "pluralLabel": "Sunday Mornings" },
+    "title": "Ideal Sunday Morning",
+    "prompt": "What does your ideal Sunday morning look like?",
+    "axes": ["routine", "lifestyle", "comfort"],
+    "values": ["Sleeping in", "Brunch with friends", "A long run", "Farmers market", "Coffee and a book", "Pancakes at home", "Church or spiritual practice", "Yoga", "Crossword or puzzles", "Resetting the apartment", "Walking the dog", "Watching sports"],
+    "isAbstract": true
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "food-drink",
+    "entityTypeSlug": "late-night-snack",
+    "createEntityType": { "label": "Late-Night Snack", "pluralLabel": "Late-Night Snacks" },
+    "title": "Late-Night Snack",
+    "prompt": "What's your go-to late-night snack?",
+    "axes": ["food", "routine", "comfort"],
+    "values": ["Pizza", "Cereal", "Ice cream", "Chips", "Instant ramen", "Grilled cheese", "Tacos", "Popcorn", "Cookies", "Leftovers from the fridge", "Fries", "Peanut butter toast"],
+    "isAbstract": true
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "travel",
+    "entityTypeSlug": "travel-style",
+    "createEntityType": { "label": "Travel Style", "pluralLabel": "Travel Styles" },
+    "title": "Travel Style",
+    "prompt": "How do you like to travel?",
+    "axes": ["travel", "lifestyle", "adventure"],
+    "values": ["Beach resort", "Backpacking", "City break", "Road trip", "Camping", "Cruise", "Ski trip", "All-inclusive", "Food-focused trip", "Adventure travel", "Museums and history", "Staycation"],
+    "isAbstract": true
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "lifestyle-hobbies",
+    "entityTypeSlug": "time-of-year",
+    "createEntityType": { "label": "Time of Year", "pluralLabel": "Times of Year" },
+    "title": "Favorite Time of Year",
+    "prompt": "What's your favorite time of year?",
+    "axes": ["seasons", "lifestyle", "mood"],
+    "values": ["Early spring", "Late spring", "Early summer", "Peak summer", "Late summer", "Early fall", "Peak fall foliage", "Late fall", "The holidays", "Deep winter", "Snow days", "New Year's week"],
+    "isAbstract": true
+  }
+]

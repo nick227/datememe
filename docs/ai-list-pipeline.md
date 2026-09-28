@@ -34,6 +34,8 @@ A file holds one list or an array of lists — one file per generated batch is t
 - No IDs, slugs, QIDs, image URLs or database fields. Anything extra is ignored; code derives all of it.
 - **The list's `values` are its choices.** A category offers exactly those values (curated pool); re-importing with more values adds them. Only a deliberately broad list (e.g. "Movies") sets `"pool": "entity-type"` to offer every entity of the type.
 - A title that matches an existing category must use that category's entity type — otherwise the import is refused.
+- An unknown `groupSlug` is an error unless the list declares `"createGroup": { "label": "…" }` (same rule as `createEntityType`; other lists in the batch may then use that group).
+- Every new list needs a cover brief in `catalog/cover-briefs.json`.
 - `groupSlug` must exist. An unknown `entityTypeSlug` is an error unless `createEntityType` says the new type is intentional.
 - `values` may also be `{ "name": "…" }` objects. Duplicates (by key) are errors.
 - Re-importing never modifies an existing category or entity — edits made by admins in production win.

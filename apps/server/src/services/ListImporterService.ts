@@ -9,7 +9,9 @@ const valueName = z.union([z.string(), z.object({ name: z.string() })]).transfor
 
 export const ListSeedInputV1 = z.object({
   schemaVersion: z.literal(1),
-  groupSlug: z.string().describe('Slug of an existing CategoryGroup (e.g. film-tv, music)'),
+  groupSlug: z.string().describe('Slug of the CategoryGroup (e.g. film-tv, music)'),
+  createGroup: z.object({ label: z.string() }).optional()
+    .describe('Only when groupSlug is new on purpose; otherwise an unknown group is an error'),
   entityTypeSlug: z.string().describe('Slug of the EntityType (e.g. movie, tv-show, band)'),
   createEntityType: z.object({ label: z.string(), pluralLabel: z.string() }).optional()
     .describe('Only when entityTypeSlug is new on purpose; otherwise an unknown type is an error, not a silent new type'),
@@ -49,6 +51,8 @@ type Tx = Parameters<Parameters<typeof db.$transaction>[0]>[0]
 
 export type BatchManifest = {
   entityTypeSlugs: Set<string>
+  /** Groups some list in the batch declares with createGroup. */
+  groupSlugs?: Set<string>
 }
 
 export class ListImporterService {
@@ -79,8 +83,10 @@ export class ListImporterService {
 
     try {
       const run = async (tx: Tx) => {
-        const group = await tx.categoryGroup.findUnique({ where: { slug: data.groupSlug } })
-        if (!group) report.errors.push(`Group '${data.groupSlug}' not found`)
+        let group = await tx.categoryGroup.findUnique({ where: { slug: data.groupSlug } })
+        if (!group && !data.createGroup && !batchManifest?.groupSlugs?.has(data.groupSlug)) {
+          report.errors.push(`Group '${data.groupSlug}' not found; add createGroup if it is meant to be new`)
+        }
         let entityType = await tx.entityType.findUnique({ where: { slug: data.entityTypeSlug } })
         if (!entityType && !data.createEntityType && !batchManifest?.entityTypeSlugs.has(data.entityTypeSlug)) {
           report.errors.push(`Entity type '${data.entityTypeSlug}' not found; add createEntityType if it is meant to be new`)
@@ -113,6 +119,10 @@ export class ListImporterService {
         if (curated) report.choicesAdded = names.filter((n) => !offered.has(resolved.get(n) ?? '')).length
         if (dryRun) return
 
+        if (!group) {
+          const last = await tx.categoryGroup.aggregate({ _max: { sortOrder: true } })
+          group = await tx.categoryGroup.create({ data: { slug: data.groupSlug, label: data.createGroup!.label, sortOrder: (last._max.sortOrder ?? 0) + 1 } })
+        }
         if (!entityType) {
           entityType = await tx.entityType.create({ data: { slug: data.entityTypeSlug, label: data.createEntityType!.label, pluralLabel: data.createEntityType!.pluralLabel, icon: 'box' } })
         }
