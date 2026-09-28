@@ -1,6 +1,6 @@
 # Admin → Lists: roadmap
 
-*2026-09-28. Phase 1 scope and decisions agreed in discussion; nothing is built yet.*
+*2026-09-28. **Spec locked** for Phase 1; nothing is built yet.*
 
 ## Goal
 
@@ -37,6 +37,10 @@ Production lists are published today through `catalog/lists/*.json` → `pnpm pr
 4. **Takes are shown now.** `Category.popularityCount` (completed lists, kept by the rankings rebuild) tells dead lists from live ones at a glance.
 5. **Value type is read-only on existing lists.** Picking one is allowed only when creating a list, and only from existing types; creating a new type stays in Taxonomy.
 6. **Content Factory is left alone in Phase 1.** Its Admin navigation entry is removed once the new List page covers ordinary editing. Its tables stay.
+7. **New values from + Add are deduped and traceable, not pending.** A `PENDING` entity is visible only to its submitter (`serializeListForViewer`, docs §5.3), so a pending value would vanish from the list for every user. Instead:
+   - + Add first runs the same exact/alias/fuzzy match that user submissions use, and offers the existing value.
+   - Only then does it create an `APPROVED` entity tagged `metadata.origin = {by: 'admin', userId, listId, at}`, so admin-created values can be listed and reviewed in Taxonomy later.
+8. **Cover is never a hard blocker.** Going Live needs a cover *or* an explicit **No cover** (the placeholder). If Openverse or the model is unavailable, the admin can still publish.
 
 ---
 
@@ -65,7 +69,11 @@ Group ▾                                  Sort ▾
 - **Search:** title, question and slug, as you type.
 - **Chips:**
   - All / Live / Hidden / Needs attention.
-  - **Needs attention** means no cover, or fewer values than the list's max picks. (A weak-cover signal can join later if it proves useful.)
+  - **Needs attention** means any of:
+    - no cover decision;
+    - fewer values than the list's max picks;
+    - failed cover automation — the new `COVER_SUGGEST` job records `metadata.coverSuggest = {status, error, at}`, so this costs nothing extra.
+  - A weak-cover signal can join later if it proves useful.
 - **Group ▾:** filter by `CategoryGroup`.
 - **Sort ▾:** Recently updated (default) · A–Z · Most taken.
 - **Row contents:**
@@ -74,7 +82,7 @@ Group ▾                                  Sort ▾
   - group,
   - value count,
   - takes,
-  - **one** badge: Live, Hidden, Hidden · Never published, or the single most important problem (⚠ Cover, ⚠ Values).
+  - **one** badge: Live, Hidden, Hidden · Never published, or the single most important problem (⚠ Cover, ⚠ Values, ⚠ Cover failed).
 - Tapping a row opens **List edit**; **+ New** opens the same page, empty.
 
 ### 3.2 List edit
@@ -108,11 +116,11 @@ Live on app                                [ ON ]
 - **Text:** Title (`shortLabel`), Question (`prompt`), Group.
 - **Values:**
   - The ordered curated list, with drag to reorder (↑/↓ fallback) and × to remove.
-  - **+ Add** searches existing values of the list's type, or creates a new one by name.
+  - **+ Add** searches existing values of the list's type. If nothing fits, it creates a new one by name, after the duplicate check in decision 7, and labels it "new" in the row.
   - No AI suggestions in Phase 1.
 - **Visibility:**
   - Live on app (`isActive`).
-  - Turning Live on runs a check: title, question, at least the max-picks number of values, and a cover. Anything missing is shown inline.
+  - Turning Live on runs a check: title, question, at least the max-picks number of values, and a cover **or** an explicit No cover. Anything missing is shown inline.
 - **Advanced**, collapsed:
   - slug,
   - ranked / unranked,
@@ -161,6 +169,7 @@ Title · Question · Group · Value type (existing only) · Values (+ Add) · Co
 
 - Values are added manually.
 - The cover is filled in automatically once the list has enough values (decision 3).
+- If suggestion fails or finds nothing good, the list shows ⚠ Cover failed. The admin can retry, upload, or choose No cover and go Live anyway (decision 8).
 - The admin turns it Live when ready.
 - There are no concepts, drafts or operations screens.
 
@@ -203,8 +212,9 @@ Title · Question · Group · Value type (existing only) · Values (+ Add) · Co
    - Today's endpoint returns every list with every media asset.
 2. **Cover decisions from Admin write `metadata.cover`.** **Bug today:** admin uploads don't, so the next media-sync restores the old approved cover. Every path (suggested, upload, none, revert) writes the decision and keeps `replaced`.
 3. **3:4 upload crop.** It's currently 1:1.
-4. **One-list cover suggestion.** Extract `covers-auto`'s per-list logic into a function the API and worker can call. It runs as a `COVER_SUGGEST` job with cached results, and is also used for auto-cover on new lists.
+4. **One-list cover suggestion.** Extract `covers-auto`'s per-list logic into a function the API and worker can call. It runs as a `COVER_SUGGEST` job with cached results, records its outcome in `metadata.coverSuggest`, and is also used for auto-cover on new lists.
 5. **Importer respects admin edits** (decision 2).
+7. **+ Add with duplicate check and `metadata.origin`** (decision 7). This reuses `TaxonomyService`'s submission matching.
 6. **`firstLiveAt` stamp.** Written the first time a list goes Live.
 
 Openverse allows ~200 anonymous searches a day, and each list's suggestion uses 4. That's fine for Phase 1 with caching. Register an Openverse API key before this is used heavily.
