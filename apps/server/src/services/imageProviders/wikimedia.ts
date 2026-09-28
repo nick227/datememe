@@ -1,6 +1,6 @@
 import type { ImageCandidate, ImageProvider } from './types'
 
-const USER_AGENT = 'Datememe/1.0 (taxonomy image importer)'
+const USER_AGENT = `Datememe/1.0 (${process.env.BASE_URL ?? 'https://datememe-server.up.railway.app'}; taxonomy image importer)`
 const WIKIDATA_API = 'https://www.wikidata.org/w/api.php'
 const COMMONS_API = 'https://commons.wikimedia.org/w/api.php'
 

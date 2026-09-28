@@ -181,13 +181,26 @@ async function main() {
     if (cover?.status !== 'approved') continue
     const current = await db.mediaAsset.findFirst({ where: { categoryId: c.id, isPrimary: true, provider: cover.provider, sourceId: cover.id } })
     if (current && isServableAsset(current)) continue
+    // Commons throttles bursts (HTTP 429); wait it out rather than fail the run.
+    const importCover = async (attempt = 0): Promise<unknown> => {
+      try {
+        return await media.importAndAttach({ categoryId: c.id }, candidate, actor.id, actor.role, { maxDimension: 1600 })
+      } catch (error: any) {
+        if (attempt < 3 && /returned 429/.test(error?.message ?? '')) {
+          await new Promise((resolve) => setTimeout(resolve, 60_000 * (attempt + 1)))
+          return importCover(attempt + 1)
+        }
+        throw error
+      }
+    }
+    const candidate: ImageCandidate = {
+      // A sized Commons copy, not the (often huge, throttled) original.
+      provider: cover.provider, externalId: cover.id, title: cover.title, previewUrl: wikimediaSizedUrl(cover.url, cover.width), sourceUrl: cover.url, landingUrl: cover.landingUrl,
+      creator: cover.creator, license: cover.license, licenseUrl: cover.licenseUrl, attribution: cover.attribution,
+      importRule: 'IMPORT_ALLOWED', metadata: { approvedCover: true, source: cover.source },
+    }
     try {
-      await media.importAndAttach({ categoryId: c.id }, {
-        // A sized Commons copy, not the (often huge, throttled) original.
-        provider: cover.provider, externalId: cover.id, title: cover.title, previewUrl: wikimediaSizedUrl(cover.url, cover.width), sourceUrl: cover.url, landingUrl: cover.landingUrl,
-        creator: cover.creator, license: cover.license, licenseUrl: cover.licenseUrl, attribution: cover.attribution,
-        importRule: 'IMPORT_ALLOWED', metadata: { approvedCover: true, source: cover.source },
-      }, actor.id, actor.role, { maxDimension: 1600 })
+      await importCover()
       approvedCovers.imported++
       results.push({ label: `cover:${c.slug}`, status: 'imported' })
     } catch (error: any) {

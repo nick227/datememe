@@ -94,7 +94,7 @@ export class TaxonomyMediaService {
     if (!isApprovedImageHost(candidate.provider, parsedUrl.hostname)) {
       throw { statusCode: 400, message: 'Image source is not an approved provider host' }
     }
-    const response = await fetch(parsedUrl, { signal: AbortSignal.timeout(30000), headers: { 'User-Agent': 'Datememe/1.0 (taxonomy image importer)' } })
+    const response = await fetch(parsedUrl, { signal: AbortSignal.timeout(30000), headers: { 'User-Agent': `Datememe/1.0 (${process.env.BASE_URL ?? 'https://datememe-server.up.railway.app'}; taxonomy image importer)` } })
     if (!response.ok) throw { statusCode: 502, message: `Image source returned ${response.status}` }
     const contentLength = Number(response.headers.get('content-length') ?? 0)
     if (contentLength > MAX_REMOTE_BYTES) throw { statusCode: 413, message: 'Remote image exceeds the import limit' }
