@@ -25,10 +25,10 @@ async function main() {
 
   let changed = 0, skipped = 0
   for (const list of lists) {
-    const category = await db.category.findFirst({
-      where: { slug: { in: [...new Set([key(list.title), legacyAsciiKey(list.title)])] } },
-      select: { id: true, shortLabel: true, poolMode: true, entityTypeId: true, _count: { select: { requiredTags: true } } },
-    })
+    // Found the way the importer finds it: by slug, else by displayed title.
+    const select = { id: true, shortLabel: true, poolMode: true, entityTypeId: true, _count: { select: { requiredTags: true } } } as const
+    const category = await db.category.findFirst({ where: { slug: { in: [...new Set([key(list.title), legacyAsciiKey(list.title)])] } }, select })
+      ?? await db.category.findFirst({ where: { shortLabel: list.title }, select })
     if (!category || category.poolMode === 'CURATED' || category._count.requiredTags) { skipped++; continue }
 
     const ids: string[] = []

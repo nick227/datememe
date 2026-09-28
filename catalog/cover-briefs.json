@@ -1,5 +1,5 @@
 {
-  "$comment": "Per list (category slug): an Openverse search phrase of 2-3 words (every word must match) for its cover \u2014 a photographable scene, never a logo or an identifiable person. covers:propose searches it; a human picks the image. Keep briefs distinct so lists don't compete for the same photos.",
+  "$comment": "Per list (category slug): an Openverse search phrase of 2-3 words (every word must match) for its cover — a photographable scene, never a logo or an identifiable person. covers:propose searches it; a human picks the image. Keep briefs distinct so lists don't compete for the same photos.",
   "biggest-workplace-pet-peeves": "office stress",
   "dream-cars": "sports car",
   "dream-job": "laptop mountain",
@@ -47,7 +47,7 @@
   "favorite-political-podcasts": "podcast microphone",
   "favorite-pop-artists": "concert confetti",
   "favorite-reaction-gifs": "funny face",
-  "favorite-sci-fi-shows": "galaxy stars",
+  "favorite-sci-fi-shows": "space station",
   "favorite-sneakers": "sneakers",
   "favorite-sports-franchises": "stadium night",
   "favorite-sports-teams": "sports fans",
@@ -104,5 +104,17 @@
   "ideal-sunday-morning": "breakfast in bed",
   "late-night-snack": "pizza night",
   "travel-style": "backpacker travel",
-  "favorite-time-of-year": "autumn leaves"
+  "favorite-time-of-year": "autumn leaves",
+  "ways-to-unwind": "hammock relaxing",
+  "self-care-non-negotiables": "spa towels",
+  "morning-routine": "alarm clock",
+  "sense-of-humor": "rubber chicken",
+  "life-priorities": "compass map",
+  "dating-pet-peeves": "broken heart",
+  "how-you-show-love": "holding hands",
+  "texting-style": "speech bubbles",
+  "perfect-night-out": "city nightlife",
+  "chores-you-don-t-mind": "laundry basket",
+  "worth-the-splurge": "shopping bags",
+  "favorite-holidays": "holiday lights"
 }

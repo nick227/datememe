@@ -94,7 +94,9 @@ export class ListImporterService {
         if (report.errors.length) return
 
         // Existing categories keep whatever admins have since edited.
+        // By slug, else by displayed title (older lists' slugs don't follow their titles: "Artists" is favorite-artists-all-time).
         const existing = await tx.category.findFirst({ where: { slug: { in: [...new Set([key(data.title), legacyAsciiKey(data.title)])] } } })
+          ?? await tx.category.findFirst({ where: { shortLabel: data.title } })
         if (existing) report.categorySlug = existing.slug
         report.categoryCreated = !existing
         // Reusing a same-titled category of another type would put this list's

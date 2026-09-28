@@ -1,0 +1,140 @@
+[
+  {
+    "schemaVersion": 1,
+    "groupSlug": "music",
+    "entityTypeSlug": "band",
+    "title": "Artists",
+    "prompt": "Who are your favorite artists of all time?",
+    "axes": ["music", "taste"],
+    "values": ["The Beatles", "Michael Jackson", "Queen", "Led Zeppelin", "Madonna", "Beyoncé", "Taylor Swift", "Kanye West", "Nas", "The Weeknd", "Kendrick Lamar", "Drake", "Radiohead", "Nirvana", "Frank Ocean", "Eminem", "Outkast", "Billie Eilish"],
+    "isAbstract": false
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "lifestyle-hobbies",
+    "entityTypeSlug": "hobby",
+    "title": "Ways to Unwind",
+    "prompt": "How do you unwind after a long day?",
+    "axes": ["wellness", "routine", "comfort"],
+    "values": ["Reading", "Yoga", "Cooking", "Gaming", "Gardening", "Hot bath", "Long walk", "Meditation", "Working out", "Calling a friend", "TV and takeout", "Headphones and a playlist", "Nap", "Journaling"],
+    "isAbstract": true
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "lifestyle-hobbies",
+    "entityTypeSlug": "daily-habit",
+    "createEntityType": { "label": "Daily Habit", "pluralLabel": "Daily Habits" },
+    "title": "Self-Care Non-Negotiables",
+    "prompt": "Which self-care habits do you never skip?",
+    "axes": ["wellness", "routine", "lifestyle"],
+    "values": ["Eight hours of sleep", "Daily workout", "Skincare routine", "Therapy", "Drinking enough water", "Time alone", "Phone-free time", "Meal prep", "Getting outside every day", "Stretching", "Weekly call with family", "Saying no to plans"],
+    "isAbstract": true
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "lifestyle-hobbies",
+    "entityTypeSlug": "daily-habit",
+    "title": "Morning Routine",
+    "prompt": "What's non-negotiable in your morning routine?",
+    "axes": ["routine", "lifestyle", "personality"],
+    "values": ["Coffee before words", "Hitting snooze", "Morning workout", "Shower first thing", "A real breakfast", "Scrolling in bed", "Making the bed", "Skincare routine", "Walking the dog", "Journaling", "News or a podcast", "Out the door in 10 minutes"],
+    "isAbstract": true
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "lifestyle-hobbies",
+    "entityTypeSlug": "humor-style",
+    "createEntityType": { "label": "Humor Style", "pluralLabel": "Humor Styles" },
+    "title": "Sense of Humor",
+    "prompt": "What kind of humor gets you every time?",
+    "axes": ["humor", "personality", "communication"],
+    "values": ["Dry and deadpan", "Sarcastic", "Dark humor", "Absurd and surreal", "Puns and dad jokes", "Self-deprecating", "Wholesome", "Physical comedy", "Roasting your friends", "Witty wordplay", "Cringe comedy", "Speaks fluent meme"],
+    "isAbstract": true
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "dating-relationships",
+    "entityTypeSlug": "life-priority",
+    "createEntityType": { "label": "Life Priority", "pluralLabel": "Life Priorities" },
+    "title": "Life Priorities",
+    "prompt": "What matters most to you in life right now?",
+    "axes": ["values", "lifestyle", "future"],
+    "values": ["Family", "Career", "Adventure", "Faith", "Health", "Financial security", "Friendships", "Creativity", "Travel", "Making a difference", "Personal growth", "Having fun"],
+    "isAbstract": true
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "dating-relationships",
+    "entityTypeSlug": "pet-peeve",
+    "title": "Dating Pet Peeves",
+    "prompt": "Which dating habits are instant dealbreakers?",
+    "axes": ["dating", "values", "communication"],
+    "values": ["On their phone the whole date", "Rude to the server", "Late without texting", "Talks about their ex", "Never asks you a question", "Cancels last minute", "Bad tipper", "Only talks about work", "Love-bombing", "Vague plans, no follow-through", "Mean about their friends", "Slow fades instead of saying no"],
+    "isAbstract": true
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "dating-relationships",
+    "entityTypeSlug": "love-language",
+    "createEntityType": { "label": "Love Language", "pluralLabel": "Love Languages" },
+    "title": "How You Show Love",
+    "prompt": "How do you show a partner you care?",
+    "axes": ["dating", "communication", "affection"],
+    "values": ["Words of affirmation", "Quality time", "Physical touch", "Acts of service", "Thoughtful gifts", "Cooking for them", "Planning surprises", "Sending memes all day", "Handwritten notes", "Remembering the little things", "Making them a playlist", "Long phone calls"],
+    "isAbstract": true
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "lifestyle-hobbies",
+    "entityTypeSlug": "texting-style",
+    "createEntityType": { "label": "Texting Style", "pluralLabel": "Texting Styles" },
+    "title": "Texting Style",
+    "prompt": "What's your texting style?",
+    "axes": ["social", "communication", "personality"],
+    "values": ["Replies instantly", "Voice notes", "Double-texter", "Sends paragraphs", "One-word replies", "Memes instead of words", "Leaves people on read", "Reacts instead of replying", "Just calls", "Emoji in every text", "Replies three days later", "Perfect punctuation"],
+    "isAbstract": true
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "lifestyle-hobbies",
+    "entityTypeSlug": "weekend-vibe",
+    "title": "Perfect Night Out",
+    "prompt": "What's your perfect night out?",
+    "axes": ["nightlife", "social", "lifestyle"],
+    "values": ["Night out at a club", "Going to a concert", "Dive bar", "Cocktail lounge", "Karaoke", "Comedy show", "Trivia night", "Rooftop bar", "Late-night diner", "Wine bar", "Brewery", "House party"],
+    "isAbstract": true
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "lifestyle-hobbies",
+    "entityTypeSlug": "chore",
+    "createEntityType": { "label": "Chore", "pluralLabel": "Chores" },
+    "title": "Chores You Don't Mind",
+    "prompt": "Which household chores do you actually not mind?",
+    "axes": ["home", "routine", "lifestyle"],
+    "values": ["Dishes", "Laundry", "Folding clothes", "Vacuuming", "Cooking dinner", "Grocery shopping", "Taking out the trash", "Cleaning the bathroom", "Yard work", "Organizing closets", "Ironing", "Meal planning"],
+    "isAbstract": true
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "lifestyle-hobbies",
+    "entityTypeSlug": "splurge",
+    "createEntityType": { "label": "Splurge", "pluralLabel": "Splurges" },
+    "title": "Worth the Splurge",
+    "prompt": "What's actually worth splurging on?",
+    "axes": ["money", "lifestyle", "values"],
+    "values": ["Travel", "Good food", "Concert tickets", "Tech", "Clothes and sneakers", "Home decor", "Skincare", "Fitness", "A nice car", "Experiences with friends", "Hobby gear", "A really good mattress"],
+    "isAbstract": true
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "lifestyle-hobbies",
+    "entityTypeSlug": "holiday",
+    "createEntityType": { "label": "Holiday", "pluralLabel": "Holidays" },
+    "title": "Favorite Holidays",
+    "prompt": "Which holidays do you love most?",
+    "axes": ["seasons", "traditions", "family"],
+    "values": ["Christmas", "Halloween", "Thanksgiving", "New Year's Eve", "Fourth of July", "Valentine's Day", "Easter", "St. Patrick's Day", "Hanukkah", "Diwali", "Lunar New Year", "Your birthday"],
+    "isAbstract": true
+  }
+]
