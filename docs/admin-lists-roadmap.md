@@ -6,7 +6,7 @@
 - **Cover suggestion runs in the server process, not a worker job.** The worker has no access to the cover libraries or the uploads volume. The state lives in `metadata.coverSuggest`, the app polls it, and a run interrupted by a restart shows as failed after 10 minutes.
 - **Values reorder with ↑/↓, no drag yet.**
 - **"Hidden · Never published" applies only to lists created in Admin.** Older lists predate `firstLiveAt`.
-- **Other agents' subject dedupe:** each new cover decision records its `cover.subject`. Covers chosen before Phase 1 only have one if `covers:improve --apply` has been run since.
+- **Subject dedupe:** each new cover decision records its `cover.subject`. Covers chosen before Phase 1 only have one if `covers:improve --apply` has been run since.
 
 ## Goal
 
