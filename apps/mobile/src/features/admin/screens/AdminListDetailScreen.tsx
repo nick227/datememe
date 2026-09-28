@@ -1,20 +1,15 @@
-import { useEffect, useRef, useState } from 'react'
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native'
+import { useState } from 'react'
+import { Image, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { AnimatedSheet } from '../../../ui/AnimatedSheet'
 import {
   ApiError,
-  useAdminBulkSaveEntities,
-  useAdminCreateListDefinition,
-  useAdminEntities,
-  useAdminEntitiesByParent,
+  useAdminCreateList,
   useAdminEntityTypes,
-  useAdminGenerateEntities,
-  useAdminListCuratedEntities,
-  useAdminListDefinitions,
-  useAdminUpdateListCuratedEntities,
-  useAdminUpdateListDefinition,
+  useAdminList,
+  useAdminSetListValues,
+  useAdminUpdateList,
   useCategoryGroups,
+  type AdminListDetail,
 } from '@project/sdk'
 import { ScreenContainer } from '../../../ui/ScreenContainer'
 import { TopNavigation } from '../../../ui/TopNavigation'
@@ -23,138 +18,24 @@ import { SelectField } from '../../../ui/SelectField'
 import { Button } from '../../../ui/Button'
 import { Skeleton } from '../../../ui/Skeleton'
 import { ErrorState } from '../../../ui/ErrorState'
-import { ActionSheet, useActionSheet } from '../../../ui/ActionSheet'
 import { Typography } from '../../../ui/Typography'
-import { Icon } from '../../../ui/Icon'
-import { AdminImagePicker } from '../components/AdminImagePicker'
-import { borderWidth, colors, radius, spacing } from '../../../theme'
+import { ListCoverSheet } from '../components/ListCoverSheet'
+import { AddListValueSheet } from '../components/AddListValueSheet'
+import { borderWidth, colors, spacing } from '../../../theme'
 import type { AdminStackParamList } from '../../../navigation/types'
+
+// Admin → Lists: one list, one page — Cover, Text, Values, Visibility, and
+// Advanced collapsed (docs/admin-lists-roadmap.md §3.2). Without a listId it
+// is New list: title, question, group and value type, then the same page.
 
 type Props = NativeStackScreenProps<AdminStackParamList, 'AdminListDetail'>
 
-const ORDERING_OPTIONS = [
-  { label: 'Ranked', value: 'RANKED' },
-  { label: 'Unranked', value: 'UNRANKED' },
-]
-
-type FormState = {
-  groupId: string
-  entityTypeId: string
-  parentEntityId: string | null
-  slug: string
-  prompt: string
-  shortLabel: string
-  minItems: string
-  maxItems: string
-  orderingMode: 'RANKED' | 'UNRANKED'
-  isMatchSignal: boolean
-  isPremiumOnly: boolean
-  isActive: boolean
-}
-
-const BLANK_FORM: FormState = {
-  groupId: '',
-  entityTypeId: '',
-  parentEntityId: null,
-  slug: 'new-list',
-  prompt: 'Rank the following...',
-  shortLabel: 'New List',
-  minItems: '1',
-  maxItems: '5',
-  orderingMode: 'RANKED',
-  isMatchSignal: true,
-  isPremiumOnly: false,
-  isActive: true,
-}
-
 export function AdminListDetailScreen({ route, navigation }: Props) {
   const listId = route.params?.listId
+  const list = useAdminList(listId)
 
-  const lists = useAdminListDefinitions()
-  const groups = useCategoryGroups()
-  const types = useAdminEntityTypes()
-  const list = listId ? lists.data?.find((l) => l.id === listId) : undefined
-
-  const createList = useAdminCreateListDefinition()
-  const updateList = useAdminUpdateListDefinition()
-  const sheet = useActionSheet()
-
-  const [form, setForm] = useState<FormState>(BLANK_FORM)
-  const hydrated = useRef(false)
-
-  useEffect(() => {
-    if (!listId) {
-      hydrated.current = true
-      return
-    }
-    if (hydrated.current || !list) return
-    setForm({
-      groupId: list.groupId,
-      entityTypeId: list.entityTypeId,
-      parentEntityId: list.parentEntityId,
-      slug: list.slug,
-      prompt: list.prompt,
-      shortLabel: list.shortLabel,
-      minItems: String(list.minItems),
-      maxItems: String(list.maxItems),
-      orderingMode: list.orderingMode as 'RANKED' | 'UNRANKED',
-      isMatchSignal: list.isMatchSignal,
-      isPremiumOnly: list.isPremiumOnly,
-      isActive: list.isActive,
-    })
-    hydrated.current = true
-  }, [list, listId])
-
-  // Reparenting rule reused from Taxonomy: a List's "parent entity
-  // constraint" must be an entity of the type its own entity type nests
-  // under, same hierarchy check apps/server's updateEntity enforces.
-  const selectedType = types.data?.find((t) => t.id === form.entityTypeId)
-  const parentTypeId = selectedType?.parentId ?? undefined
-  const parentCandidates = useAdminEntities(parentTypeId)
-
-  function handleEntityTypeChange(id: string) {
-    setForm((f) => ({ ...f, entityTypeId: id, parentEntityId: null }))
-  }
-
-  function handleSaveConfig() {
-    const body = {
-      groupId: form.groupId,
-      entityTypeId: form.entityTypeId,
-      parentEntityId: form.parentEntityId,
-      slug: form.slug.trim(),
-      prompt: form.prompt.trim(),
-      shortLabel: form.shortLabel.trim(),
-      minItems: parseInt(form.minItems, 10) || 1,
-      maxItems: parseInt(form.maxItems, 10) || 1,
-      orderingMode: form.orderingMode,
-      isMatchSignal: form.isMatchSignal,
-      isPremiumOnly: form.isPremiumOnly,
-      isActive: form.isActive,
-    }
-    if (!body.groupId || !body.entityTypeId || !body.slug || !body.prompt || !body.shortLabel) {
-      sheet.show({ title: 'Missing fields', message: 'Group, entity type, slug, prompt, and name are all required.', buttons: [{ testID: 'admin-list-detail.dialog.ok', text: 'OK' }] })
-      return
-    }
-    if (listId) {
-      updateList.mutate(
-        { id: listId, ...body },
-        {
-          onSuccess: () => sheet.show({ title: 'Saved', message: 'List details saved.', buttons: [{ testID: 'admin-list-detail.dialog.ok', text: 'OK' }] }),
-          onError: (err) => sheet.show({ title: 'Could not save', message: err instanceof ApiError ? err.message : 'Try again.', buttons: [{ testID: 'admin-list-detail.dialog.ok', text: 'OK' }] }),
-        },
-      )
-    } else {
-      createList.mutate(body, {
-        onSuccess: (created) => {
-          navigation.setParams({ listId: created.id })
-          sheet.show({ title: 'List created', message: 'Now add curated values below.', buttons: [{ testID: 'admin-list-detail.dialog.ok', text: 'OK' }] })
-        },
-        onError: (err) => sheet.show({ title: 'Could not create', message: err instanceof ApiError ? err.message : 'Try again.', buttons: [{ testID: 'admin-list-detail.dialog.ok', text: 'OK' }] }),
-      })
-    }
-  }
-
-  if (listId && lists.isLoading) {
+  if (!listId) return <NewList navigation={navigation} />
+  if (list.isLoading) {
     return (
       <ScreenContainer testID="screen.admin-list-detail" width="wide">
         <TopNavigation testID="admin-list-detail.header" alignment="left" leftAction="back" onLeftAction={() => navigation.goBack()} title="List" />
@@ -162,468 +43,207 @@ export function AdminListDetailScreen({ route, navigation }: Props) {
       </ScreenContainer>
     )
   }
-
-  if (listId && (lists.isError || !list)) {
+  if (list.isError || !list.data) {
     return (
       <ScreenContainer testID="screen.admin-list-detail" width="wide">
         <TopNavigation testID="admin-list-detail.header" alignment="left" leftAction="back" onLeftAction={() => navigation.goBack()} title="List" />
-        <ErrorState testID="admin-list-detail.error" subtitle="Couldn't load this list." onRetry={() => lists.refetch()} />
+        <ErrorState testID="admin-list-detail.error" subtitle="Couldn't load this list." onRetry={() => list.refetch()} />
       </ScreenContainer>
     )
   }
+  // Keyed so the form re-seeds when another list opens, never on background refetches.
+  return <EditList key={list.data.id} list={list.data} onBack={() => navigation.goBack()} />
+}
 
-  const groupOptions = (groups.data ?? []).map((g) => ({ label: g.label, value: g.id }))
-  const typeOptions = (types.data ?? []).map((t) => ({ label: t.label, value: t.id }))
-  const parentOptions = [
-    { label: '(No parent constraint — all entities of this type)', value: '' },
-    ...(parentCandidates.data ?? []).map((e) => ({ label: e.canonicalName, value: e.id })),
-  ]
+type Form = {
+  title: string; prompt: string; groupId: string; isActive: boolean
+  slug: string; orderingMode: 'RANKED' | 'UNRANKED'; minItems: string; maxItems: string; isMatchSignal: boolean
+}
+const formOf = (l: AdminListDetail): Form => ({
+  title: l.title, prompt: l.prompt, groupId: l.group.id, isActive: l.isActive,
+  slug: l.slug, orderingMode: l.orderingMode, minItems: String(l.minItems), maxItems: String(l.maxItems), isMatchSignal: l.isMatchSignal,
+})
+
+function EditList({ list, onBack }: { list: AdminListDetail; onBack: () => void }) {
+  const groups = useCategoryGroups()
+  const update = useAdminUpdateList()
+  const setValues = useAdminSetListValues()
+  const [saved, setSaved] = useState(() => formOf(list))
+  const [form, setForm] = useState(saved)
+  const [advanced, setAdvanced] = useState(false)
+  const [coverOpen, setCoverOpen] = useState(false)
+  const [addOpen, setAddOpen] = useState(false)
+  const [message, setMessage] = useState<{ text: string; error?: boolean } | null>(null)
+  const dirty = JSON.stringify(form) !== JSON.stringify(saved)
+  const set = <K extends keyof Form>(k: K, v: Form[K]) => setForm((f) => ({ ...f, [k]: v }))
+
+  function save() {
+    update.mutate(
+      {
+        id: list.id, title: form.title, prompt: form.prompt, groupId: form.groupId, isActive: form.isActive,
+        slug: form.slug, orderingMode: form.orderingMode, minItems: Number(form.minItems), maxItems: Number(form.maxItems), isMatchSignal: form.isMatchSignal,
+      },
+      {
+        onSuccess: (l) => { const next = formOf(l); setSaved(next); setForm(next); setMessage({ text: 'Saved.' }) },
+        onError: (e) => setMessage({ text: e instanceof ApiError ? e.message : 'Could not save.', error: true }),
+      },
+    )
+  }
+  const values = list.values
+  const move = (from: number, to: number) => {
+    const ids = values.map((v) => v.entityId)
+    const [id] = ids.splice(from, 1)
+    ids.splice(to, 0, id!)
+    setValues.mutate({ id: list.id, entityIds: ids })
+  }
+  const remove = (index: number) => setValues.mutate({ id: list.id, entityIds: values.filter((_, i) => i !== index).map((v) => v.entityId) })
+
+  const status = list.isActive ? 'Live ●' : list.neverPublished ? 'Hidden · Never published' : 'Hidden'
+  const cover = list.cover
+  const suggesting = list.coverSuggest?.status === 'running'
 
   return (
     <ScreenContainer testID="screen.admin-list-detail" width="wide">
-      <TopNavigation testID="admin-list-detail.header"
-        alignment="left"
-        leftAction="back"
-        onLeftAction={() => navigation.goBack()}
-        title={listId ? 'Edit List' : 'New List'}
+      <TopNavigation testID="admin-list-detail.header" alignment="left" leftAction="back" onLeftAction={onBack} title={list.title} subtitle={status}
+        rightElement={
+          <Pressable testID="admin-list-detail.save" hitSlop={12} disabled={!dirty || update.isPending} onPress={save}>
+            <Typography variant="button" style={{ color: dirty ? colors.ink : colors.inkMuted }}>{update.isPending ? 'Saving…' : 'Save'}</Typography>
+          </Pressable>
+        }
       />
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.card}>
-          <Typography variant="heading" style={styles.cardTitle}>List configuration</Typography>
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        {message ? <Typography variant="body" style={{ color: message.error ? colors.danger : colors.ink }}>{message.text}</Typography> : null}
 
-          <TextField testID="admin-list-detail.short-label" label="List name (short label)" value={form.shortLabel} onChangeText={(v) => setForm((f) => ({ ...f, shortLabel: v }))} />
-          <TextField testID="admin-list-detail.slug" label="Slug" value={form.slug} onChangeText={(v) => setForm((f) => ({ ...f, slug: v }))} autoCapitalize="none" />
-          <TextField testID="admin-list-detail.prompt" label="Prompt (question)" value={form.prompt} onChangeText={(v) => setForm((f) => ({ ...f, prompt: v }))} />
-
-          <View style={styles.scopeBox}>
-            <Typography variant="label" style={styles.scopeTitle}>Taxonomy scope</Typography>
-            <SelectField testID="admin-list-detail.group-id" label="Group" value={form.groupId} options={groupOptions} onSelect={(v) => setForm((f) => ({ ...f, groupId: v }))} placeholder="Select a group…" />
-            <SelectField testID="admin-list-detail.entity-type-id" label="Entity type (required)" value={form.entityTypeId} options={typeOptions} onSelect={handleEntityTypeChange} placeholder="Select a type…" />
-            {parentTypeId ? (
-              <>
-                <SelectField testID="admin-list-detail.parent-entity-id"
-                  label="Parent entity constraint (optional)"
-                  value={form.parentEntityId ?? ''}
-                  options={parentOptions}
-                  onSelect={(v) => setForm((f) => ({ ...f, parentEntityId: v || null }))}
-                  placeholder="No constraint"
-                />
-                <Typography variant="bodyMuted" style={styles.scopeHint}>Leave empty to include all entities of the type.</Typography>
-              </>
-            ) : null}
-          </View>
-
-          <View style={styles.row}>
-            <View style={styles.rowField}>
-              <TextField testID="admin-list-detail.min-items" label="Min items" value={form.minItems} onChangeText={(v) => setForm((f) => ({ ...f, minItems: v }))} keyboardType="number-pad" />
+        <Section title="Cover">
+          <View style={styles.coverRow}>
+            <View style={styles.cover}>
+              {cover.imageCardUrl ? <Image source={{ uri: cover.imageCardUrl }} style={StyleSheet.absoluteFill} resizeMode="cover" /> : null}
             </View>
-            <View style={styles.rowField}>
-              <TextField testID="admin-list-detail.max-items" label="Max items" value={form.maxItems} onChangeText={(v) => setForm((f) => ({ ...f, maxItems: v }))} keyboardType="number-pad" />
+            <View style={{ flex: 1, gap: spacing.xs }}>
+              <Typography variant="body" numberOfLines={2}>
+                {cover.imageCardUrl ? cover.title ?? 'Uploaded image' : cover.status === 'none' ? 'No cover (placeholder)' : suggesting ? 'Finding a cover…' : 'No cover yet'}
+              </Typography>
+              {cover.credit ? (
+                <Typography variant="bodyMuted" numberOfLines={2}>{[cover.credit.license?.toUpperCase(), cover.credit.creator].filter(Boolean).join(' · ')}</Typography>
+              ) : null}
+              {list.problems.includes('cover-failed') ? <Typography variant="bodyMuted" style={{ color: colors.danger }}>Automatic cover failed — choose one.</Typography> : null}
+              <View style={{ alignSelf: 'flex-start', marginTop: spacing.sm }}>
+                <Button testID="admin-list-detail.change-cover" label="Change" variant="secondary" onPress={() => setCoverOpen(true)} />
+              </View>
             </View>
           </View>
-          <SelectField testID="admin-list-detail.ordering-mode" label="Ordering" value={form.orderingMode} options={ORDERING_OPTIONS} onSelect={(v) => setForm((f) => ({ ...f, orderingMode: v as 'RANKED' | 'UNRANKED' }))} />
+        </Section>
 
-          <View style={styles.toggleRow}>
-            <Typography variant="body">Active (visible in app)</Typography>
-            <Button testID="admin-list-detail.active" label={form.isActive ? 'Active' : 'Archived'} variant="secondary" onPress={() => setForm((f) => ({ ...f, isActive: !f.isActive }))} />
-          </View>
-          <View style={styles.toggleRow}>
-            <Typography variant="body">Premium only</Typography>
-            <Button testID="admin-list-detail.premium-only" label={form.isPremiumOnly ? 'Yes' : 'No'} variant="secondary" onPress={() => setForm((f) => ({ ...f, isPremiumOnly: !f.isPremiumOnly }))} />
-          </View>
+        <Section title="Text">
+          <TextField testID="admin-list-detail.title" label="Title" value={form.title} onChangeText={(v) => set('title', v)} />
+          <TextField testID="admin-list-detail.prompt" label="Question" value={form.prompt} onChangeText={(v) => set('prompt', v)} multiline />
+          <SelectField testID="admin-list-detail.group" label="Group" value={form.groupId} options={(groups.data ?? []).map((g) => ({ label: g.label, value: g.id }))} onSelect={(v) => set('groupId', v)} />
+        </Section>
 
-          <Button testID="admin-list-detail.save-config" label="Save configuration" loading={createList.isPending || updateList.isPending} onPress={handleSaveConfig} />
-
-          {listId && list ? (
-            <AdminImagePicker
-              target={{ categoryId: listId }}
-              query={form.shortLabel}
-              entityTypeLabel={selectedType?.label}
-              asset={list.mediaAssets.find((m) => m.isPrimary) ?? null}
-              onAttached={() => {}}
-            />
+        <Section title={`Values (${list.valueCount})`}
+          action={list.curated ? <Pressable testID="admin-list-detail.add-value" hitSlop={8} onPress={() => setAddOpen(true)}><Typography variant="label" style={{ color: colors.ink }}>+ Add</Typography></Pressable> : null}>
+          {!list.curated ? (
+            <Typography variant="bodyMuted">{`This older list offers every ${list.entityType.label} value (${list.valueCount}); its values can't be edited here.`}</Typography>
+          ) : values.length === 0 ? (
+            <Typography variant="bodyMuted">No values yet. Add at least {list.maxItems}.</Typography>
+          ) : values.map((v, i) => (
+            <View key={v.entityId} style={styles.valueRow}>
+              <Typography variant="body" style={{ flex: 1 }} numberOfLines={1}>{v.name}{v.isNew ? <Typography variant="label"> · new</Typography> : null}</Typography>
+              <Pressable testID={`admin-list-detail.value.${i}.up`} hitSlop={6} disabled={i === 0 || setValues.isPending} onPress={() => move(i, i - 1)}><Typography variant="body" style={[styles.icon, i === 0 && styles.iconOff]}>↑</Typography></Pressable>
+              <Pressable testID={`admin-list-detail.value.${i}.down`} hitSlop={6} disabled={i === values.length - 1 || setValues.isPending} onPress={() => move(i, i + 1)}><Typography variant="body" style={[styles.icon, i === values.length - 1 && styles.iconOff]}>↓</Typography></Pressable>
+              <Pressable testID={`admin-list-detail.value.${i}.remove`} hitSlop={6} disabled={setValues.isPending} onPress={() => remove(i)}><Typography variant="body" style={styles.icon}>×</Typography></Pressable>
+            </View>
+          ))}
+          {list.curated && values.length > 0 && values.length < list.maxItems ? (
+            <Typography variant="bodyMuted" style={{ color: colors.danger }}>Needs at least {list.maxItems} values to go live.</Typography>
           ) : null}
-        </View>
+        </Section>
 
-        {listId ? (
-          <CuratedValuesEditor key={listId} listId={listId} entityTypeId={form.entityTypeId} parentEntityId={form.parentEntityId} shortLabel={form.shortLabel} />
+        <Section title="Visibility">
+          <View style={styles.toggleRow}>
+            <Typography variant="body">Live on app</Typography>
+            <Switch testID="admin-list-detail.live" value={form.isActive} onValueChange={(v) => set('isActive', v)} trackColor={{ true: colors.ink, false: colors.border }} />
+          </View>
+          {form.isActive !== saved.isActive ? <Typography variant="bodyMuted">Press Save to {form.isActive ? 'publish' : 'hide'} this list.</Typography> : null}
+        </Section>
+
+        <Pressable testID="admin-list-detail.advanced" onPress={() => setAdvanced((a) => !a)}>
+          <Typography variant="label" style={{ color: colors.ink }}>{advanced ? '▾' : '▸'} Advanced</Typography>
+        </Pressable>
+        {advanced ? (
+          <View style={styles.section}>
+            <TextField testID="admin-list-detail.slug" label="Slug" value={form.slug} onChangeText={(v) => set('slug', v)} autoCapitalize="none" autoCorrect={false} />
+            <SelectField testID="admin-list-detail.ordering" label="Ordering" value={form.orderingMode} options={[{ label: 'Ranked', value: 'RANKED' }, { label: 'Unranked', value: 'UNRANKED' }]} onSelect={(v) => set('orderingMode', v as Form['orderingMode'])} />
+            <View style={{ flexDirection: 'row', gap: spacing.md }}>
+              <View style={{ flex: 1 }}><TextField testID="admin-list-detail.min" label="Min picks" value={form.minItems} onChangeText={(v) => set('minItems', v)} keyboardType="number-pad" /></View>
+              <View style={{ flex: 1 }}><TextField testID="admin-list-detail.max" label="Max picks" value={form.maxItems} onChangeText={(v) => set('maxItems', v)} keyboardType="number-pad" /></View>
+            </View>
+            <View style={styles.toggleRow}>
+              <Typography variant="body">Counts toward matching</Typography>
+              <Switch testID="admin-list-detail.match-signal" value={form.isMatchSignal} onValueChange={(v) => set('isMatchSignal', v)} trackColor={{ true: colors.ink, false: colors.border }} />
+            </View>
+            <Typography variant="bodyMuted">Value type: {list.entityType.label}{list.parentEntity ? ` (within ${list.parentEntity.name})` : ''} · {list.takes} takes</Typography>
+          </View>
         ) : null}
+
+        {dirty ? <Button testID="admin-list-detail.save-bottom" label="Save" loading={update.isPending} onPress={save} /> : null}
       </ScrollView>
 
-      <ActionSheet testID="admin-list-detail.dialog" config={sheet.config} onDismiss={sheet.dismiss} />
+      <ListCoverSheet list={list} visible={coverOpen} onClose={() => setCoverOpen(false)} />
+      {list.curated ? <AddListValueSheet list={list} visible={addOpen} onClose={() => setAddOpen(false)} /> : null}
     </ScreenContainer>
   )
 }
 
-type CuratedItem = { entityId: string; name: string; imageUrl?: string | null }
-
-function CuratedValuesEditor({
-  listId,
-  entityTypeId,
-  parentEntityId,
-  shortLabel,
-}: {
-  listId: string
-  entityTypeId: string
-  parentEntityId: string | null
-  shortLabel: string
-}) {
-  const curated = useAdminListCuratedEntities(listId)
-  const available = useAdminEntitiesByParent(entityTypeId, parentEntityId, !!entityTypeId)
-  const saveCurated = useAdminUpdateListCuratedEntities()
-  const sheet = useActionSheet()
-
-  // A null draft follows server data until the first edit; refetches cannot
-  // overwrite an in-progress selection. The component is keyed by list ID.
-  const [selectedDraft, setSelectedDraft] = useState<CuratedItem[] | null>(null)
-  const selectedValues = selectedDraft ?? (curated.data ?? [])
-    .slice()
-    .sort((a, b) => a.sortOrder - b.sortOrder)
-    .map((c) => ({ entityId: c.entityId, name: c.entity.canonicalName, imageUrl: c.entity.imageUrl }))
-  const [searchQuery, setSearchQuery] = useState('')
-  const selectionReady = curated.data !== undefined
-  const editingDisabled = !selectionReady || saveCurated.isPending
-
-  function setSelectedValues(update: (previous: CuratedItem[]) => CuratedItem[]) {
-    setSelectedDraft((previous) => update(previous ?? selectedValues))
-  }
-
-  const [showGenerateModal, setShowGenerateModal] = useState(false)
-  const [genPrompt, setGenPrompt] = useState('')
-  const [genCandidates, setGenCandidates] = useState<string[] | null>(null)
-  const generate = useAdminGenerateEntities()
-  const bulkSave = useAdminBulkSaveEntities()
-
-  const filteredAvailable = (available.data ?? []).filter(
-    (e) => e.canonicalName.toLowerCase().includes(searchQuery.trim().toLowerCase()) && !selectedValues.some((c) => c.entityId === e.id),
-  )
-
-  function addEntity(entity: { id: string; canonicalName: string; imageUrl?: string | null }) {
-    if (editingDisabled) return
-    setSelectedValues((prev) => prev.some((c) => c.entityId === entity.id)
-      ? prev
-      : [...prev, { entityId: entity.id, name: entity.canonicalName, imageUrl: entity.imageUrl }])
-  }
-
-  function removeEntity(entityId: string) {
-    setSelectedValues((prev) => prev.filter((c) => c.entityId !== entityId))
-  }
-
-  function moveEntity(index: number, delta: number) {
-    setSelectedValues((prev) => {
-      const target = index + delta
-      if (target < 0 || target >= prev.length) return prev
-      const next = [...prev]
-      ;[next[index], next[target]] = [next[target], next[index]]
-      return next
-    })
-  }
-
-  function handleSaveCurated() {
-    if (editingDisabled) return
-    saveCurated.mutate(
-      { id: listId, entities: selectedValues.map((c, i) => ({ entityId: c.entityId, sortOrder: i })) },
-      {
-        onSuccess: () => sheet.show({ title: 'Saved', message: 'Curated values saved.', buttons: [{ testID: 'admin-list-detail.curated-dialog.ok', text: 'OK' }] }),
-        onError: (err) => sheet.show({ title: 'Could not save', message: err instanceof ApiError ? err.message : 'Try again.', buttons: [{ testID: 'admin-list-detail.curated-dialog.ok', text: 'OK' }] }),
-      },
-    )
-  }
-
-  function closeGenerateModal() {
-    setShowGenerateModal(false)
-    setGenPrompt('')
-    setGenCandidates(null)
-  }
-
-  function handleGenerate() {
-    generate.mutate(
-      { categoryName: shortLabel, prompt: genPrompt, count: 10 },
-      {
-        onSuccess: (result) => setGenCandidates(result),
-        onError: (err) => sheet.show({ title: 'Could not generate', message: err instanceof ApiError ? err.message : 'Try again.', buttons: [{ testID: 'admin-list-detail.curated-dialog.ok', text: 'OK' }] }),
-      },
-    )
-  }
-
-  function updateCandidate(index: number, value: string) {
-    setGenCandidates((current) => current?.map((c, i) => (i === index ? value : c)) ?? current)
-  }
-
-  function moveCandidate(index: number, delta: number) {
-    setGenCandidates((current) => {
-      if (!current) return current
-      const target = index + delta
-      if (target < 0 || target >= current.length) return current
-      const next = [...current]
-      ;[next[index], next[target]] = [next[target], next[index]]
-      return next
-    })
-  }
-
-  function removeCandidate(index: number) {
-    setGenCandidates((current) => current?.filter((_, i) => i !== index) ?? current)
-  }
-
-  function handleApproveCandidates() {
-    if (!genCandidates || genCandidates.length === 0) return
-    bulkSave.mutate(
-      { entityTypeId, parentId: parentEntityId, entities: genCandidates },
-      {
-        onSuccess: (result) => {
-          setSelectedValues((prev) => [
-            ...prev,
-            ...result.entities
-              .filter((e) => !prev.some((c) => c.entityId === e.id))
-              .map((e) => ({ entityId: e.id, name: e.canonicalName, imageUrl: e.imageUrl })),
-          ])
-          closeGenerateModal()
-        },
-        onError: (err) => sheet.show({ title: 'Could not save', message: err instanceof ApiError ? err.message : 'Try again.', buttons: [{ testID: 'admin-list-detail.curated-dialog.ok', text: 'OK' }] }),
-      },
-    )
-  }
+function NewList({ navigation }: { navigation: Props['navigation'] }) {
+  const groups = useCategoryGroups()
+  const types = useAdminEntityTypes()
+  const create = useAdminCreateList()
+  const [form, setForm] = useState({ title: '', prompt: '', groupId: '', entityTypeId: '' })
+  const [error, setError] = useState<string | null>(null)
+  const ready = form.title.trim() && form.prompt.trim() && form.groupId && form.entityTypeId
 
   return (
-    <View style={styles.card}>
-      <View style={styles.curatedHeader}>
-        <View style={{ flex: 1 }}>
-          <Typography variant="heading">Curated values</Typography>
-          <Typography variant="bodyMuted">Add available values to your selection, then order and save them.</Typography>
-        </View>
-        <Pressable testID="admin-list-detail.show-generate-modal" hitSlop={8} disabled={editingDisabled || !entityTypeId} onPress={() => setShowGenerateModal(true)}>
-          <Typography variant="button" style={styles.aiLink}>AI suggest…</Typography>
-        </Pressable>
-      </View>
-
-      <TextField testID="admin-list-detail.search-query" placeholder="Search available values…" value={searchQuery} onChangeText={setSearchQuery} />
-
-      <Typography variant="label" style={styles.selectedValuesLabel}>Available values</Typography>
-      <ScrollView testID="admin-list-detail.available-values" style={styles.availableList} nestedScrollEnabled keyboardShouldPersistTaps="handled">
-
-        {available.isLoading ? (
-          <Skeleton height={80} />
-        ) : available.isError ? (
-          <ErrorState testID="admin-list-detail.available-error" subtitle="Couldn't load available values." onRetry={() => available.refetch()} />
-        ) : filteredAvailable.length === 0 ? (
-          <Typography variant="bodyMuted" style={styles.centeredHint}>{searchQuery.trim() ? 'No available values match your search.' : available.data?.length ? 'All available values are selected.' : 'No values are available for this list.'}</Typography>
-        ) : (
-          filteredAvailable.map((entity) => (
-            <View testID={`admin-list-detail.entity.${entity.id}`} key={entity.id} style={styles.availableRow}>
-              <Typography variant="body" style={{ flex: 1 }} numberOfLines={1}>{entity.canonicalName}</Typography>
-              <Pressable testID={`admin-list-detail.entity.${entity.id}.add`} accessibilityRole="button" accessibilityLabel={`Add ${entity.canonicalName}`} style={styles.valueAction} disabled={editingDisabled} onPress={() => addEntity(entity)}>
-                <Icon name="Plus" size={18} color={colors.primary} />
-              </Pressable>
-            </View>
-          ))
-        )}
+    <ScreenContainer testID="screen.admin-list-new" width="wide">
+      <TopNavigation testID="admin-list-new.header" alignment="left" leftAction="back" onLeftAction={() => navigation.goBack()} title="New list" subtitle="Starts hidden" />
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <TextField testID="admin-list-new.title" label="Title" value={form.title} onChangeText={(title) => setForm((f) => ({ ...f, title }))} placeholder="Favorite Road Trip Snacks" />
+        <TextField testID="admin-list-new.prompt" label="Question" value={form.prompt} onChangeText={(prompt) => setForm((f) => ({ ...f, prompt }))} placeholder="What do you pack for a road trip?" multiline />
+        <SelectField testID="admin-list-new.group" label="Group" value={form.groupId} placeholder="Choose a group" options={(groups.data ?? []).map((g) => ({ label: g.label, value: g.id }))} onSelect={(groupId) => setForm((f) => ({ ...f, groupId }))} />
+        <SelectField testID="admin-list-new.type" label="Value type" value={form.entityTypeId} placeholder="Choose what the values are"
+          options={(types.data ?? []).filter((t: any) => t.isActive !== false).map((t: any) => ({ label: t.label, value: t.id }))} onSelect={(entityTypeId) => setForm((f) => ({ ...f, entityTypeId }))} />
+        <Typography variant="bodyMuted">Next: add values. A cover is found automatically once the list has enough of them.</Typography>
+        {error ? <Typography variant="body" style={{ color: colors.danger }}>{error}</Typography> : null}
+        <Button testID="admin-list-new.create" label="Create list" disabled={!ready} loading={create.isPending}
+          onPress={() => create.mutate(form, {
+            onSuccess: (l) => navigation.replace('AdminListDetail', { listId: l.id }),
+            onError: (e) => setError(e instanceof ApiError ? e.message : 'Could not create the list.'),
+          })} />
       </ScrollView>
+    </ScreenContainer>
+  )
+}
 
-      <Typography variant="label" style={styles.selectedValuesLabel}>Selected values{selectionReady ? ` (${selectedValues.length})` : ''}</Typography>
-      {!selectionReady ? (
-        curated.isError ? (
-          <ErrorState testID="admin-list-detail.curated-error" subtitle="Couldn't load selected values. Retry before editing." onRetry={() => curated.refetch()} />
-        ) : <Skeleton height={80} />
-      ) : selectedValues.length === 0 ? (
-        <View style={styles.emptyCurated}>
-          <Typography variant="bodyMuted">No values selected yet. Use + beside an available value to add it.</Typography>
-        </View>
-      ) : (
-        <ScrollView testID="admin-list-detail.selected-values" style={styles.selectedList} contentContainerStyle={{ gap: spacing.xs }} nestedScrollEnabled keyboardShouldPersistTaps="handled">
-          {selectedValues.map((item, index) => (
-            <View testID={`admin-list-detail.selected.${item.entityId}`} key={item.entityId} style={styles.curatedRow}>
-              <View style={styles.reorderCol}>
-                <Pressable testID={`admin-list-detail.selected.${item.entityId}.move-up`} accessibilityRole="button" accessibilityLabel={`Move ${item.name} up`} style={styles.valueAction} disabled={editingDisabled || index === 0} onPress={() => moveEntity(index, -1)}>
-                  <Icon name="ChevronUp" size={16} color={index === 0 ? colors.surfaceMuted : colors.inkMuted} />
-                </Pressable>
-                <Pressable testID={`admin-list-detail.selected.${item.entityId}.move-down`} accessibilityRole="button" accessibilityLabel={`Move ${item.name} down`} style={styles.valueAction} disabled={editingDisabled || index === selectedValues.length - 1} onPress={() => moveEntity(index, 1)}>
-                  <Icon name="ChevronDown" size={16} color={index === selectedValues.length - 1 ? colors.surfaceMuted : colors.inkMuted} />
-                </Pressable>
-              </View>
-              <Typography variant="body" style={{ flex: 1 }} numberOfLines={1}>{item.name}</Typography>
-              <Pressable testID={`admin-list-detail.selected.${item.entityId}.remove`} accessibilityRole="button" accessibilityLabel={`Remove ${item.name}`} style={styles.valueAction} disabled={editingDisabled} onPress={() => removeEntity(item.entityId)}>
-                <Icon name="X" size={18} color={colors.danger} />
-              </Pressable>
-            </View>
-          ))}
-        </ScrollView>
-      )}
-
-      <Button disabled={editingDisabled} testID="admin-list-detail.save-curated" label="Save curated values" loading={saveCurated.isPending} onPress={handleSaveCurated} />
-
-      <AnimatedSheet testID="admin-list-detail.generate-dialog.modal" visible={showGenerateModal} onClose={closeGenerateModal} sheetStyle={styles.modalContent}>
-        <View testID="admin-list-detail.generate-dialog" style={{ flex: 1 }}>
-          <View style={styles.modalHeader}>
-              <Typography testID="admin-list-detail.generate-dialog.title" variant="heading">Curate AI values for {shortLabel}</Typography>
-              <Pressable testID="admin-list-detail.generate-dialog.close" hitSlop={8} onPress={closeGenerateModal}>
-                <Icon name="X" size={22} />
-              </Pressable>
-            </View>
-
-            {genCandidates === null ? (
-              <View testID="admin-list-detail.generate-dialog.prompt-step" style={{ padding: spacing.lg }}>
-                <TextField testID="admin-list-detail.gen-prompt"
-                  label="Prompt instructions (optional)"
-                  value={genPrompt}
-                  onChangeText={setGenPrompt}
-                  multiline
-                  numberOfLines={3}
-                  placeholder={`e.g. Generate the top 10 examples for ${shortLabel}`}
-                />
-                <Button testID="admin-list-detail.generate" label={generate.isPending ? 'Generating…' : 'Generate candidates'} loading={generate.isPending} onPress={handleGenerate} />
-              </View>
-            ) : (
-              <ScrollView testID="admin-list-detail.generate-dialog.review-step" style={{ padding: spacing.lg }}>
-                <Typography variant="bodyMuted" style={{ marginBottom: spacing.md }}>
-                  Review, edit, and reorder candidates before saving.
-                </Typography>
-                <View style={{ gap: spacing.sm }}>
-                  {genCandidates.map((candidate, index) => (
-                    <View testID={`admin-list-detail.generate-dialog.candidate-slot.${index}`} key={index} style={styles.candidateRow}>
-                      <View style={styles.reorderCol}>
-                        <Pressable testID="admin-list-detail.generate-dialog.candidate.move-up" hitSlop={6} disabled={index === 0} onPress={() => moveCandidate(index, -1)}>
-                          <Icon name="ChevronUp" size={16} color={index === 0 ? colors.surfaceMuted : colors.inkMuted} />
-                        </Pressable>
-                        <Pressable testID="admin-list-detail.generate-dialog.candidate.move-down" hitSlop={6} disabled={index === genCandidates.length - 1} onPress={() => moveCandidate(index, 1)}>
-                          <Icon name="ChevronDown" size={16} color={index === genCandidates.length - 1 ? colors.surfaceMuted : colors.inkMuted} />
-                        </Pressable>
-                      </View>
-                      <View style={styles.candidateInputWrapper}>
-                        <TextField testID="admin-list-detail.candidate" value={candidate} onChangeText={(v) => updateCandidate(index, v)} />
-                      </View>
-                      <Pressable testID="admin-list-detail.generate-dialog.candidate.remove" hitSlop={8} onPress={() => removeCandidate(index)}>
-                        <Icon name="X" size={18} color={colors.danger} />
-                      </Pressable>
-                    </View>
-                  ))}
-                </View>
-                <Pressable testID="admin-list-detail.gen-candidates" style={styles.addRow} onPress={() => setGenCandidates((c) => [...(c ?? []), 'New item'])}>
-                  <Typography variant="label">+ Add custom item</Typography>
-                </Pressable>
-
-                <View style={styles.modalFooter}>
-                  <Button testID="admin-list-detail.discard-start-over" label="Discard & start over" variant="secondary" onPress={() => setGenCandidates(null)} />
-                  <Button testID="admin-list-detail.approve-candidates"
-                    label={bulkSave.isPending ? 'Saving…' : `Approve & add ${genCandidates.length}`}
-                    loading={bulkSave.isPending}
-                    disabled={genCandidates.length === 0}
-                    onPress={handleApproveCandidates}
-                  />
-                </View>
-              </ScrollView>
-            )}
-          </View>
-      </AnimatedSheet>
-      <ActionSheet testID="admin-list-detail.curated-dialog" config={sheet.config} onDismiss={sheet.dismiss} />
+function Section({ title, action, children }: { title: string; action?: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <View style={styles.section}>
+      <View style={styles.sectionHead}>
+        <Typography variant="label">{title}</Typography>
+        {action}
+      </View>
+      {children}
     </View>
   )
 }
 
 const styles = StyleSheet.create({
-  scrollContent: {
-    paddingBottom: spacing.xxl,
-    gap: spacing.lg,
-  },
-  card: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    borderWidth: borderWidth.thin,
-    borderColor: colors.border,
-    padding: spacing.lg,
-  },
-  cardTitle: { marginBottom: spacing.md },
-  scopeBox: {
-    backgroundColor: colors.surfaceMuted,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderStyle: 'dashed',
-    padding: spacing.md,
-    marginBottom: spacing.md,
-  },
-  scopeTitle: { marginBottom: spacing.sm },
-  scopeHint: { marginTop: -spacing.sm, marginBottom: spacing.md },
-  row: { flexDirection: 'row', gap: spacing.md },
-  rowField: { flex: 1 },
-  toggleRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.md,
-  },
-  curatedHeader: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: spacing.md,
-  },
-  aiLink: { color: colors.primary },
-  availableList: {
-    maxHeight: 240,
-    flexGrow: 0,
-    flexShrink: 0,
-    marginBottom: spacing.md,
-  },
-  availableRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  centeredHint: {
-    textAlign: 'center',
-    paddingVertical: spacing.lg,
-  },
-  selectedList: { maxHeight: 320, flexGrow: 0, flexShrink: 0, marginBottom: spacing.md },
-  valueAction: { minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
-  selectedValuesLabel: { marginBottom: spacing.sm },
-  emptyCurated: {
-    borderWidth: 1,
-    borderStyle: 'dashed',
-    borderColor: colors.border,
-    borderRadius: radius.md,
-    padding: spacing.lg,
-    alignItems: 'center',
-    marginBottom: spacing.md,
-  },
-  curatedRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    paddingVertical: spacing.xs,
-  },
-  reorderCol: { minWidth: 44, gap: 2 },
-  modalContent: {
-    backgroundColor: colors.surface,
-    borderTopLeftRadius: radius.lg,
-    borderTopRightRadius: radius.lg,
-    maxHeight: '85%',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: spacing.lg,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  candidateRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-  candidateInputWrapper: { flex: 1 },
-  addRow: {
-    borderWidth: borderWidth.thin,
-    borderStyle: 'dashed',
-    borderColor: colors.border,
-    borderRadius: radius.md,
-    paddingVertical: spacing.md,
-    alignItems: 'center',
-    marginTop: spacing.sm,
-  },
-  modalFooter: {
-    gap: spacing.sm,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.xl,
-  },
+  content: { gap: spacing.xl, paddingBottom: spacing.xxl },
+  section: { gap: spacing.sm },
+  sectionHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderBottomWidth: borderWidth.thick, borderBottomColor: colors.ink, paddingBottom: spacing.xs, marginBottom: spacing.xs },
+  coverRow: { flexDirection: 'row', gap: spacing.lg },
+  cover: { width: 120, height: 160, backgroundColor: colors.surfaceMuted, borderWidth: borderWidth.thin, borderColor: colors.border, overflow: 'hidden' },
+  valueRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.xs, borderBottomWidth: 1, borderBottomColor: colors.border },
+  icon: { fontSize: 18, width: 22, textAlign: 'center' },
+  iconOff: { color: colors.border },
+  toggleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
 })

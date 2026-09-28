@@ -234,7 +234,10 @@ export class ListAdminService {
     if (!l) return fail(404, 'List not found')
     const current = l.curatedEntities.map((c) => c.entityId)
     const add = async (entityId: string, status: 'existing' | 'created') => {
-      if (current.includes(entityId)) fail(409, 'That value is already in this list')
+      if (current.includes(entityId)) {
+        const { canonicalName } = await db.entity.findUniqueOrThrow({ where: { id: entityId }, select: { canonicalName: true } })
+        fail(409, `"${canonicalName}" is already in this list`)
+      }
       return { status, list: await this.setValues(id, [...current, entityId], actor) }
     }
 
