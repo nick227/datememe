@@ -3,6 +3,7 @@ import { dirname, resolve } from 'path'
 import { db } from '@project/db'
 import { searchOpenverse, usableCandidates, type CoverCandidate } from '../lib/openverse'
 import { mergeRefMetadata } from '../lib/wikidataIdentity'
+import { coverDecisionOf } from '../lib/categoryCovers'
 
 // List covers are chosen by a person. DB-only (no files), so this runs locally
 // against the target database; media:sync later downloads approved covers
@@ -49,7 +50,7 @@ function contactSheet(review: ReviewFile) {
   return `<!doctype html><meta charset="utf-8"><title>List covers — ${REVIEW_ENV}</title><style>body{font:14px system-ui;margin:24px;background:#fff;color:#111}h2{font-size:16px;margin:28px 0 8px}small{color:#666;font-weight:400}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}figure{margin:0}img{width:100%;aspect-ratio:16/10;object-fit:cover;border:1px solid #ddd}figcaption{font-size:12px;color:#444}</style><h1>List covers (${review.pending.length} pending) — ${REVIEW_ENV}</h1>${rows}`
 }
 
-const coverOf = (metadata: unknown) => (metadata as any)?.cover as { status: 'approved' | 'none'; id?: string } | undefined
+const coverOf = coverDecisionOf
 
 async function propose() {
   const briefs: Record<string, string> = JSON.parse(readFileSync(BRIEFS, 'utf8'))

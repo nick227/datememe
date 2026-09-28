@@ -1,5 +1,6 @@
 import type { AuthenticatedRequest } from '../lib/userContext'
 import { TaxonomyMediaService } from '../services/TaxonomyMediaService'
+import { recordCoverDecision } from '../lib/categoryCovers'
 
 const mediaService = new TaxonomyMediaService()
 
@@ -9,6 +10,13 @@ function targetFromBody(body: any) {
     entityTypeId: typeof body?.entityTypeId === 'string' ? body.entityTypeId : undefined,
     categoryId: typeof body?.categoryId === 'string' ? body.categoryId : undefined,
   }
+}
+
+// A list cover an admin attaches is a decision: without it, the next media-sync
+// would restore the previously approved cover over the admin's choice.
+async function recordListCover(target: { categoryId?: string }, asset: { id: string; provider?: string | null; sourceId?: string | null; license?: string | null; creator?: string | null }, source: 'upload' | 'import' | 'reference') {
+  if (!target.categoryId) return
+  await recordCoverDecision(target.categoryId, { status: 'asset', assetId: asset.id, source, provider: asset.provider ?? null, sourceId: asset.sourceId ?? null, license: asset.license ?? null, creator: asset.creator ?? null })
 }
 
 export async function searchTaxonomyImages(request: AuthenticatedRequest, reply: any) {
@@ -28,6 +36,7 @@ export async function importTaxonomyImage(request: AuthenticatedRequest, reply: 
     request.user.id,
     request.user.role,
   )
+  await recordListCover(targetFromBody(request.body), asset, 'import')
   return reply.status(201).send({ asset })
 }
 
@@ -42,6 +51,7 @@ export async function referenceTaxonomyImage(request: AuthenticatedRequest, repl
     request.user.id,
     request.user.role,
   )
+  await recordListCover(targetFromBody(request.body), asset, 'reference')
   return reply.status(201).send({ asset })
 }
 
@@ -70,6 +80,7 @@ export async function uploadTaxonomyImage(request: AuthenticatedRequest, reply: 
     actorUserId: request.user.id,
     actorRole: request.user.role,
   })
+  await recordListCover(target, asset, 'upload')
   return reply.status(201).send({ asset })
 }
 

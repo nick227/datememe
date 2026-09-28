@@ -1,5 +1,6 @@
 import { db } from '@project/db'
 import { isServableAsset } from './mediaIntegrity'
+import { mergeRefMetadata } from './wikidataIdentity'
 
 // Every list card shows its category's own cover. Covers are chosen once and
 // stored (a DERIVED_COVER MediaAsset pointing at an entity image's stored
@@ -14,6 +15,26 @@ import { isServableAsset } from './mediaIntegrity'
 // placeholder beats a repeated photo.
 
 export const DERIVED_COVER = 'DERIVED_COVER'
+
+/**
+ * A list's cover decision (Category.metadata.cover) — what media-sync and
+ * assignCategoryCovers obey:
+ *   approved  an Openverse pick; media-sync downloads it if it isn't the primary asset
+ *   asset     an image an admin attached directly (upload/import); keep that asset
+ *   none      show the placeholder
+ */
+export type CoverStatus = 'approved' | 'asset' | 'none'
+export const coverDecisionOf = (metadata: unknown) => (metadata as any)?.cover as ({ status: CoverStatus } & Record<string, any>) | undefined
+
+/** Records a person's cover choice for a list, keeping the previous one (one level) for undo. */
+export async function recordCoverDecision(categoryId: string, cover: { status: CoverStatus } & Record<string, unknown>) {
+  const category = await db.category.findUniqueOrThrow({ where: { id: categoryId }, select: { metadata: true } })
+  const previous = coverDecisionOf(category.metadata)
+  const { replaced: _dropped, ...previousFlat } = previous ?? ({} as Record<string, unknown>)
+  const next = { ...cover, at: new Date().toISOString(), ...(previous ? { replaced: previousFlat } : {}) }
+  await db.category.update({ where: { id: categoryId }, data: { metadata: mergeRefMetadata(category.metadata, { cover: next }) } })
+  return next
+}
 
 type Asset = { id: string; storageKey: string | null; publicUrl: string | null; sha256: string | null }
 const imageKey = (a: Asset) => a.sha256 ?? a.publicUrl ?? a.id
@@ -40,8 +61,9 @@ export async function assignCategoryCovers(apply = true) {
     },
   })
   // A cover a person approved always keeps its image; then more popular lists choose first.
-  const decision = (c: { metadata: unknown }) => (c.metadata as any)?.cover?.status as 'approved' | 'none' | undefined
-  categories.sort((a, b) => Number(decision(b) === 'approved') - Number(decision(a) === 'approved') || b.popularityCount - a.popularityCount || a.slug.localeCompare(b.slug))
+  const decision = (c: { metadata: unknown }) => coverDecisionOf(c.metadata)?.status
+  const chosen = (c: { metadata: unknown }) => Number(decision(c) === 'approved' || decision(c) === 'asset')
+  categories.sort((a, b) => chosen(b) - chosen(a) || b.popularityCount - a.popularityCount || a.slug.localeCompare(b.slug))
   counts.categories = categories.length
 
   const used = new Set<string>()

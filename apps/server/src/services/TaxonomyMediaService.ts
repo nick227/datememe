@@ -11,6 +11,7 @@ import { getImageProvider, imageProviders, type ImageCandidate } from './imagePr
 const storage = createStorageProvider()
 const MAX_REMOTE_BYTES = 12 * 1024 * 1024
 const VARCHAR_LIMIT = 191 // Prisma's default String length on MySQL
+const COVER_MAX_DIMENSION = 1600 // list covers keep more resolution than value images (1000)
 
 // Commons credits can run to paragraphs; the column keeps a truncated copy and
 // metadata keeps the full text.
@@ -61,9 +62,11 @@ export class TaxonomyMediaService {
     actorRole: string
   }) {
     assertTarget(input.target)
-    const normalized = await this.normalize(input.buffer, input.mimeType)
+    const normalized = await this.normalize(input.buffer, input.mimeType, input.target.categoryId ? COVER_MAX_DIMENSION : undefined)
     const stored = await this.storeNormalized(normalized.buffer, input.originalName.replace(/\.[^.]+$/, '') + '.webp')
+    const cover = input.target.categoryId ? await this.coverExtras(input.buffer, normalized.buffer) : undefined
     return this.attachAsset(input.target, {
+      ...(cover ? { metadata: cover } : {}),
       sourceType: input.sourceType ?? 'UPLOAD',
       storageKey: stored.key,
       publicUrl: stored.url,
@@ -102,7 +105,7 @@ export class TaxonomyMediaService {
     const buffer = Buffer.from(await response.arrayBuffer())
     if (buffer.length > MAX_REMOTE_BYTES) throw { statusCode: 413, message: 'Remote image exceeds the import limit' }
 
-    const normalized = await this.normalize(buffer, response.headers.get('content-type') ?? 'image/jpeg', opts.maxDimension)
+    const normalized = await this.normalize(buffer, response.headers.get('content-type') ?? 'image/jpeg', opts.maxDimension ?? (target.categoryId ? COVER_MAX_DIMENSION : undefined))
     const stored = await this.storeNormalized(normalized.buffer, `${candidate.provider}-${candidate.externalId}.webp`)
     // List covers also get a 3:4 card crop and quality metrics.
     const cover = target.categoryId ? await this.coverExtras(buffer, normalized.buffer) : {}

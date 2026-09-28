@@ -5,6 +5,7 @@ import { hashDistance, measureImage, NEAR_DUPLICATE, technicalQuality, type Imag
 import { combineScore, generateBriefs, RATING_VERSION, rateImage, subjectKey, type ListContext, type VisionRating } from '../lib/coverScoring'
 import { fetchThumbnail, searchOpenverse, usableCandidates, type CoverCandidate } from '../lib/openverse'
 import { mergeRefMetadata } from '../lib/wikidataIdentity'
+import { coverDecisionOf } from '../lib/categoryCovers'
 
 // Automatic list covers. DB-only (no files), so this runs locally against the
 // target database; media:sync then downloads the new covers inside the container.
@@ -79,7 +80,7 @@ async function rate(key: string, list: ListContext, image: () => Promise<Buffer 
   return result
 }
 
-const coverOf = (metadata: unknown) => (metadata as any)?.cover as ({ status: 'approved' | 'none'; id?: string } & Record<string, any>) | undefined
+const coverOf = coverDecisionOf
 // Stock libraries photograph models; anywhere else a recognizable face is a real, unasked person.
 const STOCK = new Set(['stocksnap', 'rawpixel'])
 const isGood = (s: Scored) => s.score >= AUTO_MIN && s.rating.relevance >= 7 && !s.flags.some((f) => /text|logo/.test(f)) &&
@@ -97,7 +98,8 @@ async function main() {
     orderBy: [{ popularityCount: 'desc' }, { slug: 'asc' }],
   })
   const asset = (c: (typeof categories)[number]) => c.mediaAssets[0]
-  const hasCover = (c: (typeof categories)[number]) => coverOf(c.metadata)?.status === 'approved' && !!asset(c)?.publicUrl
+  const hasCover = (c: (typeof categories)[number]) => ['approved', 'asset'].includes(coverOf(c.metadata)?.status ?? '') && !!asset(c)?.publicUrl
+  // An image an admin attached directly is their call: rated (so others avoid its subject) but never replaced.
   // Every image in use (by id and perceptual hash): no list may get another list's picture.
   const takenIds = new Map<string, string>()
   const takenHashes = new Map<string, string>()
@@ -108,7 +110,7 @@ async function main() {
     if (dhash) takenHashes.set(c.slug, dhash)
   }
 
-  const scope = MODE === 'backfill' ? categories.filter((c) => !hasCover(c)) : categories.filter(hasCover)
+  const scope = MODE === 'backfill' ? categories.filter((c) => !hasCover(c)) : categories.filter((c) => hasCover(c) && coverOf(c.metadata)!.status === 'approved')
   const outcomes: Outcome[] = []
   let stopped: string | null = null
   const contextOf = (c: (typeof categories)[number]): ListContext =>
@@ -122,7 +124,7 @@ async function main() {
     for (const c of categories.filter(hasCover)) {
       const cover = coverOf(c.metadata)!
       const stored = (asset(c)!.metadata as any)?.quality as ImageMetrics | undefined
-      const rated = await rate(`v${RATING_VERSION}:${c.slug}:current:${cover.id}`, contextOf(c), () => fetchThumbnail(asset(c)!.publicUrl!), stored)
+      const rated = await rate(`v${RATING_VERSION}:${c.slug}:current:${cover.id ?? cover.assetId}`, contextOf(c), () => fetchThumbnail(asset(c)!.publicUrl!), stored)
       if (!rated) continue
       const s = combineScore(rated.rating, rated.metrics)
       currents.set(c.slug, { url: (asset(c)!.metadata as any)?.card?.publicUrl ?? asset(c)!.publicUrl!, score: s.score, reason: s.rejected ?? rated.rating.reason, flags: s.flags })
