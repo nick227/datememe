@@ -50,6 +50,7 @@ export function toCategoryUnit(category: any, opts: { completed: boolean; previe
   // No render-time fallback to its top pick or ranked entities: those images
   // are other lists' covers, so falling back repeats photos across cards.
   const imageUrl = category.imageUrl ?? null
+  const imageCardUrl = category.imageCardUrl ?? null
   const imageCredit = category.imageCredit ?? null
 
   return {
@@ -58,6 +59,7 @@ export function toCategoryUnit(category: any, opts: { completed: boolean; previe
     title: category.shortLabel,
     subtitle: category.prompt,
     imageUrl,
+    imageCardUrl,
     imageCredit,
     metrics,
     capabilities: { canRank: true },

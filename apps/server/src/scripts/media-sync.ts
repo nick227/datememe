@@ -8,6 +8,10 @@ import { IDENTITY_PROVIDER, mergeRefMetadata, verification, verificationOf } fro
 import { fixtures } from './taxonomyMediaFixtures'
 import { assignCategoryCovers } from '../lib/categoryCovers'
 import { wikimediaSizedUrl } from '../lib/imageHosts'
+import { readFile } from 'fs/promises'
+import { resolve as resolvePath } from 'path'
+import { localStorageConfig } from '../providers/localStorageConfig'
+import { mergeRefMetadata as mergeMetadata } from '../lib/wikidataIdentity'
 
 // Production media sync. Writes image files, so it runs only inside the
 // server container (the guard below refuses anywhere else):
@@ -22,6 +26,7 @@ import { wikimediaSizedUrl } from '../lib/imageHosts'
 //   3. attaches the fixture type/list covers that are missing
 //   4. downloads list covers a person approved (covers:propose)
 //   5. gives every other list its own cover from its choices, never a repeat
+//   6. makes each list cover's 3:4 card variant + quality metrics
 // Unverified identities are never touched. The last line is a machine-readable
 // `MEDIA_SYNC {…}` summary with `remaining`; run again until it is 0.
 // Exit 1 only for unexpected failures (rate limits, deleted items, bugs).
@@ -214,7 +219,27 @@ async function main() {
   }
 
   // 5. Every other list gets its own cover from its choices — never a repeat.
-  const covers = { approved: approvedCovers, ...(await assignCategoryCovers()) }
+  const covers: Record<string, unknown> = { approved: approvedCovers, ...(await assignCategoryCovers()) }
+
+  // 6. Every list cover gets its 3:4 card variant and quality metrics, made
+  // from the stored file (no download). Covers imported from now on get them
+  // at import; this backfills the rest and repairs a missing variant file.
+  const variants = { made: 0, failed: 0 }
+  const { directory } = localStorageConfig()
+  for (const asset of await db.mediaAsset.findMany({ where: { isPrimary: true, categoryId: { not: null }, category: { isActive: true } } })) {
+    const card = (asset.metadata as any)?.card
+    if (card && isServableAsset({ storageKey: card.storageKey, publicUrl: card.publicUrl }) && (asset.metadata as any)?.quality?.transparency !== undefined) continue
+    try {
+      const file = await readFile(resolvePath(directory, asset.storageKey!))
+      const extras = await media.coverExtras(file, file)
+      await db.mediaAsset.update({ where: { id: asset.id }, data: { metadata: mergeMetadata(asset.metadata, extras) } })
+      variants.made++
+    } catch (error: any) {
+      variants.failed++
+      results.push({ label: `card:${asset.categoryId}`, status: 'failed', reason: error?.message ?? String(error) })
+    }
+  }
+  covers.cardVariants = variants
 
   for (const r of results) console.log(`${r.status.padEnd(22)} ${r.label}${r.reason ? ` — ${r.reason}` : ''}`)
   console.log(`MEDIA_SYNC ${JSON.stringify({ ...counts, covers })}`)

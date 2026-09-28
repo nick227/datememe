@@ -20,6 +20,8 @@ async function main() {
   show('Entity images that do not resolve', audit.deadEntityImages)
   show('Same image on multiple entities', audit.sharedHashes)
   show('Same cover on multiple lists', audit.sharedCovers)
+  show('List covers without a 3:4 card variant', audit.missingCardVariants)
+  show('Near-duplicate list covers (covers:improve)', audit.nearDuplicateCovers)
   console.log(audit.healthy ? '\nOK: media is consistent.' : '\nFAIL: media is inconsistent — see repair-taxonomy-media.ts')
   if (!audit.healthy) process.exitCode = 1
 }

@@ -1660,6 +1660,8 @@ export interface components {
             matchAnswerMultiplier: number | null;
             requiredTags: components["schemas"]["Tag"][];
             imageUrl?: string | null;
+            /** @description The list cover cropped to 3:4 around its most salient region, for portrait cards. Null until generated; fall back to imageUrl. */
+            imageCardUrl?: string | null;
             imageCredit?: components["schemas"]["ImageCredit"];
         };
         Entity: {
@@ -1929,6 +1931,8 @@ export interface components {
             title: string;
             subtitle?: string | null;
             imageUrl?: string | null;
+            /** @description The list cover cropped to 3:4 around its most salient region, for portrait cards. Null until generated; fall back to imageUrl. */
+            imageCardUrl?: string | null;
             imageCredit?: components["schemas"]["ImageCredit"];
             metrics?: components["schemas"]["Metric"][];
             capabilities?: components["schemas"]["Capabilities"];

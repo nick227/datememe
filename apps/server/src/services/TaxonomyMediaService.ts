@@ -5,6 +5,7 @@ import { createStorageProvider } from '../providers/storage'
 import { assertMediaWritesAreServable, isServableAsset } from '../lib/mediaIntegrity'
 import { mergeRefMetadata, verification, verificationOf } from '../lib/wikidataIdentity'
 import { isApprovedImageHost } from '../lib/imageHosts'
+import { cardVariant, measureImage } from '../lib/coverImage'
 import { getImageProvider, imageProviders, type ImageCandidate } from './imageProviders'
 
 const storage = createStorageProvider()
@@ -103,6 +104,8 @@ export class TaxonomyMediaService {
 
     const normalized = await this.normalize(buffer, response.headers.get('content-type') ?? 'image/jpeg', opts.maxDimension)
     const stored = await this.storeNormalized(normalized.buffer, `${candidate.provider}-${candidate.externalId}.webp`)
+    // List covers also get a 3:4 card crop and quality metrics.
+    const cover = target.categoryId ? await this.coverExtras(buffer, normalized.buffer) : {}
     return this.attachAsset(target, {
       sourceType: 'PROVIDER_IMPORT',
       provider: candidate.provider,
@@ -120,9 +123,20 @@ export class TaxonomyMediaService {
       publicUrl: stored.url,
       mimeType: stored.mimeType,
       byteSize: stored.size,
-      metadata: { ...candidate.metadata, title: candidate.title, creator: candidate.creator },
+      metadata: { ...candidate.metadata, title: candidate.title, creator: candidate.creator, ...cover },
       sha256: createHash('sha256').update(normalized.buffer).digest('hex'),
     }, actorUserId, actorRole)
+  }
+
+  /**
+   * A list cover's 3:4 card variant (attention-cropped from the best source
+   * available) and its quality metrics, as asset metadata. Also used to
+   * backfill covers that predate variants.
+   */
+  async coverExtras(source: Buffer, stored: Buffer) {
+    const card = await cardVariant(source)
+    const saved = await this.storeNormalized(card.buffer, 'card.webp')
+    return { card: { storageKey: saved.key, publicUrl: saved.url, width: card.width, height: card.height }, quality: await measureImage(stored) }
   }
 
   async attachReference(target: Target, candidate: ImageCandidate, actorUserId: string, actorRole: string) {

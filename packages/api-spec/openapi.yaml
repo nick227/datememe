@@ -361,6 +361,10 @@ components:
           type: array
           items: { $ref: '#/components/schemas/Tag' }
         imageUrl: { type: string, nullable: true }
+        imageCardUrl:
+          type: string
+          nullable: true
+          description: The list cover cropped to 3:4 around its most salient region, for portrait cards. Null until generated; fall back to imageUrl.
         imageCredit: { $ref: '#/components/schemas/ImageCredit' }
 
     Entity:
@@ -776,6 +780,10 @@ components:
         title: { type: string }
         subtitle: { type: string, nullable: true }
         imageUrl: { type: string, nullable: true }
+        imageCardUrl:
+          type: string
+          nullable: true
+          description: The list cover cropped to 3:4 around its most salient region, for portrait cards. Null until generated; fall back to imageUrl.
         imageCredit: { $ref: '#/components/schemas/ImageCredit' }
         metrics:
           type: array

@@ -114,6 +114,7 @@ export function serializeCategory(category: any) {
     matchAnswerMultiplier: category.matchAnswerMultiplier ?? null,
     requiredTags: (category.requiredTags ?? []).map((rt: any) => rt.tag),
     imageUrl: primaryImage,
+    imageCardUrl: (asset?.metadata as any)?.card?.publicUrl ?? null,
     imageCredit: serializeImageCredit(asset),
   }
 }

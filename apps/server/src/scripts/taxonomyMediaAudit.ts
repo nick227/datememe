@@ -4,6 +4,7 @@ import { isServableAsset } from '../lib/mediaIntegrity'
 import { localStorageConfig } from '../providers/localStorageConfig'
 import { fixtures, retiredQids } from './taxonomyMediaFixtures'
 import { verificationOf } from '../lib/wikidataIdentity'
+import { hashDistance, NEAR_DUPLICATE } from '../lib/coverImage'
 
 // Read-only consistency check between what the database says about taxonomy
 // media and what this deployment can actually serve. No network calls.
@@ -109,6 +110,19 @@ export async function auditTaxonomyMedia() {
   const sharedCovers = [...coversByImage.values()].filter((lists) => lists.length > 1).map((lists) => ({ lists }))
   const listsWithoutCover = [...activeCategories.keys()].filter((id) => !assets.some((a) => a.isPrimary && a.categoryId === id)).length
 
+  // Active list covers: each needs its 3:4 card variant; covers that look alike
+  // (perceptual hash) are reported for covers:improve.
+  const listCovers = assets.filter((a) => a.isPrimary && a.categoryId && activeCategories.has(a.categoryId))
+  const missingCardVariants = listCovers
+    .filter((a) => { const card = (a.metadata as any)?.card; return !card || !isServableAsset({ storageKey: card.storageKey, publicUrl: card.publicUrl }) })
+    .map((a) => activeCategories.get(a.categoryId!)!)
+  const nearDuplicateCovers: { lists: string[]; distance: number }[] = []
+  const hashed = listCovers.filter((a) => (a.metadata as any)?.quality?.dhash)
+  for (let i = 0; i < hashed.length; i++) for (let j = i + 1; j < hashed.length; j++) {
+    const d = hashDistance((hashed[i]!.metadata as any).quality.dhash, (hashed[j]!.metadata as any).quality.dhash)
+    if (d <= NEAR_DUPLICATE) nearDuplicateCovers.push({ lists: [activeCategories.get(hashed[i]!.categoryId!)!, activeCategories.get(hashed[j]!.categoryId!)!], distance: d })
+  }
+
   // Files on disk no MediaAsset points at. Profile photos live in the same
   // directory, so this is informational, never a deletion list.
   let unreferencedFiles: number | null = null
@@ -139,11 +153,14 @@ export async function auditTaxonomyMedia() {
     sharedImageHashes: sharedHashes.length,
     sharedListCovers: sharedCovers.length,
     listsWithoutCover,
+    listCoversWithoutCardVariant: missingCardVariants.length,
+    nearDuplicateListCovers: nearDuplicateCovers.length,
     identitiesByMethod,
     fixtureEntitiesInDb: fixtureEntities,
     fixturesMissingFromDb: fixtures.length - fixtureEntities,
     unreferencedFilesOnDisk: unreferencedFiles,
   }
-  const healthy = !summary.deadEntityImages && !assetFindings.length && !refFindings.length && !sharedHashes.length && !sharedCovers.length
-  return { summary, healthy, assetFindings, refFindings, deadEntityImages, sharedHashes, sharedCovers }
+  // Near-duplicates are reported, not failing: covers:improve resolves them.
+  const healthy = !summary.deadEntityImages && !assetFindings.length && !refFindings.length && !sharedHashes.length && !sharedCovers.length && !missingCardVariants.length
+  return { summary, healthy, assetFindings, refFindings, deadEntityImages, sharedHashes, sharedCovers, missingCardVariants, nearDuplicateCovers }
 }
