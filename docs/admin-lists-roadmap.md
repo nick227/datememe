@@ -1,6 +1,12 @@
 # Admin → Lists: roadmap
 
-*2026-09-28. **Spec locked** for Phase 1; nothing is built yet.*
+*2026-09-28. Phase 1 **built** (commits `dc76c20`, `1b03b75`, `bb5ce7c`, `8a91283`).*
+
+**Built vs spec:**
+- **Cover suggestion runs in the server process, not a worker job.** The worker has no access to the cover libraries or the uploads volume. The state lives in `metadata.coverSuggest`, the app polls it, and a run interrupted by a restart shows as failed after 10 minutes.
+- **Values reorder with ↑/↓, no drag yet.**
+- **"Hidden · Never published" applies only to lists created in Admin.** Older lists predate `firstLiveAt`.
+- **Other agents' subject dedupe:** each new cover decision records its `cover.subject`. Covers chosen before Phase 1 only have one if `covers:improve --apply` has been run since.
 
 ## Goal
 
