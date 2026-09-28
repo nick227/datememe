@@ -7,6 +7,7 @@ import { assertMediaWritesAreServable, isServableAsset } from '../lib/mediaInteg
 import { IDENTITY_PROVIDER, mergeRefMetadata, verification, verificationOf } from '../lib/wikidataIdentity'
 import { fixtures } from './taxonomyMediaFixtures'
 import { assignCategoryCovers } from '../lib/categoryCovers'
+import { wikimediaSizedUrl } from '../lib/imageHosts'
 
 // Production media sync. Writes image files, so it runs only inside the
 // server container (the guard below refuses anywhere else):
@@ -182,7 +183,8 @@ async function main() {
     if (current && isServableAsset(current)) continue
     try {
       await media.importAndAttach({ categoryId: c.id }, {
-        provider: cover.provider, externalId: cover.id, title: cover.title, previewUrl: cover.url, sourceUrl: cover.url, landingUrl: cover.landingUrl,
+        // A sized Commons copy, not the (often huge, throttled) original.
+        provider: cover.provider, externalId: cover.id, title: cover.title, previewUrl: wikimediaSizedUrl(cover.url, cover.width), sourceUrl: cover.url, landingUrl: cover.landingUrl,
         creator: cover.creator, license: cover.license, licenseUrl: cover.licenseUrl, attribution: cover.attribution,
         importRule: 'IMPORT_ALLOWED', metadata: { approvedCover: true, source: cover.source },
       }, actor.id, actor.role, { maxDimension: 1600 })
@@ -193,7 +195,7 @@ async function main() {
       isExpectedRejection(error) ? approvedCovers.rejected++ : (approvedCovers.failed++, counts.failed++)
       results.push({ label: `cover:${c.slug}`, status: isExpectedRejection(error) ? 'rejected' : 'failed', reason })
     }
-    await new Promise((resolve) => setTimeout(resolve, 1000))
+    await new Promise((resolve) => setTimeout(resolve, cover.source === 'wikimedia' ? 4000 : 1000))
   }
 
   // 5. Every other list gets its own cover from its choices — never a repeat.

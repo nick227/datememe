@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs'
 import { dirname, resolve } from 'path'
 import { db } from '@project/db'
-import { isApprovedImageHost } from '../lib/imageHosts'
+import { isApprovedImageHost, wikimediaSizedUrl } from '../lib/imageHosts'
 import { mergeRefMetadata } from '../lib/wikidataIdentity'
 
 // List covers are chosen by a person. DB-only (no files), so this runs locally
@@ -63,8 +63,8 @@ async function openverse(q: string): Promise<any[]> {
 // Openverse can't thumbnail Wikimedia-hosted files (HTTP 424); Commons serves
 // its own resized copy at a predictable path.
 function previewUrl(r: { url: string; thumbnail: string }) {
-  const m = r.url.match(/^https:\/\/upload\.wikimedia\.org\/wikipedia\/commons\/([0-9a-f])\/([0-9a-f]{2})\/([^/?]+)$/)
-  return m ? `https://upload.wikimedia.org/wikipedia/commons/thumb/${m[1]}/${m[2]}/${m[3]}/500px-${m[3]}` : r.thumbnail
+  const sized = wikimediaSizedUrl(r.url, undefined, [500])
+  return sized !== r.url ? sized : r.thumbnail
 }
 
 const coverOf = (metadata: unknown) => (metadata as any)?.cover as { status: 'approved' | 'none'; id?: string } | undefined
