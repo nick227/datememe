@@ -1,8 +1,22 @@
 # Android QA builds
 
-The standalone staging APK is verified below. A staging AAB profile is also prepared for future Play internal testing; no store submission is configured. Staging now has versioned migrations and a persistent media volume, documented in [mobile data operations](mobile-data-operations.md). Maestro and production publishing remain follow-up work in the [environment proposal](android-mobile-environment-proposal.md).
+The current candidate is the **version-code-3 staging AAB**, built successfully and installed on the emulator using its generated APK set. Use the artifact, source commit, and results in [Android launch validation](android-launch-validation.md). It fixes logout navigation and native photo upload failures found in earlier builds. **Play developer registration and upload are deferred by choice while private testing continues.** The current focus is emulator regression and direct installation on one physical Android phone; physical-phone coverage is still pending. Staging has versioned migrations and a persistent media volume, documented in [mobile data operations](mobile-data-operations.md). Broad automation remains deferred until after first market exposure.
 
-## First QA artifact
+The [first Play Internal release packet](android-play-internal.md) is retained for later and contains the exact artifact, release notes, signing details, and manual upload/tester steps. Neither Play registration nor another EAS APK build is required to continue private testing of the existing AAB.
+
+## Direct phone installation from the existing AAB
+
+The AAB itself is not directly installable. Once a phone is connected and authorized for USB debugging, use Google's `bundletool` to generate and install its APK set:
+
+1. Select the phone's ADB serial explicitly, especially while the emulator is connected.
+2. Run `bundletool build-apks` with the existing version-code-3 AAB, `--connected-device`, and the phone's `--device-id`, supplying the **existing EAS staging signing identity** privately. This generates device-specific APKs locally; it does not rebuild the app in EAS. Do not use the default debug signing identity.
+3. Run `bundletool install-apks` with the resulting `.apks` archive and the same phone serial. The emulator's existing x86_64 APK set is not a substitute for the phone's required APKs.
+
+These are the official [bundletool device generation and installation steps](https://developer.android.com/tools/bundletool). Keep signing material outside the repository. Confirm package `com.datememe.app.staging`, version `1.0.0`, code `3`, then follow the focused checks below. Record actual results only after installation; no physical-phone test has been completed yet.
+
+## Superseded first QA artifact
+
+The code-1 APK below is historical evidence of the initial standalone milestone. Use the current code-3 AAB for further launch validation.
 
 - [EAS build d40dec2f-55d8-422a-b98f-e5601527b508](https://expo.dev/accounts/hzane111/projects/datememe/builds/d40dec2f-55d8-422a-b98f-e5601527b508) finished successfully on September 23, 2026.
 - [Download the signed APK](https://expo.dev/artifacts/eas/bkBnlG_LAyEpoNblmyVdq3LpeD-eBuY__YCujb__4os.apk): version `1.0.0`, Android version code `1`, package `com.datememe.app.staging`.
@@ -36,6 +50,8 @@ Staging was created empty, with a separate MySQL volume and newly generated cred
 The first schema setup used a guarded, one-time `prisma db push` against the new staging database, followed by the existing taxonomy seed. Staging has since been backed up and baselined, and the result-table migration has been applied. The API now runs versioned migrations before deployment. See [migration and media operations](mobile-data-operations.md) for the exact commands, backup limits, and production adoption requirements.
 
 ## Build from a clean checkout
+
+This section is for a new candidate after source changes. Reuse the existing AAB for the current private testing pass.
 
 Use Node **22.22.0** (also recorded in `.node-version`) and pnpm **10.12.1**. From the repository root:
 
@@ -78,17 +94,19 @@ pnpm --filter mobile qa:config
 pnpm --filter mobile qa:store:build
 ```
 
-The final command starts an EAS AAB build; it does not submit to Google Play. No new APK or AAB was built while adding this configuration. Inspect the completed AAB's package, staging endpoint, version, version code, and signing identity before upload, and retain its build ID and source commit. The first remote build should advance beyond the verified APK's code `1`; if a remote counter already exists, retain that higher counter.
+The final command starts an EAS AAB build; it does not submit to Google Play. Code `3` is the latest validated artifact; preserve the remote counter so subsequent uploads advance it. Inspect each completed AAB's package, staging endpoint, version, version code, and signing identity before upload, and retain its build ID and source commit.
 
-This AAB is intended for a separate **Datememe QA** Play application with package `com.datememe.app.staging`, using its internal testing track and staging data. It cannot become the future production `com.datememe.app` application. Production needs its own package registration, signing setup, backend configuration, and build profile. Play Console app creation, Play App Signing enrollment, upload credentials, testing access, and the first upload are still pending; this repository has no `submit` profile or automatic submission command.
+This AAB is intended for a separate **Datememe QA** Play application with package `com.datememe.app.staging`, using its internal testing track and staging data. It cannot become the future production `com.datememe.app` application: [Play fixes the package name after the first upload](https://support.google.com/googleplay/android-developer/answer/9845334). Production needs its own package registration, signing setup, backend configuration, and build profile; `app.config.ts` currently permits only staging EAS profiles and must also be updated. Any applicable [production-access testing requirements](https://support.google.com/googleplay/android-developer/answer/14151465) must be satisfied for the production app.
+
+Play registration, app creation, signing enrollment, tester setup, and upload are deferred while private testing continues. When Play distribution resumes, the signed AAB can be uploaded manually through Play Console; EAS submission credentials are not required for that route. This repository has no `submit` profile or automatic submission command.
 
 ## Verify the installed app
 
 1. Install alongside any development app; confirm the label is **Datememe QA** and the package is `com.datememe.app.staging`.
 2. Cold-start with Metro/local API stopped. The app must reach login without asking for a development server.
 3. Register a synthetic account or use an existing QA account; sign in over the hosted staging API.
-4. Edit the profile or create a favorites list, terminate/reopen the app, and verify the saved data survives. Sign out and back in to verify authentication and persistence.
-5. Record the APK build ID, Android version/device, results, and any crash/log evidence. Check database identity through the staging API service configuration rather than relying only on the app label.
+4. Save a profile/photo change and a ranked list edit, open discovery and a profile, and send a message. Sign out and back in, then force-stop/relaunch and verify the saved changes and session survive.
+5. Record the source AAB build ID, installed version code, Android version/device, results, and any crash/log evidence. Check database identity through the staging API service configuration rather than relying only on the app label.
 
 The `android-qa@example.test` account was created for initial verification with a generated password, not a shared production credential. Create your own QA account in the app if you do not have its credentials. No real email delivery is needed for initial registration/login.
 

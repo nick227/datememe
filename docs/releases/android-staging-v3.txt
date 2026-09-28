@@ -1,0 +1,4 @@
+Private Datememe QA build using staging data.
+Fixed logout navigation and native profile photo uploads.
+Includes seeded profiles, ranked lists, discovery, and messaging for core-flow testing.
+Purchases, email delivery, and push notifications are not ready for public use.

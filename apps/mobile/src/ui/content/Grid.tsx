@@ -71,5 +71,5 @@ function GridSkeleton({ columns, widthPercent }: { columns: number; widthPercent
 
 const styles = StyleSheet.create({
   grid: { flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -spacing.xs },
-  cell: { paddingHorizontal: spacing.xs, marginBottom: spacing.sm },
+  cell: { paddingHorizontal: spacing.xs, paddingBottom: spacing.sm, marginBottom: spacing.sm, overflow: 'visible' },
 })

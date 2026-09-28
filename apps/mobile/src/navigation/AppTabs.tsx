@@ -43,6 +43,7 @@ export function AppTabs() {
         headerShown: false,
         animation: 'fade',
         tabBarShowLabel: false,
+        unmountOnBlur: true,
         tabBarButtonTestID: `tab.${route.name.toLowerCase()}`,
         tabBarActiveTintColor: colors.accent,
         tabBarInactiveTintColor: colors.inkMuted,

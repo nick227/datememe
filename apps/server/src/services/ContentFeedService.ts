@@ -428,7 +428,7 @@ export class ContentFeedService {
       ...(isFirstPage
         ? {
             summary: {
-              title: 'Lists and Favorites',
+              title: 'Lists',
               stats: [
                 { label: 'lists completed', value: completedLists.length },
                 { label: 'picks ranked', value: myLists.reduce((sum: number, l: any) => sum + l.items.length, 0) },
@@ -692,7 +692,7 @@ export class ContentFeedService {
       }
       summaryAndChips = {
         summary: {
-          title: 'Discovery People',
+          title: 'People',
           stats: [
             { label: 'favorites', value: favorited.length },
             { label: 'matches', value: matchCount },

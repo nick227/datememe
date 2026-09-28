@@ -36,8 +36,7 @@ export function PersonUnitCard({ unit, variant, zone, onPress }: Props) {
   const matchMetric = unit.metrics?.find((m) => m.type === 'overlap')
   const sharedCountMetric = unit.metrics?.find((m) => m.type === 'popularity')
   const sharedFavorites = unit.sharedFavorites ?? []
-  const alsoInto = unit.alsoInto ?? []
-  const locationLine = [unit.age, unit.subtitle].filter(Boolean).join(' · ')
+  const locationLine = unit.subtitle || ''
 
   // River is "more like an editorial/social entry than a tile" — a full-width
   // row, not another bordered box (proposal correction: four layouts create
@@ -53,7 +52,7 @@ export function PersonUnitCard({ unit, variant, zone, onPress }: Props) {
           {locationLine ? <Typography variant="bodyMuted">{locationLine}</Typography> : null}
           {sharedFavorites.length > 0 ? (
             <Typography variant="body" style={styles.sharedNames} numberOfLines={2}>
-              You both ranked {sharedFavorites.map((f) => f.entityName).join(' · ')}
+              Shared: {sharedFavorites.map((f) => f.entityName).join(' · ')}
             </Typography>
           ) : null}
         </View>
@@ -62,18 +61,16 @@ export function PersonUnitCard({ unit, variant, zone, onPress }: Props) {
           {matchMetric ? (
             <Typography style={styles.matchValue}>{matchMetric.value} match</Typography>
           ) : null}
-          {sharedCountMetric ? (
-            <Typography variant="bodyMuted">{sharedCountMetric.value} shared interests</Typography>
-          ) : null}
         </View>
       </PressableScale>
     )
   }
 
   return (
-    <CardShell testID={`discover.profile.${unit.id}`} onPress={onPress}>
+    <CardShell testID={`discover.profile.${unit.id}`} onPress={onPress} noBorder>
       <CardShell.Media style={styles.imageWrap}>
-        <SmartImage uri={unit.imageUrl} fallbackText={unit.title} />
+        <SmartImage uri={unit.imageUrl} fallbackText={unit.title} aspectRatio={3/4} style={StyleSheet.absoluteFill} />
+        {matchMetric ? <MicroBadge label={`${matchMetric.value} match`} position="top-left" variant="neutral" /> : null}
       </CardShell.Media>
 
       <CardShell.Body style={[styles.body, isRail && styles.railBody]}>
@@ -84,47 +81,26 @@ export function PersonUnitCard({ unit, variant, zone, onPress }: Props) {
         </View>
 
         <CardShell.Insight>
-          {sharedFavorites.length > 0 ? (
-            <View style={styles.block}>
-              <Typography variant="label" style={styles.sharedLabel}>
-                You both ranked
-              </Typography>
+          <View style={styles.block}>
+            <Typography variant="label" style={styles.sharedLabel}>
+              Shared interests
+            </Typography>
+            {sharedFavorites.length > 0 ? (
               <Typography variant="body" style={styles.sharedNames} numberOfLines={1}>
                 {sharedFavorites.map((f) => f.entityName).join(' · ')}
               </Typography>
-            </View>
-          ) : null}
-
-          {alsoInto.length > 0 && !isRail ? (
-            <View style={styles.block}>
-              <Typography variant="label" style={styles.alsoLabel}>
-                Also into
+            ) : (
+              <Typography variant="bodyMuted" style={{ fontStyle: 'italic' }}>
+                None
               </Typography>
-              <Typography variant="bodyMuted" numberOfLines={1}>
-                {alsoInto.map((e) => e.canonicalName).join(' · ')}
-              </Typography>
-            </View>
-          ) : null}
-          
-          {sharedFavorites.length === 0 && alsoInto.length === 0 ? (
-            <View style={styles.block}>
-              <Typography variant="bodyMuted" style={{ fontStyle: 'italic', minHeight: 40 }}>
-                No overlapping interests yet
-              </Typography>
-            </View>
-          ) : null}
+            )}
+          </View>
         </CardShell.Insight>
 
         <CardShell.ActionRow>
           <Typography variant="bodyMuted" numberOfLines={1} style={styles.metaText}>
             {locationLine}
           </Typography>
-          {matchMetric ? (
-            <Typography variant="body" style={styles.matchLine}>
-              <Typography style={styles.matchValue}>{matchMetric.value} match</Typography>
-              {sharedCountMetric ? ` · ${sharedCountMetric.value} shared` : ''}
-            </Typography>
-          ) : null}
         </CardShell.ActionRow>
       </CardShell.Body>
     </CardShell>
@@ -138,13 +114,13 @@ export function PersonUnitCard({ unit, variant, zone, onPress }: Props) {
 function CompactPersonCard({ unit, onPress }: { unit: ContentUnit; onPress: () => void }) {
   const matchMetric = unit.metrics?.find((m) => m.type === 'overlap')
   const sharedCountMetric = unit.metrics?.find((m) => m.type === 'popularity')
-  const locationLine = [unit.age, unit.subtitle].filter(Boolean).join(' · ')
-  const metaLine = locationLine || (sharedCountMetric ? `${sharedCountMetric.value} shared` : null)
+  const locationLine = unit.subtitle || ''
+  const metaLine = locationLine
 
   return (
-    <CardShell testID={`discover.profile.${unit.id}`} onPress={onPress} radius="grid" noBorder={!!unit.imageUrl}>
+    <CardShell testID={`discover.profile.${unit.id}`} onPress={onPress} radius="grid" noBorder>
       <CardShell.Media style={compactStyles.imageWrap}>
-        <SmartImage uri={unit.imageUrl} fallbackText={unit.title} style={StyleSheet.absoluteFill} />
+        <SmartImage uri={unit.imageUrl} fallbackText={unit.title} aspectRatio={3/4} style={StyleSheet.absoluteFill} />
         {matchMetric ? <MicroBadge label={`${matchMetric.value} match`} position="top-left" variant="neutral" /> : null}
       </CardShell.Media>
       <CardShell.Body style={compactStyles.body}>
