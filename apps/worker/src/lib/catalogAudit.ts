@@ -174,7 +174,10 @@ export async function writeQuality(catalog: Catalog, quality: Map<string, ListQu
   return written
 }
 
-export type DomainConfig = Record<string, { label: string; groups?: string[]; keywords?: string[]; min?: number; maxShare?: number }>
+export type DomainConfig = Record<string, { label: string; groups?: string[]; keywords?: string[]; exclude?: string[]; min?: number; maxShare?: number }>
+
+/** A whole word or phrase, plural allowed: "bar" matches "bar"/"bars", never "barbecue"; "cat" never "educational". */
+const phrase = (k: string) => new RegExp(`(^|[^a-z])${k.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(s|es)?(?=[^a-z]|$)`, 'g')
 type DomainStatus = 'missing' | 'thin' | 'ok' | 'overrepresented'
 
 /** What the catalog has too much or too little of, for the next generation batch. */
@@ -182,7 +185,12 @@ export function coverageReport(catalog: Catalog, quality: Map<string, ListQualit
   const { lists } = catalog
   const text = (l: List) => ` ${l.shortLabel} ${l.prompt} ${l.entityType.label} `.toLowerCase()
   const byDomain = Object.entries(domains).map(([slug, d]) => {
-    const members = lists.filter((l) => d.groups?.includes(l.group.slug) || d.keywords?.some((k) => text(l).includes(k.toLowerCase())))
+    // Excluded phrases use a keyword in another sense ("pet peeve", "candy bar", "spend time"); they're removed first.
+    const matches = (l: List) => {
+      const t = (d.exclude ?? []).reduce((s, x) => s.replace(phrase(x), ' '), text(l))
+      return d.keywords?.some((k) => phrase(k).test(t))
+    }
+    const members = lists.filter((l) => d.groups?.includes(l.group.slug) || matches(l))
     const share = lists.length ? members.length / lists.length : 0
     const status: DomainStatus = !members.length ? 'missing' : d.min && members.length < d.min ? 'thin' : d.maxShare && share > d.maxShare ? 'overrepresented' : 'ok'
     return { domain: slug, label: d.label, status, lists: members.length, share: Math.round(share * 100) / 100, target: { min: d.min ?? null, maxShare: d.maxShare ?? null }, examples: members.slice(0, 5).map((l) => l.shortLabel) }
