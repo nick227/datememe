@@ -14,6 +14,11 @@ import { key, legacyAsciiKey } from '../lib/identityKey'
 //
 // Existing user picks outside the list are kept as choices too, so no saved
 // list becomes invalid; they are reported so they can be reviewed.
+//
+// A tagged list is left alone while its tags offer every value in its file.
+// When they hide some ("Top Rock Bands" tagged genre-rock offered only 90s alt
+// bands, none of its classics), the tags don't describe the list: it becomes
+// CURATED and the tags are dropped (tags still apply to curated lists).
 const apply = process.argv.includes('--apply')
 const DIR = resolve(__dirname, '../../../../catalog/lists')
 
@@ -26,10 +31,10 @@ async function main() {
   let changed = 0, skipped = 0
   for (const list of lists) {
     // Found the way the importer finds it: by slug, else by displayed title.
-    const select = { id: true, shortLabel: true, poolMode: true, entityTypeId: true, _count: { select: { requiredTags: true } } } as const
+    const select = { id: true, shortLabel: true, poolMode: true, entityTypeId: true, requiredTags: { select: { tagId: true } } } as const
     const category = await db.category.findFirst({ where: { slug: { in: [...new Set([key(list.title), legacyAsciiKey(list.title)])] } }, select })
       ?? await db.category.findFirst({ where: { shortLabel: list.title }, select })
-    if (!category || category.poolMode === 'CURATED' || category._count.requiredTags) { skipped++; continue }
+    if (!category || category.poolMode === 'CURATED') { skipped++; continue }
 
     const ids: string[] = []
     const unresolved: string[] = []
@@ -47,11 +52,16 @@ async function main() {
       skipped++
       continue
     }
+    const tagIds = category.requiredTags.map((t) => t.tagId)
+    const pool = { entityTypeId: category.entityTypeId, status: 'APPROVED', mergedIntoId: null, AND: tagIds.map((tagId) => ({ tags: { some: { tagId } } })) } as const
+    const hidden = tagIds.length ? await db.entity.findMany({ where: { id: { in: ids }, NOT: { AND: pool.AND } }, select: { canonicalName: true } }) : []
+    if (tagIds.length && !hidden.length) { skipped++; continue }
     const listed = new Set(ids)
     const picks = await db.listItem.findMany({ where: { list: { categoryId: category.id } }, select: { entityId: true, entity: { select: { canonicalName: true } } } })
     const offList = [...new Map(picks.filter((p) => !listed.has(p.entityId)).map((p) => [p.entityId, p.entity.canonicalName])).entries()]
-    const all = await db.entity.count({ where: { entityTypeId: category.entityTypeId, status: 'APPROVED', mergedIntoId: null } })
-    console.log(`${apply ? '✓' : '→'} ${category.shortLabel}: ${all} choices -> ${ids.length + offList.length}${offList.length ? ` (keeps existing picks: ${offList.map(([, n]) => n).join(', ')})` : ''}`)
+    const all = await db.entity.count({ where: pool })
+    const untag = hidden.length ? ` (drops its tags, which hid ${hidden.map((h) => h.canonicalName).join(', ')})` : ''
+    console.log(`${apply ? '✓' : '→'} ${category.shortLabel}: ${all} choices -> ${ids.length + offList.length}${offList.length ? ` (keeps existing picks: ${offList.map(([, n]) => n).join(', ')})` : ''}${untag}`)
     changed++
     if (!apply) continue
     await db.$transaction(async (tx) => {
@@ -60,6 +70,7 @@ async function main() {
         skipDuplicates: true,
       })
       await tx.category.update({ where: { id: category.id }, data: { poolMode: 'CURATED' } })
+      if (tagIds.length) await tx.categoryTag.deleteMany({ where: { categoryId: category.id } })
     })
   }
   console.log(`BACKFILL ${JSON.stringify({ mode: apply ? 'apply' : 'dry-run', lists: lists.length, changed, skipped })}`)
