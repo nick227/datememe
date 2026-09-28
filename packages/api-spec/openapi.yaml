@@ -1782,6 +1782,157 @@ components:
               type: array
               items: { $ref: '#/components/schemas/AdminMediaAsset' }
 
+    AdminListRow:
+      description: One row of Admin → Lists (docs/admin-lists-roadmap.md) — what the admin needs to find and triage a list.
+      type: object
+      required: [id, slug, title, prompt, group, isActive, neverPublished, valueCount, takes, problem, imageUrl, imageCardUrl, updatedAt]
+      properties:
+        id: { type: string }
+        slug: { type: string }
+        title: { type: string }
+        prompt: { type: string }
+        group: { $ref: '#/components/schemas/AdminListGroup' }
+        isActive: { type: boolean, description: Live on the app }
+        neverPublished: { type: boolean, description: 'Hidden and never live (no firstLiveAt, no completed takes)' }
+        valueCount: { type: integer }
+        takes: { type: integer, description: 'Completed lists (Category.popularityCount, kept by the rankings rebuild)' }
+        problem:
+          type: string
+          nullable: true
+          enum: [cover, cover-failed, values, null]
+          description: The most important thing needing attention, if any
+        imageUrl: { type: string, nullable: true }
+        imageCardUrl: { type: string, nullable: true, description: The 3:4 card as the app shows it }
+        updatedAt: { type: string, format: date-time }
+
+    AdminListGroup:
+      type: object
+      required: [id, label]
+      properties:
+        id: { type: string }
+        label: { type: string }
+        count: { type: integer }
+
+    AdminListsPage:
+      type: object
+      required: [items, total, groups]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/AdminListRow' }
+        total: { type: integer }
+        groups:
+          type: array
+          items: { $ref: '#/components/schemas/AdminListGroup' }
+
+    AdminListCoverCandidate:
+      description: A suggested cover from the cover automation (duplicate-safe, scored 0–100).
+      type: object
+      required: [id, title, license, url, thumbnail, width, height, score, subject, reason, good]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        creator: { type: string }
+        license: { type: string }
+        licenseVersion: { type: string }
+        licenseUrl: { type: string }
+        attribution: { type: string }
+        url: { type: string }
+        thumbnail: { type: string }
+        landingUrl: { type: string }
+        width: { type: integer }
+        height: { type: integer }
+        source: { type: string }
+        score: { type: integer }
+        subject: { type: string }
+        reason: { type: string }
+        good: { type: boolean, description: Clears the auto-apply bar }
+
+    AdminListCoverSuggest:
+      type: object
+      nullable: true
+      required: [status, at]
+      properties:
+        status: { type: string, enum: [running, done, failed] }
+        at: { type: string }
+        candidates:
+          type: array
+          items: { $ref: '#/components/schemas/AdminListCoverCandidate' }
+        rejected:
+          type: object
+          additionalProperties: { type: integer }
+        error: { type: string }
+
+    AdminListDetail:
+      type: object
+      required: [id, slug, title, prompt, group, entityType, parentEntity, isActive, isPremiumOnly, isMatchSignal, orderingMode, minItems, maxItems, curated, takes, neverPublished, valueCount, problems, updatedAt, cover, coverSuggest, values]
+      properties:
+        id: { type: string }
+        slug: { type: string }
+        title: { type: string }
+        prompt: { type: string }
+        group: { $ref: '#/components/schemas/AdminListGroup' }
+        entityType: { $ref: '#/components/schemas/AdminListGroup' }
+        parentEntity:
+          type: object
+          nullable: true
+          required: [id, name]
+          properties:
+            id: { type: string }
+            name: { type: string }
+        isActive: { type: boolean }
+        isPremiumOnly: { type: boolean }
+        isMatchSignal: { type: boolean }
+        orderingMode: { type: string, enum: [RANKED, UNRANKED] }
+        minItems: { type: integer }
+        maxItems: { type: integer }
+        curated: { type: boolean, description: "false for older lists that offer every value of their type (values can't be edited here)" }
+        takes: { type: integer }
+        neverPublished: { type: boolean }
+        valueCount: { type: integer }
+        problems:
+          type: array
+          items: { type: string, enum: [cover, cover-failed, values] }
+        updatedAt: { type: string, format: date-time }
+        cover:
+          type: object
+          required: [status, imageUrl, imageCardUrl, title, credit, canRevert]
+          properties:
+            status: { type: string, nullable: true, enum: [approved, asset, none, null] }
+            imageUrl: { type: string, nullable: true }
+            imageCardUrl: { type: string, nullable: true }
+            title: { type: string, nullable: true }
+            credit:
+              type: object
+              nullable: true
+              required: [creator, license, attribution, landingUrl]
+              properties:
+                creator: { type: string, nullable: true }
+                license: { type: string, nullable: true }
+                attribution: { type: string, nullable: true }
+                landingUrl: { type: string, nullable: true }
+            canRevert: { type: boolean }
+        coverSuggest:
+          type: object
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/AdminListCoverSuggest'
+        values:
+          type: array
+          items:
+            type: object
+            required: [entityId, name, isNew]
+            properties:
+              entityId: { type: string }
+              name: { type: string }
+              isNew: { type: boolean, description: 'Created from Admin → Lists (metadata.origin)' }
+
+    AdminListResponse:
+      type: object
+      required: [list]
+      properties:
+        list: { $ref: '#/components/schemas/AdminListDetail' }
+
     AdminCreateListDefinitionInput:
       type: object
       required: [groupId, entityTypeId, slug, prompt, shortLabel]
@@ -3577,6 +3728,229 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
 
   # ── Admin: List Definitions (batch 6) ────────────────────────────────
+  /admin/lists:
+    get:
+      operationId: getAdminLists
+      summary: Admin → Lists browse — search, status, group, sort
+      tags: [admin]
+      security:
+        - adminAuth: []
+      parameters:
+        - { in: query, name: q, schema: { type: string } }
+        - { in: query, name: status, schema: { type: string, enum: [all, live, hidden, attention] } }
+        - { in: query, name: groupId, schema: { type: string } }
+        - { in: query, name: sort, schema: { type: string, enum: [updated, az, takes] } }
+        - { in: query, name: limit, schema: { type: integer, minimum: 1, maximum: 200 } }
+        - { in: query, name: offset, schema: { type: integer, minimum: 0 } }
+      responses:
+        '200':
+          description: A page of lists
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AdminListsPage' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      operationId: createAdminList
+      summary: Create a list (Hidden, curated) from title, question, group and an existing value type
+      tags: [admin]
+      security:
+        - adminAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title, prompt, groupId, entityTypeId]
+              properties:
+                title: { type: string }
+                prompt: { type: string }
+                groupId: { type: string }
+                entityTypeId: { type: string }
+      responses:
+        '201':
+          description: The new list
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AdminListResponse' }
+        '400': { description: Missing field, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+        '409': { description: Title taken, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /admin/lists/{id}:
+    parameters:
+      - { in: path, name: id, required: true, schema: { type: string } }
+    get:
+      operationId: getAdminList
+      summary: One list as the admin edits it — text, values, cover, visibility
+      tags: [admin]
+      security:
+        - adminAuth: []
+      responses:
+        '200':
+          description: The list
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AdminListResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    patch:
+      operationId: updateAdminList
+      summary: Save text, visibility and advanced settings (going Live checks values and cover)
+      tags: [admin]
+      security:
+        - adminAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title: { type: string }
+                prompt: { type: string }
+                groupId: { type: string }
+                isActive: { type: boolean }
+                isPremiumOnly: { type: boolean }
+                slug: { type: string }
+                orderingMode: { type: string, enum: [RANKED, UNRANKED] }
+                minItems: { type: integer }
+                maxItems: { type: integer }
+                isMatchSignal: { type: boolean }
+      responses:
+        '200':
+          description: The saved list
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AdminListResponse' }
+        '400': { description: Invalid field, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+        '409': { description: Slug taken, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+        '422': { description: Not ready to go live, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /admin/lists/{id}/values:
+    parameters:
+      - { in: path, name: id, required: true, schema: { type: string } }
+    put:
+      operationId: setAdminListValues
+      summary: Replace the list's values and their order (remove and reorder)
+      tags: [admin]
+      security:
+        - adminAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [entityIds]
+              properties:
+                entityIds: { type: array, items: { type: string } }
+      responses:
+        '200':
+          description: The list
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AdminListResponse' }
+        '400': { description: Invalid values, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+        '409': { description: Not a curated list, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    post:
+      operationId: addAdminListValue
+      summary: + Add — an existing value by id, or a name (matched before anything is created; `similar` asks the admin to confirm)
+      tags: [admin]
+      security:
+        - adminAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                entityId: { type: string }
+                name: { type: string }
+                create: { type: boolean, description: Create a new value even though a similar one exists }
+      responses:
+        '200':
+          description: Added (existing or created), or a similar value to confirm
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status: { type: string, enum: [existing, created, similar] }
+                  list: { $ref: '#/components/schemas/AdminListDetail' }
+                  match:
+                    type: object
+                    required: [entityId, name]
+                    properties:
+                      entityId: { type: string }
+                      name: { type: string }
+        '400': { description: Invalid value, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+        '409': { description: Already in the list, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /admin/lists/{id}/cover/suggest:
+    parameters:
+      - { in: path, name: id, required: true, schema: { type: string } }
+    post:
+      operationId: suggestAdminListCover
+      summary: Start the cover automation for this list (runs ~20–40 s; poll getAdminList for coverSuggest)
+      tags: [admin]
+      security:
+        - adminAuth: []
+      responses:
+        '202':
+          description: Started (or already running)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AdminListResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /admin/lists/{id}/cover:
+    parameters:
+      - { in: path, name: id, required: true, schema: { type: string } }
+    post:
+      operationId: setAdminListCover
+      summary: Use a suggested cover, choose No cover, or revert to the previous one (upload goes through /admin/media/upload with categoryId)
+      tags: [admin]
+      security:
+        - adminAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [action]
+              properties:
+                action: { type: string, enum: [use, none, revert] }
+                candidateId: { type: string }
+      responses:
+        '200':
+          description: The list with its new cover
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AdminListResponse' }
+        '400': { description: Invalid action, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+        '409': { description: Image taken or nothing to revert, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
   /admin/lists/definitions:
     get:
       operationId: getListDefinitions

@@ -117,6 +117,16 @@ export class ListImporterService {
           ? new Set((await tx.categoryEntity.findMany({ where: { categoryId: existing.id }, select: { entityId: true } })).map((c) => c.entityId))
           : new Set<string>()
         if (curated) report.choicesAdded = names.filter((n) => !offered.has(resolved.get(n) ?? '')).length
+        // The database is the truth once an admin has edited a list (Admin → Lists):
+        // a file never re-adds values the admin removed. Report the difference instead.
+        const adminEditedAt = (existing?.metadata as any)?.adminEditedAt as string | undefined
+        if (existing && adminEditedAt) {
+          const missing = names.filter((n) => !offered.has(resolved.get(n) ?? ''))
+          if (missing.length) report.warnings.push(`"${existing.shortLabel}" was edited in Admin (${adminEditedAt.slice(0, 10)}); file differs — not adding ${missing.length} value(s): ${missing.slice(0, 5).join(', ')}${missing.length > 5 ? ', …' : ''}`)
+          report.choicesAdded = 0
+          report.entitiesCreated = []
+          return
+        }
         if (dryRun) return
 
         if (!group) {

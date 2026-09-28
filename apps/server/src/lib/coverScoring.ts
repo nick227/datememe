@@ -20,7 +20,7 @@ export async function generateBriefs(list: ListContext): Promise<string[]> {
   const response = await openai().chat.completions.create({
     model: MODEL,
     messages: [
-      { role: 'system', content: 'You write stock-photo search queries for the cover image of a list in a dating app. Each query is 2-3 plain words describing a photographable scene or object (every word must appear in the photo title), with no brand, product, character or person names and no words with a common second meaning (e.g. "sprinter" also means a van, "arcade" also means architecture). Make the three queries visually different from each other and from the current one.' },
+      { role: 'system', content: 'You write stock-photo search queries for the cover image of a list in a dating app. Each query is 1-2 plain nouns (3 at most) naming a photographable scene or object, like "chocolate cake" or "record store" — every word must appear in the photo title, so never add adjectives like warm, rich, creamy, cozy or vibrant, with no brand, product, character or person names and no words with a common second meaning (e.g. "sprinter" also means a van, "arcade" also means architecture). Make the three queries visually different from each other and from the current one.' },
       { role: 'user', content: `List: ${list.title}\nQuestion: ${list.prompt}\nExample answers: ${list.values.slice(0, 8).join(', ')}\nCurrent query: ${list.brief ?? '(none)'}` },
     ],
     response_format: { type: 'json_schema', json_schema: { name: 'briefs', strict: true, schema: { type: 'object', additionalProperties: false, required: ['queries'], properties: { queries: { type: 'array', items: { type: 'string' } } } } } },

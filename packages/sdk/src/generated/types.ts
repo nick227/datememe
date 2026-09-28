@@ -976,6 +976,102 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/lists": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Admin → Lists browse — search, status, group, sort */
+        get: operations["getAdminLists"];
+        put?: never;
+        /** Create a list (Hidden, curated) from title, question, group and an existing value type */
+        post: operations["createAdminList"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/lists/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        /** One list as the admin edits it — text, values, cover, visibility */
+        get: operations["getAdminList"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Save text, visibility and advanced settings (going Live checks values and cover) */
+        patch: operations["updateAdminList"];
+        trace?: never;
+    };
+    "/admin/lists/{id}/values": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /** Replace the list's values and their order (remove and reorder) */
+        put: operations["setAdminListValues"];
+        /** + Add — an existing value by id, or a name (matched before anything is created; `similar` asks the admin to confirm) */
+        post: operations["addAdminListValue"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/lists/{id}/cover/suggest": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Start the cover automation for this list (runs ~20–40 s; poll getAdminList for coverSuggest) */
+        post: operations["suggestAdminListCover"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/lists/{id}/cover": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Use a suggested cover, choose No cover, or revert to the previous one (upload goes through /admin/media/upload with categoryId) */
+        post: operations["setAdminListCover"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/lists/definitions": {
         parameters: {
             query?: never;
@@ -2673,6 +2769,123 @@ export interface components {
             entityType: components["schemas"]["AdminEntityTypeScalar"];
             parentEntity: components["schemas"]["AdminEntityScalar"] | null;
             mediaAssets: components["schemas"]["AdminMediaAsset"][];
+        };
+        /** @description One row of Admin → Lists (docs/admin-lists-roadmap.md) — what the admin needs to find and triage a list. */
+        AdminListRow: {
+            id: string;
+            slug: string;
+            title: string;
+            prompt: string;
+            group: components["schemas"]["AdminListGroup"];
+            /** @description Live on the app */
+            isActive: boolean;
+            /** @description Hidden and never live (no firstLiveAt, no completed takes) */
+            neverPublished: boolean;
+            valueCount: number;
+            /** @description Completed lists (Category.popularityCount, kept by the rankings rebuild) */
+            takes: number;
+            /**
+             * @description The most important thing needing attention, if any
+             * @enum {string|null}
+             */
+            problem: "cover" | "cover-failed" | "values" | null;
+            imageUrl: string | null;
+            /** @description The 3:4 card as the app shows it */
+            imageCardUrl: string | null;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        AdminListGroup: {
+            id: string;
+            label: string;
+            count?: number;
+        };
+        AdminListsPage: {
+            items: components["schemas"]["AdminListRow"][];
+            total: number;
+            groups: components["schemas"]["AdminListGroup"][];
+        };
+        /** @description A suggested cover from the cover automation (duplicate-safe, scored 0–100). */
+        AdminListCoverCandidate: {
+            id: string;
+            title: string;
+            creator?: string;
+            license: string;
+            licenseVersion?: string;
+            licenseUrl?: string;
+            attribution?: string;
+            url: string;
+            thumbnail: string;
+            landingUrl?: string;
+            width: number;
+            height: number;
+            source?: string;
+            score: number;
+            subject: string;
+            reason: string;
+            /** @description Clears the auto-apply bar */
+            good: boolean;
+        };
+        AdminListCoverSuggest: {
+            /** @enum {string} */
+            status: "running" | "done" | "failed";
+            at: string;
+            candidates?: components["schemas"]["AdminListCoverCandidate"][];
+            rejected?: {
+                [key: string]: number;
+            };
+            error?: string;
+        } | null;
+        AdminListDetail: {
+            id: string;
+            slug: string;
+            title: string;
+            prompt: string;
+            group: components["schemas"]["AdminListGroup"];
+            entityType: components["schemas"]["AdminListGroup"];
+            parentEntity: {
+                id: string;
+                name: string;
+            } | null;
+            isActive: boolean;
+            isPremiumOnly: boolean;
+            isMatchSignal: boolean;
+            /** @enum {string} */
+            orderingMode: "RANKED" | "UNRANKED";
+            minItems: number;
+            maxItems: number;
+            /** @description false for older lists that offer every value of their type (values can't be edited here) */
+            curated: boolean;
+            takes: number;
+            neverPublished: boolean;
+            valueCount: number;
+            problems: ("cover" | "cover-failed" | "values")[];
+            /** Format: date-time */
+            updatedAt: string;
+            cover: {
+                /** @enum {string|null} */
+                status: "approved" | "asset" | "none" | null;
+                imageUrl: string | null;
+                imageCardUrl: string | null;
+                title: string | null;
+                credit: {
+                    creator: string | null;
+                    license: string | null;
+                    attribution: string | null;
+                    landingUrl: string | null;
+                } | null;
+                canRevert: boolean;
+            };
+            coverSuggest: components["schemas"]["AdminListCoverSuggest"] | null;
+            values: {
+                entityId: string;
+                name: string;
+                /** @description Created from Admin → Lists (metadata.origin) */
+                isNew: boolean;
+            }[];
+        };
+        AdminListResponse: {
+            list: components["schemas"]["AdminListDetail"];
         };
         AdminCreateListDefinitionInput: {
             groupId: string;
@@ -4683,6 +4896,362 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+        };
+    };
+    getAdminLists: {
+        parameters: {
+            query?: {
+                q?: string;
+                status?: "all" | "live" | "hidden" | "attention";
+                groupId?: string;
+                sort?: "updated" | "az" | "takes";
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A page of lists */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminListsPage"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    createAdminList: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    title: string;
+                    prompt: string;
+                    groupId: string;
+                    entityTypeId: string;
+                };
+            };
+        };
+        responses: {
+            /** @description The new list */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminListResponse"];
+                };
+            };
+            /** @description Missing field */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            /** @description Title taken */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getAdminList: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The list */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminListResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    updateAdminList: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    title?: string;
+                    prompt?: string;
+                    groupId?: string;
+                    isActive?: boolean;
+                    isPremiumOnly?: boolean;
+                    slug?: string;
+                    /** @enum {string} */
+                    orderingMode?: "RANKED" | "UNRANKED";
+                    minItems?: number;
+                    maxItems?: number;
+                    isMatchSignal?: boolean;
+                };
+            };
+        };
+        responses: {
+            /** @description The saved list */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminListResponse"];
+                };
+            };
+            /** @description Invalid field */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            /** @description Slug taken */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not ready to go live */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    setAdminListValues: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    entityIds: string[];
+                };
+            };
+        };
+        responses: {
+            /** @description The list */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminListResponse"];
+                };
+            };
+            /** @description Invalid values */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            /** @description Not a curated list */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    addAdminListValue: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    entityId?: string;
+                    name?: string;
+                    /** @description Create a new value even though a similar one exists */
+                    create?: boolean;
+                };
+            };
+        };
+        responses: {
+            /** @description Added (existing or created), or a similar value to confirm */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        status: "existing" | "created" | "similar";
+                        list?: components["schemas"]["AdminListDetail"];
+                        match?: {
+                            entityId: string;
+                            name: string;
+                        };
+                    };
+                };
+            };
+            /** @description Invalid value */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            /** @description Already in the list */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    suggestAdminListCover: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Started (or already running) */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminListResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    setAdminListCover: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @enum {string} */
+                    action: "use" | "none" | "revert";
+                    candidateId?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description The list with its new cover */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminListResponse"];
+                };
+            };
+            /** @description Invalid action */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            /** @description Image taken or nothing to revert */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
         };
     };
     getListDefinitions: {

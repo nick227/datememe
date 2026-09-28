@@ -75,6 +75,22 @@ describe('ListImporterService', () => {
     expect(await db.categoryEntity.count({ where: { categoryId: category.id } })).toBe(9)
   })
 
+  it('never re-adds values to a list edited in Admin; reports the difference instead', async () => {
+    const input = list({ title: `${prefix} Edited`, values: values(`${prefix} Pretzels`, `${prefix} Popcorn`) })
+    await importer.importList(input)
+    const category = await db.category.findFirstOrThrow({ where: { shortLabel: `${prefix} Edited` } })
+    const popcorn = await db.entity.findFirstOrThrow({ where: { entityTypeId: type.id, canonicalName: `${prefix} Popcorn` } })
+    // The admin removed Popcorn (Admin → Lists stamps adminEditedAt on every save).
+    await db.categoryEntity.delete({ where: { categoryId_entityId: { categoryId: category.id, entityId: popcorn.id } } })
+    await db.category.update({ where: { id: category.id }, data: { metadata: { adminEditedAt: '2026-09-28T12:00:00.000Z' } } })
+    const again = await importer.importList({ ...input, values: [...input.values, `${prefix} Brand New`] })
+    expect(again.status).toBe('SUCCESS')
+    expect(again.choicesAdded).toBe(0)
+    expect(again.warnings.join()).toMatch(/edited in Admin.*not adding 2 value/)
+    expect(await db.categoryEntity.count({ where: { categoryId: category.id, entityId: popcorn.id } })).toBe(0)
+    expect(await db.entity.count({ where: { entityTypeId: type.id, canonicalName: `${prefix} Brand New` } })).toBe(0)
+  })
+
   it("offers the whole type only when the list opts in with pool: 'entity-type'", async () => {
     await importer.importList(list({ title: `${prefix} Broad`, pool: 'entity-type' }))
     const category = await db.category.findFirstOrThrow({ where: { slug: key(`${prefix} Broad`) }, include: { _count: { select: { curatedEntities: true } } } })
