@@ -3,6 +3,7 @@ import { db } from '@project/db'
 import { calculateMatchesJob } from './jobs/CalculateMatchesJob'
 import { updateTaxonomyJob } from './jobs/UpdateTaxonomyJob'
 import { rankingsRebuildJob } from './jobs/RankingsRebuildJob'
+import { catalogAuditJob } from './jobs/CatalogAuditJob'
 import { profileResultsRefreshJob } from './jobs/ProfileResultsRefreshJob'
 import { profileSocialInsightsRefreshJob } from './jobs/ProfileSocialInsightsRefreshJob'
 import { randomUUID } from 'crypto'
@@ -77,6 +78,9 @@ async function poll() {
       // seed-staging) — any such job now just means "rebuild everything".
       const result = await rankingsRebuildJob()
       console.log(JSON.stringify({ event: 'RANKINGS_REBUILT', ...result }))
+    } else if (job.type === 'CATALOG_AUDIT') {
+      const result = await catalogAuditJob()
+      console.log(JSON.stringify({ event: 'CATALOG_AUDITED', ...result }))
     } else if (job.type === 'PROFILE_RESULTS_REFRESH') {
       await profileResultsRefreshJob(payload)
     } else if (job.type === 'PROFILE_SOCIAL_INSIGHTS_REFRESH') {
@@ -144,20 +148,27 @@ process.on('SIGINT', handleShutdown)
 // Rankings are rebuilt on a timer, not from write paths — the rebuild is
 // canonical and idempotent, so a duplicate enqueue from a second worker
 // racing this check is harmless (it just rebuilds twice).
+// The catalog audit (list quality signals for Admin → Lists) works the same
+// way, less often; admin edits also enqueue one.
 const RANKINGS_REFRESH_MS = Math.max(1, parseInt(process.env.RANKINGS_REFRESH_MINUTES || '15', 10)) * 60_000
+const CATALOG_AUDIT_MS = Math.max(5, parseInt(process.env.CATALOG_AUDIT_MINUTES || '360', 10)) * 60_000
 
-async function scheduleRankingsRebuild() {
+async function scheduleIfIdle(type: string) {
   if (isShuttingDown) return
   try {
-    const inFlight = await db.jobQueue.findFirst({ where: { type: 'RANKINGS_REBUILD', status: { in: ['PENDING', 'RUNNING'] } }, select: { id: true } })
-    if (!inFlight) await db.jobQueue.create({ data: { type: 'RANKINGS_REBUILD', payload: {} } })
+    const inFlight = await db.jobQueue.findFirst({ where: { type, status: { in: ['PENDING', 'RUNNING'] } }, select: { id: true } })
+    if (!inFlight) await db.jobQueue.create({ data: { type, payload: {} } })
   } catch (err) {
-    console.error('Error scheduling rankings rebuild:', err)
+    console.error(`Error scheduling ${type}:`, err)
   }
 }
+const scheduleRankingsRebuild = () => scheduleIfIdle('RANKINGS_REBUILD')
+const scheduleCatalogAudit = () => scheduleIfIdle('CATALOG_AUDIT')
 
 console.log(`Worker ${WORKER_ID} started. Polling for jobs...`)
 poll()
 scheduleRankingsRebuild()
 setInterval(scheduleRankingsRebuild, RANKINGS_REFRESH_MS)
+scheduleCatalogAudit()
+setInterval(scheduleCatalogAudit, CATALOG_AUDIT_MS)
 

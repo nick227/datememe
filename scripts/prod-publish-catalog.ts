@@ -21,7 +21,8 @@ import { resolve } from 'path'
 //                      (+ .html contact sheet) for a person to pick
 //   media:sync         inside the server container (writes image files, so it
 //                      must run where the volume is), repeated until done
-//   derived:enqueue    local -> Railway MySQL (the worker does the rebuild)
+//   derived:enqueue    local -> Railway MySQL (the worker does the rebuild + catalog audit)
+//   catalog:audit      local -> Railway MySQL; writes catalog/review/coverage.<env>.json
 //   audit              inside the server container
 //
 // --dry-run stops after validation. --skip-media skips identify + sync.
@@ -53,7 +54,8 @@ function report() {
   if (s.coversReview) lines.push(`cover picks: ${s.coversReview.applied} applied, ${s.coversReview.stillPending} still pending`)
   if (s.covers) lines.push(`covers:      ${s.covers.proposed} lists proposed, ${s.covers.awaitingReview} awaiting your pick, ${s.covers.decided} decided${s.covers.stoppedEarly ? ' (rate-limited, resumes next run)' : ''}`)
   if (s.media) lines.push(`media:       ${s.media.imported} imported, ${s.media.noImage} no image, ${s.media.rejected} rejected, ${s.media.failed} failed, ${s.media.remaining} remaining (${s.media.rounds} rounds); ${s.media.withImage} with image`)
-  if (s.derived) lines.push(`rankings:    ${s.derived.rankingsRebuild}`)
+  if (s.derived) lines.push(`rankings:    ${s.derived.rankingsRebuild}; catalog audit ${s.derived.catalogAudit ?? 'not queued'}`)
+  if (s.quality) lines.push(`quality:     ${s.quality.flagged} of ${s.quality.lists} lists flagged; gaps: ${Object.entries(s.quality.summary).filter(([, v]) => v !== 'ok').map(([k, v]) => `${k} ${v}`).join(', ') || 'none'}`)
   if (s.audit) lines.push(`audit:       ${s.audit}`)
   return lines.join('\n')
 }
@@ -167,6 +169,11 @@ async function main() {
   const derived = await stage('derived:enqueue', 'pnpm', local('derived-enqueue.ts'), 'DERIVED', env)
   summary.derived = derived.result
   if (derived.code) fail('Could not queue the rankings rebuild')
+
+  // List quality + coverage gaps (report only; the worker writes the flags). The next
+  // generation batch reads catalog/review/coverage.<env>.json.
+  const quality = await stage('catalog:audit', 'pnpm', ['--filter', 'worker', 'exec', 'tsx', 'src/scripts/catalog-audit.ts'], 'CATALOG_AUDIT', env)
+  summary.quality = quality.result
 
   const audit = await stage('audit (in container)', 'railway', remote('audit-media.ts'), '')
   summary.audit = audit.code ? 'FAIL' : 'PASS'

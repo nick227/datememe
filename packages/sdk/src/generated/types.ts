@@ -2785,10 +2785,10 @@ export interface components {
             /** @description Completed lists (Category.popularityCount, kept by the rankings rebuild) */
             takes: number;
             /**
-             * @description The most important thing needing attention, if any
+             * @description The most important thing needing attention, if any (cover and values live; the rest from the worker's CATALOG_AUDIT)
              * @enum {string|null}
              */
-            problem: "cover" | "cover-failed" | "values" | null;
+            problem: "cover" | "cover-failed" | "values" | "duplicate" | "too-broad" | "weak-cover" | "wrong-group" | "low-takes" | null;
             imageUrl: string | null;
             /** @description The 3:4 card as the app shows it */
             imageCardUrl: string | null;
@@ -2859,7 +2859,12 @@ export interface components {
             takes: number;
             neverPublished: boolean;
             valueCount: number;
-            problems: ("cover" | "cover-failed" | "values")[];
+            problems: ("cover" | "cover-failed" | "values" | "duplicate" | "too-broad" | "weak-cover" | "wrong-group" | "low-takes")[];
+            /** @description Flagged catalog-audit findings, in words (e.g. "Shares 70% of its values with …") */
+            issues: {
+                code: string;
+                detail: string;
+            }[];
             /** Format: date-time */
             updatedAt: string;
             cover: {

@@ -16,7 +16,16 @@ const covers = new ListCoverService()
 type Actor = { id: string; role: string }
 export type ListStatusFilter = 'all' | 'live' | 'hidden' | 'attention'
 export type ListSort = 'updated' | 'az' | 'takes'
-type Problem = 'cover' | 'cover-failed' | 'values'
+type Problem = 'cover' | 'cover-failed' | 'values' | 'duplicate' | 'too-broad' | 'wrong-group' | 'weak-cover' | 'low-takes'
+type QualityIssue = { code: string; detail: string; flagged: boolean }
+// The worker's CATALOG_AUDIT (apps/worker/src/lib/catalogAudit.ts) writes metadata.quality;
+// only flagged issues reach the admin, in this order of importance.
+const QUALITY_PROBLEM: Record<string, Problem> = {
+  duplicate: 'duplicate', overlap: 'duplicate', 'too-broad': 'too-broad', 'needs-values': 'values',
+  'weak-cover': 'weak-cover', 'wrong-group': 'wrong-group', 'low-takes': 'low-takes',
+}
+const ORDER: Problem[] = ['cover', 'cover-failed', 'duplicate', 'values', 'too-broad', 'weak-cover', 'wrong-group', 'low-takes']
+const flaggedIssues = (metadata: unknown) => (((metadata as any)?.quality?.issues ?? []) as QualityIssue[]).filter((i) => i.flagged)
 
 const fail = (statusCode: number, message: string, extra: Record<string, unknown> = {}): never => { throw { statusCode, message, ...extra } }
 
@@ -54,7 +63,17 @@ function problemsOf(l: ListRow, valueCount: number): Problem[] {
     problems.push(suggest?.status === 'failed' || (suggest?.status === 'done' && !suggest.candidates.length) ? 'cover-failed' : 'cover')
   }
   if (valueCount < l.maxItems) problems.push('values')
-  return problems
+  for (const issue of flaggedIssues(l.metadata)) {
+    const p = QUALITY_PROBLEM[issue.code]
+    if (p && !problems.includes(p)) problems.push(p)
+  }
+  return problems.sort((a, b) => ORDER.indexOf(a) - ORDER.indexOf(b))
+}
+
+/** Re-runs the catalog audit soon after an edit, so flags clear without waiting for the timer. */
+async function queueCatalogAudit() {
+  const inFlight = await db.jobQueue.findFirst({ where: { type: 'CATALOG_AUDIT', status: 'PENDING' }, select: { id: true } })
+  if (!inFlight) await db.jobQueue.create({ data: { type: 'CATALOG_AUDIT', payload: {} } })
 }
 
 /**
@@ -131,6 +150,7 @@ export class ListAdminService {
       minItems: l.minItems, maxItems: l.maxItems, curated: l.poolMode === 'CURATED',
       takes: l.popularityCount, neverPublished: (await neverPublishedIds([l])).has(l.id), valueCount,
       problems: problemsOf(l, valueCount), updatedAt: l.updatedAt.toISOString(),
+      issues: flaggedIssues(l.metadata).map((i) => ({ code: QUALITY_PROBLEM[i.code] ?? i.code, detail: i.detail })),
       cover: {
         status: decision?.status ?? null,
         ...card(l),
@@ -160,6 +180,7 @@ export class ListAdminService {
       },
     })
     await this.audit(actor, 'create_list', created.id, { title })
+    await queueCatalogAudit()
     return this.detail(created.id)
   }
 
@@ -194,6 +215,7 @@ export class ListAdminService {
     const meta = mergeRefMetadata(l.metadata, { adminEditedAt: now, ...(goingLive && !(l.metadata as any)?.firstLiveAt ? { firstLiveAt: now } : {}) })
     await db.category.update({ where: { id }, data: { ...data, metadata: meta } })
     await this.audit(actor, 'update_list', id, data)
+    await queueCatalogAudit()
     return this.detail(id)
   }
 
@@ -223,6 +245,7 @@ export class ListAdminService {
       db.category.update({ where: { id }, data: { metadata: mergeRefMetadata(l.metadata, { adminEditedAt: new Date().toISOString() }) } }),
     ])
     await this.audit(actor, 'set_list_values', id, { count: ids.length })
+    await queueCatalogAudit()
     await this.maybeAutoCover(id, actor)
     return this.detail(id)
   }

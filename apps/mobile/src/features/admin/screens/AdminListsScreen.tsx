@@ -33,7 +33,12 @@ const SORTS: { value: Sort; label: string }[] = [
 const PROBLEM_LABEL: Record<NonNullable<AdminListRow['problem']>, string> = {
   cover: '⚠ Cover',
   'cover-failed': '⚠ Cover failed',
-  values: '⚠ Values',
+  values: '⚠ Needs values',
+  duplicate: '⚠ Duplicate',
+  'too-broad': '⚠ Too broad',
+  'weak-cover': '⚠ Weak cover',
+  'wrong-group': '⚠ Wrong group',
+  'low-takes': '⚠ No takes',
 }
 
 export function AdminListsScreen({ navigation }: Props) {

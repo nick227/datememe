@@ -6,10 +6,15 @@ This document is the single entrypoint for AI agents generating and processing l
 Generate useful new Lists without duplicating the catalog.
 
 ## Before Generating
-1. Read `catalog/lists/*.json`
-2. Inspect existing groups and entity types
-3. Avoid semantic duplicates
-4. Prefer under-covered dimensions
+1. **Read `catalog/review/coverage.production.json` first.** Refresh it with the command below. Generate only in domains marked `missing` or `thin`, and none in `overrepresented` ones. Check `flaggedLists` so you don't add another copy of a list already flagged as a duplicate.
+   ```bash
+   DATABASE_URL="$(railway variables --service MySQL --environment production --kv | sed -n 's/^MYSQL_PUBLIC_URL=//p')" \
+     REVIEW_ENV=production pnpm --filter worker exec tsx src/scripts/catalog-audit.ts
+   ```
+   Every `pnpm prod:publish-catalog` run also rewrites it. The domains and their targets live in `catalog/domains.json`.
+2. Read `catalog/lists/*.json`
+3. Inspect existing groups and entity types
+4. Avoid semantic duplicates
 
 ## Generate
 5. Create list JSON only (in `catalog/lists/`).

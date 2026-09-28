@@ -1,0 +1,19 @@
+{
+  "$comment": "Coverage targets for catalog:audit (apps/worker/src/scripts/catalog-audit.ts). A list counts toward a domain when its group is listed or its title/question/value type contains a keyword. min = fewer lists is 'thin'; maxShare = a larger share of all active lists is 'overrepresented'. Source: docs/catalog-gap-audit.md.",
+  "media": { "label": "Media (film, TV, music, creators, podcasts, games, books)", "groups": ["film-tv", "music", "creators", "podcasts", "gaming", "literature"], "maxShare": 0.4 },
+  "dating": { "label": "Dating & relationships", "groups": ["dating-relationships"], "keywords": ["date", "dating", "relationship", "partner", "romantic"], "min": 8 },
+  "social-habits": { "label": "Social habits", "keywords": ["party", "friends", "texting", "group chat", "plans", "social", "hang out"], "min": 5 },
+  "daily-routines": { "label": "Daily routines", "keywords": ["morning", "sunday", "sleep", "late-night", "routine", "commute", "breakfast", "bedtime"], "min": 5 },
+  "home-living": { "label": "Home & living", "keywords": ["home", "house", "houseplant", "cleaning", "apartment", "interior", "decor"], "min": 4 },
+  "nightlife": { "label": "Nightlife & going out", "keywords": ["bar", "night out", "karaoke", "beer", "wine", "cocktail", "club", "nightlife"], "min": 4 },
+  "humor": { "label": "Humor", "keywords": ["humor", "humour", "funny", "comedian", "comedy", "joke", "meme", "sitcom"], "min": 4 },
+  "values": { "label": "Values & priorities", "keywords": ["green flag", "red flag", "dealbreaker", "priorit", "life goal", "values"], "min": 4 },
+  "pets": { "label": "Pets & animals", "keywords": ["pet", "dog", "cat", "animal"], "min": 3 },
+  "money": { "label": "Money & spending", "keywords": ["money", "spend", "splurge", "saving", "budget"], "min": 3 },
+  "wellness": { "label": "Wellness & self-care", "keywords": ["wellness", "self-care", "unwind", "relax", "meditat"], "min": 3 },
+  "travel": { "label": "Travel", "groups": ["travel"], "keywords": ["travel", "trip", "vacation", "destination"], "min": 5 },
+  "seasons-holidays": { "label": "Seasons & holidays", "keywords": ["season", "holiday", "summer", "winter", "christmas", "time of year"], "min": 3 },
+  "food-drink": { "label": "Food & drink", "groups": ["food-drink"], "min": 8, "maxShare": 0.15 },
+  "sports-fitness": { "label": "Sports & fitness", "groups": ["sports"], "keywords": ["gym", "workout", "fitness"], "min": 4 },
+  "career-tech": { "label": "Career & tech", "groups": ["career", "tech"], "min": 3 }
+}

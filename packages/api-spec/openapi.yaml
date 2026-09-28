@@ -1799,8 +1799,8 @@ components:
         problem:
           type: string
           nullable: true
-          enum: [cover, cover-failed, values, null]
-          description: The most important thing needing attention, if any
+          enum: [cover, cover-failed, values, duplicate, too-broad, weak-cover, wrong-group, low-takes, null]
+          description: The most important thing needing attention, if any (cover and values live; the rest from the worker's CATALOG_AUDIT)
         imageUrl: { type: string, nullable: true }
         imageCardUrl: { type: string, nullable: true, description: The 3:4 card as the app shows it }
         updatedAt: { type: string, format: date-time }
@@ -1865,7 +1865,7 @@ components:
 
     AdminListDetail:
       type: object
-      required: [id, slug, title, prompt, group, entityType, parentEntity, isActive, isPremiumOnly, isMatchSignal, orderingMode, minItems, maxItems, curated, takes, neverPublished, valueCount, problems, updatedAt, cover, coverSuggest, values]
+      required: [id, slug, title, prompt, group, entityType, parentEntity, isActive, isPremiumOnly, isMatchSignal, orderingMode, minItems, maxItems, curated, takes, neverPublished, valueCount, problems, issues, updatedAt, cover, coverSuggest, values]
       properties:
         id: { type: string }
         slug: { type: string }
@@ -1892,7 +1892,16 @@ components:
         valueCount: { type: integer }
         problems:
           type: array
-          items: { type: string, enum: [cover, cover-failed, values] }
+          items: { type: string, enum: [cover, cover-failed, values, duplicate, too-broad, weak-cover, wrong-group, low-takes] }
+        issues:
+          description: Flagged catalog-audit findings, in words (e.g. "Shares 70% of its values with …")
+          type: array
+          items:
+            type: object
+            required: [code, detail]
+            properties:
+              code: { type: string }
+              detail: { type: string }
         updatedAt: { type: string, format: date-time }
         cover:
           type: object

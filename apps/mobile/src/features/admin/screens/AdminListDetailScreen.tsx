@@ -113,6 +113,11 @@ function EditList({ list, onBack }: { list: AdminListDetail; onBack: () => void 
       />
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         {message ? <Typography variant="body" style={{ color: message.error ? colors.danger : colors.ink }}>{message.text}</Typography> : null}
+        {list.issues.length ? (
+          <View testID="admin-list-detail.issues" style={styles.issues}>
+            {list.issues.map((i) => <Typography key={i.code + i.detail} variant="body" style={{ color: colors.danger }}>⚠ {i.detail}</Typography>)}
+          </View>
+        ) : null}
 
         <Section title="Cover">
           <View style={styles.coverRow}>
@@ -246,4 +251,5 @@ const styles = StyleSheet.create({
   icon: { fontSize: 18, width: 22, textAlign: 'center' },
   iconOff: { color: colors.border },
   toggleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  issues: { gap: spacing.xs, borderLeftWidth: borderWidth.thick, borderLeftColor: colors.danger, paddingLeft: spacing.md },
 })

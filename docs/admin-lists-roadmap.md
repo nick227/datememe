@@ -251,3 +251,21 @@ Openverse allows ~200 anonymous searches a day, and each list's suggestion uses 
   - `scripts/covers-auto.ts`, `scripts/media-sync.ts`
 - **Worker:** `apps/worker/src/jobs/RankingsRebuildJob.ts` (the pattern for `CoverSuggestJob`).
 - **Spec:** `packages/api-spec/openapi.yaml`, then `pnpm sdk:generate`.
+
+---
+
+## Catalog quality: quiet by default (built 2026-09-28)
+
+This adds no screen and no workflow; Admin sees only the exceptions.
+
+- **What it checks:** the worker's `CATALOG_AUDIT` job (`apps/worker/src/lib/catalogAudit.ts`) runs every `CATALOG_AUDIT_MINUTES` (default 360), after each Admin save, and after each publish. It scores every active list, looking for:
+  - duplicate titles;
+  - overlapping value sets (60%+);
+  - unfiltered lists narrower than their type ("too broad");
+  - too few values;
+  - wrong group (most lists of that value type live elsewhere);
+  - weak or near-duplicate covers (stored image metrics);
+  - no takes, which stays quiet until the site has 300+ takes.
+- **What it writes:** `Category.metadata.quality = {score, issues[{code, detail, flagged}], checkedAt}`. It never touches `updatedAt`.
+- **What Admin sees:** Admin → Lists shows only *flagged* issues, through Needs attention: ⚠ Duplicate, ⚠ Too broad, ⚠ Needs values, ⚠ Weak cover, ⚠ Wrong group. The edit page says what is wrong ("Shares 70% of its values with …").
+- **Coverage gaps:** `catalog-audit.ts` (and `prod:publish-catalog`) writes `catalog/review/coverage.<env>.json`. It gives each domain in `catalog/domains.json` a status of missing, thin, ok or overrepresented, which the next AI generation batch reads first (`docs/ai-list-pipeline.md`).
