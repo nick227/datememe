@@ -10,6 +10,8 @@
     "catalog:publish": "tsx src/scripts/catalog-publish.ts",
     "media:identify": "tsx src/scripts/media-identify.ts",
     "covers:propose": "tsx src/scripts/covers-propose.ts",
+    "covers:backfill": "tsx src/scripts/covers-auto.ts backfill",
+    "covers:improve": "tsx src/scripts/covers-auto.ts improve",
     "media:sync": "tsx src/scripts/media-sync.ts",
     "derived:enqueue": "tsx src/scripts/derived-enqueue.ts",
     "audit:media": "tsx src/scripts/audit-media.ts",

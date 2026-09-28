@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs'
 import { dirname, resolve } from 'path'
 import { db } from '@project/db'
-import { isApprovedImageHost, wikimediaSizedUrl } from '../lib/imageHosts'
+import { searchOpenverse, usableCandidates, type CoverCandidate } from '../lib/openverse'
 import { mergeRefMetadata } from '../lib/wikidataIdentity'
 
 // List covers are chosen by a person. DB-only (no files), so this runs locally
@@ -17,7 +17,7 @@ import { mergeRefMetadata } from '../lib/wikidataIdentity'
 // modification) wide images ≥1200px on approved hosts, and writes 6
 // candidates to catalog/review/covers.<REVIEW_ENV>.json plus a contact sheet
 // (.html) to look at them. Set "approve" to a candidate number (1–6), an
-// Openverse id, or "none"; then --apply-review. A picked image can't be
+// Openverse id, "none", or "keep" (leave the current cover); then --apply-review. A picked image can't be
 // approved for two lists.
 
 const ROOT = resolve(__dirname, '../../../..')
@@ -27,13 +27,12 @@ const REVIEW_FILE = resolve(ROOT, `catalog/review/covers.${REVIEW_ENV}.json`)
 const SHEET_FILE = REVIEW_FILE.replace(/\.json$/, '.html')
 const LIMIT = parseInt(process.env.LIMIT || '120', 10)
 const CANDIDATES = 6
-const MIN_WIDTH = 1200
 const USER_AGENT = 'Datememe/1.0 (list cover proposals)'
 
-type Candidate = { id: string; title: string; creator?: string; license: string; licenseVersion?: string; licenseUrl?: string; attribution?: string; url: string; thumbnail: string; landingUrl?: string; width: number; height: number; source?: string }
+type Candidate = CoverCandidate
 type Entry = { categoryId: string; slug: string; title: string; brief: string; candidates: Candidate[]; approve: string | null }
 type ReviewFile = { instructions: string; pending: Entry[] }
-const INSTRUCTIONS = `Entries are for ONE environment (${REVIEW_ENV}). Open the .html next to this file to see the candidates. Set "approve" to a candidate number (1-6), an Openverse id, or "none", then run covers:propose --apply-review (or pnpm prod:publish-catalog --apply-review).`
+const INSTRUCTIONS = `Entries are for ONE environment (${REVIEW_ENV}). Open the .html next to this file to see the candidates. Set "approve" to a candidate number (1-6), an Openverse id, "none", or (for a list that already has a cover) "keep", then run covers:propose --apply-review (or pnpm prod:publish-catalog --apply-review).`
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 const read = (): ReviewFile => existsSync(REVIEW_FILE) ? JSON.parse(readFileSync(REVIEW_FILE, 'utf8')) : { instructions: INSTRUCTIONS, pending: [] }
@@ -48,23 +47,6 @@ function contactSheet(review: ReviewFile) {
     e.candidates.map((c, i) => `<figure><a href="${esc(c.landingUrl ?? c.url)}" target="_blank"><img loading="lazy" src="${esc(c.thumbnail)}"></a><figcaption><b>${i + 1}</b> ${esc(c.title.slice(0, 60))}<br>${esc(c.creator ?? '?')} · ${esc(c.license.toUpperCase())} · ${c.width}×${c.height}</figcaption></figure>`).join('')
   }</div></section>`).join('\n')
   return `<!doctype html><meta charset="utf-8"><title>List covers — ${REVIEW_ENV}</title><style>body{font:14px system-ui;margin:24px;background:#fff;color:#111}h2{font-size:16px;margin:28px 0 8px}small{color:#666;font-weight:400}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}figure{margin:0}img{width:100%;aspect-ratio:16/10;object-fit:cover;border:1px solid #ddd}figcaption{font-size:12px;color:#444}</style><h1>List covers (${review.pending.length} pending) — ${REVIEW_ENV}</h1>${rows}`
-}
-
-async function openverse(q: string): Promise<any[]> {
-  const params = new URLSearchParams({ q, license_type: 'commercial,modification', size: 'large', aspect_ratio: 'wide', mature: 'false', page_size: '20' })
-  for (let attempt = 0; ; attempt++) {
-    const response = await fetch(`https://api.openverse.org/v1/images/?${params}`, { headers: { 'User-Agent': USER_AGENT }, signal: AbortSignal.timeout(20000) })
-    if (response.ok) return ((await response.json()) as any).results ?? []
-    if (response.status !== 429 || attempt === 2) throw new Error(`Openverse returned ${response.status}`)
-    await sleep((Number(response.headers.get('retry-after')) || 30 * 2 ** attempt) * 1000)
-  }
-}
-
-// Openverse can't thumbnail Wikimedia-hosted files (HTTP 424); Commons serves
-// its own resized copy at a predictable path.
-function previewUrl(r: { url: string; thumbnail: string }) {
-  const sized = wikimediaSizedUrl(r.url, undefined, [500])
-  return sized !== r.url ? sized : r.thumbnail
 }
 
 const coverOf = (metadata: unknown) => (metadata as any)?.cover as { status: 'approved' | 'none'; id?: string } | undefined
@@ -85,15 +67,12 @@ async function propose() {
   let stopped: string | null = null
   for (const c of todo.slice(0, LIMIT)) {
     let results: any[]
-    try { results = await openverse(briefs[c.slug]!) } catch (error: any) { stopped = error.message; break }
-    const candidates: Candidate[] = results
-      .filter((r) => r.width >= MIN_WIDTH && r.height && r.width / r.height >= 1.25 && r.width / r.height <= 2.4)
-      .filter((r) => { try { return isApprovedImageHost('openverse', new URL(r.url).hostname) } catch { return false } })
+    try { results = await searchOpenverse(briefs[c.slug]!) } catch (error: any) { stopped = error.message; break }
+    const candidates: Candidate[] = usableCandidates(results)
       .filter((r) => !taken.has(r.id))
       // CC0 first (stock-quality, no attribution needed), keeping Openverse's relevance order within each.
       .sort((a, b) => Number(b.license === 'cc0') - Number(a.license === 'cc0'))
       .slice(0, CANDIDATES)
-      .map((r) => ({ id: r.id, title: r.title ?? '', creator: r.creator ?? undefined, license: r.license, licenseVersion: r.license_version, licenseUrl: r.license_url, attribution: r.attribution, url: r.url, thumbnail: previewUrl(r), landingUrl: r.foreign_landing_url, width: r.width, height: r.height, source: r.source }))
     if (!candidates.length) counts.noCandidates++
     review.pending.push({ categoryId: c.id, slug: c.slug, title: c.shortLabel, brief: briefs[c.slug]!, candidates, approve: null })
     counts.proposed++
@@ -112,6 +91,7 @@ async function applyReview() {
   const taken = new Map(categories.flatMap((c) => { const id = coverOf(c.metadata)?.id; return id ? [[id, c.id] as const] : [] }))
   let applied = 0
   for (const e of review.pending.filter((p) => p.approve)) {
+    if (e.approve === 'keep') { console.log(`kept      ${e.slug}`); continue }
     const category = categories.find((c) => c.id === e.categoryId)
     if (!category) continue
     let cover: Record<string, unknown>
