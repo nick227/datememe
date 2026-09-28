@@ -101,7 +101,7 @@
   },
   {
     "schemaVersion": 1,
-    "groupSlug": "entertainment",
+    "groupSlug": "film-tv",
     "entityTypeSlug": "movie",
     "title": "Favorite Animated Movies",
     "prompt": "What are your favorite animated feature films?",
@@ -126,7 +126,7 @@
   },
   {
     "schemaVersion": 1,
-    "groupSlug": "entertainment",
+    "groupSlug": "film-tv",
     "entityTypeSlug": "movie",
     "title": "Favorite Comedy Movies",
     "prompt": "Which comedy movies always make you laugh?",
@@ -151,7 +151,7 @@
   },
   {
     "schemaVersion": 1,
-    "groupSlug": "entertainment",
+    "groupSlug": "film-tv",
     "entityTypeSlug": "tv-show",
     "title": "Favorite Sci-Fi Shows",
     "prompt": "Rank your favorite science fiction television series.",
@@ -176,7 +176,7 @@
   },
   {
     "schemaVersion": 1,
-    "groupSlug": "entertainment",
+    "groupSlug": "film-tv",
     "entityTypeSlug": "tv-personality",
     "title": "Favorite Talk Show Hosts",
     "prompt": "Who are your favorite late night or daytime talk show hosts?",
@@ -201,7 +201,7 @@
   },
   {
     "schemaVersion": 1,
-    "groupSlug": "entertainment",
+    "groupSlug": "film-tv",
     "entityTypeSlug": "movie",
     "title": "Top Documentaries",
     "prompt": "What are the most compelling documentaries you've seen?",
@@ -226,7 +226,7 @@
   },
   {
     "schemaVersion": 1,
-    "groupSlug": "entertainment",
+    "groupSlug": "film-tv",
     "entityTypeSlug": "movie",
     "title": "Favorite Action Movies",
     "prompt": "Rank the greatest action movies of all time.",

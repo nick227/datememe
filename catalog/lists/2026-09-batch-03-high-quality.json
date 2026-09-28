@@ -1,7 +1,7 @@
 [
   {
     "schemaVersion": 1,
-    "groupSlug": "entertainment",
+    "groupSlug": "film-tv",
     "entityTypeSlug": "superhero",
     "title": "Favorite Superheroes",
     "prompt": "Who are your all-time favorite superheroes?",
@@ -30,7 +30,7 @@
   },
   {
     "schemaVersion": 1,
-    "groupSlug": "entertainment",
+    "groupSlug": "film-tv",
     "entityTypeSlug": "anime",
     "title": "Top Anime Series",
     "prompt": "What are your favorite anime series?",
@@ -193,7 +193,7 @@
   },
   {
     "schemaVersion": 1,
-    "groupSlug": "entertainment",
+    "groupSlug": "film-tv",
     "entityTypeSlug": "reality-show",
     "title": "Top Reality TV Shows",
     "prompt": "Which reality TV shows are your guilty pleasures?",
@@ -249,7 +249,7 @@
   },
   {
     "schemaVersion": 1,
-    "groupSlug": "entertainment",
+    "groupSlug": "film-tv",
     "entityTypeSlug": "musical",
     "title": "Favorite Musicals",
     "prompt": "Rank your all-time favorite stage musicals.",

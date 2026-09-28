@@ -103,7 +103,6 @@ async function main() {
     tech: await db.categoryGroup.upsert({ where: { slug: 'tech' }, update: {}, create: { slug: 'tech', label: 'Tech', sortOrder: 4 } }),
     gaming: await db.categoryGroup.upsert({ where: { slug: 'gaming' }, update: {}, create: { slug: 'gaming', label: 'Gaming', sortOrder: 5 } }),
     creators: await db.categoryGroup.upsert({ where: { slug: 'creators' }, update: {}, create: { slug: 'creators', label: 'Creators', sortOrder: 6 } }),
-    geography: await db.categoryGroup.upsert({ where: { slug: 'geography' }, update: {}, create: { slug: 'geography', label: 'Geography', sortOrder: 7 } }),
     craft: await db.categoryGroup.upsert({ where: { slug: 'craft' }, update: {}, create: { slug: 'craft', label: 'Craft & Hobbies', sortOrder: 8 } }),
     literature: await db.categoryGroup.upsert({ where: { slug: 'literature' }, update: {}, create: { slug: 'literature', label: 'Literature', sortOrder: 9 } }),
     lifestyle: await db.categoryGroup.upsert({ where: { slug: 'lifestyle-hobbies' }, update: {}, create: { slug: 'lifestyle-hobbies', label: 'Lifestyle & Hobbies', sortOrder: 10 } }),
@@ -718,7 +717,7 @@ async function main() {
     requiredTagIds: [genreEducation.id],
   })
   await upsertCategory({
-    groupId: groups.geography.id,
+    groupId: groups.travel.id,
     entityTypeId: country.id,
     slug: 'dream-travel-destinations',
     axes: ["travel","aspirations"],
@@ -830,7 +829,7 @@ async function main() {
     orderingMode: 'UNRANKED',
   })
   await upsertCategory({
-    groupId: groups.geography.id,
+    groupId: groups.travel.id,
     entityTypeId: nationalPark.id,
     slug: 'favorite-national-parks',
     axes: ["travel","outdoors"],

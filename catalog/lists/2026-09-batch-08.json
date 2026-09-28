@@ -27,31 +27,6 @@
   {
     "schemaVersion": 1,
     "groupSlug": "sports",
-    "entityTypeSlug": "sports-team",
-    "title": "Favorite Sports Franchises",
-    "prompt": "Which sports teams do you passionately follow or respect?",
-    "axes": [
-      "sports",
-      "fandom",
-      "legacy"
-    ],
-    "values": [
-      "New York Yankees",
-      "Los Angeles Lakers",
-      "Dallas Cowboys",
-      "Real Madrid",
-      "Manchester United",
-      "New England Patriots",
-      "Chicago Bulls",
-      "Golden State Warriors",
-      "FC Barcelona",
-      "Toronto Maple Leafs"
-    ],
-    "isAbstract": false
-  },
-  {
-    "schemaVersion": 1,
-    "groupSlug": "sports",
     "entityTypeSlug": "extreme-sport",
     "createEntityType": {
       "label": "Extreme Sport",
@@ -80,7 +55,7 @@
   },
   {
     "schemaVersion": 1,
-    "groupSlug": "craft",
+    "groupSlug": "history-politics",
     "entityTypeSlug": "us-president",
     "createEntityType": {
       "label": "US President",
@@ -109,7 +84,7 @@
   },
   {
     "schemaVersion": 1,
-    "groupSlug": "craft",
+    "groupSlug": "history-politics",
     "entityTypeSlug": "historical-figure",
     "createEntityType": {
       "label": "Historical Figure",
@@ -138,7 +113,7 @@
   },
   {
     "schemaVersion": 1,
-    "groupSlug": "creators",
+    "groupSlug": "history-politics",
     "entityTypeSlug": "commentator",
     "createEntityType": {
       "label": "Commentator",

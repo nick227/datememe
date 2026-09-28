@@ -175,7 +175,7 @@
   },
   {
     "schemaVersion": 1,
-    "groupSlug": "entertainment",
+    "groupSlug": "film-tv",
     "entityTypeSlug": "viral-video",
     "createEntityType": {
       "label": "Viral Video",

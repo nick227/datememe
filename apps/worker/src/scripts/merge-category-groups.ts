@@ -9,6 +9,10 @@ import { db } from '@project/db'
 const MERGES: { from: string; to: string; label: string }[] = [
   { from: 'food', to: 'food-drink', label: 'Food & Drink' },
   { from: 'lifestyle', to: 'lifestyle-hobbies', label: 'Lifestyle & Hobbies' },
+  // 2026-09-28 catalog audit: two more pairs split the same topic. seed.ts
+  // creates film-tv and travel, so those are canonical.
+  { from: 'entertainment', to: 'film-tv', label: 'Film & TV' },
+  { from: 'geography', to: 'travel', label: 'Travel & Places' },
 ]
 
 async function run() {

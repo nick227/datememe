@@ -52,31 +52,6 @@
   {
     "schemaVersion": 1,
     "groupSlug": "music",
-    "entityTypeSlug": "band",
-    "title": "Top Hip Hop Artists",
-    "prompt": "Who are your top hip hop artists or rappers?",
-    "axes": [
-      "music",
-      "hip-hop",
-      "culture"
-    ],
-    "values": [
-      "Tupac",
-      "The Notorious B.I.G.",
-      "Jay-Z",
-      "Nas",
-      "Eminem",
-      "Kendrick Lamar",
-      "Drake",
-      "Kanye West",
-      "Snoop Dogg",
-      "J. Cole"
-    ],
-    "isAbstract": false
-  },
-  {
-    "schemaVersion": 1,
-    "groupSlug": "music",
     "entityTypeSlug": "music-festival",
     "title": "Favorite Music Festivals",
     "prompt": "What are your dream music festivals to attend?",
@@ -101,7 +76,7 @@
   },
   {
     "schemaVersion": 1,
-    "groupSlug": "entertainment",
+    "groupSlug": "film-tv",
     "entityTypeSlug": "movie",
     "title": "Top Movie Soundtracks",
     "prompt": "Which movies have the greatest soundtracks?",
@@ -126,7 +101,7 @@
   },
   {
     "schemaVersion": 1,
-    "groupSlug": "entertainment",
+    "groupSlug": "film-tv",
     "entityTypeSlug": "youtuber",
     "title": "Favorite YouTubers",
     "prompt": "Who are your favorite YouTube creators?",
@@ -176,32 +151,7 @@
   },
   {
     "schemaVersion": 1,
-    "groupSlug": "entertainment",
-    "entityTypeSlug": "streaming-service",
-    "title": "Top Streaming Services",
-    "prompt": "Which streaming platforms are your favorites?",
-    "axes": [
-      "entertainment",
-      "film-tv",
-      "music"
-    ],
-    "values": [
-      "Netflix",
-      "Hulu",
-      "HBO Max",
-      "Disney+",
-      "Amazon Prime Video",
-      "Spotify",
-      "Apple Music",
-      "YouTube Premium",
-      "Crunchyroll",
-      "Twitch"
-    ],
-    "isAbstract": true
-  },
-  {
-    "schemaVersion": 1,
-    "groupSlug": "entertainment",
+    "groupSlug": "film-tv",
     "entityTypeSlug": "composer",
     "title": "Favorite Film Composers",
     "prompt": "Who are the greatest cinematic composers?",
