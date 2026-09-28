@@ -19,7 +19,8 @@ import { mergeRefMetadata } from '../lib/wikidataIdentity'
 // rates the survivors for relevance, 3:4 crop survival, appeal, people,
 // text/logos and sensitive content. combineScore turns that into 0–100.
 //
-//   backfill: best ≥ AUTO_MIN with relevance ≥ 8 and no flags → approved;
+//   Good, relevant and distinct beats perfect (POC bar, 2026-09-28).
+//   backfill: best ≥ AUTO_MIN (72) with relevance ≥ 7 and no prominent text → approved;
 //             best ≥ REVIEW_MIN → review; otherwise nothing good found.
 //   improve:  replaces only when best ≥ current + MARGIN, with the same
 //             auto/review split; a replaced cover is kept in cover.replaced.
@@ -39,7 +40,7 @@ const CACHE_FILE = resolve(ROOT, `catalog/review/cache/covers-auto.${REVIEW_ENV}
 const MODE: 'backfill' | 'improve' = process.argv.includes('improve') ? 'improve' : 'backfill'
 const APPLY = process.argv.includes('--apply')
 const num = (name: string, fallback: number) => Number(process.env[name] ?? fallback)
-const AUTO_MIN = num('AUTO_MIN', 78)
+const AUTO_MIN = num('AUTO_MIN', 72)
 const REVIEW_MIN = num('REVIEW_MIN', 60)
 const MARGIN = num('MARGIN', 12)
 const IMPROVE_BELOW = num('IMPROVE_BELOW', 72)
@@ -81,7 +82,7 @@ async function rate(key: string, list: ListContext, image: () => Promise<Buffer 
 const coverOf = (metadata: unknown) => (metadata as any)?.cover as ({ status: 'approved' | 'none'; id?: string } & Record<string, any>) | undefined
 // Stock libraries photograph models; anywhere else a recognizable face is a real, unasked person.
 const STOCK = new Set(['stocksnap', 'rawpixel'])
-const isGood = (s: Scored) => s.score >= AUTO_MIN && s.rating.relevance >= 8 && !s.flags.some((f) => /text|logo/.test(f)) &&
+const isGood = (s: Scored) => s.score >= AUTO_MIN && s.rating.relevance >= 7 && !s.flags.some((f) => /text|logo/.test(f)) &&
   !(s.rating.people === 'identifiable' && !STOCK.has(s.candidate.source ?? ''))
 
 async function main() {

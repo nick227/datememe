@@ -31,7 +31,7 @@ export async function generateBriefs(list: ListContext): Promise<string[]> {
 }
 
 /** Bump when the rating prompt or schema changes, so cached ratings are redone. */
-export const RATING_VERSION = 3
+export const RATING_VERSION = 4
 
 export type VisionRating = {
   relevance: number; cropSurvival: number; appeal: number
@@ -45,12 +45,12 @@ const RATING_SCHEMA = {
   type: 'object', additionalProperties: false,
   required: ['relevance', 'cropSurvival', 'appeal', 'isPhotograph', 'people', 'textOrLogo', 'sensitive', 'subject', 'reason'],
   properties: {
-    relevance: { type: 'integer', description: '0-10: how clearly the image evokes THIS list at a glance. 9-10 only when it could hardly be the cover of any other list; a generic stand-in that would fit many lists (a microphone, a crowd, a trophy, a starry sky, a pretty landscape) is at most 6' },
+    relevance: { type: 'integer', description: '0-10: how clearly the image evokes THIS list at a glance. Clearly related is enough for 7+; below 5 means unrelated, misleading or confusing (chess pieces for video games)' },
     cropSurvival: { type: 'integer', description: '0-10: does the second image (the 3:4 card crop) still show the subject well' },
     appeal: { type: 'integer', description: '0-10: would this make someone want to open the list (light, composition, mood)' },
     isPhotograph: { type: 'boolean', description: 'false only for digital illustration, cartoon drawing, clip art, vector graphics, 3D renders and screenshots. A photo of anything (a painting, sculpture, toy, poster on a wall) is true' },
     people: { type: 'string', enum: ['none', 'incidental', 'identifiable'], description: 'identifiable = a recognizable face is a main subject' },
-    textOrLogo: { type: 'string', enum: ['none', 'minor', 'prominent'], description: 'visible text, signage, brand logos, or trademarked characters and mascots (e.g. Mickey Mouse, Superman); prominent when they are a main subject' },
+    textOrLogo: { type: 'string', enum: ['none', 'minor', 'prominent'], description: 'visible text, signage and brand logos (a photographed character or toy is fine)' },
     sensitive: { type: 'boolean', description: 'tragedy, violence, protest, medical, suggestive or otherwise inappropriate for a friendly cover' },
     subject: { type: 'string', description: 'the main subject as ONE lowercase singular noun, as generic as possible ("microphone", "cat", "trophy", "crowd", "graffiti")' },
     reason: { type: 'string', description: 'one short sentence' },
