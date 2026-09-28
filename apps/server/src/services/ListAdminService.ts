@@ -57,8 +57,13 @@ function problemsOf(l: ListRow, valueCount: number): Problem[] {
   return problems
 }
 
+/**
+ * Hidden lists created in Admin that have never been live. Older lists
+ * predate the firstLiveAt stamp, so for them "never published" is unknown
+ * (retired lists were live once) and they show as plain Hidden.
+ */
 async function neverPublishedIds(lists: ListRow[]) {
-  const hidden = lists.filter((l) => !l.isActive && !(l.metadata as any)?.firstLiveAt)
+  const hidden = lists.filter((l) => !l.isActive && !(l.metadata as any)?.firstLiveAt && (l.metadata as any)?.createdBy?.by === 'admin')
   if (!hidden.length) return new Set<string>()
   const taken = await db.list.groupBy({ by: ['categoryId'], where: { categoryId: { in: hidden.map((l) => l.id) }, isComplete: true } })
   const withTakes = new Set(taken.map((t) => t.categoryId))
