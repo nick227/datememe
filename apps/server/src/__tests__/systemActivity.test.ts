@@ -42,12 +42,14 @@ describe('SystemActivityService', () => {
     await db.user.deleteMany({ where: { id: { in: createdUserIds } } })
   })
 
-  it('keeps one persistent SYSTEM thread and deduplicates a retried like event', async () => {
+  it('keeps one persistent SYSTEM thread and deduplicates concurrent retries', async () => {
     const actor = await makeProfile('activity-actor')
     const target = await makeProfile('activity-target')
 
-    await activity.recordProfileLiked(actor.profile!.id, target.profile!)
-    await activity.recordProfileLiked(actor.profile!.id, target.profile!)
+    await Promise.all([
+      activity.recordProfileLiked(actor.profile!.id, target.profile!, 'swipe-retry-test'),
+      activity.recordProfileLiked(actor.profile!.id, target.profile!, 'swipe-retry-test'),
+    ])
 
     const systemConversations = await db.conversation.findMany({
       where: { type: 'SYSTEM', participants: { some: { profileId: actor.profile!.id } } },
@@ -59,13 +61,14 @@ describe('SystemActivityService', () => {
     expect(systemConversations[0]!.messages[0]!.attachments).toMatchObject({
       eventType: 'PROFILE_LIKED',
       profileId: target.profile!.id,
+      swipeId: 'swipe-retry-test',
     })
   })
 
   it('serializes SYSTEM activity as readable product history, not a gated incoming message', async () => {
     const actor = await makeProfile('activity-readable')
     const target = await makeProfile('activity-readable-target')
-    await activity.recordProfileLiked(actor.profile!.id, target.profile!)
+    await activity.recordProfileLiked(actor.profile!.id, target.profile!, 'swipe-readable-test')
 
     const inbox = await messaging.listConversations(actor.id, actor.profile!.id, {})
     const system = inbox.data.find((c: any) => c.type === 'SYSTEM')
@@ -84,7 +87,7 @@ describe('SystemActivityService', () => {
     const targetA = await makeProfile('activity-clock-a')
     const targetB = await makeProfile('activity-clock-b')
 
-    await activity.recordProfileLiked(actor.profile!.id, targetA.profile!)
+    await activity.recordProfileLiked(actor.profile!.id, targetA.profile!, 'swipe-clock-a')
     const first = await db.conversation.findFirstOrThrow({
       where: { type: 'SYSTEM', participants: { some: { profileId: actor.profile!.id } } },
     })
@@ -92,7 +95,7 @@ describe('SystemActivityService', () => {
     // Make the assertion deterministic even on databases whose timestamps only
     // expose millisecond precision.
     await db.conversation.update({ where: { id: first.id }, data: { updatedAt: new Date('2000-01-01T00:00:00.000Z') } })
-    await activity.recordProfileLiked(actor.profile!.id, targetB.profile!)
+    await activity.recordProfileLiked(actor.profile!.id, targetB.profile!, 'swipe-clock-b')
 
     const second = await db.conversation.findUniqueOrThrow({ where: { id: first.id } })
     expect(second.updatedAt.getTime()).toBeGreaterThan(new Date('2000-01-01T00:00:00.000Z').getTime())
