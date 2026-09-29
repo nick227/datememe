@@ -147,7 +147,7 @@ export class MessagingService {
 
     let systemMessageType: 'LIKE' | 'MATCH' | 'ACTIVITY_DIGEST'
     let body: string
-    let event: Record<string, unknown>
+    let event: Prisma.JsonObject
     let cta: { label: string; route: string; params: Record<string, string> }
 
     if (input.type === 'PROFILE_LIKED') {
