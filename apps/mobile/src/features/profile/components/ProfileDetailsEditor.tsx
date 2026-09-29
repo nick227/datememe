@@ -9,7 +9,7 @@ import { AttributeFields } from './AttributeFields'
 import { ChoiceChips } from './ChoiceChips'
 
 type Profile = components['schemas']['Profile']
-const GENDERS = [{ value: 'MALE', label: 'Man' }, { value: 'FEMALE', label: 'Woman' }, { value: 'NON_BINARY', label: 'Nonbinary' }]
+const GENDERS = [{ value: 'MALE', label: 'Man' }, { value: 'FEMALE', label: 'Woman' }, { value: 'NON_BINARY', label: 'Nonbinary' }, { value: 'PREFER_NOT_TO_SAY', label: 'Prefer not to say' }]
 const SEEKING = [{ value: 'MALE', label: 'Men' }, { value: 'FEMALE', label: 'Women' }, { value: 'NON_BINARY', label: 'Nonbinary' }]
 
 export function ProfileDetailsEditor({ profile }: { profile: Profile }) {

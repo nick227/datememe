@@ -175,6 +175,27 @@ describe('DiscoveryService', () => {
       expect(ids).toContain(mutualMatch.profile.id)
       expect(ids).not.toContain(oneDirectionalOnly.profile.id)
     })
+
+    it('treats prefer-not-to-say as no stated gender, so Interested in still applies', async () => {
+      const { user: viewerUser, profile: viewer } = await makeProfile({
+        label: 'undisclosed-viewer',
+        genderIdentity: 'PREFER_NOT_TO_SAY',
+        seeking: ['FEMALE'],
+      })
+      const visible = await makeProfile({ label: 'undisclosed-visible', genderIdentity: 'FEMALE', seeking: ['MALE'] })
+      const wrongGender = await makeProfile({ label: 'undisclosed-wrong-gender', genderIdentity: 'MALE', seeking: ['MALE'] })
+      const alsoUndisclosed = await makeProfile({ label: 'undisclosed-candidate', genderIdentity: 'PREFER_NOT_TO_SAY', seeking: ['MALE'] })
+
+      await linkScore(viewer.id, visible.profile.id)
+      await linkScore(viewer.id, wrongGender.profile.id)
+      await linkScore(viewer.id, alsoUndisclosed.profile.id)
+
+      const result = await service.getDiscoveryFeed(viewerUser.id, viewer.id, { limit: 20 })
+      const ids = result.data.map((d: { profile: { id: string } }) => d.profile.id)
+      expect(ids).toContain(visible.profile.id)
+      expect(ids).not.toContain(wrongGender.profile.id)
+      expect(ids).not.toContain(alsoUndisclosed.profile.id)
+    })
   })
 
   describe('taxonomy engagement (taste facet)', () => {

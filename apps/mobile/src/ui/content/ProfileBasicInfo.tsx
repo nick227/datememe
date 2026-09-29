@@ -14,6 +14,7 @@ type Props = {
 
 function formatValue(val?: string | null) {
   if (!val) return 'Not specified'
+  if (val === 'PREFER_NOT_TO_SAY') return 'Prefer not to say'
   return val.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
 }
 

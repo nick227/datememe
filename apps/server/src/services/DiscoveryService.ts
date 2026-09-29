@@ -35,6 +35,12 @@ export type DiscoveryFilters = {
 
 type DiscoveryCursor = { score: number; id: string; page: number }
 
+/** A declined gender is not a value other people can be seeking. */
+function statedGender(genderIdentity: string | null | undefined) {
+  if (!genderIdentity || genderIdentity === 'PREFER_NOT_TO_SAY') return undefined
+  return genderIdentity
+}
+
 export function decodeDiscoveryCursor(cursor?: string): DiscoveryCursor | null {
   if (!cursor) return null
   try {
@@ -78,6 +84,7 @@ export class DiscoveryService {
       return { data: [], meta: { hasMore: false, nextCursor: null }, filterNotice: 'Add your location in your profile to use Near Me.' }
     }
     const viewerSeekingGenders = viewer?.seekingGenders.map((g) => g.gender) ?? []
+    const viewerGender = statedGender(viewer?.genderIdentity)
     const viewerAge = viewer ? computeAge(viewer.birthdate) : null
 
     // Taste axis: pool *engagement* (facet.ts), resolved generically so a
@@ -153,7 +160,7 @@ export class DiscoveryService {
         id: { in: candidateIds },
         isDiscoverable: true,
         ...(viewerSeekingGenders.length ? { genderIdentity: { in: viewerSeekingGenders } } : {}),
-        ...(viewer?.genderIdentity ? { seekingGenders: { some: { gender: viewer.genderIdentity } } } : {}),
+        ...(viewerGender ? { seekingGenders: { some: { gender: viewerGender } } } : {}),
         ...(birthdateWhere ? { birthdate: birthdateWhere } : {}),
         ...(viewerAge !== null ? { preferredMinAge: { lte: viewerAge }, preferredMaxAge: { gte: viewerAge } } : {}),
         NOT: [
@@ -245,6 +252,7 @@ export class DiscoveryService {
       return { data: [], meta: { hasMore: false, nextCursor: null }, filterNotice: 'Add your location in your profile to use Near Me.' }
     }
     const viewerSeekingGenders = viewer?.seekingGenders.map((g) => g.gender) ?? []
+    const viewerGender = statedGender(viewer?.genderIdentity)
     const viewerAge = viewer ? computeAge(viewer.birthdate) : null
 
     let tasteWhitelist: string[] | null = null
@@ -269,7 +277,7 @@ export class DiscoveryService {
         isDiscoverable: true,
         ...(tasteWhitelist ? { id: { in: tasteWhitelist } } : {}),
         ...(viewerSeekingGenders.length ? { genderIdentity: { in: viewerSeekingGenders } } : {}),
-        ...(viewer?.genderIdentity ? { seekingGenders: { some: { gender: viewer.genderIdentity } } } : {}),
+        ...(viewerGender ? { seekingGenders: { some: { gender: viewerGender } } } : {}),
         ...(birthdateWhere ? { birthdate: birthdateWhere } : {}),
         ...(viewerAge !== null ? { preferredMinAge: { lte: viewerAge }, preferredMaxAge: { gte: viewerAge } } : {}),
         NOT: [
