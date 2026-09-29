@@ -57,7 +57,10 @@ export function ConversationScreen({ route, navigation }: Props) {
   }, [markAsReadMutate])
   const headerHeight = useHeaderHeight()
 
-  const conversation = conversations.data?.pages.flatMap(p => p.data).find(c => c.id === conversationId)
+  // The server already returns Conversation.type; the generated SDK contract
+  // predates that field, so keep this local compatibility cast until the next
+  // API-contract cleanup rather than broadening this epic into SDK regeneration.
+  const conversation = conversations.data?.pages.flatMap(p => p.data).find(c => c.id === conversationId) as any
   const otherParticipant = conversation?.participants.find((p: any) => p.id !== myProfileId) ?? conversation?.participants[0]
   const rows = messages.data?.pages.flatMap((p) => p.data) ?? []
 
@@ -279,7 +282,10 @@ export function ConversationScreen({ route, navigation }: Props) {
           onEndReached={() => messages.hasNextPage && messages.fetchNextPage()}
           renderItem={({ item, index }) => {
             if (isSystemThread) {
-              const event = item.attachments ?? {}
+              // Human message attachments are an array in the public SDK. System
+              // activity deliberately stores a structured object in the same JSON
+              // column; keep the compatibility cast local to this renderer.
+              const event = (item.attachments ?? {}) as any
               const cta = event.cta
               const actionable = cta && ['ProfileDetail', 'ListBuilder', 'Conversation'].includes(cta.route)
               return (
