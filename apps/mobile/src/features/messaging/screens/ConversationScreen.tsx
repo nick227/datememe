@@ -29,6 +29,20 @@ import { hapticLight, hapticSuccess } from '../../../lib/haptics'
 
 type Props = NativeStackScreenProps<MessagesStackParamList, 'Conversation'>
 
+function systemEventTitle(item: any) {
+  switch (item.attachments?.event?.type) {
+    case 'PROFILE_LIKED': return 'Like sent'
+    case 'PROFILE_LIKED_YOU': return 'New like'
+    case 'MATCH': return 'Match'
+    case 'LIST_COMPLETED': return 'List completed'
+    default: return 'Datememe insight'
+  }
+}
+
+function supportsSystemCta(cta: any) {
+  return cta?.route === 'ProfileDetail' || cta?.route === 'Conversation' || cta?.route === 'ListBuilder'
+}
+
 export function ConversationScreen({ route, navigation }: Props) {
   const { conversationId, displayName } = route.params
   const isFocused = useIsFocused()
@@ -45,7 +59,7 @@ export function ConversationScreen({ route, navigation }: Props) {
   const sheet = useActionSheet()
   const [draft, setDraft] = useState('')
   const [attachment, setAttachment] = useState<ImagePicker.ImagePickerAsset | null>(null)
-  
+
   useEffect(() => {
     markAsReadMutate()
   }, [markAsReadMutate])
@@ -196,6 +210,39 @@ export function ConversationScreen({ route, navigation }: Props) {
     })
   }
 
+  function handleSystemCta(cta: any) {
+    if (!supportsSystemCta(cta)) return
+
+    if (cta.route === 'ProfileDetail' && cta.params?.profileId) {
+      ;(navigation.getParent()?.navigate as any)('Discover', {
+        screen: 'ProfileDetail',
+        params: {
+          profileId: cta.params.profileId,
+          displayName: cta.params.displayName ?? 'Profile',
+        },
+      })
+      return
+    }
+
+    if (cta.route === 'Conversation' && cta.params?.conversationId) {
+      navigation.push('Conversation', {
+        conversationId: cta.params.conversationId,
+        displayName: cta.params.displayName ?? 'Match',
+      })
+      return
+    }
+
+    if (cta.route === 'ListBuilder' && cta.params?.categorySlug) {
+      ;(navigation.getParent()?.navigate as any)('Lists', {
+        screen: 'ListBuilder',
+        params: {
+          categorySlug: cta.params.categorySlug,
+          shortLabel: cta.params.shortLabel ?? 'List',
+        },
+      })
+    }
+  }
+
   return (
     <ScreenContainer testID="screen.conversation" padded={false} width="wide">
       {/* Interactive Header */}
@@ -203,8 +250,8 @@ export function ConversationScreen({ route, navigation }: Props) {
         <Pressable testID="conversation.back" onPress={() => navigation.goBack()} style={styles.headerBtn}>
           <Icon name="ArrowLeft" size={24} color={colors.ink} />
         </Pressable>
-        
-        <Pressable 
+
+        <Pressable
           testID="conversation.profile"
           style={styles.headerProfile}
           onPress={() =>
@@ -227,7 +274,7 @@ export function ConversationScreen({ route, navigation }: Props) {
             </View>
           )}
           <View style={styles.headerTextContainer}>
-            <Typography variant="heading">{isSystemThread ? 'Datememe' : displayName}</Typography>
+            <Typography variant="heading">{isSystemThread ? 'Activity' : displayName}</Typography>
             {contextLine && (
               <Typography variant="label" style={styles.headerContext}>
                 {contextLine}
@@ -236,9 +283,13 @@ export function ConversationScreen({ route, navigation }: Props) {
           </View>
         </Pressable>
 
-        <Pressable testID="conversation.options" onPress={handleOptions} style={styles.headerBtn}>
-          <Icon name="MoreVertical" size={24} color={colors.ink} />
-        </Pressable>
+        {isSystemThread ? (
+          <View style={styles.headerBtn}><View style={styles.headerIconPlaceholder} /></View>
+        ) : (
+          <Pressable testID="conversation.options" onPress={handleOptions} style={styles.headerBtn}>
+            <Icon name="MoreVertical" size={24} color={colors.ink} />
+          </Pressable>
+        )}
       </View>
       <View style={styles.headerDivider} />
 
@@ -264,13 +315,14 @@ export function ConversationScreen({ route, navigation }: Props) {
           renderItem={({ item, index }) => {
             if (isSystemThread) {
               const cta = item.attachments?.cta
+              const actionable = supportsSystemCta(cta)
               return (
                 <View style={styles.systemCardContainer}>
                   <View style={styles.systemCard}>
-                    <Text style={styles.systemCardTitle}>Datememe Insights</Text>
+                    <Text style={styles.systemCardTitle}>{systemEventTitle(item)}</Text>
                     <Text style={styles.systemCardBody}>{item.body}</Text>
-                    {cta && (
-                      <Pressable style={styles.systemCardCta} onPress={() => console.log('Navigate to:', cta.route)}>
+                    {actionable && (
+                      <Pressable testID={`conversation.system.${item.id}.cta`} style={styles.systemCardCta} onPress={() => handleSystemCta(cta)}>
                         <Text style={styles.systemCardCtaText}>{cta.label}</Text>
                       </Pressable>
                     )}
@@ -363,18 +415,18 @@ export function ConversationScreen({ route, navigation }: Props) {
                 <Icon name="Plus" size={24} color={colors.inkMuted} />
               </Pressable>
               <TextField testID="conversation.compose"
-                value={draft} 
-                onChangeText={setDraft} 
-                placeholder="Message…" 
+                value={draft}
+                onChangeText={setDraft}
+                placeholder="Message…"
                 multiline
-                style={styles.inputField} 
+                style={styles.inputField}
               />
               {(draft.trim().length > 0 || attachment) && (
                 <Animated.View entering={ZoomIn.duration(200)} exiting={ZoomOut.duration(200)}>
-                  <Pressable 
+                  <Pressable
                     testID="conversation.send"
-                    style={styles.sendButton} 
-                    onPress={handleSend} 
+                    style={styles.sendButton}
+                    onPress={handleSend}
                     disabled={sendMessage.isPending || uploadMedia.isPending}
                   >
                     <Icon name="Send" size={20} color={colors.white} />
@@ -401,6 +453,10 @@ const styles = StyleSheet.create({
   },
   headerBtn: {
     padding: spacing.xs,
+  },
+  headerIconPlaceholder: {
+    width: 24,
+    height: 24,
   },
   headerProfile: {
     flex: 1,
@@ -443,13 +499,13 @@ const styles = StyleSheet.create({
   },
   bubbleOwn: { backgroundColor: colors.primary },
   bubbleOther: { backgroundColor: colors.surfaceMuted },
-  
+
   lockedContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
   },
-  bubbleLocked: { 
+  bubbleLocked: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
@@ -473,7 +529,7 @@ const styles = StyleSheet.create({
   bodyOther: { color: colors.ink, fontSize: 15, lineHeight: 20 },
   timeOwn: { color: 'rgba(255,255,255,0.7)', fontSize: 11, alignSelf: 'flex-end', marginTop: 4 },
   timeOther: { color: colors.inkMuted, fontSize: 11, alignSelf: 'flex-start', marginTop: 4 },
-  
+
   systemCardContainer: {
     alignItems: 'center',
     marginVertical: spacing.md,
