@@ -6,7 +6,7 @@
     "title": "Life Goals",
     "prompt": "Which life goals are you actually working toward?",
     "axes": ["values", "future", "lifestyle"],
-    "values": ["Kids someday", "Getting married", "Buying a house", "Living abroad", "Starting a business", "Retiring early", "Seeing every continent", "Running a marathon", "Writing a book", "Getting a dog", "Paying off debt", "Learning another language"],
+    "values": ["Kids someday", "Getting married", "Buying a house", "Living abroad", "Starting a business", "Retiring early", "Seeing every continent", "Running a marathon", "Writing a book", "Getting a dog", "Paying off debt", "Learning another language", "Getting a PhD", "Going back to school", "Learning to surf", "Climbing Kilimanjaro", "Seeing the Northern Lights", "Visiting all 50 states", "Living by the beach", "Owning land", "Building a cabin", "Retiring abroad", "Adopting a child", "Fostering animals", "Becoming a millionaire", "Reaching the top of my field", "Changing careers", "Going freelance", "Working remotely forever", "Buying a boat", "Opening a restaurant", "Opening a café", "Recording an album", "Getting in the best shape of my life", "Finishing an Ironman", "Hiking the Appalachian Trail", "Driving cross-country", "Living in a van", "Learning an instrument", "Taking a sabbatical", "Moving to a big city", "Moving to the countryside", "A big wedding", "Eloping", "Growing old with someone", "Building generational wealth", "Volunteering abroad", "Running for office", "Skydiving", "Learning to cook really well", "Giving back", "Having a garden", "Owning a horse", "Starting a podcast", "Building a house from scratch"],
     "isAbstract": true
   },
   {
@@ -16,7 +16,7 @@
     "title": "Dating Profile Red Flags",
     "prompt": "Which dating-profile red flags make you swipe left?",
     "axes": ["dating", "values", "humor"],
-    "values": ["Only group photos", "Empty bio", "Sunglasses in every pic", "Holding a fish", "Opens with \"hey\"", "\"Just ask\"", "Shirtless mirror selfie", "Height requirement", "Looking for a partner in crime", "All photos are filtered", "Won't move off the app", "A list of what they don't want"],
+    "values": ["Only group photos", "Empty bio", "Sunglasses in every pic", "Holding a fish", "Opens with \"hey\"", "\"Just ask\"", "Shirtless mirror selfie", "Height requirement", "Looking for a partner in crime", "All photos are filtered", "Won't move off the app", "A list of what they don't want", "Exes cropped out of photos", "Car selfies", "Only gym selfies", "Posing with a tiger", "\"Fluent in sarcasm\"", "\"Here for a good time, not a long time\"", "\"No drama\"", "\"If you can't handle me at my worst...\"", "Instagram handle in the bio", "\"Looking for the Jim to my Pam\"", "\"Swipe left if...\"", "\"Just got out of something\"", "Crypto in the bio", "\"Entrepreneur\" with zero details", "Blurry photos", "Photos from ten years ago", "Only festival photos", "Photos with kids who aren't theirs", "Zodiac dealbreakers", "\"Love to laugh\"", "\"Work hard, play hard\"", "\"Sapiosexual\"", "Calls themselves an alpha", "Politics is the whole bio", "\"Good vibes only\"", "\"Not on here much\"", "Snapchat only", "Messy room in the mirror selfie", "Posing with a gun", "Hunting trophy photos", "A drink in every picture", "A dog that isn't theirs", "\"Taking a break from dating\"", "\"Ghosters need not apply\"", "Hashtags in the bio", "Lists their salary", "\"Trust issues\"", "Negative bio", "Every photo is with a celebrity cutout", "AI-generated photos"],
     "isAbstract": true
   },
   {
@@ -26,7 +26,7 @@
     "title": "Group Chat Role",
     "prompt": "Who are you in the group chat?",
     "axes": ["social", "communication", "personality"],
-    "values": ["The planner", "The lurker", "The meme supplier", "The hype person", "Mutes it for weeks", "Answers messages from last Tuesday", "Twenty texts in a row", "Only reacts", "\"Wait, what happened?\"", "The fact-checker", "Starts the drama", "Screenshots everything"],
+    "values": ["The planner", "The lurker", "The meme supplier", "The hype person", "Mutes it for weeks", "Answers messages from last Tuesday", "Twenty texts in a row", "Only reacts", "\"Wait, what happened?\"", "The fact-checker", "Starts the drama", "Screenshots everything", "The voice-note monologue", "The link dropper", "Renames the chat", "The poll creator", "The birthday reminder", "\"We should hang soon\"", "The late-night philosopher", "The oversharer", "The sports updater", "The breaking news alert", "The TikTok sender", "Never actually shows up", "The \"lol\" responder", "The GIF queen", "Does the Venmo math", "The shade-thrower", "The peacemaker", "Changes the group photo", "3 a.m. selfies", "The weather reporter", "The recipe sharer", "The emotional support", "The advice giver", "\"Who's coming?\"", "The spoiler", "Keeper of the inside jokes", "The chaos agent", "Only here for plans", "Lives in another time zone", "The ghost", "Leaves the chat", "Replies in threads", "Pins messages", "Nicknames for everyone", "Posts baby pictures", "The debater", "Types \"ok\" to everything", "The hot takes", "Sends the same meme twice", "Brings back a dead chat"],
     "isAbstract": true
   },
   {
@@ -36,7 +36,7 @@
     "title": "Friend Hangouts",
     "prompt": "How do you like to hang out with friends?",
     "axes": ["social", "lifestyle", "personality"],
-    "values": ["Hosting a dinner party", "Trivia night", "Game night", "Bottomless brunch", "Watching the game", "Coffee catch-up", "Working out together", "Movie night on the couch", "Pickleball", "Group trip", "Cooking together at someone's place", "Long walk and a talk"],
+    "values": ["Hosting a dinner party", "Trivia night", "Game night", "Bottomless brunch", "Watching the game", "Coffee catch-up", "Working out together", "Movie night on the couch", "Pickleball", "Group trip", "Cooking together at someone's place", "Long walk and a talk", "Wine night", "Book club", "Craft night", "Potluck", "Pottery class", "Spa day", "Camping trip", "Bowling", "Bar crawl", "Escape room", "Hiking", "Paint and sip", "Bonfire", "Poker night", "Fantasy draft party", "Watch party", "Movie theater", "Thrifting", "Shopping trip", "Bike ride", "Run club", "Climbing gym", "Beach volleyball", "Golf", "Mini golf", "Brewery tour", "Wine tasting", "Dance class", "Cooking class", "Costume party", "Birthday dinner", "Video game night", "Dungeons & Dragons", "Puzzle night", "Sleepover", "Tailgate", "Sauna session", "Volunteering together", "Karaoke night", "Road trip"],
     "isAbstract": true
   },
   {
@@ -46,7 +46,7 @@
     "title": "Bedtime Routine",
     "prompt": "How do you wind down before bed?",
     "axes": ["routine", "wellness", "comfort"],
-    "values": ["Scrolling in bed", "Reading a few pages", "A show in the background", "Hot shower", "Skincare routine", "Podcast or sleep story", "White noise", "Herbal tea", "Meditation app", "Setting out tomorrow's clothes", "Asleep the second I lie down", "Lying awake overthinking"],
+    "values": ["Scrolling in bed", "Reading a few pages", "A show in the background", "Hot shower", "Skincare routine", "Podcast or sleep story", "White noise", "Herbal tea", "Meditation app", "Setting out tomorrow's clothes", "Asleep the second I lie down", "Lying awake overthinking", "Brushing and flossing", "Retainer in", "Checking the locks", "Setting multiple alarms", "Phone charging across the room", "Do Not Disturb on", "Melatonin", "Magnesium", "Sleep mask", "Earplugs", "Weighted blanket", "Cuddling the pet", "Late-night snack", "Tidying the kitchen", "Journaling", "Gratitude list", "Prayer", "Stretching", "Yoga nidra", "Audiobook", "Lighting a candle", "Bath", "Face mask", "Pillow spray", "Cold room", "Blackout curtains", "Humidifier on", "Texting goodnight", "Tomorrow's to-do list", "Deep breathing", "ASMR videos", "Sleeping with socks on", "Glass of water on the nightstand", "Staying up way too late", "Falling asleep on the couch", "Wind-down playlist", "Talking with my partner until late", "Pajamas on by 7", "Sleep tracker on", "Rain sounds"],
     "isAbstract": true
   },
   {
@@ -57,7 +57,7 @@
     "title": "Home Must-Haves",
     "prompt": "What does your home absolutely need?",
     "axes": ["home", "lifestyle", "comfort"],
-    "values": ["A big comfy couch", "Lots of houseplants", "A real kitchen", "In-unit laundry", "A home office", "Outdoor space", "Natural light", "Full bookshelves", "A great bed", "A dishwasher", "Room for a pet", "A walkable neighborhood"],
+    "values": ["A big comfy couch", "Lots of houseplants", "A real kitchen", "In-unit laundry", "A home office", "Outdoor space", "Natural light", "Full bookshelves", "A great bed", "A dishwasher", "Room for a pet", "A walkable neighborhood", "Walk-in closet", "Bathtub", "Rain shower", "Double sinks", "Kitchen island", "Gas stove", "Air conditioning", "Fireplace", "Balcony", "Backyard", "Pool", "Hot tub", "Garage", "Parking spot", "Lots of storage", "Guest room", "Home gym", "A big TV", "Surround sound", "Smart home gadgets", "Fast Wi-Fi", "Quiet neighbors", "Elevator", "Doorman", "Rooftop access", "Mudroom", "Walk-in pantry", "Hardwood floors", "High ceilings", "Exposed brick", "Open floor plan", "A reading nook", "Art on the walls", "Record player", "Blackout curtains", "Good water pressure", "A bar cart", "Front porch", "Near public transit", "Near the beach", "A view", "Heated floors"],
     "isAbstract": true
   },
   {
@@ -67,7 +67,7 @@
     "title": "Your Karaoke Song",
     "prompt": "What's your go-to karaoke song?",
     "axes": ["nightlife", "music", "personality"],
-    "values": ["Bohemian Rhapsody", "Don't Stop Believin'", "Livin' on a Prayer", "I Will Survive", "Mr. Brightside", "Sweet Caroline", "Dancing Queen", "Wannabe", "Total Eclipse of the Heart", "Before He Cheats", "I Want It That Way", "Rolling in the Deep"],
+    "values": ["Bohemian Rhapsody", "Don't Stop Believin'", "Livin' on a Prayer", "I Will Survive", "Mr. Brightside", "Sweet Caroline", "Dancing Queen", "Wannabe", "Total Eclipse of the Heart", "Before He Cheats", "I Want It That Way", "Rolling in the Deep", "I Will Always Love You", "Toxic", "...Baby One More Time", "Girls Just Want to Have Fun", "Like a Prayer", "Uptown Funk", "Shake It Off", "Love Story", "Party in the U.S.A.", "Since U Been Gone", "Wonderwall", "Creep", "Hey Ya!", "Crazy in Love", "Single Ladies", "Umbrella", "Proud Mary", "I Wanna Dance with Somebody", "Summer Nights", "Islands in the Stream", "Friends in Low Places", "Jolene", "Man! I Feel Like a Woman!", "Wagon Wheel", "Piano Man", "Tiny Dancer", "Africa", "Take On Me", "My Heart Will Go On", "Killing Me Softly", "No Scrubs", "Baby Got Back", "Gangsta's Paradise", "Lose Yourself", "Poker Face", "Bad Romance", "Dancing On My Own", "Drivers License", "Don't Stop Me Now", "Valerie", "Believe", "Livin' la Vida Loca", "Build Me Up Buttercup"],
     "isAbstract": false
   },
   {
@@ -77,7 +77,7 @@
     "title": "Money Habits",
     "prompt": "How do you handle money?",
     "axes": ["money", "values", "lifestyle"],
-    "values": ["Budget every dollar", "Save first, spend later", "Treat-yourself spender", "Split the bill evenly", "Always grab the check", "Request $3 back on Venmo", "Invest on the side", "Never check the balance", "Hunt for deals", "Buy now, pay later", "Keep an emergency fund", "Save up for trips"],
+    "values": ["Budget every dollar", "Save first, spend later", "Treat-yourself spender", "Split the bill evenly", "Always grab the check", "Request $3 back on Venmo", "Invest on the side", "Never check the balance", "Hunt for deals", "Buy now, pay later", "Keep an emergency fund", "Save up for trips", "Maxing out the 401(k)", "Roth IRA every year", "Index funds only", "Day trading", "Crypto HODLer", "Cash envelopes", "Spreadsheet budget", "Budgeting app", "No-spend months", "Couponing", "Cashback cards", "Chasing credit card points", "Pay the card off in full", "Carrying a balance", "Impulse buyer", "Leaving things in the cart", "Subscription graveyard", "Cancel subscriptions every month", "Thrift everything", "Buy it for life", "Spend on experiences, not things", "Round-up savings", "Automatic savings", "Negotiate everything", "Pay bills the day they arrive", "Pay bills the day they're due", "Track net worth", "Send money home", "Separate finances", "Give to charity", "Side hustle income", "Lottery tickets", "Sports betting", "Price-check everything", "Late-night online shopping", "\"It was on sale\"", "Return everything", "Financial advisor", "Read money books", "Talk about money openly"],
     "isAbstract": true
   },
   {
@@ -87,7 +87,7 @@
     "title": "Wellness Trends",
     "prompt": "Which wellness trends are you actually into?",
     "axes": ["wellness", "lifestyle", "routine"],
-    "values": ["Cold plunges", "Pilates", "Sauna", "Hot yoga", "Sound baths", "Matcha", "Walking pad", "Sleep tracking", "Dry January", "Run clubs", "Breathwork", "Gut-health everything"],
+    "values": ["Cold plunges", "Pilates", "Sauna", "Hot yoga", "Sound baths", "Matcha", "Walking pad", "Sleep tracking", "Dry January", "Run clubs", "Breathwork", "Gut-health everything", "Red light therapy", "Infrared sauna", "Lymphatic drainage massage", "Gua sha", "Mouth taping", "Magnesium", "Creatine", "Protein everything", "12-3-30 workout", "Hot girl walks", "Zone 2 cardio", "Rucking", "Intermittent fasting", "Keto", "Carnivore diet", "Plant-based eating", "Adaptogens", "Mushroom coffee", "Celery juice", "Apple cider vinegar shots", "Collagen", "Sea moss", "Oil pulling", "Grounding", "Manifesting", "Crystals", "Somatic workouts", "Barre", "Spin class", "CrossFit", "Hyrox", "Continuous glucose monitors", "Digital detox", "Dopamine fasting", "Vibration plates", "Sleepy girl mocktail", "Cottage cheese everything", "Fibermaxxing", "Weighted vests", "Forest bathing"],
     "isAbstract": true
   },
   {
@@ -97,7 +97,7 @@
     "title": "Travel Personality",
     "prompt": "What kind of travel buddy are you?",
     "axes": ["travel", "personality", "adventure"],
-    "values": ["Itinerary in a spreadsheet", "Go with the flow", "At the airport three hours early", "Packs the night before", "Finds the best food", "Takes all the photos", "Naps on every ride", "Tracks the budget", "Souvenir hunter", "Chats up the locals", "Pool day, every day", "Up for sunrise"],
+    "values": ["Itinerary in a spreadsheet", "Go with the flow", "At the airport three hours early", "Packs the night before", "Finds the best food", "Takes all the photos", "Naps on every ride", "Tracks the budget", "Souvenir hunter", "Chats up the locals", "Pool day, every day", "Up for sunrise", "Carry-on only", "Overpacker", "Lounge hopper", "Window seat, always", "Aisle seat, always", "Sleeps the whole flight", "Chatty seatmate", "Museum marathoner", "Hidden-gem hunter", "Loves a tourist trap", "Reads every review", "Learns the local phrases", "Points for everything", "Upgrades at any cost", "Hostel socializer", "Solo wanderer", "Night owl explorer", "Bar hopper", "Beach reader", "Adrenaline junkie", "Shops the whole trip", "Sends postcards", "Journals the trip", "Vlogs everything", "Gets lost on purpose", "The navigator", "Finds the coffee shop first", "Tours the local grocery store", "Brave with street food", "Picky eater abroad", "Books everything last minute", "Books a year out", "Lost-luggage veteran", "Brings the whole pharmacy", "Travels with snacks", "Cries on the last day", "Plans the next trip on the flight home", "Collects fridge magnets", "Wears the local jersey", "Does the free walking tour"],
     "isAbstract": true
   },
   {
@@ -107,7 +107,7 @@
     "title": "Perfect Summer Day",
     "prompt": "What does your perfect summer day look like?",
     "axes": ["seasons", "lifestyle", "adventure"],
-    "values": ["Beach day", "Pool party", "Backyard barbecue", "Lake day", "Outdoor concert", "Ice cream run", "Farmers market", "Rooftop drinks", "Fireworks", "Boat day", "Picnic in the park", "Staying inside with the AC"],
+    "values": ["Beach day", "Pool party", "Backyard barbecue", "Lake day", "Outdoor concert", "Ice cream run", "Farmers market", "Rooftop drinks", "Fireworks", "Boat day", "Picnic in the park", "Staying inside with the AC", "Hiking to a waterfall", "Kayaking", "Paddleboarding", "Sailing", "Jet skiing", "Water park", "Theme park", "Baseball game", "Beer garden", "Patio happy hour", "Outdoor movie", "Drive-in", "Sunset cruise", "Bonfire", "Fishing", "Tubing down a river", "Swimming hole", "Slip 'n Slide", "Water balloon fight", "Popsicles", "Watermelon on the porch", "Hammock nap", "Gardening", "Street fair", "Outdoor yoga", "Bike ride", "Tennis", "Beach volleyball", "Surf lesson", "Snorkeling", "Building sandcastles", "Berry picking", "Crab boil", "Lobster roll run", "Night swimming", "Stargazing", "Festival day", "Road trip", "Camping", "Mini golf"],
     "isAbstract": true
   }
 ]

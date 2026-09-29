@@ -7,7 +7,7 @@
     "title": "Dream Pet",
     "prompt": "What pet do you have, or want someday?",
     "axes": ["pets", "lifestyle", "home"],
-    "values": ["Dog", "Cat", "Rabbit", "Parrot", "Hamster", "Goldfish", "Turtle", "Horse", "Bearded dragon", "Hedgehog", "Backyard chickens", "No pets for me"],
+    "values": ["Dog", "Cat", "Rabbit", "Parrot", "Hamster", "Goldfish", "Turtle", "Horse", "Bearded dragon", "Hedgehog", "Backyard chickens", "No pets for me", "Guinea pig", "Ferret", "Chinchilla", "Rat", "Mouse", "Gerbil", "Ball python", "Corn snake", "Leopard gecko", "Axolotl", "Tarantula", "Hermit crab", "Betta fish", "Koi", "Cockatiel", "Budgie", "Canary", "Cockatoo", "Mini pig", "Goat", "Donkey", "Alpaca", "Llama", "Ducks", "Tortoise", "Sugar glider", "Frog", "Chameleon", "Iguana", "Miniature horse", "Fennec fox", "Capybara", "Saltwater aquarium", "Sheep", "Cow", "Pigeon", "Foster animals", "Two cats", "A dog and a cat", "Tamagotchi", "Pet rock"],
     "isAbstract": true
   },
   {
@@ -17,7 +17,7 @@
     "title": "Favorite Animals",
     "prompt": "Which animals do you love most?",
     "axes": ["pets", "nature", "personality"],
-    "values": ["Dog", "Cat", "Otter", "Red panda", "Penguin", "Dolphin", "Elephant", "Capybara", "Octopus", "Sloth", "Owl", "Tiger"],
+    "values": ["Dog", "Cat", "Otter", "Red panda", "Penguin", "Dolphin", "Elephant", "Capybara", "Octopus", "Sloth", "Owl", "Tiger", "Giraffe", "Lion", "Cheetah", "Leopard", "Snow leopard", "Giant panda", "Koala", "Kangaroo", "Wombat", "Quokka", "Platypus", "Hippo", "Rhino", "Zebra", "Gorilla", "Orangutan", "Chimpanzee", "Wolf", "Fox", "Grizzly bear", "Polar bear", "Seal", "Humpback whale", "Orca", "Shark", "Manta ray", "Sea turtle", "Jellyfish", "Seahorse", "Axolotl", "Hummingbird", "Eagle", "Flamingo", "Peacock", "Puffin", "Raccoon", "Hedgehog", "Rabbit", "Horse", "Highland cow", "Moose", "Bison", "Frog", "Bat", "Crow", "Bee"],
     "isAbstract": true
   },
   {
@@ -28,7 +28,7 @@
     "title": "Making Plans",
     "prompt": "How do you make plans with friends?",
     "axes": ["social", "communication", "personality"],
-    "values": ["Booked weeks ahead", "Totally spontaneous", "Always the organizer", "Waits to be invited", "Sends a calendar invite", "Standing weekly hang", "Last-minute yes", "Group-chat poll", "\"Maybe\" until the last second", "Cancels if it rains", "Brings a plus-one", "Leaves room to bail"],
+    "values": ["Booked weeks ahead", "Totally spontaneous", "Always the organizer", "Waits to be invited", "Sends a calendar invite", "Standing weekly hang", "Last-minute yes", "Group-chat poll", "\"Maybe\" until the last second", "Cancels if it rains", "Brings a plus-one", "Leaves room to bail", "Double-books by accident", "Needs a week's notice", "Same-day plans are fine", "Weekends only", "Weeknights only", "Books the restaurant", "Picks the place every time", "\"Surprise me\"", "Confirms the day before", "Shows up early", "Shows up late", "Shared calendar", "Plans trips in a Google Doc", "Plans around the game", "Offers three dates", "\"I'm down for whatever\"", "Organizes the birthday dinner", "Starts the group trip chat", "Waits for a headcount", "One-on-one only", "Big groups only", "Invites everyone", "Cancels by text", "Reschedules, never cancels", "Never flakes", "Needs a recovery day after", "Plans the whole weekend", "Keeps Sundays free", "Same spot every time", "Always somewhere new", "Sets a time to leave", "Books tickets months out", "Sends reminders", "\"Let's grab coffee sometime\"", "Drives everyone", "Hosts at their place", "Brings a gift", "Plans around nap time", "Needs an itinerary", "Last-minute \"who's out tonight?\""],
     "isAbstract": true
   },
   {
@@ -38,7 +38,7 @@
     "title": "Go-To Breakfast",
     "prompt": "What's your go-to breakfast?",
     "axes": ["food", "routine", "lifestyle"],
-    "values": ["Eggs and bacon", "Avocado toast", "Cereal", "Smoothie", "Oatmeal", "Bagel and cream cheese", "Pancakes", "Breakfast burrito", "Yogurt and granola", "Just coffee", "Leftover pizza", "Skip breakfast"],
+    "values": ["Eggs and bacon", "Avocado toast", "Cereal", "Smoothie", "Oatmeal", "Bagel and cream cheese", "Pancakes", "Breakfast burrito", "Yogurt and granola", "Just coffee", "Leftover pizza", "Skip breakfast", "Waffles", "French toast", "Eggs Benedict", "Omelet", "Scrambled eggs", "Huevos rancheros", "Chilaquiles", "Shakshuka", "Full English", "Biscuits and gravy", "Chicken and waffles", "Breakfast sandwich", "Bacon, egg and cheese", "Toast and jam", "Croissant", "Pain au chocolat", "Muffin", "Donuts", "Cinnamon Rolls", "Granola bar", "Protein bar", "Protein shake", "Fruit bowl", "Açaí bowl", "Chia pudding", "Overnight oats", "Hash browns", "Grits", "Congee", "Dim sum", "Pho", "Bagel with lox", "Breakfast tacos", "Dutch baby", "Crepes", "Cottage cheese and fruit", "Kolaches", "Arepas", "Bánh mì", "Rice and eggs", "Cold pizza"],
     "isAbstract": true
   },
   {
@@ -48,7 +48,7 @@
     "title": "Cleaning Style",
     "prompt": "What's your cleaning style?",
     "axes": ["home", "routine", "lifestyle"],
-    "values": ["Clean as I go", "Sunday reset", "Only when guests are coming", "The robot vacuum handles it", "Monthly deep clean", "Organized chaos", "Label everything", "Dishes can soak overnight", "Making the bed", "Hire a cleaner", "The clothes chair", "Stress-cleaning"],
+    "values": ["Clean as I go", "Sunday reset", "Only when guests are coming", "The robot vacuum handles it", "Monthly deep clean", "Organized chaos", "Label everything", "Dishes can soak overnight", "Making the bed", "Hire a cleaner", "The clothes chair", "Stress-cleaning", "Cleaning playlist on blast", "Podcast while cleaning", "15-minute tidy", "Everything has a home", "Minimalist, nothing to clean", "Laundry mountain", "Folds immediately", "Never folds, just shoves", "Procrastination cleaning", "Cleans before every trip", "Washes sheets weekly", "Dishes before bed", "Dishwasher Tetris", "Natural cleaners only", "Bleach everything", "Swiffer everything", "Shoes off at the door", "Spring cleaning", "Decluttering purge", "Color-coded closet", "Tidy but dusty", "Spotless kitchen, chaotic bedroom", "Room-by-room schedule", "One room a day", "Chore chart", "Chores split evenly", "\"That's a tomorrow problem\"", "Doom piles", "Cleans other people's places", "Car is a mess", "Car is spotless", "Fridge clean-out day", "Vacuums every day", "Lint roller everywhere", "Toothbrush on the grout", "Candle to cover it up", "Windows open while cleaning", "Robot mop", "Cleans when procrastinating on work", "Cleans at midnight"],
     "isAbstract": true
   },
   {
@@ -58,7 +58,7 @@
     "title": "Your Bar Order",
     "prompt": "What's your usual bar order?",
     "axes": ["nightlife", "food", "lifestyle"],
-    "values": ["Cheap beer", "IPA", "Glass of red wine", "Vodka soda", "Tequila soda", "Hard seltzer", "Whiskey neat", "Cider", "Rosé", "Shots for the table", "Mocktail", "Water, I'm driving"],
+    "values": ["Cheap beer", "IPA", "Glass of red wine", "Vodka soda", "Tequila soda", "Hard seltzer", "Whiskey neat", "Cider", "Rosé", "Shots for the table", "Mocktail", "Water, I'm driving", "Lager", "Pilsner", "Stout", "Guinness", "Sour beer", "Beer flight", "Michelada", "Margarita on the rocks", "Spicy margarita", "Frozen margarita", "Aperol Spritz", "Gin and tonic", "Rum and Coke", "Jack and Coke", "Whiskey ginger", "Bourbon on the rocks", "Tequila shot", "Mezcal neat", "Vodka cranberry", "Vodka Red Bull", "Espresso martini", "Dirty martini", "Old fashioned", "Negroni", "Paloma", "Glass of white wine", "Prosecco", "Champagne", "Orange wine", "Sangria", "Sake", "Soju", "Hot toddy", "Bartender's choice", "Whatever's on special", "Shirley Temple", "Club soda with lime", "Non-alcoholic beer", "Kombucha", "Diet Coke", "Pitcher for the table", "Jägerbomb"],
     "isAbstract": true
   },
   {
@@ -68,7 +68,7 @@
     "title": "Money Pet Peeves",
     "prompt": "Which money habits drive you up the wall?",
     "axes": ["money", "values", "dating"],
-    "values": ["Never pays you back", "Splits the bill to the penny", "Brags about what things cost", "Always \"forgot\" their wallet", "Bad tipper", "Crypto talk on a first date", "Designer everything, no savings", "Venmo requests for everything", "Won't chip in for the appetizer they ate", "Asks what you make", "Lends money and never lets you forget", "Cheap gifts, expensive taste"],
+    "values": ["Never pays you back", "Splits the bill to the penny", "Brags about what things cost", "Always \"forgot\" their wallet", "Bad tipper", "Crypto talk on a first date", "Designer everything, no savings", "Venmo requests for everything", "Won't chip in for the appetizer they ate", "Asks what you make", "Lends money and never lets you forget", "Cheap gifts, expensive taste", "Orders the most expensive thing, then splits evenly", "Asks to borrow money by date two", "Flexes on social media", "Won't stop talking about their investments", "Pitches you their MLM", "Always broke, always shopping", "Never pays for anything", "Insists on paying for everything", "Keeps score of every favor", "Keeps a tab on you", "Leaves you with the check", "\"I'll get you next time\"", "Won't split the Uber", "Price-checks your purchases", "Treats you like an ATM", "Comments on your salary", "Sports betting every weekend", "Unsolicited financial advice", "Brags about wins, hides losses", "Won't talk about money at all", "Complains about prices nonstop", "Tips 10%", "Returns every gift", "Regifts", "Uses your Netflix and never pays", "Asks you to cosign", "Wants a joint account too soon", "Always \"between jobs\"", "Sends you their GoFundMe", "Asks what your rent is", "Buys you things you didn't want", "Judges how you spend", "Overspends to impress", "Hides purchases", "Constantly asks for discounts", "Haggles at small businesses", "Pays late, every time", "Tells you the price of every gift", "Splurges on themselves, cheap with you", "Lends money, then posts about it"],
     "isAbstract": true
   },
   {
@@ -78,7 +78,7 @@
     "title": "Underrated Cities",
     "prompt": "Which underrated city would you tell a friend to visit?",
     "axes": ["travel", "adventure", "taste"],
-    "values": ["Lisbon", "Porto", "Mexico City", "Montreal", "Budapest", "Copenhagen", "Kyoto", "Cape Town", "Edinburgh", "Medellín", "Ljubljana", "Oaxaca"],
+    "values": ["Lisbon", "Porto", "Mexico City", "Montreal", "Budapest", "Copenhagen", "Kyoto", "Cape Town", "Edinburgh", "Medellín", "Ljubljana", "Oaxaca", "Valencia", "Seville", "Bologna", "Naples", "Palermo", "Tbilisi", "Kraków", "Gdańsk", "Tallinn", "Riga", "Sarajevo", "Belgrade", "Sofia", "Thessaloniki", "Split", "Ghent", "Rotterdam", "Lyon", "Marseille", "Leipzig", "Hamburg", "Gothenburg", "Bergen", "Galway", "Glasgow", "Taipei", "Busan", "Fukuoka", "Osaka", "Hanoi", "Hoi An", "Chiang Mai", "George Town", "Guadalajara", "Valparaíso", "Cartagena", "Montevideo", "Quebec City", "Pittsburgh", "Asheville", "Savannah", "Santa Fe"],
     "isAbstract": false
   }
 ]

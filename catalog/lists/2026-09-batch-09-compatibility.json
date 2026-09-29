@@ -8,7 +8,7 @@
     "title": "Perfect First Date",
     "prompt": "What makes the perfect first date?",
     "axes": ["dating", "social", "lifestyle"],
-    "values": ["Coffee shop", "Dinner at a nice restaurant", "Drinks at a cocktail bar", "Museum or gallery", "Picnic in the park", "Mini golf", "Live music", "Cooking together", "A hike", "Bowling or arcade", "Comedy club", "Farmers market stroll"],
+    "values": ["Coffee shop", "Dinner at a nice restaurant", "Drinks at a cocktail bar", "Museum or gallery", "Picnic in the park", "Mini golf", "Live music", "Cooking together", "A hike", "Bowling or arcade", "Comedy club", "Farmers market stroll", "Brunch", "Wine tasting", "Escape room", "Axe throwing", "Pottery class", "Cooking class", "Karaoke", "Trivia night", "Dessert crawl", "Ice skating", "Roller skating", "Climbing gym", "Botanical garden", "Aquarium", "Zoo", "Sunset walk on the beach", "Bookstore browsing", "Record store digging", "Thrift shopping", "Food truck crawl", "Street festival", "Rooftop bar", "Dive bar with a jukebox", "Ice cream and a walk", "Drive-in movie", "Movie theater", "Sporting event", "Kayaking or paddleboarding", "Bike ride", "Paint and sip", "Pickleball", "Go-karts", "Arcade bar", "Jazz club", "Speakeasy", "Late-night diner", "Taco crawl", "Planetarium", "Open mic night", "Tea house", "Brewery tour", "Night market"],
     "isAbstract": true
   },
   {
@@ -19,7 +19,7 @@
     "title": "Ideal Date Night In",
     "prompt": "What's your ideal night in together?",
     "axes": ["dating", "home", "comfort"],
-    "values": ["Cooking dinner together", "Movie marathon", "Board games", "Takeout and a new show", "Baking dessert", "Wine and cheese", "Video games", "Doing a puzzle", "Living-room karaoke", "At-home spa night", "Stargazing", "Reading side by side"],
+    "values": ["Cooking dinner together", "Movie marathon", "Board games", "Takeout and a new show", "Baking dessert", "Wine and cheese", "Video games", "Doing a puzzle", "Living-room karaoke", "At-home spa night", "Stargazing", "Reading side by side", "Homemade pizza night", "Pillow fort", "Themed dinner", "Fondue", "Sushi rolling", "Candlelit dinner", "Painting together", "Building a LEGO set", "Comedy special", "Anime binge", "Rewatching a childhood movie", "Reality TV commentary", "Card games", "Dancing in the kitchen", "Making cocktails", "Building a playlist together", "Planning a dream trip", "Face masks", "Massage swap", "Reading to each other", "Bubble bath", "Backyard fire pit", "Balcony sunset", "Staying in bed all day", "Breakfast for dinner", "Sundae bar", "Charcuterie board", "Documentary night", "Co-op video game", "Mario Kart tournament", "Tarot or astrology night", "Home workout together", "Repotting plants", "Learning a TikTok dance", "Watching old home videos", "Letters to our future selves", "Cooking each other's childhood favorite", "Ordering from somewhere new", "Trivia app battle", "Scrapbooking together"],
     "isAbstract": true
   },
   {
@@ -30,7 +30,7 @@
     "title": "Green Flags",
     "prompt": "Which green flags do you notice first?",
     "axes": ["dating", "values", "communication"],
-    "values": ["Asks follow-up questions", "Texts back when they said they would", "Kind to servers and staff", "Makes real plans, not \"let's hang sometime\"", "Has long-time close friends", "Apologizes without excuses", "Can laugh at themselves", "Respects your time", "Has their own hobbies", "Introduces you to their friends", "Curious about new things", "Keeps small promises"],
+    "values": ["Asks follow-up questions", "Texts back when they said they would", "Kind to servers and staff", "Makes real plans, not \"let's hang sometime\"", "Has long-time close friends", "Apologizes without excuses", "Can laugh at themselves", "Respects your time", "Has their own hobbies", "Introduces you to their friends", "Curious about new things", "Keeps small promises", "Remembers details you mentioned", "Kind to animals", "Communicates clearly", "Comfortable with silence", "Goes to therapy", "Takes accountability", "Shows up on time", "Keeps their space clean", "Close with their family", "Celebrates your wins", "Supports your goals", "Gives genuine compliments", "Listens without interrupting", "Knows how to cook", "Respects boundaries", "Emotionally available", "Consistent, not hot and cold", "Plans the second date", "Admits when they don't know", "Tips well", "Reads books", "Checks in when you're sick", "Laughs easily", "Honest even when it's awkward", "Loyal to their friends", "Makes you feel safe", "Open about what they want", "Doesn't play games", "Has goals", "Good with money", "Takes care of their health", "Shares their food", "Picks up the phone", "Asks about your day", "Sends \"home safe?\" texts", "Excited about their work", "Remembers your coffee order", "Good with kids", "Says \"I was wrong\"", "Makes time for you"],
     "isAbstract": true
   },
   {
@@ -41,7 +41,7 @@
     "title": "Your Role at a Party",
     "prompt": "Who are you at a party?",
     "axes": ["social", "personality"],
-    "values": ["The DJ", "The host", "In the kitchen", "On the dance floor", "Knows everyone", "Deep-conversation corner", "By the snack table", "Taking all the photos", "Leaves early", "Last one standing", "Befriends the pets", "Starts the games"],
+    "values": ["The DJ", "The host", "In the kitchen", "On the dance floor", "Knows everyone", "Deep-conversation corner", "By the snack table", "Taking all the photos", "Leaves early", "Last one standing", "Befriends the pets", "Starts the games", "The bartender", "The designated driver", "The late arrival", "The Irish exit", "Hypes up the birthday person", "Organizes the group photo", "Tells the long stories", "The wallflower", "Out on the porch", "Chats with the parents", "Helps clean up", "Brings the charcuterie", "The plus-one who knows nobody", "The matchmaker", "The drama reporter", "Asleep on the couch", "Orders the pizza", "Starts the sing-along", "Gives the toast", "Checks on everyone", "Overdressed on purpose", "Brought a guitar", "Arguing about music", "The 2 a.m. philosopher", "Sneaks off to the balcony", "Stays for the after-party", "Plays with the kids", "Flirts with everyone", "Knows the neighbors", "Films the TikTok", "Brings a board game", "Brings homemade food", "Walks everyone to their car", "Plays beer pong", "The karaoke closer", "Holds everyone's stuff", "Makes friends in the bathroom line", "Finds the quietest room", "Changes the music every song", "Leads the conga line"],
     "isAbstract": true
   },
   {
@@ -52,7 +52,7 @@
     "title": "Ideal Sunday Morning",
     "prompt": "What does your ideal Sunday morning look like?",
     "axes": ["routine", "lifestyle", "comfort"],
-    "values": ["Sleeping in", "Brunch with friends", "A long run", "Farmers market", "Coffee and a book", "Pancakes at home", "Church or spiritual practice", "Yoga", "Crossword or puzzles", "Resetting the apartment", "Walking the dog", "Watching sports"],
+    "values": ["Sleeping in", "Brunch with friends", "A long run", "Farmers market", "Coffee and a book", "Pancakes at home", "Church or spiritual practice", "Yoga", "Crossword or puzzles", "Resetting the apartment", "Walking the dog", "Watching sports", "Breakfast in bed", "Diner breakfast", "Bagels and the paper", "Long walk", "Bike ride", "Tennis", "Pickleball", "Grocery run", "Meal prep", "Laundry and a podcast", "Gym session", "Hungover on the couch", "Saturday-morning cartoons, on Sunday", "Journaling", "Meditation", "Mimosas", "Baking", "Gardening", "Big cooked breakfast", "Waffles", "French toast", "Calling family", "Video games", "Golf", "Swimming laps", "Lazy morning in bed", "Flea market", "Working from a coffee shop", "A hike", "Beach walk", "Fantasy football prep", "Pottery class", "Volunteering", "Running errands", "Walking to the bakery", "Records on the turntable", "Cuddling with the pets", "Sunday Mass or service", "Planning the week", "Getting a haircut"],
     "isAbstract": true
   },
   {
@@ -63,7 +63,7 @@
     "title": "Late-Night Snack",
     "prompt": "What's your go-to late-night snack?",
     "axes": ["food", "routine", "comfort"],
-    "values": ["Pizza", "Cereal", "Ice cream", "Chips", "Instant ramen", "Grilled cheese", "Tacos", "Popcorn", "Cookies", "Leftovers from the fridge", "Fries", "Peanut butter toast"],
+    "values": ["Pizza", "Cereal", "Ice cream", "Chips", "Instant ramen", "Grilled cheese", "Tacos", "Popcorn", "Cookies", "Leftovers from the fridge", "Fries", "Peanut butter toast", "Nachos", "Quesadilla", "Chicken nuggets", "Mac and cheese", "Hot Pockets", "Pizza rolls", "Frozen pizza", "Burrito", "Taco Bell run", "Kebab", "Hot dog", "Cheese and crackers", "Pickles", "Buttered toast", "PB&J", "Frozen grapes", "Apple and peanut butter", "Cookie dough", "Brownies", "Candy", "Gummy bears", "Chocolate", "Trail mix", "Pretzels", "Hummus and pita", "Cold pizza", "Chicken wings", "Egg sandwich", "Spoonful of peanut butter", "Nutella from the jar", "Pop-Tarts", "Toaster waffles", "Yogurt", "Fruit", "Cheese puffs", "Mozzarella sticks", "Late-night burger", "Bagel Bites", "Leftover Chinese food", "Dumplings", "Fried rice", "Onion rings"],
     "isAbstract": true
   },
   {
@@ -74,7 +74,7 @@
     "title": "Travel Style",
     "prompt": "How do you like to travel?",
     "axes": ["travel", "lifestyle", "adventure"],
-    "values": ["Beach resort", "Backpacking", "City break", "Road trip", "Camping", "Cruise", "Ski trip", "All-inclusive", "Food-focused trip", "Adventure travel", "Museums and history", "Staycation"],
+    "values": ["Beach resort", "Backpacking", "City break", "Road trip", "Camping", "Cruise", "Ski trip", "All-inclusive", "Food-focused trip", "Adventure travel", "Museums and history", "Staycation", "Glamping", "Van life", "Solo travel", "Group trip", "Luxury hotel", "Boutique hotel", "Hostels", "Wellness retreat", "Safari", "Island hopping", "Train journey", "Sailing trip", "Diving trip", "Wine country", "Festival trip", "National parks", "Theme parks", "Visiting family", "Volunteer trip", "Digital nomad", "Weekend getaway", "Bucket-list trip", "Spring break", "Bachelor or bachelorette trip", "Sports trip", "Following a tour", "Cultural immersion", "Language immersion", "Photography trip", "Trekking", "Surf trip", "Fishing trip", "Cabin in the woods", "Lake house", "Motorcycle trip", "Houseboat", "Farm stay", "Pilgrimage", "Eco-lodge", "Honeymoon-style getaway"],
     "isAbstract": true
   },
   {
@@ -85,7 +85,7 @@
     "title": "Favorite Time of Year",
     "prompt": "What's your favorite time of year?",
     "axes": ["seasons", "lifestyle", "mood"],
-    "values": ["Early spring", "Late spring", "Early summer", "Peak summer", "Late summer", "Early fall", "Peak fall foliage", "Late fall", "The holidays", "Deep winter", "Snow days", "New Year's week"],
+    "values": ["Early spring", "Late spring", "Early summer", "Peak summer", "Late summer", "Early fall", "Peak fall foliage", "Late fall", "The holidays", "Deep winter", "Snow days", "New Year's week", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December", "Cherry blossom season", "Spooky season", "Sweater weather", "Football season", "Baseball season", "March Madness", "Summer solstice", "Back-to-school season", "Festival season", "Wedding season", "Graduation season", "Apple-picking season", "Awards season", "Ski season", "Beach season", "Wildflower season", "Rainy season", "Midsummer", "Second summer", "First warm day of the year", "First snowfall", "Long summer evenings", "Holiday lights season", "Birthday month", "Pride Month", "Cuffing season"],
     "isAbstract": true
   }
 ]

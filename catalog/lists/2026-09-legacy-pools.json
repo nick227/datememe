@@ -6,7 +6,7 @@
     "title": "Workplace Pet Peeves",
     "prompt": "What are your biggest workplace pet peeves?",
     "axes": ["career", "values"],
-    "values": ["Coworkers chewing loudly", "Last-minute meetings", "Leaving the printer jammed", "Meaningless Meetings", "Micro-management", "Microwaving Fish", "Office politics", "Reply-All Emails", "Slow Wi-Fi", "Taking credit for others' work"],
+    "values": ["Coworkers chewing loudly", "Last-minute meetings", "Leaving the printer jammed", "Meaningless Meetings", "Micro-management", "Microwaving Fish", "Office politics", "Reply-All Emails", "Slow Wi-Fi", "Taking credit for others' work", "This could've been an email", "Speakerphone in the open office", "\"Per my last email\"", "Friday 4:59 p.m. requests", "Being cc'd on everything", "Lunch thieves", "Nobody cleans the office fridge", "Dirty dishes in the office sink", "Empty coffee pot left behind", "\"You're on mute\"", "Talking over people in meetings", "Meetings over lunch", "Meetings with no agenda", "Back-to-back meetings", "Conference room squatters", "Slack messages that just say \"hi\"", "Pings after hours", "Weekend emails", "Corporate jargon", "Mandatory fun", "Open-office noise", "Freezing office AC", "Too much perfume", "Clipping nails at the desk", "Whistling at the desk", "Loud mechanical keyboards", "Office gossip", "The boss plays favorites", "Moving deadlines", "Vague feedback", "Return-to-office mandates", "Endless approval chains", "Always \"slammed\"", "Passive-aggressive sticky notes", "Coming in sick", "Stand-ups that run 45 minutes", "Hot desking", "Productivity tracking software", "Borrowing your stuff without asking", "\"Quick question\" that takes an hour", "Leaving the microwave dirty"],
     "isAbstract": true
   },
   {
@@ -16,7 +16,7 @@
     "title": "Weekend Vibe",
     "prompt": "What does your ideal weekend look like?",
     "axes": ["lifestyle", "social"],
-    "values": ["Binge-watching shows", "Camping outdoors", "Exploring the city", "Going to a concert", "Hosting a dinner party", "Night out at a club", "Quiet night in with movies", "Road trip", "Trying a new restaurant", "Working on hobbies"],
+    "values": ["Binge-watching shows", "Camping outdoors", "Exploring the city", "Going to a concert", "Hosting a dinner party", "Night out at a club", "Quiet night in with movies", "Road trip", "Trying a new restaurant", "Working on hobbies", "Beach day", "Game night", "Bottomless brunch", "Watching the game", "Farmers market", "Picnic in the park", "Backyard barbecue", "Lake day", "House party", "Karaoke", "Comedy show", "Trivia night", "Brewery", "Wine bar", "Coffee catch-up", "Group trip", "Pickleball", "Hiking", "Bike ride", "Spa day", "Wine tasting", "Thrifting", "Book club", "Cabin weekend", "Sleeping in all weekend", "Chores and errands", "Weekend getaway", "Visiting family", "Volunteering together", "Escape room", "Bowling", "Museum day", "Festival day", "Bar crawl", "Theme park", "Movie theater", "Poker night", "Video game night", "Climbing gym", "Golf", "Fishing", "Doing absolutely nothing", "Side project grind", "Working all weekend"],
     "isAbstract": true
   }
 ]

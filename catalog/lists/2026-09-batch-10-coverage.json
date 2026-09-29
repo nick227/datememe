@@ -6,7 +6,7 @@
     "title": "Artists",
     "prompt": "Who are your favorite artists of all time?",
     "axes": ["music", "taste"],
-    "values": ["The Beatles", "Michael Jackson", "Queen", "Led Zeppelin", "Madonna", "Beyoncé", "Taylor Swift", "Kanye West", "Nas", "The Weeknd", "Kendrick Lamar", "Drake", "Radiohead", "Nirvana", "Frank Ocean", "Eminem", "Outkast", "Billie Eilish"],
+    "values": ["The Beatles", "Michael Jackson", "Queen", "Led Zeppelin", "Madonna", "Beyoncé", "Taylor Swift", "Kanye West", "Nas", "The Weeknd", "Kendrick Lamar", "Drake", "Radiohead", "Nirvana", "Frank Ocean", "Eminem", "Outkast", "Billie Eilish", "Prince", "David Bowie", "Elvis Presley", "Bob Dylan", "Bob Marley", "Stevie Wonder", "Aretha Franklin", "Whitney Houston", "Mariah Carey", "Rihanna", "Lady Gaga", "Ariana Grande", "Adele", "Bruno Mars", "Ed Sheeran", "Harry Styles", "Dua Lipa", "Olivia Rodrigo", "Bad Bunny", "BTS", "Blackpink", "SZA", "Tyler, the Creator", "Travis Scott", "J. Cole", "Jay-Z", "Lil Wayne", "Nicki Minaj", "Post Malone", "Coldplay", "U2", "Red Hot Chili Peppers", "Fleetwood Mac", "Elton John", "ABBA", "Daft Punk", "Metallica", "Pink Floyd", "The Rolling Stones", "Arctic Monkeys", "Lana Del Rey", "Frank Sinatra", "Johnny Cash", "Dolly Parton", "Zach Bryan", "Sabrina Carpenter"],
     "isAbstract": false
   },
   {
@@ -16,7 +16,7 @@
     "title": "Ways to Unwind",
     "prompt": "How do you unwind after a long day?",
     "axes": ["wellness", "routine", "comfort"],
-    "values": ["Reading", "Yoga", "Cooking", "Gaming", "Gardening", "Hot bath", "Long walk", "Meditation", "Working out", "Calling a friend", "TV and takeout", "Headphones and a playlist", "Nap", "Journaling"],
+    "values": ["Reading", "Yoga", "Cooking", "Gaming", "Gardening", "Hot bath", "Long walk", "Meditation", "Working out", "Calling a friend", "TV and takeout", "Headphones and a playlist", "Nap", "Journaling", "Baking", "Knitting", "Puzzles", "Sauna", "Massage", "Long drive with music", "Swimming", "Running", "Painting", "Coloring book", "Playing guitar", "Singing in the car", "Board games", "Rewatching a comfort show", "Candle and a book", "Bike ride", "Sitting in the sun", "People-watching at a café", "Thrifting", "Hot tub", "Pilates", "Cuddling a pet", "Dancing around the kitchen", "Stargazing", "Fishing", "Sketching", "Crossword", "Building LEGO", "Breathwork", "Cup of tea", "Early bedtime", "Face mask", "Wine and a movie", "Retail therapy", "Video call with friends", "Scrolling TikTok", "Cleaning the house", "Beach day", "Crafting"],
     "isAbstract": true
   },
   {
@@ -27,7 +27,7 @@
     "title": "Self-Care Non-Negotiables",
     "prompt": "Which self-care habits do you never skip?",
     "axes": ["wellness", "routine", "lifestyle"],
-    "values": ["Eight hours of sleep", "Daily workout", "Skincare routine", "Therapy", "Drinking enough water", "Time alone", "Phone-free time", "Meal prep", "Getting outside every day", "Stretching", "Weekly call with family", "Saying no to plans"],
+    "values": ["Eight hours of sleep", "Daily workout", "Skincare routine", "Therapy", "Drinking enough water", "Time alone", "Phone-free time", "Meal prep", "Getting outside every day", "Stretching", "Weekly call with family", "Saying no to plans", "Morning coffee ritual", "Sunscreen every day", "Vitamins", "Daily meditation", "Regular massages", "Fresh haircut", "Nails done", "Date night", "Sunday reset", "Annual check-ups", "Dentist every six months", "Reading before bed", "No screens in bed", "Friend time every week", "Solo dates", "Long baths", "Cooking real meals", "Hitting protein goals", "Ten thousand steps", "Early bedtime", "Sleeping in on weekends", "Mental health days", "Unplugged weekends", "Yoga class", "Sauna", "Fresh flowers at home", "Clean sheets", "A tidy space", "Monthly budget check-in", "Hobby time", "Walk after dinner", "Alcohol-free weeknights", "Gratitude practice", "Hair care routine", "Prayer", "Morning sunlight", "Time in nature", "Dancing it out", "Gym three times a week", "Therapy dog cuddles"],
     "isAbstract": true
   },
   {
@@ -37,7 +37,7 @@
     "title": "Morning Routine",
     "prompt": "What's non-negotiable in your morning routine?",
     "axes": ["routine", "lifestyle", "personality"],
-    "values": ["Coffee before words", "Hitting snooze", "Morning workout", "Shower first thing", "A real breakfast", "Scrolling in bed", "Making the bed", "Skincare routine", "Walking the dog", "Journaling", "News or a podcast", "Out the door in 10 minutes"],
+    "values": ["Coffee before words", "Hitting snooze", "Morning workout", "Shower first thing", "A real breakfast", "Scrolling in bed", "Making the bed", "Skincare routine", "Walking the dog", "Journaling", "News or a podcast", "Out the door in 10 minutes", "Alarm across the room", "Up before sunrise", "Sleep until the last second", "Meditation app", "Stretching", "Cold shower", "Lemon water", "Matcha", "Protein shake", "Emails in bed", "Daily puzzles", "Pour-over coffee", "Drive-thru coffee", "Morning run", "Yoga flow", "5 a.m. gym", "Walking pad", "Hair and makeup", "Picking an outfit", "Packing lunch", "Feeding the pets", "School drop-off", "Commute podcast", "Affirmations", "Gratitude list", "Watering plants", "Emptying the dishwasher", "Quick tidy", "Breakfast on the go", "Skipping breakfast", "Vitamins", "Morning sunlight", "Music while getting ready", "Checking the weather", "Coffee in silence", "Planning the day", "Morning prayer", "Cuddling the dog", "Checking the stock market", "Snoozing exactly three times"],
     "isAbstract": true
   },
   {
@@ -48,7 +48,7 @@
     "title": "Sense of Humor",
     "prompt": "What kind of humor gets you every time?",
     "axes": ["humor", "personality", "communication"],
-    "values": ["Dry and deadpan", "Sarcastic", "Dark humor", "Absurd and surreal", "Puns and dad jokes", "Self-deprecating", "Wholesome", "Physical comedy", "Roasting your friends", "Witty wordplay", "Cringe comedy", "Speaks fluent meme"],
+    "values": ["Dry and deadpan", "Sarcastic", "Dark humor", "Absurd and surreal", "Puns and dad jokes", "Self-deprecating", "Wholesome", "Physical comedy", "Roasting your friends", "Witty wordplay", "Cringe comedy", "Speaks fluent meme", "Observational", "Satirical", "Bathroom humor", "Raunchy", "Anti-humor", "Ironic", "Post-ironic", "Deep-fried memes", "Quick one-liners", "Long elaborate bits", "Commits to the bit", "Inside jokes", "Impressions", "Silly voices", "Storytelling", "Nerdy references", "Movie quotes", "Sitcom references", "Playful banter", "Flirty", "Awkward", "British humor", "Cartoon humor", "Sketch comedy", "Stand-up style", "Gen Z humor", "Millennial humor", "Unhinged", "Chaotic energy", "Understated", "Mock-serious", "Laughs at their own jokes", "Laughs at everything", "Hard to make laugh", "Pranks", "Callbacks", "Situational", "Meta humor", "Parody", "Gallows humor", "Goofy"],
     "isAbstract": true
   },
   {
@@ -59,7 +59,7 @@
     "title": "Life Priorities",
     "prompt": "What matters most to you in life right now?",
     "axes": ["values", "lifestyle", "future"],
-    "values": ["Family", "Career", "Adventure", "Faith", "Health", "Financial security", "Friendships", "Creativity", "Travel", "Making a difference", "Personal growth", "Having fun"],
+    "values": ["Family", "Career", "Adventure", "Faith", "Health", "Financial security", "Friendships", "Creativity", "Travel", "Making a difference", "Personal growth", "Having fun", "Love", "Romance", "Independence", "Freedom", "Stability", "Balance", "Happiness", "Peace of mind", "Community", "Legacy", "Education", "Wealth", "Success", "Recognition", "Service", "Spirituality", "Mental health", "Fitness", "Home", "Pets", "Nature", "Art", "Music", "Culture", "Food", "Honesty", "Loyalty", "Kindness", "Integrity", "Justice", "Achievement", "Leadership", "Curiosity", "Simplicity", "Comfort", "Belonging", "Joy", "Caring for parents", "Tradition", "Ambition", "Work-life balance"],
     "isAbstract": true
   },
   {
@@ -69,7 +69,7 @@
     "title": "Dating Pet Peeves",
     "prompt": "Which dating habits are instant dealbreakers?",
     "axes": ["dating", "values", "communication"],
-    "values": ["On their phone the whole date", "Rude to the server", "Late without texting", "Talks about their ex", "Never asks you a question", "Cancels last minute", "Bad tipper", "Only talks about work", "Love-bombing", "Vague plans, no follow-through", "Mean about their friends", "Slow fades instead of saying no"],
+    "values": ["On their phone the whole date", "Rude to the server", "Late without texting", "Talks about their ex", "Never asks you a question", "Cancels last minute", "Bad tipper", "Only talks about work", "Love-bombing", "Vague plans, no follow-through", "Mean about their friends", "Slow fades instead of saying no", "Chews with their mouth open", "Talks over you", "Doesn't text back for days", "Talks marriage on date one", "Judges your order", "Makes everything a competition", "Doesn't say thank you", "Complains the whole time", "Trauma-dumps on date one", "Negging", "Name-drops constantly", "Humble-brags", "Mansplaining", "Calls every ex crazy", "\"I'm not like other girls\"", "Too much cologne", "Bad hygiene", "Drinks too much", "Sends \"wyd\" at 1 a.m.", "Future-faking", "Breadcrumbing", "Won't commit to a plan", "Hot and cold", "Picks food off your plate", "Asks your body count", "Posts you too soon", "Hides you from their friends", "Hogs the aux", "Films the date for content", "Only talks politics", "Takes calls at dinner", "Doesn't make eye contact", "Checks out other people", "Snaps at the barista", "Orders for you", "Brags about their car", "Won't share dessert", "Treats the date like an interview", "Makes fun of your music taste", "No questions about your life, only theirs"],
     "isAbstract": true
   },
   {
@@ -80,7 +80,7 @@
     "title": "How You Show Love",
     "prompt": "How do you show a partner you care?",
     "axes": ["dating", "communication", "affection"],
-    "values": ["Words of affirmation", "Quality time", "Physical touch", "Acts of service", "Thoughtful gifts", "Cooking for them", "Planning surprises", "Sending memes all day", "Handwritten notes", "Remembering the little things", "Making them a playlist", "Long phone calls"],
+    "values": ["Words of affirmation", "Quality time", "Physical touch", "Acts of service", "Thoughtful gifts", "Cooking for them", "Planning surprises", "Sending memes all day", "Handwritten notes", "Remembering the little things", "Making them a playlist", "Long phone calls", "Bringing them coffee", "Good-morning texts", "Doing the dishes", "Nursing them when sick", "Planning the dates", "Warming up the car", "Saving them the last bite", "Hugs", "Holding hands", "Back scratches", "Cuddles", "Forehead kisses", "Hyping them up in public", "Showing up to their events", "Listening to their rants", "Learning their hobby", "Buying flowers", "Baking for them", "Fixing things around the house", "Running their errands", "Introducing them to family", "Making a scrapbook", "Taking photos of them", "Letting them sleep in", "Giving space when they need it", "Remembering anniversaries", "Saying \"I'm proud of you\"", "Inside jokes", "Surprise visits", "Paying for dinner", "Sharing hoodies", "Carrying the bags", "Airport pickups", "Stocking their favorite snack", "Playing with their hair", "Singing to them", "Protecting their peace", "Texting \"home safe?\"", "Defending them to anyone", "Grocery runs without asking"],
     "isAbstract": true
   },
   {
@@ -91,7 +91,7 @@
     "title": "Texting Style",
     "prompt": "What's your texting style?",
     "axes": ["social", "communication", "personality"],
-    "values": ["Replies instantly", "Voice notes", "Double-texter", "Sends paragraphs", "One-word replies", "Memes instead of words", "Leaves people on read", "Reacts instead of replying", "Just calls", "Emoji in every text", "Replies three days later", "Perfect punctuation"],
+    "values": ["Replies instantly", "Voice notes", "Double-texter", "Sends paragraphs", "One-word replies", "Memes instead of words", "Leaves people on read", "Reacts instead of replying", "Just calls", "Emoji in every text", "Replies three days later", "Perfect punctuation", "all lowercase", "ALL CAPS", "Typos everywhere", "Sends \"k\"", "\"lol\" after everything", "Exclamation points everywhere!!", "Ellipses...", "GIFs only", "Stickers", "Sends TikToks", "Sends screenshots", "FaceTimes instead", "Morning check-ins", "Always says goodnight", "Replies at 3 a.m.", "Dry texter", "Flirty texter", "Keyboard smash", "Always asks a question back", "No punctuation ever", "Emoji only", "Brutally honest", "Sends Spotify links", "Sends Reels", "Shares location", "Texts during meetings", "Edits every message", "Unsends messages", "Read receipts on", "Read receipts off", "Notifications muted", "\"Typing...\" forever", "Abbreviations only", "Instagram DMs only", "Snapchat only", "Formal like an email", "Signs off with their name", "\"Call me when you can\"", "Grammar police", "Schedules texts"],
     "isAbstract": true
   },
   {
@@ -101,7 +101,7 @@
     "title": "Perfect Night Out",
     "prompt": "What's your perfect night out?",
     "axes": ["nightlife", "social", "lifestyle"],
-    "values": ["Night out at a club", "Going to a concert", "Dive bar", "Cocktail lounge", "Karaoke", "Comedy show", "Trivia night", "Rooftop bar", "Late-night diner", "Wine bar", "Brewery", "House party"],
+    "values": ["Night out at a club", "Going to a concert", "Dive bar", "Cocktail lounge", "Karaoke", "Comedy show", "Trivia night", "Rooftop bar", "Late-night diner", "Wine bar", "Brewery", "House party", "Speakeasy", "Jazz club", "Drag show", "Bowling", "Arcade bar", "Axe throwing", "Pool hall", "Line dancing", "Salsa night", "Silent disco", "Open mic", "Sports bar", "Stadium game", "Late-night tacos", "Night market", "Food hall", "Fancy dinner", "Tasting menu", "Theater show", "Opera or ballet", "Late movie", "Rave", "Warehouse party", "Beach bonfire", "Bar crawl", "Piano bar", "Tiki bar", "Hotel bar", "Casino", "Escape room", "Gay bar", "Supper club", "Burlesque show", "Dinner and a movie", "Hookah lounge", "Street festival", "Pop-up party", "Mini golf", "Dueling pianos", "Roller disco"],
     "isAbstract": true
   },
   {
@@ -112,7 +112,7 @@
     "title": "Chores You Don't Mind",
     "prompt": "Which household chores do you actually not mind?",
     "axes": ["home", "routine", "lifestyle"],
-    "values": ["Dishes", "Laundry", "Folding clothes", "Vacuuming", "Cooking dinner", "Grocery shopping", "Taking out the trash", "Cleaning the bathroom", "Yard work", "Organizing closets", "Ironing", "Meal planning"],
+    "values": ["Dishes", "Laundry", "Folding clothes", "Vacuuming", "Cooking dinner", "Grocery shopping", "Taking out the trash", "Cleaning the bathroom", "Yard work", "Organizing closets", "Ironing", "Meal planning", "Mopping", "Dusting", "Changing the sheets", "Watering plants", "Walking the dog", "Scooping the litter box", "Cleaning out the fridge", "Wiping counters", "Loading the dishwasher", "Unloading the dishwasher", "Washing the car", "Mowing the lawn", "Raking leaves", "Shoveling snow", "Weeding", "Cleaning windows", "Organizing the pantry", "Decluttering", "Paying bills", "Scheduling appointments", "Returning packages", "Fixing things around the house", "Assembling furniture", "Hanging pictures", "Cleaning out the car", "Scrubbing the oven", "Cleaning the grill", "Taking out the recycling", "Sweeping", "Tidying up before bed", "Putting away groceries", "Bathing the dog", "Deep-cleaning the kitchen", "Organizing the garage", "Sorting the mail", "Batch cooking", "Changing lightbulbs", "Hanging laundry to dry", "Making the bed", "Hand-washing dishes"],
     "isAbstract": true
   },
   {
@@ -123,7 +123,7 @@
     "title": "Worth the Splurge",
     "prompt": "What's actually worth splurging on?",
     "axes": ["money", "lifestyle", "values"],
-    "values": ["Travel", "Good food", "Concert tickets", "Tech", "Clothes and sneakers", "Home decor", "Skincare", "Fitness", "A nice car", "Experiences with friends", "Hobby gear", "A really good mattress"],
+    "values": ["Travel", "Good food", "Concert tickets", "Tech", "Clothes and sneakers", "Home decor", "Skincare", "Fitness", "A nice car", "Experiences with friends", "Hobby gear", "A really good mattress", "Fancy coffee every day", "Good headphones", "Designer bag", "Nice watch", "Jewelry", "Great haircut", "Massages", "Therapy", "Personal trainer", "Pilates classes", "Organic groceries", "Nice sheets", "Good knives", "Quality cookware", "Espresso machine", "Gaming setup", "Camera gear", "A good bike", "Ski pass", "Golf clubs", "Omakase", "Tasting menus", "Good wine", "Good whiskey", "Front-row seats", "Festival passes", "Business class", "Five-star hotels", "Spa weekends", "Pets", "Art", "Vinyl records", "Books", "Takeout", "Ubers everywhere", "House cleaner", "Candles", "Perfume", "Nails and lashes", "Tattoos", "Classes and courses", "Gifts for others", "Home gym", "Furniture"],
     "isAbstract": true
   },
   {
@@ -134,7 +134,7 @@
     "title": "Favorite Holidays",
     "prompt": "Which holidays do you love most?",
     "axes": ["seasons", "traditions", "family"],
-    "values": ["Christmas", "Halloween", "Thanksgiving", "New Year's Eve", "Fourth of July", "Valentine's Day", "Easter", "St. Patrick's Day", "Hanukkah", "Diwali", "Lunar New Year", "Your birthday"],
+    "values": ["Christmas", "Halloween", "Thanksgiving", "New Year's Eve", "Fourth of July", "Valentine's Day", "Easter", "St. Patrick's Day", "Hanukkah", "Diwali", "Lunar New Year", "Your birthday", "Mother's Day", "Father's Day", "Memorial Day", "Labor Day", "Martin Luther King Jr. Day", "Juneteenth", "Veterans Day", "Cinco de Mayo", "Día de los Muertos", "Mardi Gras", "Passover", "Rosh Hashanah", "Eid al-Fitr", "Eid al-Adha", "Ramadan", "Holi", "Kwanzaa", "Boxing Day", "Christmas Eve", "New Year's Day", "April Fools' Day", "Earth Day", "Pi Day", "Star Wars Day", "Friendsgiving", "Galentine's Day", "Super Bowl Sunday", "Canada Day", "Bastille Day", "Oktoberfest", "Mid-Autumn Festival", "Songkran", "Carnival", "Guy Fawkes Night", "Hogmanay", "Pride", "Your anniversary", "Presidents' Day", "Groundhog Day", "Summer solstice"],
     "isAbstract": true
   }
 ]
