@@ -1,0 +1,17 @@
+{
+  "name": "site",
+  "private": true,
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "start": "node dist/server.js",
+    "dev": "tsx watch src/server.ts",
+    "test": "tsx --test test/release.test.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "echo 'no lint configured for site'"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0"
+  }
+}

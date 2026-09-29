@@ -31,6 +31,7 @@ Phase 3 (Frontend Shell), adapted for Expo — built bottom-up through the full 
 - [ ] Admin / moderation panel (EntitySubmission + Report review queues exist in the DB, no UI)
 - [ ] Search-engine sync (Typesense/Meilisearch) — MVP autocomplete is MySQL prefix/FULLTEXT + in-process Levenshtein, per docs §6
 - [ ] Supporting marketing site (docs §10) — not started
+- [x] **Android beta homepage** (`apps/site`) — POC download page, separate from the API and the Expo app. Reads `release.json` generated from the APK in `releases/incoming/`. Railway service `site` keeps the published APK and download counter on a volume mounted at `/app/releases`. `GET /download` counts, then redirects to `/downloads/datememe-latest.apk`.
 - [x] **Rankings tab** (site-wide aggregate answers) — see "Rankings" below
 - [ ] Rate limiting on auth endpoints (login, forgot-password, verify-email) — the 6-digit OTP codes are brute-forceable without it; noted, not built this pass
 
