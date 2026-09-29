@@ -58,6 +58,14 @@ export function ListBuilderScreen({ route, navigation }: Props) {
     return () => clearTimeout(timer)
   }, [query])
 
+  useEffect(() => {
+    const keyboardSub = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      () => setIsListExpanded(false)
+    )
+    return () => keyboardSub.remove()
+  }, [])
+
   const entities = useCategoryEntities(categorySlug, { q: debouncedQuery || undefined })
   const submitEntity = useSubmitEntity()
   const upsertList = useUpsertList(categorySlug)
@@ -307,7 +315,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   chrome: {
-    flexShrink: 0,
+    flexShrink: 1,
     zIndex: 2,
   },
   question: {
@@ -338,7 +346,7 @@ const styles = StyleSheet.create({
   },
   values: {
     flex: 1,
-    minHeight: 0,
+    minHeight: 120,
     zIndex: 1,
   },
   fastPicksList: {
