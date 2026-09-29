@@ -211,7 +211,7 @@ function EditList({ list, onBack }: { list: AdminListDetail; onBack: () => void 
       </ScrollView>
 
       <ListCoverSheet list={list} visible={coverOpen} onClose={() => setCoverOpen(false)} />
-      {list.curated ? <AddListValueSheet list={list} visible={addOpen} onClose={() => setAddOpen(false)} /> : null}
+      <AddListValueSheet list={list} visible={addOpen} onClose={() => setAddOpen(false)} />
     </ScreenContainer>
   )
 }
