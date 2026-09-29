@@ -1783,7 +1783,7 @@ export interface components {
             usageCount: number;
         };
         EntitySubmissionInput: {
-            entityTypeId: string;
+            categorySlug: string;
             rawText: string;
         };
         EntitySubmission: {
@@ -3621,7 +3621,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Submission created; a PENDING Entity is created in the same transaction and returned so the caller can add it to their list immediately (docs §5.3). */
+            /** @description The name is resolved to an APPROVED entity (or created) and added to this list's public choices, so any member can pick it. */
             201: {
                 headers: {
                     [name: string]: unknown;

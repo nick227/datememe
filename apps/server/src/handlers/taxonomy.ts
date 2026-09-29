@@ -36,7 +36,7 @@ export async function searchCategoryEntities(request: AuthenticatedRequest, repl
 export async function submitEntity(request: AuthenticatedRequest, reply: any) {
   const data = await taxonomyService.submitEntity(
     requireProfileId(request.user),
-    request.body.entityTypeId,
+    request.body.categorySlug,
     request.body.rawText,
   )
   return reply.status(201).send({ data })

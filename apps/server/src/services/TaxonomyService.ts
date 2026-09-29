@@ -1,4 +1,4 @@
-import { viewerCategoryPool } from '../lib/categoryPool'
+import { curatedPool } from '../lib/categoryPool'
 import { db, Prisma } from '@project/db'
 import { decodeOffsetCursor, encodeOffsetCursor, normalizeLimit } from '../lib/pagination'
 import { similarity } from '../lib/levenshtein'
@@ -136,7 +136,8 @@ export class TaxonomyService {
     const rows = await db.entity.findMany({
       where: {
         entityTypeId: category.entityTypeId,
-        AND: [viewerCategoryPool(category, viewerProfileId), poolCondition, { OR: statusOr }, ...(searchOr ? [{ OR: searchOr }] : [])],
+        ...curatedPool(category),
+        AND: [poolCondition, { OR: statusOr }, ...(searchOr ? [{ OR: searchOr }] : [])],
       },
       // Alphabetically APPROVED < PENDING < REJECTED, so this also puts live entities
       // first without a separate CASE expression — documented, not accidental.
@@ -154,17 +155,22 @@ export class TaxonomyService {
     }
   }
 
-  /** See docs/data-schema-proposal.md §5.3 for the full flow this implements. */
-  async submitEntity(submitterProfileId: string, entityTypeId: string, rawText: string) {
-    const entityType = await db.entityType.findUnique({ where: { id: entityTypeId } })
-    if (!entityType) throw { statusCode: 404, message: 'Entity type not found' }
+  /** Resolve or create the entity, then add it to this list's public choices. */
+  async submitEntity(submitterProfileId: string, categorySlug: string, rawText: string) {
+    const category = await db.category.findUnique({ where: { slug: categorySlug } })
+    if (!category) throw { statusCode: 404, message: 'Category not found' }
+    const entityTypeId = category.entityTypeId
 
     const baseSlug = slugify(rawText)
 
     // 1. Exact-slug match against an already-APPROVED entity — short-circuit, no new rows.
     const exact = await db.entity.findUnique({ where: { entityTypeId_slug: { entityTypeId, slug: baseSlug } } })
     if (exact && exact.status === 'APPROVED') {
-      return { id: `existing:${exact.id}`, status: 'APPROVED' as const, submittedEntity: serializeEntity(exact), suggestedMatch: null }
+      const canonical = exact.mergedIntoId
+        ? await db.entity.findUniqueOrThrow({ where: { id: exact.mergedIntoId } })
+        : exact
+      await db.$transaction((tx) => publishListChoice(tx, category.id, canonical.id))
+      return { id: `existing:${canonical.id}`, status: 'APPROVED' as const, submittedEntity: serializeEntity(canonical), suggestedMatch: null }
     }
 
     // 2. Fuzzy shortlist (contains-match, scored with Levenshtein) for a suggestedMatch
@@ -184,6 +190,7 @@ export class TaxonomyService {
       if (!best || score > best.score) best = { entity: candidate, score }
     }
     if (best && best.score >= 0.92) {
+      await db.$transaction((tx) => publishListChoice(tx, category.id, best.entity.id))
       return {
         id: `existing:${best.entity.id}`,
         status: 'APPROVED' as const,
@@ -192,8 +199,7 @@ export class TaxonomyService {
       }
     }
 
-    // 3. No confident match — create a PENDING entity. Avoid colliding with a slug someone
-    //    else's still-unreviewed submission already owns (duplicates get merged later).
+    // 3. No confident match — create the entity and add it to this list.
     let slug = baseSlug
     let suffix = 2
     while (await db.entity.findUnique({ where: { entityTypeId_slug: { entityTypeId, slug } } })) {
@@ -213,6 +219,7 @@ export class TaxonomyService {
           submittedByProfileId: submitterProfileId,
         },
       })
+      await publishListChoice(tx, category.id, entity.id)
       return tx.entitySubmission.create({
         data: {
           entityTypeId,
@@ -233,4 +240,18 @@ export class TaxonomyService {
       suggestedMatch: submission.suggestedMatch ? serializeEntity(submission.suggestedMatch) : null,
     }
   }
+}
+
+type Tx = Parameters<Parameters<typeof db.$transaction>[0]>[0]
+
+/** Put an entity on a list's public choices. An exclusion is lifted; an existing choice is left as-is. */
+async function publishListChoice(tx: Tx, categoryId: string, entityId: string) {
+  const where = { categoryId_entityId: { categoryId, entityId } }
+  const existing = await tx.categoryEntity.findUnique({ where, select: { isExcluded: true } })
+  if (existing) {
+    if (existing.isExcluded) await tx.categoryEntity.update({ where, data: { isExcluded: false } })
+    return
+  }
+  const start = ((await tx.categoryEntity.aggregate({ where: { categoryId }, _max: { sortOrder: true } }))._max.sortOrder ?? -1) + 1
+  await tx.categoryEntity.create({ data: { categoryId, entityId, sortOrder: start } })
 }

@@ -3,85 +3,102 @@ import { db } from '@project/db'
 import { ListService } from '../services/ListService'
 import { TaxonomyService } from '../services/TaxonomyService'
 
-describe('custom values on a curated list', () => {
+describe('user submissions join the list for everyone', () => {
   const stamp = Date.now()
   const lists = new ListService()
   const taxonomy = new TaxonomyService()
+  const slug = `custom-anime-${stamp}`
   let profileId: string
-  let userId: string
+  let otherProfileId: string
+  let userIds: string[]
   let typeId: string
   let groupId: string
-  let categoryId: string
-  let slug: string
+  let curatedId: string
+  let filteredId: string
+  let tagId: string
   let inPoolId: string
   let outsiderId: string
 
   beforeAll(async () => {
-    slug = `custom-anime-${stamp}`
     const type = await db.entityType.create({ data: { slug, label: 'Anime', pluralLabel: 'Anime' } })
     const group = await db.categoryGroup.create({ data: { slug, label: 'Film' } })
-    const user = await db.user.create({
-      data: {
-        email: `${slug}@example.com`,
-        profile: { create: { username: slug, displayName: 'Custom', birthdate: new Date('1990-01-01') } },
-      },
-      include: { profile: true },
+    const tag = await db.tag.create({ data: { slug: `${slug}-90s`, label: '90s' } })
+    const [user, other] = await Promise.all([
+      db.user.create({
+        data: { email: `${slug}@example.com`, profile: { create: { username: slug, displayName: 'Custom', birthdate: new Date('1990-01-01') } } },
+        include: { profile: true },
+      }),
+      db.user.create({
+        data: { email: `${slug}-other@example.com`, profile: { create: { username: `${slug}-other`, displayName: 'Other', birthdate: new Date('1991-01-01') } } },
+        include: { profile: true },
+      }),
+    ])
+    const curated = await db.category.create({
+      data: { groupId: group.id, entityTypeId: type.id, slug, prompt: 'What are your favorite anime series?', shortLabel: 'Top Anime Series', poolMode: 'CURATED' },
     })
-    const category = await db.category.create({
+    const filtered = await db.category.create({
       data: {
-        groupId: group.id,
-        entityTypeId: type.id,
-        slug,
-        prompt: 'What are your favorite anime series?',
-        shortLabel: 'Top Anime Series',
-        poolMode: 'CURATED',
+        groupId: group.id, entityTypeId: type.id, slug: `${slug}-filtered`, prompt: 'Which 90s anime?', shortLabel: '90s Anime', poolMode: 'FILTERED',
+        requiredTags: { create: { tagId: tag.id } },
       },
     })
     const inPool = await db.entity.create({
-      data: { entityTypeId: type.id, canonicalName: 'Death Note', slug: `${slug}-death-note`, status: 'APPROVED' },
+      data: { entityTypeId: type.id, canonicalName: 'Death Note', slug: `${slug}-death-note`, status: 'APPROVED', tags: { create: { tagId: tag.id } } },
     })
     const outsider = await db.entity.create({
       data: { entityTypeId: type.id, canonicalName: 'Outside', slug: `${slug}-outside`, status: 'APPROVED' },
     })
-    await db.categoryEntity.create({ data: { categoryId: category.id, entityId: inPool.id, sortOrder: 0 } })
+    await db.categoryEntity.create({ data: { categoryId: curated.id, entityId: inPool.id, sortOrder: 0 } })
+    await db.categoryEntity.create({ data: { categoryId: filtered.id, entityId: outsider.id, sortOrder: 0, isExcluded: true } })
     typeId = type.id
     groupId = group.id
-    userId = user.id
+    tagId = tag.id
+    userIds = [user.id, other.id]
     profileId = user.profile!.id
-    categoryId = category.id
+    otherProfileId = other.profile!.id
+    curatedId = curated.id
+    filteredId = filtered.id
     inPoolId = inPool.id
     outsiderId = outsider.id
   })
 
   afterAll(async () => {
-    await db.jobQueue.deleteMany({ where: { payload: { path: '$.categoryId', equals: categoryId } } })
-    await db.list.deleteMany({ where: { categoryId } })
+    const categoryIds = [curatedId, filteredId]
+    await db.jobQueue.deleteMany({ where: { OR: categoryIds.map((categoryId) => ({ payload: { path: '$.categoryId', equals: categoryId } })) } })
+    await db.list.deleteMany({ where: { categoryId: { in: categoryIds } } })
     await db.entitySubmission.deleteMany({ where: { entityTypeId: typeId } })
-    await db.category.delete({ where: { id: categoryId } })
+    await db.category.deleteMany({ where: { id: { in: categoryIds } } })
     await db.entity.deleteMany({ where: { entityTypeId: typeId } })
+    await db.tag.delete({ where: { id: tagId } })
     await db.entityType.delete({ where: { id: typeId } })
     await db.categoryGroup.delete({ where: { id: groupId } })
-    await db.user.delete({ where: { id: userId } })
+    await db.user.deleteMany({ where: { id: { in: userIds } } })
   })
 
-  it('saves and finds a value the viewer just submitted, and still rejects other out-of-pool entities', async () => {
-    const submitted = await taxonomy.submitEntity(profileId, typeId, 'Steins Gate')
+  it('publishes a new value and an existing out-of-pool value onto a curated list', async () => {
+    const submitted = await taxonomy.submitEntity(profileId, slug, 'Steins Gate')
     const customId = submitted.submittedEntity.id
+    expect(await db.categoryEntity.findUnique({ where: { categoryId_entityId: { categoryId: curatedId, entityId: customId } } })).toMatchObject({ isExcluded: false })
 
-    const saved = await lists.upsertMyList(profileId, slug, {
-      items: [
-        { entityId: inPoolId, rank: 1 },
-        { entityId: customId, rank: 2 },
-      ],
-    })
-    expect(saved.items.map((item) => item.entityId)).toEqual([inPoolId, customId])
+    const found = await taxonomy.searchCategoryEntities(slug, otherProfileId, { q: 'Steins' })
+    expect(found.data.map((entity) => entity.id)).toContain(customId)
+    await expect(lists.upsertMyList(otherProfileId, slug, { items: [{ entityId: outsiderId, rank: 1 }] })).rejects.toMatchObject({ statusCode: 400 })
 
-    await expect(
-      lists.upsertMyList(profileId, slug, { items: [{ entityId: outsiderId, rank: 1 }] }),
-    ).rejects.toMatchObject({ statusCode: 400, message: 'One or more entities are not valid for this category' })
+    const adopted = await taxonomy.submitEntity(profileId, slug, 'Outside')
+    expect(adopted.submittedEntity.id).toBe(outsiderId)
+    const saved = await lists.upsertMyList(otherProfileId, slug, { items: [{ entityId: inPoolId, rank: 1 }, { entityId: customId, rank: 2 }, { entityId: outsiderId, rank: 3 }] })
+    expect(saved.items.map((item) => item.entityId)).toEqual([inPoolId, customId, outsiderId])
+  })
 
-    const search = await taxonomy.searchCategoryEntities(slug, profileId, { q: 'Steins' })
-    expect(search.data.map((entity) => entity.id)).toContain(customId)
-    expect(search.data.map((entity) => entity.id)).not.toContain(outsiderId)
+  it('publishes onto a tag-filtered list and lifts an exclusion', async () => {
+    const submitted = await taxonomy.submitEntity(profileId, `${slug}-filtered`, 'Cowboy Bebop')
+    const customId = submitted.submittedEntity.id
+    const found = await taxonomy.searchCategoryEntities(`${slug}-filtered`, otherProfileId, { q: 'Cowboy' })
+    expect(found.data.map((entity) => entity.id)).toEqual([customId])
+
+    await taxonomy.submitEntity(profileId, `${slug}-filtered`, 'Outside')
+    expect(await db.categoryEntity.findUnique({ where: { categoryId_entityId: { categoryId: filteredId, entityId: outsiderId } } })).toMatchObject({ isExcluded: false })
+    const saved = await lists.upsertMyList(otherProfileId, `${slug}-filtered`, { items: [{ entityId: customId, rank: 1 }, { entityId: outsiderId, rank: 2 }] })
+    expect(saved.items.map((item) => item.entityId)).toEqual([customId, outsiderId])
   })
 })

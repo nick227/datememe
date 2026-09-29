@@ -421,9 +421,9 @@ components:
 
     EntitySubmissionInput:
       type: object
-      required: [entityTypeId, rawText]
+      required: [categorySlug, rawText]
       properties:
-        entityTypeId: { type: string }
+        categorySlug: { type: string }
         rawText: { type: string, minLength: 1, maxLength: 200 }
 
     EntitySubmission:
@@ -2617,9 +2617,8 @@ paths:
       responses:
         '201':
           description: >
-            Submission created; a PENDING Entity is created in the same
-            transaction and returned so the caller can add it to their list
-            immediately (docs §5.3).
+            The name is resolved to an APPROVED entity (or created) and added
+            to this list's public choices, so any member can pick it.
           content:
             application/json:
               schema:

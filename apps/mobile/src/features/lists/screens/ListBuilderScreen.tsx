@@ -149,7 +149,7 @@ export function ListBuilderScreen({ route, navigation }: Props) {
   async function handleSuggestNew(newQuery: string) {
     if (!category.data) return
     try {
-      const result = await submitEntity.mutateAsync({ entityTypeId: category.data.entityTypeId, rawText: newQuery })
+      const result = await submitEntity.mutateAsync({ categorySlug, rawText: newQuery })
       toggle(result.submittedEntity.id, result.submittedEntity.canonicalName, result.submittedEntity.imageUrl)
     } catch (err: any) {
       sheet.show({ title: 'Could not add that', message: err?.message ?? 'Try again in a moment', buttons: [{ testID: 'list-builder.dialog.ok', text: 'OK' }] })
