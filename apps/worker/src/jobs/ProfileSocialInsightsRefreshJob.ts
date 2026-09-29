@@ -153,28 +153,7 @@ async function emitDigestIfChanged(setId: string) {
 }
 
 async function deliverSystemMessage(profileId: string, set: any) {
-  // 1. Find or create the one persistent SYSTEM conversation for this user
-  let systemConversation = await db.conversation.findFirst({
-    where: {
-      type: 'SYSTEM',
-      participants: {
-        some: { profileId }
-      }
-    }
-  })
-
-  if (!systemConversation) {
-    systemConversation = await db.conversation.create({
-      data: {
-        type: 'SYSTEM',
-        participants: {
-          create: [{ profileId }]
-        }
-      }
-    })
-  }
-
-  // 2. Draft the rich text body
+  // Draft the rich text body before taking the recipient lock.
   const totalInteractions = (set.sampleSummary as any)?.messages || 0
   let body = `Your activity this week\n${totalInteractions} people interacted with your profile\n\n`
   
@@ -182,20 +161,38 @@ async function deliverSystemMessage(profileId: string, set: any) {
     body += `${insight.label} ↑\n${insight.value}\n\n`
   }
 
-  // 3. Idempotent check & transactional delivery
   await db.$transaction(async (tx) => {
-    // Ensure we haven't already created a message for this set (idempotency)
-    const existingMessage = await tx.message.findFirst({
+    // Serialize SYSTEM-thread writers with SystemActivityService. Without a
+    // relation-level unique constraint, locking the owner profile is the one
+    // place both API and worker writers can safely share.
+    await tx.$queryRaw`SELECT id FROM Profile WHERE id = ${profileId} FOR UPDATE`
+
+    let systemConversation = await tx.conversation.findFirst({
       where: {
-        conversationId: systemConversation!.id,
-        systemMessageType: 'ACTIVITY_DIGEST',
-        attachments: { string_contains: set.id } // crude json match to find set.id
+        type: 'SYSTEM',
+        participants: { some: { profileId } }
       }
     })
 
-    if (existingMessage) {
-      return // Already delivered
+    if (!systemConversation) {
+      systemConversation = await tx.conversation.create({
+        data: {
+          type: 'SYSTEM',
+          participants: { create: [{ profileId }] }
+        }
+      })
     }
+
+    // Prisma/MySQL JSON string_contains does not reliably find nested object
+    // values. Compare the structured insightSetId exactly instead.
+    const priorDigests = await tx.message.findMany({
+      where: {
+        conversationId: systemConversation.id,
+        systemMessageType: 'ACTIVITY_DIGEST'
+      },
+      select: { attachments: true }
+    })
+    if (priorDigests.some((m) => (m.attachments as any)?.insightSetId === set.id)) return
 
     const attachments = {
       eventType: 'ACTIVITY_DIGEST',
@@ -211,7 +208,7 @@ async function deliverSystemMessage(profileId: string, set: any) {
 
     await tx.message.create({
       data: {
-        conversationId: systemConversation!.id,
+        conversationId: systemConversation.id,
         systemMessageType: 'ACTIVITY_DIGEST',
         body: body.trim(),
         attachments: attachments as any
@@ -222,7 +219,7 @@ async function deliverSystemMessage(profileId: string, set: any) {
     // same activity clock used by the main messaging service so this digest
     // lands in the correct chronological position in the inbox.
     await tx.conversation.update({
-      where: { id: systemConversation!.id },
+      where: { id: systemConversation.id },
       data: { updatedAt: deliveredAt }
     })
 
