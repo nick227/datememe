@@ -1,4 +1,4 @@
-# Android staging launch validation — September 25–27, 2026
+# Android staging launch validation — September 25–29, 2026
 
 ## Data and media
 
@@ -67,6 +67,28 @@ All 44 ARM64/x86_64 native libraries have ELF load-segment alignment of at least
 A supplementary RELRO-end modulo check flagged 39 libraries. Inspecting the rounded protection ranges found no overlap with writable or executable load-segment bytes outside RELRO. Bionic rounds those boundaries when applying protection, and the inspected libraries leave sufficient gaps. We infer these flags are conservative false positives for this layout; no dependency rebuild was made on that basis. [Bionic linker implementation](https://android.googlesource.com/platform/bionic/+/refs/heads/main/linker/linker_phdr.cpp) · [LLD 18 segment layout](https://raw.githubusercontent.com/llvm/llvm-project/release/18.x/lld/ELF/Writer.cpp). A 16 KB runtime remains untested.
 
 The [Play Internal packet](android-play-internal.md) records upload steps, release notes, and the public upload-certificate fingerprint. A verified local copy is collected in `C:\Users\Administrator\Downloads\datememe-play-internal-v3`. Only the emulator is connected. The owner signed in to Google but chose to defer paid developer registration until the app has been vetted further. Play app creation, upload, and publishing are deferred by choice. No Play app or release has been created.
+
+## Private testing follow-up — September 28 UTC
+
+Play registration remains deferred by the owner. A universal APK was generated locally from the exact code-3 AAB without another EAS build: `C:\Users\Administrator\Downloads\datememe-staging-v3-universal.apk` (100,346,884 bytes). Its SHA-256 is `91bfdb424010a4185545e32a21c2da225fec7eb9574c82fe31ccbdcd39a573f1`. APK signature verification, the expected EAS staging certificate, and 16 KB ZIP alignment passed. This APK still contains artifact source `f2ea325`.
+
+An additional native journey used a newly registered synthetic adult account, Taylor QA, with **FREE** membership and no grant:
+
+- Registration reached Lists; hosted reads confirmed an empty profile and zero saved lists, with no previous QA account's data carried into the new account.
+- Saved the first complete ranked list: Blur, Radiohead, Oasis, Nirvana, Pearl Jam. The hosted API returned all five in that order; discovery then returned eight candidates and rendered people under the Music filter.
+- Opened Casey's profile, completed a mutual like against the synthetic Casey fixture, and opened the resulting conversation. A native outgoing message was confirmed by Casey's API session.
+- An incoming reply was locked for the free account; the API withheld its body. The app rendered the locked message.
+- Reproduced a broken **Unlock** action: the conversation stayed open. The Account screen's **Go Premium** action reached the paywall, confirming this is a conversation navigation bug. Both conversation upgrade links now target `ProfileTab` in source.
+
+Search selection worked with direct taps. UIAutomator clipped the absolute dropdown's accessibility bounds, causing the initial scripted taps to miss; this was corrected in the manual test coordinates, with no search code change.
+
+The expired-session cache fix is in main commit `0161d57` and backported as `ea58866`; the upgrade navigation fix is in isolated release commit `ae8b296`. Release source at `ae8b296` passes mobile/SDK typecheck and all nine SDK tests, including removing another account's cached lists/messages and ignoring late responses after session expiry. **These later fixes are not in the code-3 APK/AAB and still need native validation in a subsequent candidate.** Main's ongoing admin, messaging, and content UI changes still fail the full mobile typecheck; that workspace is not the source of the tested artifact.
+
+The universal code-3 APK was installed over the emulator's split installation using the same signing identity. Cold launch retained the new account and its one completed list/five picks. The inspected crash and ReactNativeJS/AndroidRuntime logs contained no Datememe crash or runtime error. Physical-phone coverage is still pending.
+
+## Corrected candidate — September 29 UTC
+
+Expo account usage was checked before starting another build: Free plan, 3 of 15 Android builds used, zero overage. A free-plan AAB build for source `ae8b296` is in progress as [7f2918ed-c05b-4377-833b-64093533ab25](https://expo.dev/accounts/hzane111/projects/datememe/builds/7f2918ed-c05b-4377-833b-64093533ab25), version code `4`. It includes the expired-session cache and conversation upgrade-route fixes. No Play registration or paid plan was initiated. Build completion and native verification must be recorded before treating it as the replacement for code 3.
 
 ## Remaining release gates
 

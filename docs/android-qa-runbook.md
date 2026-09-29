@@ -6,7 +6,11 @@ The [first Play Internal release packet](android-play-internal.md) is retained f
 
 ## Direct phone installation from the existing AAB
 
-The AAB itself is not directly installable. Once a phone is connected and authorized for USB debugging, use Google's `bundletool` to generate and install its APK set:
+An installable universal APK has now been generated locally from that exact AAB: `C:\Users\Administrator\Downloads\datememe-staging-v3-universal.apk` (100,346,884 bytes). It includes ARM64/ARMv7 phone architectures and both emulator architectures, retains package `com.datememe.app.staging` and version code `3`, and uses the existing EAS staging signing identity. Signature verification and 16 KB ZIP alignment passed. SHA-256: `91bfdb424010a4185545e32a21c2da225fec7eb9574c82fe31ccbdcd39a573f1`.
+
+Transfer this APK to the phone and open it, allowing installation from that file source if Android prompts. Alternatively, install it with ADB using the selected phone serial. This uses the existing bundle without another cloud build or Play registration. The adjacent README records known v3 limitations. The later session-expiry cache and messaging upgrade-route source fixes are **not included** in this unchanged v3 artifact.
+
+The universal APK above is ready to install. As an optional alternative, connect a phone and authorize USB debugging, then use Google's `bundletool` to generate and install a smaller device-specific APK set from the AAB:
 
 1. Select the phone's ADB serial explicitly, especially while the emulator is connected.
 2. Run `bundletool build-apks` with the existing version-code-3 AAB, `--connected-device`, and the phone's `--device-id`, supplying the **existing EAS staging signing identity** privately. This generates device-specific APKs locally; it does not rebuild the app in EAS. Do not use the default debug signing identity.
@@ -60,12 +64,12 @@ corepack enable
 pnpm install --frozen-lockfile
 pnpm --filter mobile test
 pnpm --filter mobile qa:config
-pnpm --filter mobile qa:build
+pnpm --filter mobile qa:store:build
 ```
 
 The build command runs pinned EAS CLI **24.7.0** through `pnpm dlx`. Authenticate with an Expo account that has access to `hzane111/datememe`; for unattended use, supply `EXPO_TOKEN` through the runner's secret store. The initial keystore has been created in EAS for the staging package. This is a QA signing identity, separate from future production signing.
 
-The `qa` profile supplies `APP_VARIANT=staging` and the explicit API URL, selects the EAS `preview` environment, and builds a release APK with `developmentClient=false`. No local `.env`, Metro, local backend, or Android toolchain is needed to build on EAS. `app.json` holds shared assets/plugins and the EAS project association; `app.config.ts` derives variant identity and validated runtime configuration. The runtime reads that same validated endpoint through Expo Constants.
+The primary `qa-store` command builds an AAB; derive installable APKs locally as described above. The optional `qa:build` command produces a cloud-built APK. Both inherit the same staging configuration. The `qa` profile supplies `APP_VARIANT=staging` and the explicit API URL, selects the EAS `preview` environment, and builds a release APK with `developmentClient=false`. No local `.env`, Metro, local backend, or Android toolchain is needed to build on EAS. `app.json` holds shared assets/plugins and the EAS project association; `app.config.ts` derives variant identity and validated runtime configuration. The runtime reads that same validated endpoint through Expo Constants.
 
 The installed app version comes from `expo.version` in `app.json`, currently `1.0.0`; the workspace package version is not a store version. The verified first APK has Android version code `1`. New EAS builds use remote version management and auto-increment, shared by the staging APK and AAB profiles. The local `versionCode: 1` is an initialization seed, not the version of a subsequent cloud artifact. EAS initializes from that seed when no remote counter exists, then increments it. Record the actual version code from each build; do not reset the remote counter or reuse a Play upload's code. See [Expo app version management](https://docs.expo.dev/build-reference/app-versions/).
 
@@ -79,7 +83,7 @@ EXPO_PUBLIC_API_URL=https://qa-server-staging.up.railway.app \
 pnpm dlx eas-cli@24.7.0 build:view BUILD_ID
 ```
 
-Record the build ID and artifact link. Download the APK from the EAS build page and install it on an Android device/emulator. This is internal APK distribution; there is no Play Console dependency.
+Record the build ID, source commit, and artifact link. Download the AAB and derive signed APKs locally, or download the APK directly if the optional APK profile was selected. Private installation has no Play Console dependency.
 
 ## Prepare the staging Play AAB
 
@@ -103,10 +107,12 @@ Play registration, app creation, signing enrollment, tester setup, and upload ar
 ## Verify the installed app
 
 1. Install alongside any development app; confirm the label is **Datememe QA** and the package is `com.datememe.app.staging`.
-2. Cold-start with Metro/local API stopped. The app must reach login without asking for a development server.
+2. Cold-start without relying on Metro or a local API. A fresh install must reach login; an update or relaunch with a valid session must return to the signed-in app. Neither should ask for a development server.
 3. Register a synthetic account or use an existing QA account; sign in over the hosted staging API.
 4. Save a profile/photo change and a ranked list edit, open discovery and a profile, and send a message. Sign out and back in, then force-stop/relaunch and verify the saved changes and session survive.
-5. Record the source AAB build ID, installed version code, Android version/device, results, and any crash/log evidence. Check database identity through the staging API service configuration rather than relying only on the app label.
+5. With a free synthetic account, open an incoming locked message → Unlock → paywall, then return to messaging. After reaching the daily message allowance, verify Go Premium opens the paywall and the rejected message draft remains available when returning. Do not treat these navigation checks as working purchase integration.
+6. Log out of a populated account and register/sign into a different account. The previous account's lists and messages must not appear.
+7. Record the source AAB build ID, installed version code, Android version/device, whether this was a fresh install or an update retaining data, results, and any crash/log evidence. Check database identity through the staging API service configuration rather than relying only on the app label.
 
 The `android-qa@example.test` account was created for initial verification with a generated password, not a shared production credential. Create your own QA account in the app if you do not have its credentials. No real email delivery is needed for initial registration/login.
 
