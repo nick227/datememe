@@ -128,9 +128,11 @@ export class TaxonomyService {
       ? [{ canonicalName: { contains: opts.q } }, { aliases: { some: { alias: { contains: opts.q } } } }]
       : null
 
+    // An untagged filtered list offers its whole type. Don't build `OR: [{ AND: [] }, …]` for it:
+    // Prisma reads an empty AND nested in an OR as false, which hid every value on those lists.
     const isCurated = category.poolMode === 'CURATED'
-    const poolCondition: Prisma.EntityWhereInput = isCurated ? {} : { 
-      OR: [{ AND: tagFilters }, { curatedForCategories: { some: { categoryId: category.id, isExcluded: false } } }] 
+    const poolCondition: Prisma.EntityWhereInput = isCurated || !tagFilters.length ? {} : {
+      OR: [{ AND: tagFilters }, { curatedForCategories: { some: { categoryId: category.id, isExcluded: false } } }],
     }
 
     const rows = await db.entity.findMany({

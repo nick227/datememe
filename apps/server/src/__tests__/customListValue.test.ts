@@ -90,6 +90,18 @@ describe('user submissions join the list for everyone', () => {
     expect(saved.items.map((item) => item.entityId)).toEqual([inPoolId, customId, outsiderId])
   })
 
+  it('offers the whole type on an untagged, uncurated filtered list', async () => {
+    const open = await db.category.create({
+      data: { groupId, entityTypeId: typeId, slug: `${slug}-open`, prompt: 'Any anime?', shortLabel: 'Anime', poolMode: 'FILTERED' },
+    })
+    try {
+      const found = await taxonomy.searchCategoryEntities(`${slug}-open`, otherProfileId, {})
+      expect(found.data.map((entity) => entity.id)).toEqual(expect.arrayContaining([inPoolId, outsiderId]))
+    } finally {
+      await db.category.delete({ where: { id: open.id } })
+    }
+  })
+
   it('publishes onto a tag-filtered list and lifts an exclusion', async () => {
     const submitted = await taxonomy.submitEntity(profileId, `${slug}-filtered`, 'Cowboy Bebop')
     const customId = submitted.submittedEntity.id
