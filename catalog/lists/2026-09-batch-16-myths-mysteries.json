@@ -1,0 +1,330 @@
+[
+  {
+    "schemaVersion": 1,
+    "groupSlug": "myths-mysteries",
+    "createGroup": {
+      "label": "Myths & Mysteries"
+    },
+    "entityTypeSlug": "mystery",
+    "createEntityType": {
+      "label": "Mystery",
+      "pluralLabel": "Mysteries"
+    },
+    "title": "Unexplained Mysteries",
+    "prompt": "Which unsolved mysteries keep you up at night?",
+    "axes": [
+      "mystery",
+      "curiosity",
+      "history"
+    ],
+    "values": [
+      "Bermuda Triangle",
+      "Dyatlov Pass incident",
+      "Wow! signal",
+      "Mary Celeste",
+      "Tunguska event",
+      "Taos Hum",
+      "D. B. Cooper",
+      "Loch Ness Monster",
+      "Roswell incident",
+      "Marfa lights",
+      "Phoenix Lights",
+      "Flannan Isles lighthouse",
+      "Hessdalen lights",
+      "Kryptos"
+    ],
+    "isAbstract": false
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "myths-mysteries",
+    "entityTypeSlug": "mystery",
+    "title": "Ancient Mysteries",
+    "prompt": "Which ancient mysteries fascinate you most?",
+    "axes": [
+      "mystery",
+      "history",
+      "archaeology"
+    ],
+    "values": [
+      "Antikythera mechanism",
+      "Göbekli Tepe",
+      "Nazca Lines",
+      "Moai of Easter Island",
+      "Stonehenge",
+      "Great Pyramid of Giza",
+      "Puma Punku",
+      "Baghdad Battery",
+      "Sacsayhuamán",
+      "Newgrange",
+      "Carnac stones",
+      "Derinkuyu underground city",
+      "Longyou Caves",
+      "Great Sphinx of Giza"
+    ],
+    "isAbstract": false
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "myths-mysteries",
+    "entityTypeSlug": "civilization",
+    "createEntityType": {
+      "label": "Civilization",
+      "pluralLabel": "Civilizations"
+    },
+    "title": "Lost Civilizations",
+    "prompt": "Which lost civilization would you most want to visit?",
+    "axes": [
+      "history",
+      "mystery",
+      "travel"
+    ],
+    "values": [
+      "Minoan civilization",
+      "Indus Valley Civilisation",
+      "Olmecs",
+      "Maya civilization",
+      "Khmer Empire",
+      "Nabataeans",
+      "Great Zimbabwe",
+      "Cahokia",
+      "Etruscans",
+      "Hittites",
+      "Norte Chico",
+      "Ancestral Puebloans",
+      "Atlantis"
+    ],
+    "isAbstract": false
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "myths-mysteries",
+    "entityTypeSlug": "lost-treasure",
+    "createEntityType": {
+      "label": "Lost Treasure",
+      "pluralLabel": "Lost Treasures"
+    },
+    "title": "Legendary Lost Treasures",
+    "prompt": "Which lost treasure would you hunt for?",
+    "axes": [
+      "mystery",
+      "adventure",
+      "history"
+    ],
+    "values": [
+      "Amber Room",
+      "El Dorado",
+      "Oak Island money pit",
+      "Treasure of Lima",
+      "Knights Templar treasure",
+      "Ark of the Covenant",
+      "Holy Grail",
+      "Lost Dutchman's Gold Mine",
+      "Yamashita's gold",
+      "Kruger Millions",
+      "Blackbeard's treasure",
+      "Flor de la Mar",
+      "Beale ciphers",
+      "Library of Ivan the Terrible"
+    ],
+    "isAbstract": false
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "myths-mysteries",
+    "entityTypeSlug": "secret-society",
+    "createEntityType": {
+      "label": "Secret Society",
+      "pluralLabel": "Secret Societies"
+    },
+    "title": "Secret Societies",
+    "prompt": "Which secret society would you join, if they'd have you?",
+    "axes": [
+      "mystery",
+      "history",
+      "esoteric"
+    ],
+    "values": [
+      "Freemasons",
+      "Rosicrucians",
+      "Bavarian Illuminati",
+      "Knights Templar",
+      "Skull and Bones",
+      "Hermetic Order of the Golden Dawn",
+      "Hellfire Club",
+      "Ordo Templi Orientis",
+      "Bohemian Club",
+      "Carbonari",
+      "Order of Assassins",
+      "Priory of Sion",
+      "Odd Fellows"
+    ],
+    "isAbstract": false
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "history-politics",
+    "entityTypeSlug": "secret-operation",
+    "createEntityType": {
+      "label": "Secret Operation",
+      "pluralLabel": "Secret Operations"
+    },
+    "title": "Declassified Secret Operations",
+    "prompt": "Which declassified secret operation is the wildest?",
+    "axes": [
+      "history",
+      "mystery",
+      "politics"
+    ],
+    "values": [
+      "Operation Mincemeat",
+      "MKUltra",
+      "Ghost Army",
+      "Project Blue Book",
+      "Manhattan Project",
+      "Operation Paperclip",
+      "Bletchley Park codebreaking",
+      "Operation Northwoods",
+      "Project Azorian",
+      "Canadian Caper",
+      "Operation Fortitude",
+      "Stargate Project",
+      "COINTELPRO",
+      "Acoustic Kitty"
+    ],
+    "isAbstract": false
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "myths-mysteries",
+    "entityTypeSlug": "mythology",
+    "createEntityType": {
+      "label": "Mythology",
+      "pluralLabel": "Mythologies"
+    },
+    "title": "Favorite Mythologies",
+    "prompt": "Which mythologies do you love most?",
+    "axes": [
+      "mythology",
+      "stories",
+      "culture"
+    ],
+    "values": [
+      "Greek mythology",
+      "Norse mythology",
+      "Egyptian mythology",
+      "Celtic mythology",
+      "Japanese mythology",
+      "Hindu mythology",
+      "Aztec mythology",
+      "Mesopotamian mythology",
+      "Slavic mythology",
+      "Chinese mythology",
+      "Yoruba mythology",
+      "Polynesian mythology",
+      "Arthurian legend",
+      "Maya mythology"
+    ],
+    "isAbstract": false
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "myths-mysteries",
+    "entityTypeSlug": "mythical-creature",
+    "createEntityType": {
+      "label": "Mythical Creature",
+      "pluralLabel": "Mythical Creatures"
+    },
+    "title": "Mythical Creatures",
+    "prompt": "Which mythical creatures are your favorites?",
+    "axes": [
+      "mythology",
+      "imagination",
+      "fantasy"
+    ],
+    "values": [
+      "Dragon",
+      "Phoenix",
+      "Kraken",
+      "Kitsune",
+      "Wendigo",
+      "Basilisk",
+      "Griffin",
+      "Unicorn",
+      "Mermaid",
+      "Minotaur",
+      "Banshee",
+      "Chupacabra",
+      "Thunderbird",
+      "Kappa"
+    ],
+    "isAbstract": false
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "myths-mysteries",
+    "entityTypeSlug": "esoteric-practice",
+    "createEntityType": {
+      "label": "Esoteric Practice",
+      "pluralLabel": "Esoteric Practices"
+    },
+    "title": "Esoteric Practices",
+    "prompt": "Which esoteric practices are you into?",
+    "axes": [
+      "esoteric",
+      "spirituality",
+      "values"
+    ],
+    "values": [
+      "Tarot",
+      "Astrology",
+      "Alchemy",
+      "Numerology",
+      "Lucid dreaming",
+      "Runes",
+      "Kabbalah",
+      "Hermeticism",
+      "I Ching",
+      "Palmistry",
+      "Crystal healing",
+      "Sigil magic",
+      "Astral projection",
+      "Chaos magic",
+      "None of these"
+    ],
+    "isAbstract": true
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "myths-mysteries",
+    "entityTypeSlug": "mysterious-text",
+    "createEntityType": {
+      "label": "Mysterious Text",
+      "pluralLabel": "Mysterious Texts"
+    },
+    "title": "Forbidden Books",
+    "prompt": "Which forbidden or mysterious books would you most want to read?",
+    "axes": [
+      "esoteric",
+      "books",
+      "mystery"
+    ],
+    "values": [
+      "Voynich manuscript",
+      "Codex Gigas",
+      "Book of Enoch",
+      "Emerald Tablet",
+      "Corpus Hermeticum",
+      "Key of Solomon",
+      "Lesser Key of Solomon",
+      "Picatrix",
+      "Book of Abramelin",
+      "Necronomicon",
+      "Egyptian Book of the Dead",
+      "Codex Seraphinianus",
+      "Rohonc Codex",
+      "Book of Soyga"
+    ],
+    "isAbstract": false
+  }
+]
