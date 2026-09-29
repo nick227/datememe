@@ -552,11 +552,18 @@ components:
     # ── Messaging ─────────────────────────────────────────
     Conversation:
       type: object
-      required: [id, status, initiatedById, participants, participantReadState, lastMessageAt, lastMessageBody, hasUnread]
+      required: [id, type, status, initiatedById, participants, participantReadState, lastMessageAt, lastMessageBody, hasUnread]
       properties:
         id: { type: string }
+        type:
+          type: string
+          enum: [USER, SYSTEM]
+          description: SYSTEM is the viewer's one-person Activity thread.
         status: { type: string, enum: [PENDING, ACCEPTED, DECLINED, BLOCKED] }
-        initiatedById: { type: string }
+        initiatedById:
+          type: string
+          nullable: true
+          description: Null on the SYSTEM conversation.
         participants:
           type: array
           items: { $ref: '#/components/schemas/Profile' }
@@ -590,6 +597,7 @@ components:
         attachments:
           type: array
           nullable: true
+          description: Media on a person's message. Always null on system (activity) messages — see `systemData`.
           items:
             type: object
             required: [type, url]
@@ -599,6 +607,35 @@ components:
               mimeType: { type: string }
               width: { type: integer }
               height: { type: integer }
+        systemMessageType:
+          type: string
+          nullable: true
+          enum: [LIKE, MATCH, ACTIVITY_DIGEST, null]
+          description: Set on activity messages in the SYSTEM conversation; null on a person's message.
+        systemData:
+          type: object
+          nullable: true
+          additionalProperties: true
+          description: Structured data of an activity message (null on a person's message). Stored in the message's attachments column; returned here so `attachments` keeps one meaning.
+          properties:
+            eventKey: { type: string }
+            event:
+              type: object
+              additionalProperties: true
+              properties:
+                type: { type: string, description: 'PROFILE_LIKED, PROFILE_LIKED_YOU, MATCH, LIST_COMPLETED, …' }
+            cta:
+              type: object
+              required: [label, route]
+              properties:
+                label: { type: string }
+                route: { type: string }
+                params:
+                  type: object
+                  additionalProperties: { type: string }
+            notify: { type: boolean }
+            insightSetId: { type: string }
+            fingerprint: { type: string }
         locked: { type: boolean }
         createdAt: { type: string, format: date-time }
 

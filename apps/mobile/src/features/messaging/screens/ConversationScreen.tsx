@@ -30,7 +30,7 @@ import { hapticLight, hapticSuccess } from '../../../lib/haptics'
 type Props = NativeStackScreenProps<MessagesStackParamList, 'Conversation'>
 
 function systemEventTitle(item: any) {
-  switch (item.attachments?.event?.type) {
+  switch (item.systemData?.event?.type) {
     case 'PROFILE_LIKED': return 'Like sent'
     case 'PROFILE_LIKED_YOU': return 'New like'
     case 'MATCH': return 'Match'
@@ -314,14 +314,14 @@ export function ConversationScreen({ route, navigation }: Props) {
           onEndReached={() => messages.hasNextPage && messages.fetchNextPage()}
           renderItem={({ item, index }) => {
             if (isSystemThread) {
-              const cta = item.attachments?.cta
+              const cta = item.systemData?.cta
               const actionable = supportsSystemCta(cta)
               return (
                 <View style={styles.systemCardContainer}>
                   <View style={styles.systemCard}>
                     <Text style={styles.systemCardTitle}>{systemEventTitle(item)}</Text>
                     <Text style={styles.systemCardBody}>{item.body}</Text>
-                    {actionable && (
+                    {actionable && cta && (
                       <Pressable testID={`conversation.system.${item.id}.cta`} style={styles.systemCardCta} onPress={() => handleSystemCta(cta)}>
                         <Text style={styles.systemCardCtaText}>{cta.label}</Text>
                       </Pressable>

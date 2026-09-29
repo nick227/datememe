@@ -60,6 +60,8 @@ export function serializeConversation(conversation: any, viewerProfileId: string
   }
 }
 
+const isPlainObject = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v)
+
 function serializeMessage(message: any, viewerProfileId: string, entitlements: Entitlements) {
   const isSystem = !!message.systemMessageType
   const isOwn = message.senderId === viewerProfileId
@@ -68,9 +70,12 @@ function serializeMessage(message: any, viewerProfileId: string, entitlements: E
     id: message.id,
     conversationId: message.conversationId,
     senderId: message.senderId,
-    systemMessageType: message.systemMessageType,
+    systemMessageType: message.systemMessageType ?? null,
     body: locked ? null : message.body,
-    attachments: locked ? null : message.attachments,
+    // One column, two meanings: media on a person's message, structured event data
+    // on an activity message. The API keeps them apart (attachments vs systemData).
+    attachments: locked || isSystem || !Array.isArray(message.attachments) ? null : message.attachments,
+    systemData: isSystem && isPlainObject(message.attachments) ? message.attachments : null,
     locked,
     createdAt: message.createdAt,
   }

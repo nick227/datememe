@@ -7,6 +7,7 @@ import { resolve } from 'path'
 import { db } from '@project/db'
 import * as handlers from '../handlers'
 import * as security from '../plugins/security'
+import { MessagingService } from '../services/MessagingService'
 
 /**
  * Regression guard for a bug class that has hit this codebase four separate
@@ -464,5 +465,30 @@ describe('OpenAPI response contract — real serialization, not just service obj
     await db.profile.deleteMany({ where: { userId: targetUser.id } })
     await db.user.deleteMany({ where: { id: targetUser.id } })
     await db.plan.delete({ where: { id: plan.id } })
+  })
+
+  it('an activity message serializes (systemData, not attachments) through GET /conversations/:id/messages', async () => {
+    // Activity rows keep their event/CTA object in the attachments column; the
+    // schema types attachments as a media array, so returning it there 500'd.
+    const app = await buildRealApiApp()
+    const profile = await db.profile.findUniqueOrThrow({ where: { userId: adminUser.id } })
+    const { conversationId } = await new MessagingService().recordSystemActivity(profile.id, {
+      type: 'LIST_COMPLETED', eventKey: `contract-${Date.now()}`, title: 'Top Movies', categoryId: 'c1', categorySlug: 'top-movies', listId: 'l1',
+    })
+    try {
+      const res = await app.inject({ method: 'GET', url: `/conversations/${conversationId}/messages?limit=30`, headers: { authorization: `Bearer ${adminSession.token}` } })
+      expect(res.statusCode).toBe(200)
+      const [message] = res.json().data
+      const inbox = await app.inject({ method: 'GET', url: '/conversations', headers: { authorization: `Bearer ${adminSession.token}` } })
+      expect(inbox.statusCode).toBe(200)
+      expect(inbox.json().data.find((c: any) => c.id === conversationId)).toMatchObject({ type: 'SYSTEM', initiatedById: null })
+      expect(message.attachments).toBeNull()
+      expect(message.systemMessageType).toBe('ACTIVITY_DIGEST')
+      expect(message.systemData).toMatchObject({ event: { type: 'LIST_COMPLETED' }, cta: { route: 'ListBuilder', params: { categorySlug: 'top-movies' } } })
+    } finally {
+      await db.message.deleteMany({ where: { conversationId } })
+      await db.conversationParticipant.deleteMany({ where: { conversationId } })
+      await db.conversation.delete({ where: { id: conversationId } })
+    }
   })
 })

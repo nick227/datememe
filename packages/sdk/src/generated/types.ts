@@ -1853,9 +1853,15 @@ export interface components {
         };
         Conversation: {
             id: string;
+            /**
+             * @description SYSTEM is the viewer's one-person Activity thread.
+             * @enum {string}
+             */
+            type: "USER" | "SYSTEM";
             /** @enum {string} */
             status: "PENDING" | "ACCEPTED" | "DECLINED" | "BLOCKED";
-            initiatedById: string;
+            /** @description Null on the SYSTEM conversation. */
+            initiatedById: string | null;
             participants: components["schemas"]["Profile"][];
             /** @description Per-participant last-read timestamp, used to derive "Seen" state on the client without a per-message read model. */
             participantReadState: {
@@ -1875,6 +1881,7 @@ export interface components {
             senderId: string;
             /** @description Null when `locked` is true — free-tier recipient, see docs §8. */
             body?: string | null;
+            /** @description Media on a person's message. Always null on system (activity) messages — see `systemData`. */
             attachments?: {
                 /** @enum {string} */
                 type: "image" | "video";
@@ -1883,6 +1890,33 @@ export interface components {
                 width?: number;
                 height?: number;
             }[] | null;
+            /**
+             * @description Set on activity messages in the SYSTEM conversation; null on a person's message.
+             * @enum {string|null}
+             */
+            systemMessageType?: "LIKE" | "MATCH" | "ACTIVITY_DIGEST" | null;
+            /** @description Structured data of an activity message (null on a person's message). Stored in the message's attachments column; returned here so `attachments` keeps one meaning. */
+            systemData?: ({
+                eventKey?: string;
+                event?: {
+                    /** @description PROFILE_LIKED, PROFILE_LIKED_YOU, MATCH, LIST_COMPLETED, … */
+                    type?: string;
+                } & {
+                    [key: string]: unknown;
+                };
+                cta?: {
+                    label: string;
+                    route: string;
+                    params?: {
+                        [key: string]: string;
+                    };
+                };
+                notify?: boolean;
+                insightSetId?: string;
+                fingerprint?: string;
+            } & {
+                [key: string]: unknown;
+            }) | null;
             locked: boolean;
             /** Format: date-time */
             createdAt: string;
