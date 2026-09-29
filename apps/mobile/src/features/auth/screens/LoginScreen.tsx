@@ -41,10 +41,10 @@ export function LoginScreen({ navigation }: Props) {
       <View style={{ flex: 1, justifyContent: 'center' }}>
         <View style={styles.card}>
           <Typography variant="display" style={{ marginBottom: spacing.xs }}>
-            Good to see you again
+            DATEMEME
           </Typography>
           <Typography variant="bodyMuted" style={{ marginBottom: spacing.xl }}>
-            Log in to pick up where you left off.
+            Meet, share and connect with others
           </Typography>
           <GoogleAuthButton onPress={handleGooglePress} />
           <OrDivider />
@@ -80,8 +80,6 @@ export function LoginScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.surface,
-    borderWidth: borderWidth.thick,
-    borderColor: colors.ink,
     padding: spacing.xl,
   },
 })

@@ -1,5 +1,4 @@
-import { db } from '@project/db'
-
+import { db, Prisma } from '@project/db'
 export async function updateTaxonomyJob(payload: {
   addedEntities: string[]
   removedEntities: string[]
@@ -14,25 +13,41 @@ export async function updateTaxonomyJob(payload: {
     allAffectedEntities = Array.from(new Set([...allAffectedEntities, ...currentEntityIds]))
   }
 
+  if (allAffectedEntities.length === 0) return
+
+  const globalCounts = await db.$queryRaw<any[]>`
+    SELECT li.entityId as entityId, COUNT(DISTINCT l.profileId) as usageCount
+    FROM ListItem li
+    JOIN List l ON l.id = li.listId
+    WHERE li.entityId IN (${Prisma.join(allAffectedEntities)})
+      AND l.isComplete = 1
+    GROUP BY li.entityId
+  `
+
+  const categoryCounts = await db.$queryRaw<any[]>`
+    SELECT li.entityId as entityId, l.categoryId as categoryId, COUNT(DISTINCT l.profileId) as usageCount
+    FROM ListItem li
+    JOIN List l ON l.id = li.listId
+    WHERE li.entityId IN (${Prisma.join(allAffectedEntities)})
+      AND l.isComplete = 1
+    GROUP BY li.entityId, l.categoryId
+  `
+
+  const globalCountMap = new Map<string, number>()
+  for (const r of globalCounts) {
+    globalCountMap.set(r.entityId, Number(r.usageCount))
+  }
+
+  const categoryCountMap = new Map<string, Record<string, number>>()
+  for (const r of categoryCounts) {
+    if (!categoryCountMap.has(r.entityId)) categoryCountMap.set(r.entityId, {})
+    categoryCountMap.get(r.entityId)![r.categoryId] = Number(r.usageCount)
+  }
+
   // We loop to avoid massive transactions and handle each entity idempotently.
   for (const entityId of allAffectedEntities) {
-    const items = await db.listItem.findMany({
-      where: { entityId, list: { isComplete: true } },
-      select: { list: { select: { profileId: true, categoryId: true } } }
-    })
-    const distinctProfilesGlobal = new Set(items.map(item => item.list.profileId)).size
-    
-    const usageByCategory: Record<string, number> = {}
-    // Group by categoryId, then count distinct profiles
-    const categoryProfiles = new Map<string, Set<string>>()
-    for (const item of items) {
-      const catId = item.list.categoryId
-      if (!categoryProfiles.has(catId)) categoryProfiles.set(catId, new Set())
-      categoryProfiles.get(catId)!.add(item.list.profileId)
-    }
-    for (const [catId, profiles] of categoryProfiles.entries()) {
-      usageByCategory[catId] = profiles.size
-    }
+    const distinctProfilesGlobal = globalCountMap.get(entityId) ?? 0
+    const usageByCategory = categoryCountMap.get(entityId) ?? {}
 
     await db.$transaction(async (tx) => {
       await tx.entity.update({

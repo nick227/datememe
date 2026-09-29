@@ -41,39 +41,42 @@ export async function rankingsRebuildJob() {
   const minTakes = rankingsMinTakes()
   const now = new Date()
 
-  // Ranked lists: maxItems - rank + 1 (on a 5-slot list #1 is worth 5x #5).
-  // Unranked lists: a pick is a pick — their "rank" is only tap order.
-  const rows = await db.$queryRawUnsafe<Row[]>(`
-    SELECT l.categoryId AS categoryId, e.id AS entityId,
-      CAST(SUM(CASE WHEN c.orderingMode = 'RANKED' THEN GREATEST(1, c.maxItems - li.rank + 1) ELSE 1 END) AS SIGNED) AS score,
-      CAST(COUNT(DISTINCT l.profileId) AS SIGNED) AS pickCount,
-      CAST(COUNT(DISTINCT CASE WHEN li.rank = 1 THEN l.profileId END) AS SIGNED) AS firstPlaceCount
-    ${ELIGIBLE}
-    GROUP BY l.categoryId, e.id
-  `)
-  const takes = await db.$queryRawUnsafe<{ categoryId: string; takeCount: number }[]>(`
-    SELECT l.categoryId AS categoryId, CAST(COUNT(DISTINCT l.id) AS SIGNED) AS takeCount
-    ${ELIGIBLE}
-    GROUP BY l.categoryId
-  `)
-
-  const takeCountByCategory = new Map(takes.map((t) => [t.categoryId, Number(t.takeCount)]))
-  const rowsByCategory = new Map<string, Row[]>()
-  for (const r of rows) {
-    const row = { ...r, score: Number(r.score), pickCount: Number(r.pickCount), firstPlaceCount: Number(r.firstPlaceCount) }
-    if (!rowsByCategory.has(r.categoryId)) rowsByCategory.set(r.categoryId, [])
-    rowsByCategory.get(r.categoryId)!.push(row)
-  }
-
   const categories = await db.category.findMany({ select: { id: true, isActive: true, popularityCount: true, topPickEntityId: true } })
   let published = 0
 
   for (const category of categories) {
-    const takeCount = category.isActive ? takeCountByCategory.get(category.id) ?? 0 : 0
+    let takeCount = 0
+    let ranked: Row[] = []
+
+    if (category.isActive) {
+      const takeRow = await db.$queryRawUnsafe<{ takeCount: number }[]>(`
+        SELECT CAST(COUNT(DISTINCT l.id) AS SIGNED) AS takeCount
+        ${ELIGIBLE} AND c.id = ?
+      `, category.id)
+      
+      takeCount = Number(takeRow[0]?.takeCount || 0)
+      
+      if (takeCount >= minTakes) {
+        const rows = await db.$queryRawUnsafe<Row[]>(`
+          SELECT l.categoryId AS categoryId, e.id AS entityId,
+            CAST(SUM(CASE WHEN c.orderingMode = 'RANKED' THEN GREATEST(1, c.maxItems - li.rank + 1) ELSE 1 END) AS SIGNED) AS score,
+            CAST(COUNT(DISTINCT l.profileId) AS SIGNED) AS pickCount,
+            CAST(COUNT(DISTINCT CASE WHEN li.rank = 1 THEN l.profileId END) AS SIGNED) AS firstPlaceCount
+          ${ELIGIBLE} AND c.id = ?
+          GROUP BY l.categoryId, e.id
+          ORDER BY score DESC, pickCount DESC, firstPlaceCount DESC, e.id ASC
+        `, category.id)
+        
+        ranked = rows.map(r => ({
+          ...r,
+          score: Number(r.score),
+          pickCount: Number(r.pickCount),
+          firstPlaceCount: Number(r.firstPlaceCount)
+        }))
+      }
+    }
+
     const isPublished = takeCount >= minTakes
-    const ranked = (rowsByCategory.get(category.id) ?? []).sort(
-      (a, b) => b.score - a.score || b.pickCount - a.pickCount || b.firstPlaceCount - a.firstPlaceCount || a.entityId.localeCompare(b.entityId),
-    )
     const topPickEntityId = isPublished ? ranked[0]?.entityId ?? null : null
 
     await db.$transaction(async (tx) => {
