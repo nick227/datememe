@@ -1,4 +1,4 @@
-import { curatedPool } from '../lib/categoryPool'
+import { viewerCategoryPool } from '../lib/categoryPool'
 import { db, Prisma } from '@project/db'
 import { decodeOffsetCursor, encodeOffsetCursor, normalizeLimit } from '../lib/pagination'
 import { similarity } from '../lib/levenshtein'
@@ -136,8 +136,7 @@ export class TaxonomyService {
     const rows = await db.entity.findMany({
       where: {
         entityTypeId: category.entityTypeId,
-        ...curatedPool(category),
-        AND: [poolCondition, { OR: statusOr }, ...(searchOr ? [{ OR: searchOr }] : [])],
+        AND: [viewerCategoryPool(category, viewerProfileId), poolCondition, { OR: statusOr }, ...(searchOr ? [{ OR: searchOr }] : [])],
       },
       // Alphabetically APPROVED < PENDING < REJECTED, so this also puts live entities
       // first without a separate CASE expression — documented, not accidental.
