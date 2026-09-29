@@ -3,6 +3,9 @@ import { db } from '@project/db'
 import { LIST_PREVIEW_SELECT, serializeListForViewer } from '../lib/serializers'
 import { resolveEntitlements } from '../lib/entitlements'
 import { isBlockedEitherWay } from '../lib/blocks'
+import { SystemActivityService } from './SystemActivityService'
+
+const systemActivity = new SystemActivityService()
 
 export class ListService {
   async getMyLists(profileId: string) {
@@ -68,7 +71,7 @@ export class ListService {
 
     const isComplete = input.isComplete ?? input.items.length >= category.minItems
 
-    const list = await db.$transaction(async (tx) => {
+    const result = await db.$transaction(async (tx) => {
       const existing = await tx.list.findUnique({
         where: { profileId_categoryId: { profileId, categoryId: category.id } },
       })
@@ -80,9 +83,9 @@ export class ListService {
         create: { profileId, categoryId: category.id, isComplete, completedAt: isComplete ? new Date() : null },
       })
 
-      const previousItems = await tx.listItem.findMany({ 
+      const previousItems = await tx.listItem.findMany({
         where: { listId: upserted.id },
-        select: { entityId: true }
+        select: { entityId: true },
       })
       const previousEntityIds = previousItems.map((i) => i.entityId)
 
@@ -103,7 +106,7 @@ export class ListService {
       const currentSet = new Set(entityIds)
       const added = entityIds.filter((id) => !previousSet.has(id))
       const removed = previousEntityIds.filter((id) => !currentSet.has(id))
-      
+
       let isCompleteDiff: 1 | -1 | 0 = 0
       if (isComplete && !wasComplete) isCompleteDiff = 1
       else if (!isComplete && wasComplete) isCompleteDiff = -1
@@ -111,12 +114,12 @@ export class ListService {
       const jobsToCreate: any[] = [
         {
           type: 'UPDATE_TAXONOMY',
-          payload: { addedEntities: added, removedEntities: removed, categoryId: category.id, isCompleteDiff, currentEntityIds: entityIds }
+          payload: { addedEntities: added, removedEntities: removed, categoryId: category.id, isCompleteDiff, currentEntityIds: entityIds },
         },
         {
           type: 'CALCULATE_MATCHES',
-          payload: { profileId }
-        }
+          payload: { profileId },
+        },
       ]
 
       // No rankings job here: site Rankings (and Category.popularityCount /
@@ -125,9 +128,22 @@ export class ListService {
 
       await tx.jobQueue.createMany({ data: jobsToCreate })
 
-      return tx.list.findUniqueOrThrow({ where: { id: upserted.id }, select: LIST_PREVIEW_SELECT })
+      const list = await tx.list.findUniqueOrThrow({ where: { id: upserted.id }, select: LIST_PREVIEW_SELECT })
+      return { list, becameComplete: isComplete && !wasComplete }
     })
 
-    return serializeListForViewer(list, profileId)
+    // Only the first completed submission becomes activity. Editing a completed
+    // list later should not spam the user's history; the event itself is also
+    // idempotent in case this request is retried.
+    if (result.becameComplete) {
+      await systemActivity.recordListCompleted(profileId, {
+        id: category.id,
+        slug: category.slug,
+        shortLabel: category.shortLabel,
+        orderingMode: category.orderingMode,
+      })
+    }
+
+    return serializeListForViewer(result.list, profileId)
   }
 }
