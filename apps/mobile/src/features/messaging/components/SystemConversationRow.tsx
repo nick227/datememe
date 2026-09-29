@@ -36,7 +36,7 @@ export function SystemConversationRow({
   return (
     <Pressable testID={`conversations.system.${conversationId}`} style={styles.row} onPress={onPress}>
       <View style={[styles.avatar, isUnread ? styles.avatarUnread : styles.avatarRead]}>
-        <Icon name="Bell" size={24} color={isUnread ? colors.white : colors.inkMuted} />
+        <Icon name="ListChecks" size={24} color={isUnread ? colors.white : colors.inkMuted} />
       </View>
       <View style={styles.contentColumn}>
         <View style={styles.rowHeader}>
@@ -50,9 +50,9 @@ export function SystemConversationRow({
           )}
         </View>
         <View style={styles.rowSub}>
-          <Typography 
-            variant="bodyMuted" 
-            numberOfLines={1} 
+          <Typography
+            variant="bodyMuted"
+            numberOfLines={1}
             style={[styles.snippet, isUnread && styles.unreadSnippet]}
           >
             {previewText}
@@ -65,23 +65,23 @@ export function SystemConversationRow({
 }
 
 const styles = StyleSheet.create({
-  row: { 
-    flexDirection: 'row', 
+  row: {
+    flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: spacing.md, 
+    paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
     backgroundColor: colors.surface,
     maxWidth: 800,
     width: '100%',
     alignSelf: 'center',
   },
-  avatar: { 
-    width: 56, 
-    height: 56, 
-    borderRadius: radius.pill, 
+  avatar: {
+    width: 56,
+    height: 56,
+    borderRadius: radius.pill,
     marginRight: spacing.md,
     alignItems: 'center',
-    justifyContent: 'center'
+    justifyContent: 'center',
   },
   avatarRead: {
     backgroundColor: colors.surfaceMuted,
@@ -89,9 +89,9 @@ const styles = StyleSheet.create({
   avatarUnread: {
     backgroundColor: colors.primary,
   },
-  contentColumn: { 
-    flex: 1, 
-    justifyContent: 'center' 
+  contentColumn: {
+    flex: 1,
+    justifyContent: 'center',
   },
   rowHeader: {
     flexDirection: 'row',
@@ -133,5 +133,5 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     backgroundColor: colors.primary,
     flexShrink: 0,
-  }
+  },
 })
