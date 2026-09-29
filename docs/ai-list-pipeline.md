@@ -70,6 +70,18 @@ pnpm prod:publish-catalog --dry-run
 pnpm prod:publish-catalog                 # add --identities to also resolve entity images (optional)
 ```
 
+### Publishing from a clean copy
+The preflight refuses uncommitted changes under `apps/server` and `packages/*`, even ones unrelated to the catalog. When other work is in progress, commit only the catalog files, push, and publish from a worktree of HEAD inside the repo (so the Railway CLI link still applies):
+```bash
+echo '/.pubwt/' >> .git/info/exclude            # once
+git worktree add --detach .pubwt HEAD && cd .pubwt
+pnpm install --frozen-lockfile --prefer-offline
+pnpm --filter @project/db exec prisma generate && pnpm --filter "./packages/*" build
+cp -a ../catalog/review catalog/ && cp ../.env .env   # review files are gitignored
+pnpm prod:publish-catalog                         # then pick covers in catalog/review/covers.production.json, --apply-review
+cp -a catalog/review/. ../catalog/review/ && cd .. && git worktree remove --force .pubwt
+```
+
 ## Media Safety
 13. Never fetch or store production media locally.
 14. Never use free-text first-result image matching.
