@@ -3,6 +3,9 @@ import { db } from '@project/db'
 import { LIST_PREVIEW_SELECT, serializeListForViewer } from '../lib/serializers'
 import { resolveEntitlements } from '../lib/entitlements'
 import { isBlockedEitherWay } from '../lib/blocks'
+import { MessagingService } from './MessagingService'
+
+const messagingService = new MessagingService()
 
 export class ListService {
   async getMyLists(profileId: string) {
@@ -67,12 +70,14 @@ export class ListService {
     }
 
     const isComplete = input.isComplete ?? input.items.length >= category.minItems
+    let becameComplete = false
 
     const list = await db.$transaction(async (tx) => {
       const existing = await tx.list.findUnique({
         where: { profileId_categoryId: { profileId, categoryId: category.id } },
       })
       const wasComplete = existing?.isComplete ?? false
+      becameComplete = isComplete && !wasComplete
 
       const upserted = await tx.list.upsert({
         where: { profileId_categoryId: { profileId, categoryId: category.id } },
@@ -80,9 +85,9 @@ export class ListService {
         create: { profileId, categoryId: category.id, isComplete, completedAt: isComplete ? new Date() : null },
       })
 
-      const previousItems = await tx.listItem.findMany({ 
+      const previousItems = await tx.listItem.findMany({
         where: { listId: upserted.id },
-        select: { entityId: true }
+        select: { entityId: true },
       })
       const previousEntityIds = previousItems.map((i) => i.entityId)
 
@@ -103,7 +108,7 @@ export class ListService {
       const currentSet = new Set(entityIds)
       const added = entityIds.filter((id) => !previousSet.has(id))
       const removed = previousEntityIds.filter((id) => !currentSet.has(id))
-      
+
       let isCompleteDiff: 1 | -1 | 0 = 0
       if (isComplete && !wasComplete) isCompleteDiff = 1
       else if (!isComplete && wasComplete) isCompleteDiff = -1
@@ -111,12 +116,12 @@ export class ListService {
       const jobsToCreate: any[] = [
         {
           type: 'UPDATE_TAXONOMY',
-          payload: { addedEntities: added, removedEntities: removed, categoryId: category.id, isCompleteDiff, currentEntityIds: entityIds }
+          payload: { addedEntities: added, removedEntities: removed, categoryId: category.id, isCompleteDiff, currentEntityIds: entityIds },
         },
         {
           type: 'CALCULATE_MATCHES',
-          payload: { profileId }
-        }
+          payload: { profileId },
+        },
       ]
 
       // No rankings job here: site Rankings (and Category.popularityCount /
@@ -127,6 +132,18 @@ export class ListService {
 
       return tx.list.findUniqueOrThrow({ where: { id: upserted.id }, select: LIST_PREVIEW_SELECT })
     })
+
+    if (becameComplete) {
+      await messagingService.recordSystemActivity(profileId, {
+        type: 'LIST_COMPLETED',
+        eventKey: `list-completed:${profileId}:${category.id}`,
+        title: category.shortLabel,
+        categoryId: category.id,
+        categorySlug: category.slug,
+        listId: list.id,
+        notify: false,
+      })
+    }
 
     return serializeListForViewer(list, profileId)
   }
