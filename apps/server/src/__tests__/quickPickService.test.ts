@@ -57,6 +57,7 @@ describe('QuickPickService — new QuickPickSignal schema', () => {
         prompt: 'Which do you prefer?',
         shortLabel: 'QP Category',
         isActive: true,
+        curatedEntities: { create: [{ entityId: entityA.id, sortOrder: 0 }, { entityId: entityB.id, sortOrder: 1 }] },
       },
     })
 

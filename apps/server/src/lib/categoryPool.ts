@@ -1,8 +1,6 @@
 import type { Prisma } from '@project/db'
-// Curated categories have an explicit allowlist. FILTERED categories use tags but can have explicit exclusions/inclusions.
-export function curatedPool(category: { id: string; poolMode: string }): Prisma.EntityWhereInput {
-  if (category.poolMode === 'CURATED') {
-    return { curatedForCategories: { some: { categoryId: category.id, isExcluded: false } }, mergedIntoId: null }
-  }
-  return { curatedForCategories: { none: { categoryId: category.id, isExcluded: true } }, mergedIntoId: null }
+// Every list offers exactly its CategoryEntity rows. Lists that offered every value of
+// their type ("FILTERED") were snapshotted into rows on 2026-09-29 (scripts/curate-all-lists.ts).
+export function curatedPool(category: { id: string }): Prisma.EntityWhereInput {
+  return { curatedForCategories: { some: { categoryId: category.id, isExcluded: false } }, mergedIntoId: null }
 }

@@ -108,18 +108,12 @@ export class TaxonomyService {
     viewerProfileId: string,
     opts: { q?: string; cursor?: string; limit?: number },
   ) {
-    const category = await db.category.findUnique({
-      where: { slug: categorySlug },
-      include: { requiredTags: true },
-    })
+    const category = await db.category.findUnique({ where: { slug: categorySlug }, select: { id: true } })
     if (!category) throw { statusCode: 404, message: 'Category not found' }
 
     const limit = normalizeLimit(opts.limit)
     const offset = decodeOffsetCursor(opts.cursor)
 
-    const tagFilters: Prisma.EntityWhereInput[] = category.requiredTags.map((rt) => ({
-      tags: { some: { tagId: rt.tagId } },
-    }))
     const statusOr: Prisma.EntityWhereInput[] = [
       { status: 'APPROVED' },
       { status: { in: ['PENDING', 'REJECTED'] }, submittedByProfileId: viewerProfileId },
@@ -128,18 +122,10 @@ export class TaxonomyService {
       ? [{ canonicalName: { contains: opts.q } }, { aliases: { some: { alias: { contains: opts.q } } } }]
       : null
 
-    // An untagged filtered list offers its whole type. Don't build `OR: [{ AND: [] }, …]` for it:
-    // Prisma reads an empty AND nested in an OR as false, which hid every value on those lists.
-    const isCurated = category.poolMode === 'CURATED'
-    const poolCondition: Prisma.EntityWhereInput = isCurated || !tagFilters.length ? {} : {
-      OR: [{ AND: tagFilters }, { curatedForCategories: { some: { categoryId: category.id, isExcluded: false } } }],
-    }
-
     const rows = await db.entity.findMany({
       where: {
-        entityTypeId: category.entityTypeId,
         ...curatedPool(category),
-        AND: [poolCondition, { OR: statusOr }, ...(searchOr ? [{ OR: searchOr }] : [])],
+        AND: [{ OR: statusOr }, ...(searchOr ? [{ OR: searchOr }] : [])],
       },
       // Alphabetically APPROVED < PENDING < REJECTED, so this also puts live entities
       // first without a separate CASE expression — documented, not accidental.

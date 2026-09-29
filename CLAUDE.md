@@ -115,9 +115,9 @@ Fourth bottom tab (Lists · Rankings · Discover · Messages; Profile stays on t
 
 AI-generated lists live as data in `catalog/lists/*.json`; `pnpm prod:publish-catalog` validates, publishes (locally, through the Railway MySQL proxy), resolves Wikidata identities, syncs images **inside the server container**, queues a rankings rebuild and audits — each stage an idempotent command. Full design, file format and the identity rules: `docs/ai-list-pipeline.md`. Media writes are refused outside the container (`lib/mediaIntegrity.ts`). Never add first-search-result image or QID matching.
 
-State as of 2026-09-29: 140 active lists (Batches 10–13 added 41), 0 flagged, every coverage domain at target after the minimums in `catalog/domains.json` were raised for the high-signal compatibility domains. Next batches should add depth there, not breadth.
-- **Validation refuses new values that would widen a list offering its whole type** (not curated, no tags): name it in the new list's `alsoExpands` when it's meant to grow (Top Movies, Top TV Shows), otherwise curate it first.
-- Older lists that offered a whole type are curated from `catalog/lists/2026-09-legacy-pools.json` via `catalog-backfill-pools.ts` (the importer and backfill also match a list by exact title when its slug doesn't follow it).
+State as of 2026-09-29: 171 active lists (Batches 14–16 added 31, incl. the `substances` and `myths-mysteries` groups/domains from `docs/idea-list.md`), every coverage domain at target. Substance lists are intentional; give them a "None of these" value.
+- **Every list has an explicit, editable pool** (its `CategoryEntity` rows) — no list offers "every value of its type" any more. The 43 legacy `FILTERED` lists were snapshotted in production on 2026-09-29 (`apps/server/src/scripts/curate-all-lists.ts`, backup in `~/datememe-backups/`), keeping 14 saved picks the old tag-blind save check had accepted. Admin can add/remove/reorder every list; user submissions join the list they were made from. A batch grows a broader list only via `alsoExpands` (e.g. Horror → Top Movies). `Category.poolMode` still exists but is always `CURATED` and no code reads it.
+- The importer also matches a list by exact title when its slug doesn't follow it.
 - The coverage classifier matches whole words, with per-domain `exclude` phrases.
 - **Publishing while other work is uncommitted:** the preflight refuses a dirty `apps/server`/`packages/*`, so publish from a clean worktree of HEAD (see the runbook).
 

@@ -21,10 +21,8 @@ export const ListSeedInputV1 = z.object({
   values: z.array(valueName).min(8).describe('Entity names to pre-populate (minimum 8)'),
   isAbstract: z.boolean().default(false).describe('Whether this category uses ICON media instead of photos'),
   requiredTags: z.array(z.string()).optional().describe('Optional tags required for this category'),
-  pool: z.enum(['curated', 'entity-type']).default('curated')
-    .describe("'curated' (default): the list's values are its choices. 'entity-type': every entity of the type — only for deliberately broad lists like Movies"),
   alsoExpands: z.array(z.string()).optional()
-    .describe('Titles of existing lists that offer every value of this type and are meant to gain its new values (e.g. "Top Movies"). Any other such list fails validation'),
+    .describe('Titles of existing lists of the same type that should also offer this list\'s values (e.g. "Top Movies"). A list only ever offers the values named for it'),
 })
 
 export type ListSeedInput = z.input<typeof ListSeedInputV1>
@@ -36,8 +34,10 @@ export type ImportReport = {
   categoryCreated: boolean
   entitiesCreated: string[]
   entitiesReused: string[]
-  /** Values newly added to a curated category's choices. */
+  /** Values newly added to the category's choices. */
   choicesAdded: number
+  /** alsoExpands results, e.g. "Top Movies +10". */
+  expanded: string[]
   warnings: string[]
   errors: string[]
 }
@@ -60,11 +60,11 @@ export type BatchManifest = {
 export class ListImporterService {
   /**
    * Validates and imports one list atomically. Safe to re-run: existing
-   * categories and entities are reused, never modified — except that a curated
+   * categories and entities are reused, never modified — except that a
    * category gains any of the file's values it doesn't offer yet (additive only).
    */
   async importList(input: ListSeedInput, dryRun = false, batchManifest?: BatchManifest): Promise<ImportReport> {
-    const report: ImportReport = { status: dryRun ? 'DRY_RUN' : 'SUCCESS', categoryCreated: false, entitiesCreated: [], entitiesReused: [], choicesAdded: 0, warnings: [], errors: [] }
+    const report: ImportReport = { status: dryRun ? 'DRY_RUN' : 'SUCCESS', categoryCreated: false, entitiesCreated: [], entitiesReused: [], choicesAdded: 0, expanded: [], warnings: [], errors: [] }
     const parsed = ListSeedInputV1.safeParse(input)
     if (!parsed.success) {
       report.status = 'ERROR'
@@ -108,19 +108,17 @@ export class ListImporterService {
           report.errors.push(`Title matches existing category "${existing.shortLabel}" of type '${actual?.slug}', not '${data.entityTypeSlug}'; use that type or rename the list`)
           return
         }
-        const curated = existing ? existing.poolMode === 'CURATED' : data.pool === 'curated'
-        if (existing && !curated && data.pool === 'curated') {
-          report.warnings.push(`"${existing.shortLabel}" offers every ${data.entityTypeSlug} instead of this list's values; run catalog-backfill-pools.ts`)
-        }
 
         const names = [...seen.values()]
         const resolved = entityType ? await this.resolveEntities(tx, entityType.id, names, report) : new Map<string, string>()
         if (report.errors.length) return
         for (const name of names) (resolved.has(name) ? report.entitiesReused : report.entitiesCreated).push(name)
-        const offered = existing && curated
+        const offered = existing
           ? new Set((await tx.categoryEntity.findMany({ where: { categoryId: existing.id }, select: { entityId: true } })).map((c) => c.entityId))
           : new Set<string>()
-        if (curated) report.choicesAdded = names.filter((n) => !offered.has(resolved.get(n) ?? '')).length
+        report.choicesAdded = names.filter((n) => !offered.has(resolved.get(n) ?? '')).length
+        const expansions = await this.expansionTargets(tx, data, entityType?.id, names, resolved, report)
+        if (report.errors.length) return
         // The database is the truth once an admin has edited a list (Admin → Lists):
         // a file never re-adds values the admin removed. Report the difference instead.
         const adminEditedAt = (existing?.metadata as any)?.adminEditedAt as string | undefined
@@ -146,7 +144,7 @@ export class ListImporterService {
             data: {
               groupId: group!.id, entityTypeId: entityType.id, slug: report.categorySlug!, prompt: data.prompt, shortLabel: data.title,
               minItems: 1, maxItems: 5, orderingMode: 'RANKED', axes: data.axes, isActive: true,
-              poolMode: data.pool === 'curated' ? 'CURATED' : 'FILTERED',
+              poolMode: 'CURATED',
               metadata: data.isAbstract ? { mediaKind: 'ICON' } : {},
             },
           })
@@ -164,14 +162,9 @@ export class ListImporterService {
           const entity = await tx.entity.create({ data: { entityTypeId: entityType.id, canonicalName: name, slug: key(name), sourceType: 'SEEDED', status: 'APPROVED' } })
           resolved.set(name, entity.id)
         }
-        if (curated) {
-          // The list's values are the category's choices, in the file's order.
-          const start = ((await tx.categoryEntity.aggregate({ where: { categoryId }, _max: { sortOrder: true } }))._max.sortOrder ?? -1) + 1
-          await tx.categoryEntity.createMany({
-            data: names.filter((n) => !offered.has(resolved.get(n)!)).map((n, i) => ({ categoryId: categoryId!, entityId: resolved.get(n)!, sortOrder: start + i })),
-            skipDuplicates: true,
-          })
-        }
+        // The list's values are the category's choices, in the file's order.
+        await appendChoices(tx, categoryId!, names.filter((n) => !offered.has(resolved.get(n)!)).map((n) => resolved.get(n)!))
+        for (const t of expansions) await appendChoices(tx, t.id, names.map((n) => resolved.get(n)!).filter((id) => !t.has.has(id)))
       }
       if (dryRun) await run(db as unknown as Tx)
       else await db.$transaction(run, { timeout: 60_000 })
@@ -183,38 +176,29 @@ export class ListImporterService {
   }
 
   /**
-   * New values join their type, so an existing list that offers every value of
-   * it (not curated, no required tags) silently gains them — batches reusing
-   * pet-peeve grew Workplace Pet Peeves from 10 to 45 choices. For each such
-   * list, errors on the batch's lists that would create values of the type,
-   * unless a list of that type in the batch names it in alsoExpands (title or slug).
+   * alsoExpands: other lists of the same type that should offer this list's values too
+   * ("Favorite Horror Movies" → "Top Movies"). Nothing joins a list implicitly; this is
+   * the explicit way to grow one. A target edited in Admin is left alone, like the list itself.
    */
-  async fullTypeExposures(batch: { list: ListSeedInput; report: ImportReport }[]) {
-    const types = new Map<string, { created: Set<string>; creators: ImportReport[]; ack: Set<string> }>()
-    for (const { list, report } of batch) {
-      const t = types.get(list.entityTypeSlug) ?? { created: new Set<string>(), creators: [], ack: new Set<string>() }
-      for (const a of list.alsoExpands ?? []) t.ack.add(a.toLowerCase())
-      if (report.status !== 'ERROR' && report.entitiesCreated.length) {
-        report.entitiesCreated.forEach((n) => t.created.add(key(n)))
-        t.creators.push(report)
-      }
-      types.set(list.entityTypeSlug, t)
-    }
-    for (const [slug, t] of types) {
-      if (!t.created.size) continue
-      const type = await db.entityType.findUnique({ where: { slug }, select: { id: true } })
-      if (!type) continue // created by this batch: no list offers it yet
-      const exposed = await db.category.findMany({
-        where: { entityTypeId: type.id, isActive: true, poolMode: { not: 'CURATED' }, requiredTags: { none: {} } },
-        select: { slug: true, shortLabel: true },
+  private async expansionTargets(tx: Tx, data: z.output<typeof ListSeedInputV1>, entityTypeId: string | undefined, names: string[], resolved: Map<string, string>, report: ImportReport) {
+    const targets: { id: string; has: Set<string> }[] = []
+    for (const title of data.alsoExpands ?? []) {
+      const t = await tx.category.findFirst({
+        where: { OR: [{ shortLabel: title }, { slug: key(title) }] },
+        select: { id: true, shortLabel: true, entityTypeId: true, metadata: true, curatedEntities: { select: { entityId: true } } },
       })
-      if (!exposed.length) continue
-      const now = await db.entity.count({ where: { entityTypeId: type.id, status: 'APPROVED', mergedIntoId: null } })
-      for (const c of exposed.filter((c) => !t.ack.has(c.shortLabel.toLowerCase()) && !t.ack.has(c.slug))) {
-        const error = `Adds ${t.created.size} value(s) to type '${slug}', which "${c.shortLabel}" offers in full; publishing would expand it from ${now} to ${now + t.created.size} choices. Curate it (catalog-backfill-pools.ts), or add "alsoExpands": ["${c.shortLabel}"] if it is meant to grow`
-        for (const r of t.creators) { r.errors.push(error); r.status = 'ERROR' }
+      if (!t) { report.errors.push(`alsoExpands: no list titled "${title}"`); continue }
+      if (t.entityTypeId !== entityTypeId) { report.errors.push(`alsoExpands: "${t.shortLabel}" is a list of another type`); continue }
+      const has = new Set(t.curatedEntities.map((c) => c.entityId)) // excluded rows count: never re-add what was removed
+      const adding = names.filter((n) => !has.has(resolved.get(n) ?? '')).length
+      if ((t.metadata as any)?.adminEditedAt) {
+        if (adding) report.warnings.push(`alsoExpands: "${t.shortLabel}" was edited in Admin; not adding ${adding} value(s)`)
+        continue
       }
+      if (adding) report.expanded.push(`${t.shortLabel} +${adding}`)
+      targets.push({ id: t.id, has })
     }
+    return targets
   }
 
   /**
@@ -242,4 +226,10 @@ export class ListImporterService {
     }
     return resolved
   }
+}
+
+async function appendChoices(tx: Tx, categoryId: string, entityIds: string[]) {
+  if (!entityIds.length) return
+  const start = ((await tx.categoryEntity.aggregate({ where: { categoryId }, _max: { sortOrder: true } }))._max.sortOrder ?? -1) + 1
+  await tx.categoryEntity.createMany({ data: entityIds.map((entityId, i) => ({ categoryId, entityId, sortOrder: start + i })), skipDuplicates: true })
 }

@@ -202,10 +202,8 @@ export class QuickPickService {
     if (contextType === 'CATEGORY') {
       const category = await db.category.findUnique({ where: { id: contextId } });
       if (!category) throw { statusCode: 404, message: 'Category not found' };
-      if (category.poolMode === 'CURATED') {
-        const count = await db.entity.count({ where: { id: { in: [winnerEntityId, loserEntityId] }, entityTypeId: category.entityTypeId, status: 'APPROVED', ...curatedPool(category) } });
-        if (count !== 2) throw { statusCode: 400, message: 'Values are not in this curated list' };
-      }
+      const count = await db.entity.count({ where: { id: { in: [winnerEntityId, loserEntityId] }, entityTypeId: category.entityTypeId, status: 'APPROVED', ...curatedPool(category) } });
+      if (count !== 2) throw { statusCode: 400, message: 'Values are not in this list' };
     }
     if (winnerEntityId === loserEntityId) throw { statusCode: 400, message: 'Winner and loser must differ' };
     const { entity1Id, entity2Id } = this.getCanonicalPair(winnerEntityId, loserEntityId);
@@ -265,7 +263,7 @@ export class QuickPickService {
     if (contextType === 'CATEGORY') {
       const category = await db.category.findUnique({ where: { id: contextId } });
       if (!category) throw { statusCode: 404, message: 'Category not found' };
-      if (category.poolMode === 'CURATED' && await db.entity.count({ where: { id: { in: [winnerId, loserId] }, entityTypeId: category.entityTypeId, status: 'APPROVED', ...curatedPool(category) } }) !== 2) throw { statusCode: 400, message: 'Values are not in this curated list' };
+      if (await db.entity.count({ where: { id: { in: [winnerId, loserId] }, entityTypeId: category.entityTypeId, status: 'APPROVED', ...curatedPool(category) } }) !== 2) throw { statusCode: 400, message: 'Values are not in this list' };
     }
     const canonical = this.getCanonicalPair(winnerId, loserId);
     

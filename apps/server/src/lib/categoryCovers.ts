@@ -56,7 +56,7 @@ export async function assignCategoryCovers(apply = true) {
   const categories = await db.category.findMany({
     where: { isActive: true },
     select: {
-      id: true, slug: true, poolMode: true, entityTypeId: true, popularityCount: true, metadata: true,
+      id: true, slug: true, entityTypeId: true, popularityCount: true, metadata: true,
       mediaAssets: { where: { isPrimary: true }, orderBy: { createdAt: 'desc' }, take: 1 },
     },
   })
@@ -92,18 +92,11 @@ export async function assignCategoryCovers(apply = true) {
   }
 
   for (const category of needCover) {
-    const entityImages = category.poolMode === 'CURATED'
-      ? (await db.categoryEntity.findMany({
-          where: { categoryId: category.id },
-          orderBy: { sortOrder: 'asc' },
-          select: { entity: { select: { id: true, mergedIntoId: true, mediaAssets: { where: { isPrimary: true }, take: 1 } } } },
-        })).filter((c) => !c.entity.mergedIntoId).map((c) => ({ entityId: c.entity.id, asset: c.entity.mediaAssets[0] }))
-      : (await db.entity.findMany({
-          where: { entityTypeId: category.entityTypeId, status: 'APPROVED', mergedIntoId: null, mediaAssets: { some: { isPrimary: true } } },
-          orderBy: [{ usageCount: 'desc' }, { id: 'asc' }],
-          take: 50,
-          select: { id: true, mediaAssets: { where: { isPrimary: true }, take: 1 } },
-        })).map((e) => ({ entityId: e.id, asset: e.mediaAssets[0] }))
+    const entityImages = (await db.categoryEntity.findMany({
+      where: { categoryId: category.id, isExcluded: false },
+      orderBy: { sortOrder: 'asc' },
+      select: { entity: { select: { id: true, mergedIntoId: true, mediaAssets: { where: { isPrimary: true }, take: 1 } } } },
+    })).filter((c) => !c.entity.mergedIntoId).map((c) => ({ entityId: c.entity.id, asset: c.entity.mediaAssets[0] }))
 
     const pick = entityImages.find(({ asset }) => asset && isServableAsset(asset) && !used.has(imageKey(asset)))
     if (!pick?.asset) { counts.uncovered++; continue }

@@ -933,7 +933,18 @@ async function main() {
     create: { slug: 'premium-annual', label: 'Premium Annual', interval: 'ANNUAL', priceCents: 7999 },
   })
 
-  console.log('Seeding complete.')
+  // Every list offers exactly its CategoryEntity rows. The lists above are defined by
+  // type (and tags), so a list with no rows yet gets its matching values, most-used first.
+  const empty = await db.category.findMany({ where: { curatedEntities: { none: {} } }, select: { id: true, entityTypeId: true, requiredTags: { select: { tagId: true } } } })
+  for (const c of empty) {
+    const values = await db.entity.findMany({
+      where: { entityTypeId: c.entityTypeId, status: 'APPROVED', mergedIntoId: null, AND: c.requiredTags.map((t) => ({ tags: { some: { tagId: t.tagId } } })) },
+      orderBy: [{ usageCount: 'desc' }, { canonicalName: 'asc' }],
+      select: { id: true },
+    })
+    await db.categoryEntity.createMany({ data: values.map((v, sortOrder) => ({ categoryId: c.id, entityId: v.id, sortOrder })), skipDuplicates: true })
+  }
+
   console.log('Seeding complete.')
 }
 

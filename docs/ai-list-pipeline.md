@@ -37,9 +37,9 @@ A file holds one list or an array of lists — one file per generated batch is t
 }
 ```
 - No IDs, slugs, QIDs, image URLs or database fields. Anything extra is ignored; code derives all of it.
-- **The list's `values` are its choices.** A category offers exactly those values (curated pool); re-importing with more values adds them. Only a deliberately broad list (e.g. "Movies") sets `"pool": "entity-type"` to offer every entity of the type.
+- **Every list offers exactly its own values** (its `CategoryEntity` rows); re-importing with more values adds them. No list ever offers "every value of its type" (legacy lists were snapshotted on 2026-09-29, `curate-all-lists.ts`), so a new value never appears anywhere it wasn't named. A `"pool"` field is ignored.
 - A title that matches an existing category must use that category's entity type — otherwise the import is refused.
-- **New values join their type.** An older list that offers every value of its type (not curated, no tags — e.g. "Top Movies") would silently gain them, so validation fails with "publishing would expand it from N to M choices". Curate that list (`catalog-backfill-pools.ts`, with an entry holding its values), or, when it is meant to grow, add `"alsoExpands": ["Top Movies"]` to the new list.
+- **Growing a broader list is explicit:** `"alsoExpands": ["Top Movies"]` adds this list's values to that existing list of the same type too (validation prints `also Top Movies +N`). An unknown title or a list of another type is an error; a list edited in Admin is left alone with a warning, like the list itself.
 - An unknown `groupSlug` is an error unless the list declares `"createGroup": { "label": "…" }` (same rule as `createEntityType`; other lists in the batch may then use that group).
 - Every new list needs a cover brief in `catalog/cover-briefs.json`.
 - `groupSlug` must exist. An unknown `entityTypeSlug` is an error unless `createEntityType` says the new type is intentional.

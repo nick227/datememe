@@ -13,7 +13,6 @@ export type QualityIssue = { code: IssueCode; detail: string; flagged: boolean }
 export type ListQuality = { score: number; issues: QualityIssue[]; checkedAt: string; version: number }
 
 const MIN_VALUES = 8 // the importer's minimum; a list with fewer offers little to choose from
-const BROAD_POOL = 40 // an unfiltered list offering more than this many values isn't about anything in particular
 const OVERLAP = 0.6 // Jaccard of two lists' value sets
 const TITLE_SIMILAR = 0.88
 const NEAR_DUPLICATE_BITS = 8 // dhash distance, same as the cover tooling
@@ -51,16 +50,15 @@ async function loadCatalog() {
   const lists = await db.category.findMany({
     where: { isActive: true },
     select: {
-      id: true, slug: true, shortLabel: true, prompt: true, poolMode: true, maxItems: true, popularityCount: true, createdAt: true, metadata: true, entityTypeId: true,
+      id: true, slug: true, shortLabel: true, prompt: true, maxItems: true, popularityCount: true, createdAt: true, metadata: true, entityTypeId: true,
       group: { select: { slug: true, label: true } },
       entityType: { select: { slug: true, label: true, pluralLabel: true } },
       requiredTags: { select: { tagId: true } },
-      curatedEntities: { select: { entityId: true } },
+      curatedEntities: { where: { isExcluded: false }, select: { entityId: true } },
       mediaAssets: { where: { isPrimary: true }, select: { metadata: true }, take: 1 },
     },
   })
-  const typeSizes = new Map((await db.entity.groupBy({ by: ['entityTypeId'], where: { status: 'APPROVED', mergedIntoId: null }, _count: { _all: true } })).map((g) => [g.entityTypeId, g._count._all]))
-  return { lists, typeSizes }
+  return { lists }
 }
 type Catalog = Awaited<ReturnType<typeof loadCatalog>>
 type List = Catalog['lists'][number]
@@ -70,13 +68,13 @@ const weaker = (a: List, b: List) => (a.popularityCount !== b.popularityCount ? 
 
 export async function auditCatalog(now = new Date()) {
   const catalog = await loadCatalog()
-  const { lists, typeSizes } = catalog
+  const { lists } = catalog
   const issues = new Map<string, QualityIssue[]>(lists.map((l) => [l.id, []]))
   const add = (l: List, code: IssueCode, detail: string, flagged = true) => {
     const mine = issues.get(l.id)!
     if (!mine.some((i) => i.code === code)) mine.push({ code, detail, flagged })
   }
-  const values = (l: List) => (l.poolMode === 'CURATED' ? l.curatedEntities.length : typeSizes.get(l.entityTypeId) ?? 0)
+  const values = (l: List) => l.curatedEntities.length
 
   // Pairs: repeated titles, repeated value sets, repeated cover images.
   const keys = new Map(lists.map((l) => [l.id, titleKey(l.shortLabel)]))
@@ -119,9 +117,6 @@ export async function auditCatalog(now = new Date()) {
 
   for (const l of lists) {
     const n = values(l)
-    // "Top Movies" offering every movie is the point; "Top Anime Movies" offering every movie isn't.
-    const aboutWholeType = [l.entityType.label, l.entityType.pluralLabel].some((t) => t && titleKey(t) === keys.get(l.id))
-    if (l.poolMode !== 'CURATED' && !l.requiredTags.length && n > BROAD_POOL && !aboutWholeType) add(l, 'too-broad', `Offers every ${l.entityType.label} value (${n}) instead of a chosen set`)
     if (n < Math.max(MIN_VALUES, l.maxItems)) add(l, 'needs-values', `Only ${n} values; aim for at least ${Math.max(MIN_VALUES, l.maxItems)}`)
 
     const counts = typeGroups.get(l.entityTypeId)!

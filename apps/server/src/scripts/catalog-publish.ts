@@ -56,8 +56,6 @@ async function main() {
     titles.set(titleKey, `${list.title} (${file.split('/').pop()})`)
     reports.push(report)
   }
-  // Across the batch: new values must not silently widen a list that offers its whole type.
-  await importer.fullTypeExposures(lists.map(({ list }, i) => ({ list, report: reports[i]! })))
   const invalid = reports.filter((r) => r.status === 'ERROR')
 
   if (!dryRun && !invalid.length) {
@@ -66,7 +64,7 @@ async function main() {
 
   for (const r of reports) {
     if (r.status === 'ERROR') console.log(`✗ ${r.title ?? '(invalid)'} [${r.file.split('/').pop()}]\n    ${r.errors.join('\n    ')}`)
-    else if (r.categoryCreated || r.entitiesCreated.length || r.choicesAdded) console.log(`${dryRun ? '+' : '✓'} ${r.title}: ${r.categoryCreated ? 'new category, ' : ''}${r.entitiesCreated.length} new / ${r.entitiesReused.length} existing entities${r.choicesAdded ? `, ${r.choicesAdded} choices added` : ''}`)
+    else if (r.categoryCreated || r.entitiesCreated.length || r.choicesAdded || r.expanded.length) console.log(`${dryRun ? '+' : '✓'} ${r.title}: ${r.categoryCreated ? 'new category, ' : ''}${r.entitiesCreated.length} new / ${r.entitiesReused.length} existing entities${r.choicesAdded ? `, ${r.choicesAdded} choices added` : ''}${r.expanded.length ? `; also ${r.expanded.join(', ')}` : ''}`)
     for (const w of r.status === 'ERROR' ? [] : r.warnings) console.log(`! ${r.title}: ${w}`)
   }
   const summary = {
@@ -78,7 +76,7 @@ async function main() {
     newEntities: reports.reduce((n, r) => n + (r.status === 'ERROR' ? 0 : r.entitiesCreated.length), 0),
     choicesAdded: reports.reduce((n, r) => n + (r.status === 'ERROR' ? 0 : r.choicesAdded), 0),
     warnings: reports.reduce((n, r) => n + (r.status === 'ERROR' ? 0 : r.warnings.length), 0),
-    unchangedLists: reports.filter((r) => r.status !== 'ERROR' && !r.categoryCreated && !r.entitiesCreated.length && !r.choicesAdded).length,
+    unchangedLists: reports.filter((r) => r.status !== 'ERROR' && !r.categoryCreated && !r.entitiesCreated.length && !r.choicesAdded && !r.expanded.length).length,
   }
   console.log(`CATALOG ${JSON.stringify(summary)}`)
   if (invalid.length) process.exitCode = 1

@@ -31,21 +31,19 @@ const fail = (statusCode: number, message: string, extra: Record<string, unknown
 
 const LIST_SELECT = {
   id: true, slug: true, shortLabel: true, prompt: true, isActive: true, isPremiumOnly: true, isMatchSignal: true, orderingMode: true,
-  minItems: true, maxItems: true, poolMode: true, popularityCount: true, metadata: true, updatedAt: true, entityTypeId: true,
+  minItems: true, maxItems: true, popularityCount: true, metadata: true, updatedAt: true, entityTypeId: true,
   group: { select: { id: true, label: true } },
   entityType: { select: { id: true, label: true } },
   parentEntity: { select: { id: true, canonicalName: true } },
   mediaAssets: { where: { isPrimary: true }, orderBy: { createdAt: 'desc' as const }, take: 1 },
-  _count: { select: { curatedEntities: true } },
+  _count: { select: { curatedEntities: { where: { isExcluded: false } } } },
 }
 type ListRow = Awaited<ReturnType<typeof loadLists>>[number]
 const loadLists = (where: object = {}) => db.category.findMany({ where, select: LIST_SELECT })
 
-/** Values a list offers: its curated choices, or (legacy FILTERED lists) every approved value of its type. */
-async function valueCounts(lists: ListRow[]) {
-  const filteredTypes = [...new Set(lists.filter((l) => l.poolMode !== 'CURATED').map((l) => l.entityTypeId))]
-  const perType = new Map((await Promise.all(filteredTypes.map(async (t) => [t, await db.entity.count({ where: { entityTypeId: t, status: 'APPROVED', mergedIntoId: null } })] as const))))
-  return (l: ListRow) => (l.poolMode === 'CURATED' ? l._count.curatedEntities : perType.get(l.entityTypeId) ?? 0)
+/** Values a list offers: its CategoryEntity rows. */
+async function valueCounts(_lists: ListRow[]) {
+  return (l: ListRow) => l._count.curatedEntities
 }
 
 function coverOf(l: ListRow) {
@@ -138,54 +136,17 @@ export class ListAdminService {
     const [l] = await loadLists({ id })
     if (!l) return fail(404, 'List not found')
     const valueCount = (await valueCounts([l]))(l)
-    let values: { entityId: string; name: string; isNew: boolean; status?: 'automatic' | 'added' | 'excluded' }[] = []
-    if (l.poolMode === 'CURATED') {
-      const dbValues = await db.categoryEntity.findMany({
-        where: { categoryId: id }, orderBy: { sortOrder: 'asc' },
-        select: { entity: { select: { id: true, canonicalName: true, metadata: true } } },
-      })
-      values = dbValues.map((v) => ({ entityId: v.entity.id, name: v.entity.canonicalName, isNew: (v.entity.metadata as any)?.origin?.by === 'admin' }))
-    } else {
-      // FILTERED list resolved values
-      const lWithTags = await db.category.findUnique({ where: { id }, select: { requiredTags: { select: { tagId: true } } } })
-      const tagFilters = lWithTags?.requiredTags.map((rt) => ({ tags: { some: { tagId: rt.tagId } } })) || []
-      const overrides = await db.categoryEntity.findMany({
-        where: { categoryId: id },
-        select: { isExcluded: true, entity: { select: { id: true, canonicalName: true, metadata: true } } },
-      })
-      const addedMap = new Map(overrides.filter((o) => !o.isExcluded).map((o) => [o.entity.id, o.entity]))
-      const excludedMap = new Map(overrides.filter((o) => o.isExcluded).map((o) => [o.entity.id, o.entity]))
-      
-      const automaticEntities = tagFilters.length ? await db.entity.findMany({
-        where: { entityTypeId: l.entityTypeId, status: 'APPROVED', mergedIntoId: null, AND: tagFilters },
-        select: { id: true, canonicalName: true, metadata: true },
-      }) : []
-
-      const automaticMap = new Map(automaticEntities.map((e) => [e.id, e]))
-
-      // Combine them
-      const allIds = new Set([...automaticMap.keys(), ...addedMap.keys(), ...excludedMap.keys()])
-      for (const entityId of allIds) {
-        const isExcluded = excludedMap.has(entityId)
-        const isAdded = addedMap.has(entityId)
-        const isAutomatic = automaticMap.has(entityId)
-        const e = automaticMap.get(entityId) || addedMap.get(entityId) || excludedMap.get(entityId)!
-        
-        let status: 'automatic' | 'added' | 'excluded' = 'automatic'
-        if (isExcluded) status = 'excluded'
-        else if (isAdded && !isAutomatic) status = 'added'
-        
-        values.push({ entityId, name: e.canonicalName, isNew: (e.metadata as any)?.origin?.by === 'admin', status })
-      }
-      values.sort((a, b) => a.name.localeCompare(b.name))
-    }
+    const values = (await db.categoryEntity.findMany({
+      where: { categoryId: id, isExcluded: false }, orderBy: { sortOrder: 'asc' },
+      select: { entity: { select: { id: true, canonicalName: true, metadata: true } } },
+    })).map((v) => ({ entityId: v.entity.id, name: v.entity.canonicalName, isNew: (v.entity.metadata as any)?.origin?.by === 'admin' }))
 
     const { decision, asset } = coverOf(l)
     return {
       id: l.id, slug: l.slug, title: l.shortLabel, prompt: l.prompt, group: l.group, entityType: l.entityType,
       parentEntity: l.parentEntity ? { id: l.parentEntity.id, name: l.parentEntity.canonicalName } : null,
       isActive: l.isActive, isPremiumOnly: l.isPremiumOnly, isMatchSignal: l.isMatchSignal, orderingMode: l.orderingMode,
-      minItems: l.minItems, maxItems: l.maxItems, curated: l.poolMode === 'CURATED',
+      minItems: l.minItems, maxItems: l.maxItems, curated: true,
       takes: l.popularityCount, neverPublished: (await neverPublishedIds([l])).has(l.id), valueCount,
       problems: problemsOf(l, valueCount), updatedAt: l.updatedAt.toISOString(),
       issues: flaggedIssues(l.metadata).map((i) => ({ code: QUALITY_PROBLEM[i.code] ?? i.code, detail: i.detail })),
@@ -223,7 +184,7 @@ export class ListAdminService {
   }
 
   async update(id: string, input: Record<string, unknown>, actor: Actor) {
-    const l = await db.category.findUnique({ where: { id }, select: { id: true, metadata: true, isActive: true, maxItems: true, minItems: true, poolMode: true, slug: true } })
+    const l = await db.category.findUnique({ where: { id }, select: { id: true, metadata: true, isActive: true, maxItems: true, minItems: true, slug: true } })
     if (!l) return fail(404, 'List not found')
     const str = (k: string) => (typeof input[k] === 'string' ? (input[k] as string).trim() : undefined)
     const data: Record<string, unknown> = {}
@@ -272,35 +233,16 @@ export class ListAdminService {
   async setValues(id: string, entityIds: unknown, actor: Actor) {
     if (!Array.isArray(entityIds) || entityIds.some((e) => typeof e !== 'string')) return fail(400, 'entityIds must be an array of ids')
     const ids = [...new Set(entityIds as string[])]
-    const l = await db.category.findUnique({ where: { id }, select: { entityTypeId: true, poolMode: true, metadata: true } })
+    const l = await db.category.findUnique({ where: { id }, select: { entityTypeId: true, metadata: true } })
     if (!l) return fail(404, 'List not found')
     const valid = await db.entity.count({ where: { id: { in: ids }, entityTypeId: l.entityTypeId, mergedIntoId: null } })
     if (valid !== ids.length) fail(400, 'Every value must be an unmerged value of this list\'s type')
 
-    if (l.poolMode === 'CURATED') {
-      await db.$transaction([
-        db.categoryEntity.deleteMany({ where: { categoryId: id } }),
-        db.categoryEntity.createMany({ data: ids.map((entityId, sortOrder) => ({ categoryId: id, entityId, sortOrder })) }),
-        db.category.update({ where: { id }, data: { metadata: mergeRefMetadata(l.metadata, { adminEditedAt: new Date().toISOString() }) } }),
-      ])
-    } else {
-      const lWithTags = await db.category.findUnique({ where: { id }, select: { requiredTags: { select: { tagId: true } } } })
-      const tagFilters = lWithTags?.requiredTags.map((rt) => ({ tags: { some: { tagId: rt.tagId } } })) || []
-      const automaticEntities = tagFilters.length ? await db.entity.findMany({
-        where: { entityTypeId: l.entityTypeId, status: 'APPROVED', mergedIntoId: null, AND: tagFilters },
-        select: { id: true },
-      }) : []
-      const automaticIds = new Set(automaticEntities.map((e) => e.id))
-      const inclusions = ids.filter(id => !automaticIds.has(id))
-      const exclusions = [...automaticIds].filter(id => !ids.includes(id))
-      
-      await db.$transaction([
-        db.categoryEntity.deleteMany({ where: { categoryId: id } }),
-        ...(inclusions.length > 0 ? [db.categoryEntity.createMany({ data: inclusions.map((entityId, sortOrder) => ({ categoryId: id, entityId, sortOrder, isExcluded: false })) })] : []),
-        ...(exclusions.length > 0 ? [db.categoryEntity.createMany({ data: exclusions.map((entityId) => ({ categoryId: id, entityId, sortOrder: 0, isExcluded: true })) })] : []),
-        db.category.update({ where: { id }, data: { metadata: mergeRefMetadata(l.metadata, { adminEditedAt: new Date().toISOString() }) } }),
-      ])
-    }
+    await db.$transaction([
+      db.categoryEntity.deleteMany({ where: { categoryId: id } }),
+      db.categoryEntity.createMany({ data: ids.map((entityId, sortOrder) => ({ categoryId: id, entityId, sortOrder })) }),
+      db.category.update({ where: { id }, data: { metadata: mergeRefMetadata(l.metadata, { adminEditedAt: new Date().toISOString() }) } }),
+    ])
 
     await this.audit(actor, 'set_list_values', id, { count: ids.length })
     await queueCatalogAudit()
@@ -316,21 +258,9 @@ export class ListAdminService {
    * ones are visible only to their submitter) and tagged metadata.origin.
    */
   async addValue(id: string, input: { entityId?: string; name?: string; create?: boolean }, actor: Actor) {
-    const l = await db.category.findUnique({ where: { id }, select: { entityTypeId: true, poolMode: true, curatedEntities: { select: { entityId: true, isExcluded: true }, orderBy: { sortOrder: 'asc' } }, requiredTags: { select: { tagId: true } } } })
+    const l = await db.category.findUnique({ where: { id }, select: { entityTypeId: true, curatedEntities: { where: { isExcluded: false }, select: { entityId: true }, orderBy: { sortOrder: 'asc' } } } })
     if (!l) return fail(404, 'List not found')
-    let current: string[] = []
-    if (l.poolMode === 'CURATED') {
-      current = l.curatedEntities.map((c) => c.entityId)
-    } else {
-      const tagFilters = l.requiredTags.map((rt) => ({ tags: { some: { tagId: rt.tagId } } }))
-      const automaticEntities = tagFilters.length ? await db.entity.findMany({ where: { entityTypeId: l.entityTypeId, status: 'APPROVED', mergedIntoId: null, AND: tagFilters }, select: { id: true } }) : []
-      const automaticMap = new Set(automaticEntities.map(e => e.id))
-      const explicitIncludes = new Set(l.curatedEntities.filter(c => !c.isExcluded).map(c => c.entityId))
-      const explicitExcludes = new Set(l.curatedEntities.filter(c => c.isExcluded).map(c => c.entityId))
-      for (const id of explicitIncludes) automaticMap.add(id)
-      for (const id of explicitExcludes) automaticMap.delete(id)
-      current = [...automaticMap]
-    }
+    const current = l.curatedEntities.map((c) => c.entityId)
     const add = async (entityId: string, status: 'existing' | 'created') => {
       if (current.includes(entityId)) {
         const { canonicalName } = await db.entity.findUniqueOrThrow({ where: { id: entityId }, select: { canonicalName: true } })
@@ -376,7 +306,7 @@ export class ListAdminService {
   /** A list with enough values and no cover decision gets one automatically (applied only if it clears the bar). */
   async maybeAutoCover(id: string, actor: Actor) {
     const [l] = await loadLists({ id })
-    if (!l || l.poolMode !== 'CURATED') return
+    if (!l) return
     const { decision, asset } = coverOf(l)
     if (decision || asset || l._count.curatedEntities < l.maxItems) return
     const state = covers.suggestState(l.metadata)

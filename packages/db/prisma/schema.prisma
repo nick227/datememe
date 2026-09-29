@@ -510,7 +510,7 @@ model Category {
   isMatchSignal   Boolean          @default(true)
   isPremiumOnly   Boolean          @default(false)
   isActive        Boolean          @default(true)
-  poolMode        String         @default("FILTERED")
+  poolMode        String         @default("CURATED")
   authoringDraft  CategoryDraft?
   popularityCount Int              @default(0)
   parentEntityId  String?

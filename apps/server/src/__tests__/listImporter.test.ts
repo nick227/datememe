@@ -91,11 +91,11 @@ describe('ListImporterService', () => {
     expect(await db.entity.count({ where: { entityTypeId: type.id, canonicalName: `${prefix} Brand New` } })).toBe(0)
   })
 
-  it("offers the whole type only when the list opts in with pool: 'entity-type'", async () => {
-    await importer.importList(list({ title: `${prefix} Broad`, pool: 'entity-type' }))
+  it('ignores a legacy pool: entity-type and still curates the list', async () => {
+    await importer.importList({ ...list({ title: `${prefix} Broad` }), pool: 'entity-type' } as ListSeedInput)
     const category = await db.category.findFirstOrThrow({ where: { slug: key(`${prefix} Broad`) }, include: { _count: { select: { curatedEntities: true } } } })
-    expect(category.poolMode).toBe('FILTERED')
-    expect(category._count.curatedEntities).toBe(0)
+    expect(category.poolMode).toBe('CURATED')
+    expect(category._count.curatedEntities).toBe(8)
   })
 
   it('refuses a title that matches an existing category of another type', async () => {
@@ -120,25 +120,26 @@ describe('ListImporterService', () => {
     expect(await db.entityType.findUnique({ where: { slug: `${prefix}-candy` } })).toMatchObject({ label: 'Candy', pluralLabel: 'Candies' })
   })
 
-  it('refuses new values that would silently widen a list offering its whole type', async () => {
+  it('new values join only their own list, plus the lists named in alsoExpands', async () => {
     const peeve = await db.entityType.create({ data: { slug: `${prefix}-peeve`, label: 'Peeve', pluralLabel: 'Peeves' } })
-    const wide = list({ entityTypeSlug: peeve.slug, title: `${prefix} Work Peeves`, pool: 'entity-type', values: values(`${prefix} Loud chewing`) })
-    expect((await importer.importList(wide)).status).toBe('SUCCESS')
-    const validate = async (over: Partial<ListSeedInput>) => {
-      const next = list({ entityTypeSlug: peeve.slug, title: `${prefix} Date Peeves`, ...over })
-      const report = await importer.importList(next, true)
-      await importer.fullTypeExposures([{ list: next, report }])
-      return report
-    }
-    const oneNew = values(`${prefix} Love-bombing`)
+    await importer.importList(list({ entityTypeSlug: peeve.slug, title: `${prefix} Work Peeves`, values: values(`${prefix} Loud chewing`) }))
+    const work = await db.category.findFirstOrThrow({ where: { slug: key(`${prefix} Work Peeves`) } })
+    const count = () => db.categoryEntity.count({ where: { categoryId: work.id } })
+    expect(await count()).toBe(8)
 
-    const widened = await validate({ values: oneNew })
-    expect(widened.status).toBe('ERROR')
-    expect(widened.errors.join()).toMatch(new RegExp(`"${prefix} Work Peeves" offers in full; publishing would expand it from 8 to 9 choices`))
-    expect((await validate({ values: oneNew, alsoExpands: [`${prefix} Work Peeves`] })).status).toBe('DRY_RUN')
-    expect((await validate({ values: values(`${prefix} Loud chewing`) })).status).toBe('DRY_RUN') // reuses only
+    await importer.importList(list({ entityTypeSlug: peeve.slug, title: `${prefix} Date Peeves`, values: values(`${prefix} Love-bombing`) }))
+    expect(await count()).toBe(8) // same type, not named: untouched
 
-    await db.category.update({ where: { slug: key(`${prefix} Work Peeves`) }, data: { poolMode: 'CURATED' } })
-    expect((await validate({ values: oneNew })).status).toBe('DRY_RUN')
+    const dry = await importer.importList(list({ entityTypeSlug: peeve.slug, title: `${prefix} Text Peeves`, values: values(`${prefix} Dry texting`), alsoExpands: [`${prefix} Work Peeves`] }), true)
+    expect(dry.expanded).toEqual([`${prefix} Work Peeves +1`]) // the fillers are shared and already there
+    expect(await count()).toBe(8)
+    const grown = await importer.importList(list({ entityTypeSlug: peeve.slug, title: `${prefix} Text Peeves`, values: values(`${prefix} Dry texting`), alsoExpands: [`${prefix} Work Peeves`] }))
+    expect(grown.status).toBe('SUCCESS')
+    expect(await count()).toBe(9)
+
+    const wrong = await importer.importList(list({ title: `${prefix} Wrong Target`, alsoExpands: [`${prefix} Work Peeves`] }), true)
+    expect(wrong.errors.join()).toMatch(/another type/)
+    const missing = await importer.importList(list({ entityTypeSlug: peeve.slug, title: `${prefix} Missing Target`, alsoExpands: ['No Such List'] }), true)
+    expect(missing.errors.join()).toMatch(/no list titled/)
   })
 })

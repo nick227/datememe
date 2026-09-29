@@ -38,7 +38,7 @@ describe('user submissions join the list for everyone', () => {
     })
     const filtered = await db.category.create({
       data: {
-        groupId: group.id, entityTypeId: type.id, slug: `${slug}-filtered`, prompt: 'Which 90s anime?', shortLabel: '90s Anime', poolMode: 'FILTERED',
+        groupId: group.id, entityTypeId: type.id, slug: `${slug}-filtered`, prompt: 'Which 90s anime?', shortLabel: '90s Anime', poolMode: 'CURATED',
         requiredTags: { create: { tagId: tag.id } },
       },
     })
@@ -90,19 +90,16 @@ describe('user submissions join the list for everyone', () => {
     expect(saved.items.map((item) => item.entityId)).toEqual([inPoolId, customId, outsiderId])
   })
 
-  it('offers the whole type on an untagged, uncurated filtered list', async () => {
-    const open = await db.category.create({
-      data: { groupId, entityTypeId: typeId, slug: `${slug}-open`, prompt: 'Any anime?', shortLabel: 'Anime', poolMode: 'FILTERED' },
-    })
-    try {
-      const found = await taxonomy.searchCategoryEntities(`${slug}-open`, otherProfileId, {})
-      expect(found.data.map((entity) => entity.id)).toEqual(expect.arrayContaining([inPoolId, outsiderId]))
-    } finally {
-      await db.category.delete({ where: { id: open.id } })
+  it('offers only the values named for a list, never its whole type', async () => {
+    const unnamed = await db.entity.create({ data: { entityTypeId: typeId, canonicalName: 'Never Named', slug: `${slug}-never-named`, status: 'APPROVED' } })
+    for (const list of [slug, `${slug}-filtered`]) {
+      const ids = (await taxonomy.searchCategoryEntities(list, otherProfileId, { limit: 100 })).data.map((entity) => entity.id)
+      expect(ids).not.toContain(unnamed.id)
     }
+    expect((await taxonomy.searchCategoryEntities(slug, otherProfileId, {})).data.map((entity) => entity.id)).toContain(inPoolId)
   })
 
-  it('publishes onto a tag-filtered list and lifts an exclusion', async () => {
+  it('publishes onto a tagged list and lifts an exclusion', async () => {
     const submitted = await taxonomy.submitEntity(profileId, `${slug}-filtered`, 'Cowboy Bebop')
     const customId = submitted.submittedEntity.id
     const found = await taxonomy.searchCategoryEntities(`${slug}-filtered`, otherProfileId, { q: 'Cowboy' })

@@ -59,7 +59,10 @@ describe('ContentFeedService', () => {
       entityC = await db.entity.create({ data: { entityTypeId: entityType.id, canonicalName: 'Feed Entity C', slug: `feed-entity-c-${now}`, status: 'APPROVED' } })
       group = await db.categoryGroup.create({ data: { slug: `feed-group-${now}`, label: 'Feed Group' } })
       category = await db.category.create({
-        data: { groupId: group.id, entityTypeId: entityType.id, slug: `feed-category-${now}`, prompt: 'p', shortLabel: 's', isActive: true },
+        data: {
+          groupId: group.id, entityTypeId: entityType.id, slug: `feed-category-${now}`, prompt: 'p', shortLabel: 's', isActive: true,
+          curatedEntities: { create: [entityA, entityB, entityC].map((e, sortOrder) => ({ entityId: e.id, sortOrder })) },
+        },
       })
 
       viewerUser = await makeProfile('viewer')
