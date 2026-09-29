@@ -9,7 +9,7 @@ import { EmptyState } from '../../../ui/EmptyState'
 import { ErrorState } from '../../../ui/ErrorState'
 import { TextField } from '../../../ui/TextField'
 import { ActionSheet, useActionSheet } from '../../../ui/ActionSheet'
-import { CANVAS_WIDTH, colors, type, spacing } from '../../../theme'
+import { CANVAS_WIDTH, spacing } from '../../../theme'
 import { hapticMedium } from '../../../lib/haptics'
 import { ConversationRow } from '../components/ConversationRow'
 import { SystemConversationRow } from '../components/SystemConversationRow'
@@ -17,8 +17,6 @@ import { ConversationRowSkeleton } from '../components/ConversationRowSkeleton'
 import type { MessagesStackParamList } from '../../../navigation/types'
 
 type Props = NativeStackScreenProps<MessagesStackParamList, 'Conversations'>
-
-
 
 export function ConversationsScreen({ navigation }: Props) {
   const me = useCurrentUser()
@@ -29,20 +27,10 @@ export function ConversationsScreen({ navigation }: Props) {
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState('all')
   const allRows = conversations.data?.pages.flatMap((p) => p.data) ?? []
-  
-  // Enforce sort rule: unread human > recent human > unread system > recent system
+
+  // Activity is part of the same chronological inbox as human messages. Do not
+  // pin SYSTEM below people; its latest event should naturally land where it happened.
   const sortedRows = [...allRows].sort((a: any, b: any) => {
-    // 1. Rank Unread Human
-    const aHumanUnread = a.type !== 'SYSTEM' && a.hasUnread
-    const bHumanUnread = b.type !== 'SYSTEM' && b.hasUnread
-    if (aHumanUnread && !bHumanUnread) return -1
-    if (bHumanUnread && !aHumanUnread) return 1
-
-    // 2. Rank Type (Human > System)
-    if (a.type !== 'SYSTEM' && b.type === 'SYSTEM') return -1
-    if (b.type !== 'SYSTEM' && a.type === 'SYSTEM') return 1
-
-    // 3. Rank Recent (Time)
     const aTime = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0
     const bTime = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0
     return bTime - aTime
@@ -53,7 +41,7 @@ export function ConversationsScreen({ navigation }: Props) {
     ? sortedRows.filter((item) => {
         const other = item.participants.find((p: any) => p.id !== myProfileId) ?? item.participants[0]
         return (
-          other?.displayName?.toLowerCase().includes(query) ||
+          (item.type === 'SYSTEM' ? 'activity' : other?.displayName)?.toLowerCase().includes(query) ||
           item.lastMessageBody?.toLowerCase().includes(query)
         )
       })
@@ -88,8 +76,6 @@ export function ConversationsScreen({ navigation }: Props) {
     })
   }
 
-
-
   if (conversations.isError) {
     return (
       <ScreenContainer testID="screen.conversations" width="full">
@@ -103,18 +89,15 @@ export function ConversationsScreen({ navigation }: Props) {
       <FlatList
         data={(conversations.isLoading ? [1, 2, 3, 4, 5] : rows) as any[]}
         keyExtractor={(item) => (typeof item === 'number' ? String(item) : item.id)}
-        // Full-bleed scroll box, constrained content width
         contentContainerStyle={[styles.listContent, { width: '100%', maxWidth: CANVAS_WIDTH, alignSelf: 'center' }]}
         onEndReached={() => conversations.hasNextPage && conversations.fetchNextPage()}
         ListHeaderComponent={
           <View style={styles.headerContainer}>
-            <PageHeader
-              title="Messages"
-              facts={pageFacts}
-            />
+            <PageHeader title="Messages" facts={pageFacts} />
             {!conversations.isLoading && allRows.length > 0 && (
               <View style={styles.searchContainer}>
-                <TextField testID="conversations.search"
+                <TextField
+                  testID="conversations.search"
                   value={search}
                   onChangeText={setSearch}
                   placeholder="Search messages"
@@ -123,7 +106,7 @@ export function ConversationsScreen({ navigation }: Props) {
                 />
               </View>
             )}
-            <FilterChipsRow 
+            <FilterChipsRow
               chips={[{ id: 'all', label: 'All' }, { id: 'unread', label: 'Unread' }]}
               selectedIds={[filter]}
               onSelect={setFilter}
@@ -139,19 +122,17 @@ export function ConversationsScreen({ navigation }: Props) {
         }
         ItemSeparatorComponent={() => <View style={styles.separator} />}
         renderItem={({ item }) => {
-          if (typeof item === 'number') {
-            return <ConversationRowSkeleton />
-          }
+          if (typeof item === 'number') return <ConversationRowSkeleton />
 
           if (item.type === 'SYSTEM') {
             return (
               <SystemConversationRow
                 conversationId={item.id}
-                title="Datememe"
-                previewText={item.lastMessageBody || 'New updates available'}
+                title="Activity"
+                previewText={item.lastMessageBody || 'Your recent activity'}
                 createdAt={item.lastMessageAt}
                 isUnread={item.hasUnread}
-                onPress={() => navigation.navigate('Conversation', { conversationId: item.id, displayName: 'Datememe' })}
+                onPress={() => navigation.navigate('Conversation', { conversationId: item.id, displayName: 'Activity' })}
               />
             )
           }
@@ -184,17 +165,14 @@ const styles = StyleSheet.create({
     width: '100%',
     alignSelf: 'center',
   },
-  searchContainer: { 
-    paddingHorizontal: spacing.lg, 
-    marginBottom: spacing.md 
-  },
-  dropdownPlaceholder: {
-    ...type.label,
+  searchContainer: {
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.md,
   },
   separator: {
     height: 1,
     marginLeft: 56 + spacing.md + spacing.lg,
     width: '100%',
     alignSelf: 'center',
-  }
+  },
 })
