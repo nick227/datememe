@@ -70,14 +70,12 @@ export class ListService {
     }
 
     const isComplete = input.isComplete ?? input.items.length >= category.minItems
-    let becameComplete = false
 
     const list = await db.$transaction(async (tx) => {
       const existing = await tx.list.findUnique({
         where: { profileId_categoryId: { profileId, categoryId: category.id } },
       })
       const wasComplete = existing?.isComplete ?? false
-      becameComplete = isComplete && !wasComplete
 
       const upserted = await tx.list.upsert({
         where: { profileId_categoryId: { profileId, categoryId: category.id } },
@@ -133,7 +131,9 @@ export class ListService {
       return tx.list.findUniqueOrThrow({ where: { id: upserted.id }, select: LIST_PREVIEW_SELECT })
     })
 
-    if (becameComplete) {
+    // Idempotent eventKey means every complete save can safely repair activity
+    // history after a partial failure without producing duplicate entries.
+    if (isComplete) {
       await messagingService.recordSystemActivity(profileId, {
         type: 'LIST_COMPLETED',
         eventKey: `list-completed:${profileId}:${category.id}`,
