@@ -15,5 +15,6 @@
   "seasons-holidays": { "label": "Seasons & holidays", "keywords": ["season", "holiday", "summer", "winter", "christmas", "time of year"], "min": 3 },
   "food-drink": { "label": "Food & drink", "groups": ["food-drink"], "min": 8, "maxShare": 0.15 },
   "sports-fitness": { "label": "Sports & fitness", "groups": ["sports"], "keywords": ["gym", "workout", "fitness"], "min": 4 },
-  "career-tech": { "label": "Career & tech", "groups": ["career", "tech"], "min": 3 }
+  "career-tech": { "label": "Career & tech", "groups": ["career", "tech"], "min": 3 },
+  "substances": { "label": "Substances & vices", "groups": ["substances"], "keywords": ["substance", "drug", "psychedelic", "sober", "drinking", "smoke", "cannabis"], "min": 4 }
 }

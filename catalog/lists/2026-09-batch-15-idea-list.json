@@ -1,0 +1,348 @@
+[
+  {
+    "schemaVersion": 1,
+    "groupSlug": "substances",
+    "createGroup": {
+      "label": "Substances & Vices"
+    },
+    "entityTypeSlug": "substance",
+    "createEntityType": {
+      "label": "Substance",
+      "pluralLabel": "Substances"
+    },
+    "title": "Substances You've Tried",
+    "prompt": "Which of these substances have you tried?",
+    "axes": [
+      "substances",
+      "lifestyle",
+      "values"
+    ],
+    "values": [
+      "Alcohol",
+      "Cannabis",
+      "Nicotine",
+      "Psilocybin mushrooms",
+      "LSD",
+      "MDMA",
+      "Cocaine",
+      "Ketamine",
+      "DMT",
+      "Ayahuasca",
+      "Mescaline",
+      "Nitrous oxide",
+      "Kratom",
+      "Adderall without a prescription",
+      "None of these"
+    ],
+    "isAbstract": false
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "substances",
+    "entityTypeSlug": "substance-stance",
+    "createEntityType": {
+      "label": "Substance Stance",
+      "pluralLabel": "Substance Stances"
+    },
+    "title": "Your Stance on Substances",
+    "prompt": "Where do you stand on drinking and drugs?",
+    "axes": [
+      "substances",
+      "values",
+      "dating"
+    ],
+    "values": [
+      "Fully sober",
+      "Sober-curious",
+      "Cali sober",
+      "Social drinker only",
+      "420-friendly",
+      "Psychedelics a few times a year",
+      "Party-only",
+      "Fine with it, don't partake",
+      "In recovery",
+      "Microdosing",
+      "Dealbreaker if they use",
+      "Anything goes",
+      "None of these"
+    ],
+    "isAbstract": true
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "substances",
+    "entityTypeSlug": "substance",
+    "title": "Psychedelics You'd Try",
+    "prompt": "Which psychedelics have you tried, or would you try?",
+    "axes": [
+      "substances",
+      "curiosity",
+      "spirituality"
+    ],
+    "values": [
+      "Psilocybin mushrooms",
+      "LSD",
+      "DMT",
+      "Ayahuasca",
+      "5-MeO-DMT",
+      "Mescaline",
+      "San Pedro cactus",
+      "Salvia",
+      "Ibogaine",
+      "Ketamine",
+      "MDMA",
+      "Truffles",
+      "None of these"
+    ],
+    "isAbstract": false
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "substances",
+    "entityTypeSlug": "smokable",
+    "createEntityType": {
+      "label": "Smokable",
+      "pluralLabel": "Smokables"
+    },
+    "title": "What You Smoke",
+    "prompt": "What, if anything, do you smoke or vape?",
+    "axes": [
+      "substances",
+      "lifestyle",
+      "dealbreakers"
+    ],
+    "values": [
+      "Cigarettes",
+      "Cigars",
+      "Hookah",
+      "Pipe tobacco",
+      "Joints",
+      "Blunts",
+      "Bong",
+      "Dab rig",
+      "Nicotine vape",
+      "THC vape pen",
+      "Clove cigarettes",
+      "Only when I drink",
+      "None of these"
+    ],
+    "isAbstract": false
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "substances",
+    "entityTypeSlug": "drinking-style",
+    "createEntityType": {
+      "label": "Drinking Style",
+      "pluralLabel": "Drinking Styles"
+    },
+    "title": "Your Drinking Style",
+    "prompt": "Be honest: what kind of drinker are you?",
+    "axes": [
+      "substances",
+      "nightlife",
+      "values"
+    ],
+    "values": [
+      "Don't drink",
+      "Wine with dinner",
+      "Weekend drinker",
+      "Day drinker",
+      "Craft beer nerd",
+      "Cocktail snob",
+      "Only at weddings",
+      "Can't stop at one",
+      "Blackout stories",
+      "Hair of the dog",
+      "Dry January every year",
+      "Drink to deal with stress",
+      "None of these"
+    ],
+    "isAbstract": true
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "substances",
+    "entityTypeSlug": "party-habit",
+    "createEntityType": {
+      "label": "Party Habit",
+      "pluralLabel": "Party Habits"
+    },
+    "title": "Party Habits",
+    "prompt": "What does a big night out usually involve for you?",
+    "axes": [
+      "substances",
+      "nightlife",
+      "social"
+    ],
+    "values": [
+      "Just drinks",
+      "Molly at festivals",
+      "Coke in the bathroom",
+      "Ketamine at the afterparty",
+      "Poppers",
+      "Edibles at concerts",
+      "Sober raver",
+      "Energy drinks only",
+      "Out until sunrise",
+      "Afterparty regular",
+      "Three-day comedown",
+      "Home by midnight",
+      "None of these"
+    ],
+    "isAbstract": true
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "literature",
+    "entityTypeSlug": "book",
+    "title": "Mind-Expanding Books",
+    "prompt": "Which books opened the doors of perception for you?",
+    "axes": [
+      "substances",
+      "books",
+      "spirituality"
+    ],
+    "values": [
+      "The Doors of Perception",
+      "Be Here Now",
+      "How to Change Your Mind",
+      "Fear and Loathing in Las Vegas",
+      "The Teachings of Don Juan",
+      "Food of the Gods",
+      "The Electric Kool-Aid Acid Test",
+      "Island",
+      "Naked Lunch",
+      "DMT: The Spirit Molecule",
+      "Confessions of an English Opium-Eater",
+      "The Psychedelic Experience"
+    ],
+    "isAbstract": false,
+    "alsoExpands": [
+      "Books"
+    ]
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "lifestyle-hobbies",
+    "entityTypeSlug": "daily-habit",
+    "title": "Getting-Ready Routine",
+    "prompt": "How much goes into getting ready for a date?",
+    "axes": [
+      "beauty",
+      "routine",
+      "dating"
+    ],
+    "values": [
+      "Ten-step skincare",
+      "Signature scent",
+      "Fresh haircut before every date",
+      "Full glam",
+      "Outfit laid out the night before",
+      "Mirror selfie before leaving",
+      "Manicure",
+      "Beard grooming",
+      "Teeth whitening",
+      "Spray tan",
+      "Five minutes and I'm out",
+      "None of these"
+    ],
+    "isAbstract": true
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "film-tv",
+    "entityTypeSlug": "movie",
+    "title": "Favorite Horror Movies",
+    "prompt": "Rank the horror movies that got under your skin.",
+    "axes": [
+      "horror",
+      "movies",
+      "taste"
+    ],
+    "values": [
+      "The Exorcist",
+      "The Shining",
+      "Hereditary",
+      "Get Out",
+      "Halloween",
+      "The Thing",
+      "Psycho",
+      "A Nightmare on Elm Street",
+      "Scream",
+      "The Texas Chain Saw Massacre",
+      "It Follows",
+      "Rosemary's Baby",
+      "The Babadook",
+      "Midsommar"
+    ],
+    "isAbstract": false,
+    "alsoExpands": [
+      "Top Movies"
+    ]
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "craft",
+    "entityTypeSlug": "visual-artist",
+    "createEntityType": {
+      "label": "Visual Artist",
+      "pluralLabel": "Visual Artists"
+    },
+    "title": "Art Nouveau Artists",
+    "prompt": "Which Art Nouveau artists do you love most?",
+    "axes": [
+      "art",
+      "aesthetics",
+      "taste"
+    ],
+    "values": [
+      "Alphonse Mucha",
+      "Gustav Klimt",
+      "Louis Comfort Tiffany",
+      "Antoni Gaudí",
+      "Aubrey Beardsley",
+      "René Lalique",
+      "Hector Guimard",
+      "Victor Horta",
+      "Charles Rennie Mackintosh",
+      "Émile Gallé",
+      "Koloman Moser",
+      "Jan Toorop"
+    ],
+    "isAbstract": false
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "lifestyle-hobbies",
+    "entityTypeSlug": "optical-illusion",
+    "createEntityType": {
+      "label": "Optical Illusion",
+      "pluralLabel": "Optical Illusions"
+    },
+    "title": "Mind-Bending Illusions",
+    "prompt": "Which illusions mess with your head the most?",
+    "axes": [
+      "illusions",
+      "curiosity",
+      "perception"
+    ],
+    "values": [
+      "Penrose triangle",
+      "Rubin vase",
+      "Necker cube",
+      "Müller-Lyer illusion",
+      "Ames room",
+      "Café wall illusion",
+      "Hermann grid",
+      "Spinning dancer",
+      "Kanizsa triangle",
+      "Ebbinghaus illusion",
+      "Checker shadow illusion",
+      "The dress",
+      "Impossible trident",
+      "Rotating snakes"
+    ],
+    "isAbstract": false
+  }
+]
