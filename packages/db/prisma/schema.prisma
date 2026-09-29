@@ -537,6 +537,7 @@ model CategoryEntity {
   categoryId String
   entityId   String
   sortOrder  Int      @default(0)
+  isExcluded Boolean  @default(false)
 
   category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   entity   Entity   @relation(fields: [entityId], references: [id], onDelete: Restrict)

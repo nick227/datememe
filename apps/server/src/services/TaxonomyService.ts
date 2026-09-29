@@ -128,11 +128,16 @@ export class TaxonomyService {
       ? [{ canonicalName: { contains: opts.q } }, { aliases: { some: { alias: { contains: opts.q } } } }]
       : null
 
+    const isCurated = category.poolMode === 'CURATED'
+    const poolCondition: Prisma.EntityWhereInput = isCurated ? {} : { 
+      OR: [{ AND: tagFilters }, { curatedForCategories: { some: { categoryId: category.id, isExcluded: false } } }] 
+    }
+
     const rows = await db.entity.findMany({
       where: {
         entityTypeId: category.entityTypeId,
         ...curatedPool(category),
-        AND: [...tagFilters, { OR: statusOr }, ...(searchOr ? [{ OR: searchOr }] : [])],
+        AND: [poolCondition, { OR: statusOr }, ...(searchOr ? [{ OR: searchOr }] : [])],
       },
       // Alphabetically APPROVED < PENDING < REJECTED, so this also puts live entities
       // first without a separate CASE expression — documented, not accidental.

@@ -91,12 +91,19 @@ function EditList({ list, onBack }: { list: AdminListDetail; onBack: () => void 
   }
   const values = list.values
   const move = (from: number, to: number) => {
+    // Moving is only enabled for curated lists, so all are included.
     const ids = values.map((v) => v.entityId)
     const [id] = ids.splice(from, 1)
     ids.splice(to, 0, id!)
     setValues.mutate({ id: list.id, entityIds: ids })
   }
-  const remove = (index: number) => setValues.mutate({ id: list.id, entityIds: values.filter((_, i) => i !== index).map((v) => v.entityId) })
+  const remove = (index: number) => {
+    const target = values[index]
+    const isExcluded = (target as any).status === 'excluded'
+    const currentlyIncluded = values.filter(v => (v as any).status !== 'excluded').map(v => v.entityId)
+    const newIds = isExcluded ? [...currentlyIncluded, target.entityId] : currentlyIncluded.filter(id => id !== target.entityId)
+    setValues.mutate({ id: list.id, entityIds: newIds })
+  }
 
   const status = list.isActive ? 'Live ●' : list.neverPublished ? 'Hidden · Never published' : 'Hidden'
   const cover = list.cover
@@ -146,20 +153,29 @@ function EditList({ list, onBack }: { list: AdminListDetail; onBack: () => void 
         </Section>
 
         <Section title={`Values (${list.valueCount})`}
-          action={list.curated ? <Pressable testID="admin-list-detail.add-value" hitSlop={8} onPress={() => setAddOpen(true)}><Typography variant="label" style={{ color: colors.ink }}>+ Add</Typography></Pressable> : null}>
+          action={<Pressable testID="admin-list-detail.add-value" hitSlop={8} onPress={() => setAddOpen(true)}><Typography variant="label" style={{ color: colors.ink }}>+ Add</Typography></Pressable>}>
           {!list.curated ? (
-            <Typography variant="bodyMuted">{`This older list offers every ${list.entityType.label} value (${list.valueCount}); its values can't be edited here.`}</Typography>
-          ) : values.length === 0 ? (
+            <Typography variant="bodyMuted" style={{ marginBottom: spacing.md }}>{`This list is populated automatically from ${list.entityType.label} filters. Changes here override the automatic pool.`}</Typography>
+          ) : null}
+          {values.length === 0 ? (
             <Typography variant="bodyMuted">No values yet. Add at least {list.maxItems}.</Typography>
           ) : values.map((v, i) => (
             <View key={v.entityId} style={styles.valueRow}>
-              <Typography variant="body" style={{ flex: 1 }} numberOfLines={1}>{v.name}{v.isNew ? <Typography variant="label"> · new</Typography> : null}</Typography>
-              <Pressable testID={`admin-list-detail.value.${i}.up`} hitSlop={6} disabled={i === 0 || setValues.isPending} onPress={() => move(i, i - 1)}><Typography variant="body" style={[styles.icon, i === 0 && styles.iconOff]}>↑</Typography></Pressable>
-              <Pressable testID={`admin-list-detail.value.${i}.down`} hitSlop={6} disabled={i === values.length - 1 || setValues.isPending} onPress={() => move(i, i + 1)}><Typography variant="body" style={[styles.icon, i === values.length - 1 && styles.iconOff]}>↓</Typography></Pressable>
-              <Pressable testID={`admin-list-detail.value.${i}.remove`} hitSlop={6} disabled={setValues.isPending} onPress={() => remove(i)}><Typography variant="body" style={styles.icon}>×</Typography></Pressable>
+              <Typography variant="body" style={{ flex: 1, textDecorationLine: (v as any).status === 'excluded' ? 'line-through' : 'none', color: (v as any).status === 'excluded' ? colors.inkMuted : colors.ink }} numberOfLines={1}>
+                {v.name}
+                {v.isNew ? <Typography variant="label"> · new</Typography> : null}
+                {(v as any).status === 'automatic' ? <Typography variant="label" style={{ color: colors.inkMuted }}> · automatic</Typography> : null}
+                {(v as any).status === 'added' ? <Typography variant="label" style={{ color: colors.success }}> · added manually</Typography> : null}
+                {(v as any).status === 'excluded' ? <Typography variant="label" style={{ color: colors.danger }}> · excluded</Typography> : null}
+              </Typography>
+              <Pressable testID={`admin-list-detail.value.${i}.up`} hitSlop={6} disabled={i === 0 || setValues.isPending || !list.curated} onPress={() => move(i, i - 1)}><Typography variant="body" style={[styles.icon, (i === 0 || !list.curated) && styles.iconOff]}>↑</Typography></Pressable>
+              <Pressable testID={`admin-list-detail.value.${i}.down`} hitSlop={6} disabled={i === values.length - 1 || setValues.isPending || !list.curated} onPress={() => move(i, i + 1)}><Typography variant="body" style={[styles.icon, (i === values.length - 1 || !list.curated) && styles.iconOff]}>↓</Typography></Pressable>
+              <Pressable testID={`admin-list-detail.value.${i}.remove`} hitSlop={6} disabled={setValues.isPending} onPress={() => remove(i)}>
+                <Typography variant="body" style={styles.icon}>{(v as any).status === 'excluded' ? '+' : '×'}</Typography>
+              </Pressable>
             </View>
           ))}
-          {list.curated && values.length > 0 && values.length < list.maxItems ? (
+          {values.filter(v => (v as any).status !== 'excluded').length < list.maxItems ? (
             <Typography variant="bodyMuted" style={{ color: colors.danger }}>Needs at least {list.maxItems} values to go live.</Typography>
           ) : null}
         </Section>

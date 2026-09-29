@@ -138,10 +138,48 @@ export class ListAdminService {
     const [l] = await loadLists({ id })
     if (!l) return fail(404, 'List not found')
     const valueCount = (await valueCounts([l]))(l)
-    const values = await db.categoryEntity.findMany({
-      where: { categoryId: id }, orderBy: { sortOrder: 'asc' },
-      select: { entity: { select: { id: true, canonicalName: true, metadata: true } } },
-    })
+    let values: { entityId: string; name: string; isNew: boolean; status?: 'automatic' | 'added' | 'excluded' }[] = []
+    if (l.poolMode === 'CURATED') {
+      const dbValues = await db.categoryEntity.findMany({
+        where: { categoryId: id }, orderBy: { sortOrder: 'asc' },
+        select: { entity: { select: { id: true, canonicalName: true, metadata: true } } },
+      })
+      values = dbValues.map((v) => ({ entityId: v.entity.id, name: v.entity.canonicalName, isNew: (v.entity.metadata as any)?.origin?.by === 'admin' }))
+    } else {
+      // FILTERED list resolved values
+      const lWithTags = await db.category.findUnique({ where: { id }, select: { requiredTags: { select: { tagId: true } } } })
+      const tagFilters = lWithTags?.requiredTags.map((rt) => ({ tags: { some: { tagId: rt.tagId } } })) || []
+      const overrides = await db.categoryEntity.findMany({
+        where: { categoryId: id },
+        select: { isExcluded: true, entity: { select: { id: true, canonicalName: true, metadata: true } } },
+      })
+      const addedMap = new Map(overrides.filter((o) => !o.isExcluded).map((o) => [o.entity.id, o.entity]))
+      const excludedMap = new Map(overrides.filter((o) => o.isExcluded).map((o) => [o.entity.id, o.entity]))
+      
+      const automaticEntities = tagFilters.length ? await db.entity.findMany({
+        where: { entityTypeId: l.entityTypeId, status: 'APPROVED', mergedIntoId: null, AND: tagFilters },
+        select: { id: true, canonicalName: true, metadata: true },
+      }) : []
+
+      const automaticMap = new Map(automaticEntities.map((e) => [e.id, e]))
+
+      // Combine them
+      const allIds = new Set([...automaticMap.keys(), ...addedMap.keys(), ...excludedMap.keys()])
+      for (const entityId of allIds) {
+        const isExcluded = excludedMap.has(entityId)
+        const isAdded = addedMap.has(entityId)
+        const isAutomatic = automaticMap.has(entityId)
+        const e = automaticMap.get(entityId) || addedMap.get(entityId) || excludedMap.get(entityId)!
+        
+        let status: 'automatic' | 'added' | 'excluded' = 'automatic'
+        if (isExcluded) status = 'excluded'
+        else if (isAdded && !isAutomatic) status = 'added'
+        
+        values.push({ entityId, name: e.canonicalName, isNew: (e.metadata as any)?.origin?.by === 'admin', status })
+      }
+      values.sort((a, b) => a.name.localeCompare(b.name))
+    }
+
     const { decision, asset } = coverOf(l)
     return {
       id: l.id, slug: l.slug, title: l.shortLabel, prompt: l.prompt, group: l.group, entityType: l.entityType,
@@ -159,7 +197,7 @@ export class ListAdminService {
         canRevert: !!decision?.replaced?.status,
       },
       coverSuggest: covers.suggestState(l.metadata),
-      values: values.map((v) => ({ entityId: v.entity.id, name: v.entity.canonicalName, isNew: (v.entity.metadata as any)?.origin?.by === 'admin' })),
+      values,
     }
   }
 
@@ -236,14 +274,34 @@ export class ListAdminService {
     const ids = [...new Set(entityIds as string[])]
     const l = await db.category.findUnique({ where: { id }, select: { entityTypeId: true, poolMode: true, metadata: true } })
     if (!l) return fail(404, 'List not found')
-    if (l.poolMode !== 'CURATED') fail(409, 'This older list offers every value of its type; convert it with catalog-backfill-pools.ts first')
     const valid = await db.entity.count({ where: { id: { in: ids }, entityTypeId: l.entityTypeId, mergedIntoId: null } })
     if (valid !== ids.length) fail(400, 'Every value must be an unmerged value of this list\'s type')
-    await db.$transaction([
-      db.categoryEntity.deleteMany({ where: { categoryId: id } }),
-      db.categoryEntity.createMany({ data: ids.map((entityId, sortOrder) => ({ categoryId: id, entityId, sortOrder })) }),
-      db.category.update({ where: { id }, data: { metadata: mergeRefMetadata(l.metadata, { adminEditedAt: new Date().toISOString() }) } }),
-    ])
+
+    if (l.poolMode === 'CURATED') {
+      await db.$transaction([
+        db.categoryEntity.deleteMany({ where: { categoryId: id } }),
+        db.categoryEntity.createMany({ data: ids.map((entityId, sortOrder) => ({ categoryId: id, entityId, sortOrder })) }),
+        db.category.update({ where: { id }, data: { metadata: mergeRefMetadata(l.metadata, { adminEditedAt: new Date().toISOString() }) } }),
+      ])
+    } else {
+      const lWithTags = await db.category.findUnique({ where: { id }, select: { requiredTags: { select: { tagId: true } } } })
+      const tagFilters = lWithTags?.requiredTags.map((rt) => ({ tags: { some: { tagId: rt.tagId } } })) || []
+      const automaticEntities = tagFilters.length ? await db.entity.findMany({
+        where: { entityTypeId: l.entityTypeId, status: 'APPROVED', mergedIntoId: null, AND: tagFilters },
+        select: { id: true },
+      }) : []
+      const automaticIds = new Set(automaticEntities.map((e) => e.id))
+      const inclusions = ids.filter(id => !automaticIds.has(id))
+      const exclusions = [...automaticIds].filter(id => !ids.includes(id))
+      
+      await db.$transaction([
+        db.categoryEntity.deleteMany({ where: { categoryId: id } }),
+        ...(inclusions.length > 0 ? [db.categoryEntity.createMany({ data: inclusions.map((entityId, sortOrder) => ({ categoryId: id, entityId, sortOrder, isExcluded: false })) })] : []),
+        ...(exclusions.length > 0 ? [db.categoryEntity.createMany({ data: exclusions.map((entityId) => ({ categoryId: id, entityId, sortOrder: 0, isExcluded: true })) })] : []),
+        db.category.update({ where: { id }, data: { metadata: mergeRefMetadata(l.metadata, { adminEditedAt: new Date().toISOString() }) } }),
+      ])
+    }
+
     await this.audit(actor, 'set_list_values', id, { count: ids.length })
     await queueCatalogAudit()
     await this.maybeAutoCover(id, actor)
@@ -258,9 +316,21 @@ export class ListAdminService {
    * ones are visible only to their submitter) and tagged metadata.origin.
    */
   async addValue(id: string, input: { entityId?: string; name?: string; create?: boolean }, actor: Actor) {
-    const l = await db.category.findUnique({ where: { id }, select: { entityTypeId: true, curatedEntities: { select: { entityId: true }, orderBy: { sortOrder: 'asc' } } } })
+    const l = await db.category.findUnique({ where: { id }, select: { entityTypeId: true, poolMode: true, curatedEntities: { select: { entityId: true, isExcluded: true }, orderBy: { sortOrder: 'asc' } }, requiredTags: { select: { tagId: true } } } })
     if (!l) return fail(404, 'List not found')
-    const current = l.curatedEntities.map((c) => c.entityId)
+    let current: string[] = []
+    if (l.poolMode === 'CURATED') {
+      current = l.curatedEntities.map((c) => c.entityId)
+    } else {
+      const tagFilters = l.requiredTags.map((rt) => ({ tags: { some: { tagId: rt.tagId } } }))
+      const automaticEntities = tagFilters.length ? await db.entity.findMany({ where: { entityTypeId: l.entityTypeId, status: 'APPROVED', mergedIntoId: null, AND: tagFilters }, select: { id: true } }) : []
+      const automaticMap = new Set(automaticEntities.map(e => e.id))
+      const explicitIncludes = new Set(l.curatedEntities.filter(c => !c.isExcluded).map(c => c.entityId))
+      const explicitExcludes = new Set(l.curatedEntities.filter(c => c.isExcluded).map(c => c.entityId))
+      for (const id of explicitIncludes) automaticMap.add(id)
+      for (const id of explicitExcludes) automaticMap.delete(id)
+      current = [...automaticMap]
+    }
     const add = async (entityId: string, status: 'existing' | 'created') => {
       if (current.includes(entityId)) {
         const { canonicalName } = await db.entity.findUniqueOrThrow({ where: { id: entityId }, select: { canonicalName: true } })
