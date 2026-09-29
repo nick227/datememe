@@ -44,6 +44,7 @@ A file holds one list or an array of lists — one file per generated batch is t
 - Every new list needs a cover brief in `catalog/cover-briefs.json`.
 - `groupSlug` must exist. An unknown `entityTypeSlug` is an error unless `createEntityType` says the new type is intentional.
 - `values` may also be `{ "name": "…" }` objects. Duplicates (by key) are errors.
+- **File order is presentation order.** The list builder shows a list's values in its order (admin order; pick count only breaks ties) and shows only the first 20 until someone searches. Put the strongest, most common answers first; long-tail values go after the first 20.
 - Re-importing never modifies an existing category or entity — edits made by admins in production win.
 
 **Identity:** Slugs come from `key()` (e.g., "Pelé" → `pelé`). A value resolves to an existing entity by key, exact name, or exact alias; matching two different entities is an error, not a guess.

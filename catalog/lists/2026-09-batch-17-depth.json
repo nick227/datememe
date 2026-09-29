@@ -1,0 +1,354 @@
+[
+  {
+    "schemaVersion": 1,
+    "groupSlug": "dating-relationships",
+    "entityTypeSlug": "relationship-habit",
+    "createEntityType": {
+      "label": "Relationship Habit",
+      "pluralLabel": "Relationship Habits"
+    },
+    "title": "Relationship Pace",
+    "prompt": "How fast do you like a new relationship to move?",
+    "axes": [
+      "dating",
+      "expectations",
+      "commitment"
+    ],
+    "values": [
+      "Exclusive after a few dates",
+      "Define the relationship within a month",
+      "Slow burn",
+      "Friends first",
+      "Meet the parents within six months",
+      "Take my time meeting family",
+      "Move in within a year",
+      "Wait years to move in",
+      "Engaged within two years",
+      "No rush on labels",
+      "Know within three dates",
+      "Matching pace, whatever it is"
+    ],
+    "isAbstract": true
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "dating-relationships",
+    "entityTypeSlug": "relationship-habit",
+    "title": "Together Time",
+    "prompt": "How much time together do you want in a relationship?",
+    "axes": [
+      "dating",
+      "independence",
+      "routine"
+    ],
+    "values": [
+      "Most nights together",
+      "A few nights a week",
+      "Weekends together, weekdays apart",
+      "Daily alone time",
+      "Separate hobbies",
+      "Solo trips now and then",
+      "Same friend group",
+      "Separate friend groups",
+      "Working side by side",
+      "Every vacation together",
+      "Sleep over most nights",
+      "Our own space, even living together"
+    ],
+    "isAbstract": true
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "dating-relationships",
+    "entityTypeSlug": "relationship-habit",
+    "title": "Communication Needs",
+    "prompt": "What do you need from a partner's communication?",
+    "axes": [
+      "dating",
+      "communication",
+      "values"
+    ],
+    "values": [
+      "Good-morning texts",
+      "Check-ins during the day",
+      "Calls over texts",
+      "Say it to my face",
+      "Talk feelings through right away",
+      "Space before a hard talk",
+      "Weekly relationship check-in",
+      "Reassurance when I'm anxious",
+      "Quick replies",
+      "No texting while we're together",
+      "Share the little things",
+      "Honest feedback, even when it stings"
+    ],
+    "isAbstract": true
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "dating-relationships",
+    "entityTypeSlug": "relationship-habit",
+    "title": "Family Involvement",
+    "prompt": "How involved should family be in your relationship?",
+    "axes": [
+      "family",
+      "dating",
+      "values"
+    ],
+    "values": [
+      "Meet my family early",
+      "Family approval matters",
+      "Weekly calls with parents",
+      "Family group chat",
+      "Split the holidays",
+      "Every holiday with my family",
+      "Family vacations together",
+      "Keep family out of our fights",
+      "Live near either family",
+      "Independent from family",
+      "Help support family financially",
+      "Chosen family counts too"
+    ],
+    "isAbstract": true
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "dating-relationships",
+    "entityTypeSlug": "relationship-habit",
+    "title": "Money as a Couple",
+    "prompt": "How would you handle money with a partner?",
+    "axes": [
+      "money",
+      "dating",
+      "values"
+    ],
+    "values": [
+      "Joint account for shared bills",
+      "Everything combined",
+      "Keep finances separate",
+      "Split costs by income",
+      "Split everything 50/50",
+      "Share salaries openly",
+      "Budget together monthly",
+      "One person runs the finances",
+      "Prenup is smart",
+      "Talk money before moving in",
+      "No questions about personal spending",
+      "Save for goals together"
+    ],
+    "isAbstract": true
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "lifestyle-hobbies",
+    "entityTypeSlug": "investment",
+    "createEntityType": {
+      "label": "Investment",
+      "pluralLabel": "Investments"
+    },
+    "title": "How You Invest",
+    "prompt": "Where does your saved money actually go?",
+    "axes": [
+      "money",
+      "risk",
+      "future"
+    ],
+    "values": [
+      "Retirement account",
+      "Index funds",
+      "High-yield savings",
+      "Picking stocks",
+      "Real estate",
+      "Crypto",
+      "Paying off debt first",
+      "My own business",
+      "Emergency fund only",
+      "Gold",
+      "Angel investing",
+      "Sports betting",
+      "Not investing yet",
+      "None of these"
+    ],
+    "isAbstract": true
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "career",
+    "entityTypeSlug": "career-mindset",
+    "createEntityType": {
+      "label": "Career Mindset",
+      "pluralLabel": "Career Mindsets"
+    },
+    "title": "Career Ambition",
+    "prompt": "How ambitious are you about your career?",
+    "axes": [
+      "career",
+      "ambition",
+      "values"
+    ],
+    "values": [
+      "Climbing the ladder",
+      "Work to live",
+      "Building my own company",
+      "Stable and steady",
+      "Passion over paycheck",
+      "Remote forever",
+      "Retire early",
+      "Changing careers soon",
+      "Side hustle to full-time",
+      "Leading a team",
+      "Best in my field",
+      "Still figuring it out"
+    ],
+    "isAbstract": true
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "career",
+    "entityTypeSlug": "work-schedule",
+    "createEntityType": {
+      "label": "Work Schedule",
+      "pluralLabel": "Work Schedules"
+    },
+    "title": "Your Work Schedule",
+    "prompt": "What does your work routine look like?",
+    "axes": [
+      "career",
+      "routine",
+      "time"
+    ],
+    "values": [
+      "Nine to five in the office",
+      "Fully remote",
+      "Hybrid",
+      "Flexible freelance hours",
+      "Night shifts",
+      "Weekend shifts",
+      "On call",
+      "Four-day week",
+      "Travel for work",
+      "Long hours, big goals",
+      "Student schedule",
+      "Between jobs"
+    ],
+    "isAbstract": true
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "lifestyle-hobbies",
+    "entityTypeSlug": "pet-peeve",
+    "title": "Living-Together Pet Peeves",
+    "prompt": "What would drive you up the wall living with someone?",
+    "axes": [
+      "home",
+      "habits",
+      "compatibility"
+    ],
+    "values": [
+      "Dishes left in the sink",
+      "Hair in the drain",
+      "Loud phone calls",
+      "Wet towels on the bed",
+      "Leaving lights on",
+      "Snoring",
+      "Crumbs in the bed",
+      "Empty carton back in the fridge",
+      "Clothes on the floor",
+      "Toilet seat up",
+      "Never takes out the trash",
+      "Borrowing without asking"
+    ],
+    "isAbstract": true
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "lifestyle-hobbies",
+    "entityTypeSlug": "decision-style",
+    "createEntityType": {
+      "label": "Decision Style",
+      "pluralLabel": "Decision Styles"
+    },
+    "title": "Decision-Making Style",
+    "prompt": "How do you make big decisions?",
+    "axes": [
+      "personality",
+      "planning",
+      "communication"
+    ],
+    "values": [
+      "Go with my gut",
+      "Pro and con list",
+      "Research everything",
+      "Ask my friends",
+      "Sleep on it",
+      "Talk it out with a partner",
+      "Decide fast, adjust later",
+      "Overthink for weeks",
+      "Ask my family",
+      "Trust the numbers",
+      "Flip a coin",
+      "Wait for a sign"
+    ],
+    "isAbstract": true
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "lifestyle-hobbies",
+    "entityTypeSlug": "cause",
+    "createEntityType": {
+      "label": "Cause",
+      "pluralLabel": "Causes"
+    },
+    "title": "Causes You Care About",
+    "prompt": "Which causes reflect your values most?",
+    "axes": [
+      "values",
+      "worldview",
+      "community"
+    ],
+    "values": [
+      "Climate and the environment",
+      "Animal welfare",
+      "Mental health",
+      "Education",
+      "Ending homelessness",
+      "Public health",
+      "Racial justice",
+      "LGBTQ+ rights",
+      "Veterans",
+      "Local community",
+      "Arts and culture",
+      "Global poverty",
+      "Voting access",
+      "Ocean conservation"
+    ],
+    "isAbstract": true
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "lifestyle-hobbies",
+    "entityTypeSlug": "social-habit",
+    "title": "Hosting Style",
+    "prompt": "What's it like when you have friends over?",
+    "axes": [
+      "social",
+      "home",
+      "friends"
+    ],
+    "values": [
+      "Dinner party host",
+      "Game night at mine",
+      "BYOB and snacks",
+      "Last-minute hangs welcome",
+      "Never host, always the guest",
+      "Holiday host",
+      "Themed parties",
+      "Brunch host",
+      "Movie night on the couch",
+      "Big backyard cookout",
+      "Small groups only",
+      "Guests stay over anytime"
+    ],
+    "isAbstract": true
+  }
+]
