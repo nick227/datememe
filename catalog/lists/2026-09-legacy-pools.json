@@ -18,5 +18,15 @@
     "axes": ["lifestyle", "social"],
     "values": ["Binge-watching shows", "Camping outdoors", "Exploring the city", "Going to a concert", "Hosting a dinner party", "Night out at a club", "Quiet night in with movies", "Road trip", "Trying a new restaurant", "Working on hobbies"],
     "isAbstract": true
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "career",
+    "entityTypeSlug": "job-title",
+    "title": "Dream Job",
+    "prompt": "What is your dream job?",
+    "axes": ["career", "ambition"],
+    "values": ["Architect", "Data Scientist", "Electrician", "Financial Analyst", "Graphic Designer", "Marine Biologist", "Park Ranger", "Pastry Chef", "Plumber", "Registered Nurse", "Software Engineer", "Teacher"],
+    "isAbstract": true
   }
 ]

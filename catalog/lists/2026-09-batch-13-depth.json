@@ -1,0 +1,105 @@
+[
+  {
+    "schemaVersion": 1,
+    "groupSlug": "dating-relationships",
+    "entityTypeSlug": "dealbreaker",
+    "createEntityType": { "label": "Dealbreaker", "pluralLabel": "Dealbreakers" },
+    "title": "Relationship Dealbreakers",
+    "prompt": "Which of these would be a real dealbreaker in a relationship?",
+    "axes": ["values", "dating", "future"],
+    "values": ["Doesn't want kids", "Definitely wants kids", "Smokes", "Very different politics", "Different religion", "Long distance", "Doesn't like pets", "Still close with their ex", "No ambition", "Bad with money", "Hates to travel", "Never wants to move"],
+    "isAbstract": true
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "dating-relationships",
+    "entityTypeSlug": "life-priority",
+    "title": "Relationship Values",
+    "prompt": "What matters most to you in a relationship?",
+    "axes": ["values", "dating", "communication"],
+    "values": ["Honesty", "Loyalty", "Humor", "Independence", "Shared goals", "Physical affection", "Communication", "Trust", "Kindness", "Ambition", "Emotional support", "Time together"],
+    "isAbstract": true
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "career",
+    "entityTypeSlug": "job-title",
+    "title": "Side Hustles",
+    "prompt": "What's your side hustle, or the one you'd start to make extra money?",
+    "axes": ["money", "career", "ambition"],
+    "values": ["Freelance designer", "Tutor", "Rideshare driver", "Dog walker", "Etsy seller", "Content creator", "Reseller", "Personal trainer", "Wedding photographer", "Furniture flipper", "Bartender", "No side hustle"],
+    "isAbstract": true
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "lifestyle-hobbies",
+    "entityTypeSlug": "social-habit",
+    "title": "Gift-Giving Style",
+    "prompt": "What's your gift-giving style, and your budget?",
+    "axes": ["money", "dating", "affection"],
+    "values": ["Goes all out", "Experiences over things", "Handmade gifts", "Plans months ahead", "Last-minute scramble", "Practical gifts", "Funny gifts", "Gift cards, no shame", "Asks for a wish list", "Big on birthdays", "Wraps it beautifully", "Rather just spend time"],
+    "isAbstract": true
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "lifestyle-hobbies",
+    "entityTypeSlug": "home-feature",
+    "title": "Dream Place to Live",
+    "prompt": "Where would your dream home be?",
+    "axes": ["home", "lifestyle", "future"],
+    "values": ["Big-city apartment", "Suburbs with a yard", "Small town", "Farmhouse", "Beach town", "Mountain cabin", "Van life", "Somewhere abroad", "Close to family", "Downtown loft", "Lake house", "Wherever work takes me"],
+    "isAbstract": true
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "lifestyle-hobbies",
+    "entityTypeSlug": "house-rule",
+    "createEntityType": { "label": "House Rule", "pluralLabel": "House Rules" },
+    "title": "House Rules",
+    "prompt": "What makes a shared home work for you?",
+    "axes": ["home", "routine", "values"],
+    "values": ["Shoes off inside", "Dishes done every night", "Separate bathrooms", "A chore chart", "Guests welcome anytime", "Quiet mornings", "Thermostat wars settled", "Split groceries evenly", "My own space to retreat", "Pets welcome", "No TV in the bedroom", "Cook together most nights"],
+    "isAbstract": true
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "lifestyle-hobbies",
+    "entityTypeSlug": "social-habit",
+    "title": "Friendship Style",
+    "prompt": "How do you show up for your friends?",
+    "axes": ["social", "personality", "communication"],
+    "values": ["Texts every day", "Months apart, picks right up", "Plans the birthday", "Shows up with soup", "Brutally honest", "Best at advice", "Down for anything", "Remembers every detail", "Knows everyone", "Low-maintenance", "Shares location", "Sends voice memos"],
+    "isAbstract": true
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "lifestyle-hobbies",
+    "entityTypeSlug": "daily-habit",
+    "title": "Sleep Schedule",
+    "prompt": "What's your sleep schedule really like?",
+    "axes": ["routine", "lifestyle", "personality"],
+    "values": ["In bed by 10", "Midnight is early", "Up before sunrise", "Sleeps till noon on weekends", "Runs on five hours", "Afternoon naps", "Same time every day", "Falls asleep watching TV", "Needs a fan on", "Light sleeper", "Can sleep anywhere", "Night owl, no apologies"],
+    "isAbstract": true
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "film-tv",
+    "entityTypeSlug": "tv-show",
+    "title": "Funniest Sitcoms",
+    "prompt": "Which sitcoms make you laugh the hardest?",
+    "axes": ["humor", "tv", "taste"],
+    "alsoExpands": ["Top TV Shows"],
+    "values": ["The Office", "Friends", "Parks and Recreation", "Seinfeld", "Brooklyn Nine-Nine", "It's Always Sunny in Philadelphia", "Arrested Development", "Schitt's Creek", "Community", "Frasier", "Scrubs", "The Simpsons", "New Girl", "Abbott Elementary"],
+    "isAbstract": false
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "lifestyle-hobbies",
+    "entityTypeSlug": "daily-habit",
+    "title": "Pet Parenting Style",
+    "prompt": "What kind of pet parent are you, or would you be?",
+    "axes": ["pets", "home", "personality"],
+    "values": ["Pets sleep in the bed", "Strictly off the furniture", "Matching outfits", "Birthday parties for the pet", "They have their own Instagram", "Takes them everywhere", "Talks to them in a voice", "Doggy daycare", "Rescue only", "Trains every trick", "Treats on demand", "Allergic, sadly"],
+    "isAbstract": true
+  }
+]
