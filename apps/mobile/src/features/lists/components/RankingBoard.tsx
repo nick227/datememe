@@ -1,4 +1,4 @@
-import { ScrollView, StyleSheet, View } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 import Animated, { FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated'
 import { RankingBoardOption } from './RankingBoardOption'
 import { Typography } from '../../../ui/Typography'
@@ -30,7 +30,7 @@ export function RankingBoard({ items, maxItems, onRemove, onReorder }: RankingBo
     <View style={styles.container}>
 
       
-      <ScrollView style={styles.board} showsVerticalScrollIndicator={false}>
+      <View style={styles.board}>
         {slots.map(({ rank, item }) => {
           if (item) {
             return (
@@ -71,7 +71,7 @@ export function RankingBoard({ items, maxItems, onRemove, onReorder }: RankingBo
             </Animated.View>
           )
         })}
-      </ScrollView>
+      </View>
     </View>
   )
 }
@@ -83,8 +83,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   board: {
-    gap: spacing.sm,
-    maxHeight: 400, // Handle maxItems > 5
+    flexShrink: 0,
   },
   emptySlot: {
     flexDirection: 'row',

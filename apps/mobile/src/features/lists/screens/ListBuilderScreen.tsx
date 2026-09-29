@@ -1,18 +1,26 @@
 import { useEffect, useRef, useState } from 'react'
-import { FlatList, Keyboard, Pressable, StyleSheet, View } from 'react-native'
+import { FlatList, Keyboard, Platform, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { useCategory, useCategoryEntities, useCategoryRankings, useMyLists, useSubmitEntity, useUpsertList } from '@project/sdk'
+import { useCategory, useCategoryEntities, useMyLists, useSubmitEntity, useUpsertList } from '@project/sdk'
 import { ScreenContainer } from '../../../ui/ScreenContainer'
-import { TopNavigation } from '../../../ui/TopNavigation'
 import { SearchBar } from '../components/SearchBar'
 import { RankingBoard } from '../components/RankingBoard'
 import { FastPickTile } from '../components/FastPickTile'
 import { AutocompleteOverlay } from '../components/AutocompleteOverlay'
+import { PollHeader } from '../components/PollHeader'
 import { Button } from '../../../ui/Button'
 import { ActionSheet, useActionSheet } from '../../../ui/ActionSheet'
-import { colors, radius, spacing } from '../../../theme'
+import { colors, spacing } from '../../../theme'
+import { useIsDesktop } from '../../../lib/useResponsive'
 import type { CategoriesStackParamList } from '../../../navigation/types'
 import { Typography } from '../../../ui/Typography'
+
+// GlobalHeader body (logo + vertical padding) and the bottom tab bar. The
+// builder locks to the leftover viewport on web, where the app shell grows
+// with the page instead of clipping to one screen.
+const WEB_HEADER_CHROME = 52
+const WEB_TAB_CHROME = 49
 
 type Props = NativeStackScreenProps<CategoriesStackParamList, 'ListBuilder'>
 
@@ -22,6 +30,12 @@ export function ListBuilderScreen({ route, navigation }: Props) {
   const { categorySlug, shortLabel } = route.params
   const category = useCategory(categorySlug)
   const myLists = useMyLists()
+  const isDesktop = useIsDesktop()
+  const insets = useSafeAreaInsets()
+  const { height: windowHeight } = useWindowDimensions()
+  const webFrameHeight = Platform.OS === 'web'
+    ? Math.max(320, windowHeight - insets.top - WEB_HEADER_CHROME - WEB_TAB_CHROME - insets.bottom)
+    : undefined
 
   const [query, setQuery] = useState('')
   const [debouncedQuery, setDebouncedQuery] = useState('')
@@ -44,7 +58,6 @@ export function ListBuilderScreen({ route, navigation }: Props) {
   const entities = useCategoryEntities(categorySlug, { q: debouncedQuery || undefined })
   const submitEntity = useSubmitEntity()
   const upsertList = useUpsertList(categorySlug)
-  const rankings = useCategoryRankings(categorySlug)
 
   useEffect(() => {
     if (hydrated.current || !myLists.data) return
@@ -166,46 +179,20 @@ export function ListBuilderScreen({ route, navigation }: Props) {
     handleDone()
   }
 
+  function openPollResults() {
+    const label = category.data?.shortLabel ?? shortLabel
+    ;(navigation.getParent()?.navigate as (name: string, params: object) => void)('Rankings', {
+      screen: 'CategoryRanking',
+      params: { categorySlug, shortLabel: label },
+      initial: false,
+    })
+  }
+
   // Fast picks are the initial results when no query
   const fastPicks = entities.data?.pages[0]?.data ?? []
   
   // Picked dictionary for O(1) lookups
   const pickedRanks = picked.reduce((acc, p) => ({ ...acc, [p.entityId]: p.rank }), {} as Record<string, number>)
-
-  const LeftPane = (
-    <View style={styles.leftPane}>
-      <View style={styles.searchWrapper}>
-        <SearchBar testID="list-builder.search" value={query} onChangeText={setQuery} placeholder={`Type your own...`} />
-        {isOverlayVisible && (
-          <AutocompleteOverlay
-            query={query}
-            results={results}
-            pickedRanks={pickedRanks}
-            onToggle={toggle}
-            onSuggestNew={handleSuggestNew}
-            isPendingNew={submitEntity.isPending}
-          />
-        )}
-      </View>
-      
-
-
-      <FlatList
-        data={fastPicks}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.fastPicksList}
-        renderItem={({ item }) => (
-          <FastPickTile testID={`list-builder.pick.${item.id}`}
-            name={item.canonicalName}
-            imageUrl={item.imageUrl}
-            isPending={item.status === 'PENDING'}
-            pickedRank={pickedRanks[item.id] ?? null}
-            onToggle={() => toggle(item.id, item.canonicalName, item.imageUrl)}
-          />
-        )}
-      />
-    </View>
-  )
 
   const RightPane = (
     <View style={styles.rightPane}>
@@ -218,32 +205,73 @@ export function ListBuilderScreen({ route, navigation }: Props) {
     </View>
   )
 
+  const question = category.data?.prompt ?? shortLabel
+
   return (
     <ScreenContainer testID="screen.list-builder" width="narrow">
-      <TopNavigation testID="list-builder.header"
-        alignment="left"
-        title={category.data?.prompt ?? shortLabel}
-      />
-      <View style={styles.content}>
-        {RightPane}
-        {LeftPane}
-      </View>
-      <View style={styles.footer}>
-        {saveError && (
-          <View testID="list-builder.save-error" style={styles.errorRow}>
-            <Typography variant="body" style={styles.errorText}>
-              {saveError}
-            </Typography>
-            <Pressable testID="list-builder.retry-save" onPress={handleRetrySave}>
-              <Typography variant="button" style={styles.retryText}>Retry</Typography>
-            </Pressable>
+      <View style={[styles.frame, webFrameHeight != null && { height: webFrameHeight }]}>
+        <View style={styles.chrome}>
+          <PollHeader
+            testID="list-builder.header"
+            takeCount={category.data?.popularityCount}
+            onBack={() => navigation.goBack()}
+            onViewResults={openPollResults}
+          />
+          <Typography
+            testID="list-builder.question"
+            variant="title"
+            style={isDesktop ? styles.questionDesktop : styles.question}
+          >
+            {question}
+          </Typography>
+          {RightPane}
+          <View style={styles.searchWrapper}>
+            <SearchBar testID="list-builder.search" value={query} onChangeText={setQuery} placeholder="Type your own..." />
+            {isOverlayVisible && (
+              <AutocompleteOverlay
+                query={query}
+                results={results}
+                pickedRanks={pickedRanks}
+                onToggle={toggle}
+                onSuggestNew={handleSuggestNew}
+                isPendingNew={submitEntity.isPending}
+              />
+            )}
           </View>
-        )}
-        <Button testID="list-builder.done"
-          label={upsertList.isPending ? 'Saving...' : 'Done'}
-          onPress={handleDone}
-          loading={upsertList.isPending}
+        </View>
+        <FlatList
+          style={styles.values}
+          data={fastPicks}
+          keyExtractor={(item) => item.id}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={styles.fastPicksList}
+          renderItem={({ item }) => (
+            <FastPickTile testID={`list-builder.pick.${item.id}`}
+              name={item.canonicalName}
+              imageUrl={item.imageUrl}
+              isPending={item.status === 'PENDING'}
+              pickedRank={pickedRanks[item.id] ?? null}
+              onToggle={() => toggle(item.id, item.canonicalName, item.imageUrl)}
+            />
+          )}
         />
+        <View style={styles.footer}>
+          {saveError && (
+            <View testID="list-builder.save-error" style={styles.errorRow}>
+              <Typography variant="body" style={styles.errorText}>
+                {saveError}
+              </Typography>
+              <Pressable testID="list-builder.retry-save" onPress={handleRetrySave}>
+                <Typography variant="button" style={styles.retryText}>Retry</Typography>
+              </Pressable>
+            </View>
+          )}
+          <Button testID="list-builder.done"
+            label={upsertList.isPending ? 'Saving...' : 'Done'}
+            onPress={handleDone}
+            loading={upsertList.isPending}
+          />
+        </View>
       </View>
       <ActionSheet testID="list-builder.dialog" config={sheet.config} onDismiss={sheet.dismiss} />
     </ScreenContainer>
@@ -251,36 +279,49 @@ export function ListBuilderScreen({ route, navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  content: {
+  frame: {
     flex: 1,
-    flexDirection: 'column',
+    minHeight: 0,
+    overflow: 'hidden',
   },
-  leftPane: {
-    zIndex: 10,
-    flex: 1,
+  chrome: {
+    flexShrink: 0,
+    zIndex: 2,
+  },
+  question: {
+    marginTop: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  questionDesktop: {
+    marginTop: spacing.md,
+    marginBottom: spacing.lg,
+    fontSize: 42,
+    lineHeight: 48,
+    letterSpacing: -1,
   },
   rightPane: {
     zIndex: 1,
+    flexShrink: 0,
   },
   searchWrapper: {
     marginTop: spacing.md,
     zIndex: 100,
   },
+  values: {
+    flex: 1,
+    minHeight: 0,
+    zIndex: 1,
+  },
   fastPicksList: {
     gap: spacing.sm,
-    paddingBottom: spacing.xxl,
+    paddingBottom: spacing.md,
   },
-  filterRow: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: spacing.sm },
-  filterChip: {
-    backgroundColor: colors.surfaceMuted,
-    borderRadius: radius.pill,
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.md,
-    marginRight: spacing.sm,
-    marginBottom: spacing.sm,
+  footer: {
+    flexShrink: 0,
+    zIndex: 2,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
   },
-  filterChipText: { color: colors.ink },
-  footer: { paddingTop: spacing.md, paddingBottom: spacing.sm },
   errorRow: {
     flexDirection: 'row',
     alignItems: 'center',
