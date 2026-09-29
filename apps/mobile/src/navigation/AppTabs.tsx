@@ -58,8 +58,8 @@ export function AppTabs() {
       })}
     >
       <Tab.Screen name="Lists" component={CategoriesStack} />
-      <Tab.Screen name="Rankings" component={RankingsStack} />
       <Tab.Screen name="Discover" component={DiscoveryStack} />
+      <Tab.Screen name="Rankings" component={RankingsStack} />
       <Tab.Screen
         name="Messages"
         component={MessagesStack}

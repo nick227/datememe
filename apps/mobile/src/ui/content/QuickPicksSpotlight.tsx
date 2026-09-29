@@ -159,11 +159,11 @@ const styles = StyleSheet.create({
   // A full-bleed band with its own generous vertical rhythm — reads as a
   // genuinely different beat from the surrounding Grid/Rail sections.
   section: {
-    minHeight: 460,
+    minHeight: 640,
     paddingVertical: spacing.xxl,
     paddingHorizontal: spacing.lg,
     marginVertical: spacing.xl,
-    justifyContent: 'center',
+    justifyContent: 'space-evenly',
     borderTopWidth: 1,
     borderBottomWidth: 1,
     borderColor: colors.border,

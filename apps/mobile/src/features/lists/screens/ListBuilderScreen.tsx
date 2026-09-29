@@ -321,12 +321,13 @@ const styles = StyleSheet.create({
   question: {
     marginTop: spacing.sm,
     marginBottom: spacing.sm,
+    marginLeft: spacing.md,
   },
   questionDesktop: {
     marginTop: spacing.md,
     marginBottom: spacing.lg,
-    fontSize: 42,
-    lineHeight: 48,
+    fontSize: 80,
+    lineHeight: 95,
     letterSpacing: -1,
   },
   rightPane: {

@@ -35,8 +35,6 @@ export function ProfileScreen({ navigation }: Props) {
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.scroll}>
         <View style={styles.column}>
           <View style={styles.header}>
-            <Typography variant="display">Your profile</Typography>
-            <Typography variant="bodyMuted">Your photos, your details, your kind of people.</Typography>
             {profile?.username ? <Typography style={styles.username}>@{profile.username}</Typography> : null}
           </View>
           {me.isLoading ? <Skeleton variant="rect" width="100%" height={320} /> : profile ? (

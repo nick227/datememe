@@ -49,19 +49,12 @@ export function ProfileDetailsEditor({ profile }: { profile: Profile }) {
         <TextField testID="profile.city" accessibilityLabel="City" label="City" placeholder="e.g. Austin, TX" value={draft.locationLabel} onChangeText={locationLabel => change({ locationLabel })} editable={!update.isPending} style={styles.input} />
         <View style={styles.ageRow}>
           <View><Typography variant="label">Age</Typography><Typography variant="heading">{profile.age != null ? `${profile.age} years old` : 'Not available'}</Typography></View>
-          <Typography variant="bodyMuted" style={styles.ageHelp}>From your birthdate at signup</Typography>
         </View>
-        <Typography variant="label" style={styles.fieldLabel}>Gender</Typography>
+
+
+        <Typography variant="label" style={styles.fieldLabel}>About you</Typography>
         <ChoiceChips mode="single" options={GENDERS} selected={draft.genderIdentity ? [draft.genderIdentity] : []} disabled={update.isPending} onToggle={(value) => change({ genderIdentity: draft.genderIdentity === value ? null : value })} />
-        <TextField testID="profile.gender" accessibilityLabel="Gender, in your own words" placeholder="Or describe your gender" value={draft.genderIdentity && !GENDERS.some(option => option.value === draft.genderIdentity) ? draft.genderIdentity : ''} onChangeText={genderIdentity => change({ genderIdentity: genderIdentity || null })} editable={!update.isPending} style={styles.input} />
-        <Typography variant="label" style={styles.fieldLabel}>Interested in</Typography>
-        <Typography variant="bodyMuted" style={styles.helper}>Who would you like to meet? Choose all that apply.</Typography>
-        <ChoiceChips mode="multi" options={SEEKING} selected={draft.seekingGenders} disabled={update.isPending} onToggle={(value) => change({ seekingGenders: draft.seekingGenders.includes(value) ? draft.seekingGenders.filter(item => item !== value) : [...draft.seekingGenders, value] })} />
-        {draft.seekingGenders.some(value => !SEEKING.some(option => option.value === value)) ? (
-          <ChoiceChips mode="multi" options={draft.seekingGenders.filter(value => !SEEKING.some(option => option.value === value)).map(value => ({ value, label: `${value} ×` }))} selected={draft.seekingGenders} disabled={update.isPending} onToggle={(value) => change({ seekingGenders: draft.seekingGenders.filter(gender => gender !== value) })} />
-        ) : null}
-        <AttributeFields title="I am" helper="Tap everything that fits you." selected={draft.isA} disabled={update.isPending} onChange={(isA) => change({ isA })} />
-        <AttributeFields title="Looking for" helper="Tap everything you want to find." selected={draft.lookingFor} disabled={update.isPending} onChange={(lookingFor) => change({ lookingFor })} />
+        <AttributeFields title="Looking for" selected={draft.lookingFor} disabled={update.isPending} onChange={(lookingFor) => change({ lookingFor })} />
         <TextField testID="profile.about" accessibilityLabel="About you" label="About" placeholder="A little about you and what you enjoy…" value={draft.bio} onChangeText={bio => change({ bio })} maxLength={150} multiline editable={!update.isPending} style={[styles.input, styles.bio]} />
         <Typography variant="bodyMuted" style={styles.counter}>{draft.bio.length} / 150</Typography>
       </View>
@@ -70,7 +63,6 @@ export function ProfileDetailsEditor({ profile }: { profile: Profile }) {
         <View style={styles.saveButton}><Button testID="profile.save-details" label="Save details" onPress={save} loading={update.isPending} disabled={!dirty || !validName} /></View>
         {dirty ? <Pressable accessibilityRole="button" disabled={update.isPending} onPress={() => { setDraft(saved); setError(''); setMessage('') }} style={styles.reset}><Typography variant="bodyMuted">Cancel</Typography></Pressable> : null}
       </View>
-      <Typography variant="bodyMuted" accessibilityLiveRegion="polite" style={styles.helper}>{dirty ? 'You have unsaved changes' : message || 'Edit your details here, then save when you’re ready.'}</Typography>
     </View>
   )
 }

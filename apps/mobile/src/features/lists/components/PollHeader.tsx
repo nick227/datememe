@@ -11,7 +11,7 @@ type Props = {
 }
 
 export function timesTakenLabel(count: number) {
-  return count === 1 ? '1 time taken' : `${count.toLocaleString()} times taken`
+  return count === 1 ? '1 total' : `${count.toLocaleString()} total`
 }
 
 export function PollHeader({ testID, takeCount, onBack, onViewResults }: Props) {
@@ -27,19 +27,21 @@ export function PollHeader({ testID, takeCount, onBack, onViewResults }: Props) 
       >
         <Icon name="ChevronLeft" size={22} />
       </Pressable>
+      <View style={styles.row}>
       <Pressable
         testID={testID ? `${testID}.results` : undefined}
         onPress={onViewResults}
         hitSlop={8}
         accessibilityRole="button"
       >
-        <Typography variant="body" style={styles.results}>View poll results</Typography>
+        <Typography variant="body" style={styles.results}>View results</Typography>
       </Pressable>
       {takeCount != null ? (
         <Typography testID={testID ? `${testID}.taken` : undefined} variant="bodyMuted" style={styles.taken} numberOfLines={1}>
           {timesTakenLabel(takeCount)}
         </Typography>
       ) : null}
+      </View>
     </View>
   )
 }
@@ -48,6 +50,7 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     gap: spacing.md,
     minHeight: 40,
   },

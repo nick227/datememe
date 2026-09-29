@@ -19,7 +19,6 @@ export function AttributeFields({ title, helper, selected, onChange, disabled }:
       <Typography variant="bodyMuted" style={styles.helper}>{helper}</Typography>
       {PROFILE_ATTRIBUTE_GROUPS.map((group) => (
         <View key={group.title}>
-          <Typography variant="bodyMuted" style={styles.group}>{group.title}</Typography>
           <ChoiceChips
             mode="multi"
             options={group.options}

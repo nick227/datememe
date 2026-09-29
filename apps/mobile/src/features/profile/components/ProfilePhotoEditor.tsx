@@ -70,11 +70,6 @@ export function ProfilePhotoEditor({ avatarUrl, photos: initialPhotos }: Props) 
 
   return (
     <View style={styles.section}>
-      <View style={styles.headingRow}>
-        <Typography variant="title">Your photos</Typography>
-        <Typography variant="bodyMuted">{photos.length} / {MAX_PHOTOS}</Typography>
-      </View>
-      <Typography variant="bodyMuted">Lead with you. Add a few more sides of your life.</Typography>
       <View style={styles.hero}>
         {current ? (
           <>

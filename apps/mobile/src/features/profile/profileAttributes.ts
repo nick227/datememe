@@ -7,27 +7,20 @@ export const PROFILE_ATTRIBUTE_GROUPS: {
   options: { value: ProfileAttributeKey; label: string }[]
 }[] = [
   {
-    title: 'Connection',
+    title: 'Seeking',
     options: [
-      { value: 'FRIEND', label: 'Friend' },
+      { value: 'DATING', label: 'Dating' },
+      { value: 'FRIEND', label: 'Friends' },
       { value: 'RELATIONSHIP', label: 'Relationship' },
-      { value: 'MARRIAGE', label: 'Marriage' },
-    ],
-  },
-  {
-    title: 'Work',
-    options: [
       { value: 'COLLABORATOR', label: 'Collaborator' },
-      { value: 'BUSINESS_PARTNER', label: 'Business partner' },
-      { value: 'INVESTOR', label: 'Investor' },
-    ],
-  },
-  {
-    title: 'Creative',
-    options: [
-      { value: 'ACTOR', label: 'Actor' },
-      { value: 'MUSICIAN', label: 'Musician' },
-      { value: 'WRITER', label: 'Writer' },
+      { value: 'COFFEE', label: 'Coffee' },
+      { value: 'MARRIAGE', label: 'Marriage' },
+      { value: 'ONLINE', label: 'Online' },
+      { value: 'MEN', label: 'Men' },
+      { value: 'WOMEN', label: 'Women' },
+      { value: 'NONBINARY', label: 'Nonbinary' },
+      { value: 'OTHER', label: 'Other' },
+      { value: 'NOT_SPECIFIED', label: 'None of the above' },
     ],
   },
 ]
