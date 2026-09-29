@@ -16,7 +16,7 @@ function pickStrings(source: JsonObject, keys: readonly string[]) {
   return picked
 }
 
-function canonicalPayload(stored: JsonObject): JsonObject | null {
+function asActivityPayload(stored: JsonObject): JsonObject | null {
   if (typeof stored.eventKey === 'string' && isObject(stored.event)) return stored
   if (typeof stored.insightSetId !== 'string') return null
   return {
@@ -30,8 +30,8 @@ function canonicalPayload(stored: JsonObject): JsonObject | null {
 /** Map the attachments column of an Activity event onto the public systemData object. */
 export function toSystemData(stored: unknown) {
   if (!isObject(stored)) return null
-  const payload = canonicalPayload(stored)
-  if (!payload || !isObject(payload.event) || typeof payload.eventKey !== 'string') return null
+  const payload = asActivityPayload(stored)
+  if (!payload || !isObject(payload.event)) return null
   const eventType = payload.event.type
   if (typeof eventType !== 'string' || !EVENT_TYPES.has(eventType)) return null
 

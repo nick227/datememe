@@ -95,6 +95,25 @@ describe('MessagingService', () => {
     expect(aState?.lastReadAt).toBeNull()
   })
 
+  it('recordSystemActivity rejects a duplicate event key without inserting a second row', async () => {
+    const a = await makeProfile('activity-a')
+    const liked = await makeProfile('activity-b')
+    const input = {
+      type: 'PROFILE_LIKED_YOU' as const,
+      eventKey: `profile-liked-you:${a.profile!.id}:${liked.profile!.id}`,
+      displayName: 'Alex',
+      profileId: liked.profile!.id,
+    }
+    const first = await service.recordSystemActivity(a.profile!.id, input)
+    const second = await service.recordSystemActivity(a.profile!.id, input)
+    expect(first.created).toBe(true)
+    expect(second).toEqual({ created: false, conversationId: first.conversationId })
+    expect(await db.message.count({ where: { conversationId: first.conversationId } })).toBe(1)
+    await db.message.deleteMany({ where: { conversationId: first.conversationId } })
+    await db.conversationParticipant.deleteMany({ where: { conversationId: first.conversationId } })
+    await db.conversation.delete({ where: { id: first.conversationId } })
+  })
+
   it('unmatchConversation rejects a caller who is not a participant', async () => {
     const a = await makeProfile('unmatch-guard-a')
     const b = await makeProfile('unmatch-guard-b')

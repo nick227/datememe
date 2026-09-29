@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { FlatList, StyleSheet, View } from 'react-native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { useConversations, useCurrentUser, useUnmatchConversation } from '@project/sdk'
+import { useConversations, useCurrentUser, useUnmatchConversation, type components } from '@project/sdk'
 import { ScreenContainer } from '../../../ui/ScreenContainer'
 import { PageHeader } from '../../../ui/content/PageHeader'
 import { FilterChipsRow } from '../../../ui/content/FilterChipsRow'
@@ -17,6 +17,19 @@ import { ConversationRowSkeleton } from '../components/ConversationRowSkeleton'
 import type { MessagesStackParamList } from '../../../navigation/types'
 
 type Props = NativeStackScreenProps<MessagesStackParamList, 'Conversations'>
+type InboxItem = components['schemas']['Conversation']
+
+function otherParticipant(item: InboxItem, myProfileId: string | undefined) {
+  return item.participants.find((p) => p.id !== myProfileId) ?? item.participants[0]
+}
+
+function matchesQuery(item: InboxItem, query: string, myProfileId: string | undefined) {
+  if (item.type === 'SYSTEM') {
+    return 'activity'.includes(query) || !!item.lastMessageBody?.toLowerCase().includes(query)
+  }
+  const other = otherParticipant(item, myProfileId)
+  return !!other?.displayName?.toLowerCase().includes(query) || !!item.lastMessageBody?.toLowerCase().includes(query)
+}
 
 export function ConversationsScreen({ navigation }: Props) {
   const me = useCurrentUser()
@@ -26,35 +39,27 @@ export function ConversationsScreen({ navigation }: Props) {
   const sheet = useActionSheet()
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState('all')
-  const allRows = conversations.data?.pages.flatMap((p) => p.data) ?? []
-
-  // Activity is part of message history, not a secondary notification bucket.
-  // Human and SYSTEM threads therefore share one strict last-activity chronology.
-  const sortedRows = [...allRows].sort((a: any, b: any) => {
-    const aTime = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0
-    const bTime = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0
-    return bTime - aTime
-  })
-
+  const allRows = useMemo(
+    () => conversations.data?.pages.flatMap((p) => p.data) ?? [],
+    [conversations.data],
+  )
   const query = search.trim().toLowerCase()
-  let rows = query
-    ? sortedRows.filter((item) => {
-        if (item.type === 'SYSTEM') {
-          return 'activity'.includes(query) || item.lastMessageBody?.toLowerCase().includes(query)
-        }
-        const other = item.participants.find((p: any) => p.id !== myProfileId) ?? item.participants[0]
-        return (
-          other?.displayName?.toLowerCase().includes(query) ||
-          item.lastMessageBody?.toLowerCase().includes(query)
-        )
-      })
-    : sortedRows
-
-  if (filter === 'unread') {
-    rows = rows.filter((r) => r.hasUnread)
-  }
-
-  const unreadCount = allRows.filter((r) => r.hasUnread).length
+  const { rows, unreadCount } = useMemo(() => {
+    const unreadOnly = filter === 'unread'
+    let unreadCount = 0
+    if (!query && !unreadOnly) {
+      for (const item of allRows) if (item.hasUnread) unreadCount += 1
+      return { rows: allRows, unreadCount }
+    }
+    const visible: InboxItem[] = []
+    for (const item of allRows) {
+      if (item.hasUnread) unreadCount += 1
+      if (unreadOnly && !item.hasUnread) continue
+      if (query && !matchesQuery(item, query, myProfileId)) continue
+      visible.push(item)
+    }
+    return { rows: visible, unreadCount }
+  }, [allRows, query, filter, myProfileId])
   const pageFacts = [
     { value: allRows.length, label: allRows.length === 1 ? 'conversation' : 'conversations' },
     { value: unreadCount, label: 'unread' },
@@ -144,7 +149,7 @@ export function ConversationsScreen({ navigation }: Props) {
             )
           }
 
-          const other = item.participants?.find((p: any) => p.id !== myProfileId) ?? item.participants?.[0]
+          const other = otherParticipant(item, myProfileId)
           if (!other) return null
 
           return (

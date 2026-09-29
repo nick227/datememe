@@ -1,5 +1,5 @@
 import { db, Prisma } from '@project/db'
-import { decodeCursor, encodeCursor, normalizeLimit } from '../lib/pagination'
+import { decodeCursor, encodeCursor, normalizeLimit, olderThanCursor } from '../lib/pagination'
 import { PROFILE_FULL_SELECT, serializeProfile } from '../lib/serializers'
 import { enforceLimit, resolveEntitlements, Entitlements, startOfUtcDay } from '../lib/entitlements'
 import { isBlockedEitherWay } from '../lib/blocks'
@@ -25,20 +25,29 @@ export const CONVERSATION_INCLUDE = {
 
 export function serializeConversation(conversation: any, viewerProfileId: string, entitlements: Entitlements) {
   const lastMessage = conversation.messages[0]
+  const participants: ReturnType<typeof serializeProfile>[] = []
+  const participantReadState: { profileId: string; lastReadAt: Date | null }[] = []
+  let viewerParticipant: { lastReadAt: Date | null } | null = null
+
+  for (const participant of conversation.participants) {
+    const profile = participant.profile
+    if (profile.id === viewerProfileId) viewerParticipant = participant
+    participants.push(serializeProfile(profile, {
+      revealPhoto: profile.id === viewerProfileId || entitlements['profile.fullPhotoAccess'],
+    }))
+    participantReadState.push({ profileId: profile.id, lastReadAt: participant.lastReadAt ?? null })
+  }
+
   let lastMessageBody = null
   let hasUnread = false
-
-  const viewerParticipant = conversation.participants.find((p: any) => p.profile.id === viewerProfileId)
-
   if (lastMessage) {
     const isSystem = conversation.type === 'SYSTEM' || !!lastMessage.systemMessageType
     const isOwn = lastMessage.senderId === viewerProfileId
     const locked = !isSystem && !isOwn && !entitlements['messaging.readIncoming']
     lastMessageBody = locked ? '🔒 New message' : lastMessage.body
-
     if (!isOwn && viewerParticipant) {
       const shouldNotify = !isSystem || (lastMessage.attachments as any)?.notify !== false
-      hasUnread = shouldNotify && (!viewerParticipant.lastReadAt || new Date(lastMessage.createdAt) > new Date(viewerParticipant.lastReadAt))
+      hasUnread = shouldNotify && (!viewerParticipant.lastReadAt || lastMessage.createdAt > viewerParticipant.lastReadAt)
     }
   }
 
@@ -47,14 +56,8 @@ export function serializeConversation(conversation: any, viewerProfileId: string
     type: conversation.type,
     status: conversation.status,
     initiatedById: conversation.initiatedById,
-    participants: conversation.participants.map((p: any) => {
-      const revealPhoto = p.profile.id === viewerProfileId || entitlements['profile.fullPhotoAccess']
-      return serializeProfile(p.profile, { revealPhoto })
-    }),
-    participantReadState: conversation.participants.map((p: any) => ({
-      profileId: p.profile.id,
-      lastReadAt: p.lastReadAt ?? null,
-    })),
+    participants,
+    participantReadState,
     lastMessageAt: lastMessage?.createdAt ?? null,
     lastMessageBody,
     hasUnread,
@@ -84,6 +87,31 @@ type SystemActivityInput =
   | { type: 'MATCH'; eventKey: string; displayName: string; profileId: string; conversationId: string; notify?: boolean }
   | { type: 'LIST_COMPLETED'; eventKey: string; title: string; categoryId: string; categorySlug: string; listId: string; notify?: boolean }
 
+function activityContent(input: SystemActivityInput) {
+  if (input.type === 'MATCH') {
+    return {
+      systemMessageType: 'MATCH' as const,
+      body: `You matched with ${input.displayName}`,
+      event: { type: input.type, profileId: input.profileId, conversationId: input.conversationId },
+      cta: { label: 'Open conversation', route: 'Conversation', params: { conversationId: input.conversationId, displayName: input.displayName } },
+    }
+  }
+  if (input.type === 'LIST_COMPLETED') {
+    return {
+      systemMessageType: 'ACTIVITY_DIGEST' as const,
+      body: `You ranked ${input.title}`,
+      event: { type: input.type, categoryId: input.categoryId, categorySlug: input.categorySlug, listId: input.listId },
+      cta: { label: 'View answers', route: 'ListBuilder', params: { categorySlug: input.categorySlug } },
+    }
+  }
+  return {
+    systemMessageType: 'LIKE' as const,
+    body: input.type === 'PROFILE_LIKED' ? `You liked ${input.displayName}` : `${input.displayName} liked you`,
+    event: { type: input.type, profileId: input.profileId },
+    cta: { label: 'View profile', route: 'ProfileDetail', params: { profileId: input.profileId, displayName: input.displayName } },
+  }
+}
+
 export class MessagingService {
   async listConversations(viewerUserId: string, viewerProfileId: string, opts: { cursor?: string; limit?: number }) {
     const limit = normalizeLimit(opts.limit)
@@ -93,14 +121,7 @@ export class MessagingService {
     const conversations = await db.conversation.findMany({
       where: {
         participants: { some: { profileId: viewerProfileId } },
-        ...(cursor
-          ? {
-              OR: [
-                { updatedAt: { lt: new Date(cursor.createdAt) } },
-                { updatedAt: new Date(cursor.createdAt), id: { lt: cursor.id } },
-              ],
-            }
-          : {}),
+        ...olderThanCursor(cursor, 'updatedAt'),
       },
       orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
       take: limit + 1,
@@ -139,40 +160,16 @@ export class MessagingService {
       })
     }
 
-    const existing = await db.message.findMany({
-      where: { conversationId: conversation.id, systemMessageType: { not: null } },
-      select: { id: true, attachments: true },
+    const duplicate = await db.message.findFirst({
+      where: {
+        conversationId: conversation.id,
+        attachments: { path: '$.eventKey', equals: input.eventKey },
+      },
+      select: { id: true },
     })
-    if (existing.some((m) => (m.attachments as any)?.eventKey === input.eventKey)) {
-      return { created: false as const, conversationId: conversation.id }
-    }
+    if (duplicate) return { created: false as const, conversationId: conversation.id }
 
-    let systemMessageType: 'LIKE' | 'MATCH' | 'ACTIVITY_DIGEST'
-    let body: string
-    let event: Prisma.JsonObject
-    let cta: { label: string; route: string; params: Record<string, string> }
-
-    if (input.type === 'PROFILE_LIKED') {
-      systemMessageType = 'LIKE'
-      body = `You liked ${input.displayName}`
-      event = { type: input.type, profileId: input.profileId }
-      cta = { label: 'View profile', route: 'ProfileDetail', params: { profileId: input.profileId, displayName: input.displayName } }
-    } else if (input.type === 'PROFILE_LIKED_YOU') {
-      systemMessageType = 'LIKE'
-      body = `${input.displayName} liked you`
-      event = { type: input.type, profileId: input.profileId }
-      cta = { label: 'View profile', route: 'ProfileDetail', params: { profileId: input.profileId, displayName: input.displayName } }
-    } else if (input.type === 'MATCH') {
-      systemMessageType = 'MATCH'
-      body = `You matched with ${input.displayName}`
-      event = { type: input.type, profileId: input.profileId, conversationId: input.conversationId }
-      cta = { label: 'Open conversation', route: 'Conversation', params: { conversationId: input.conversationId, displayName: input.displayName } }
-    } else {
-      systemMessageType = 'ACTIVITY_DIGEST'
-      body = `You ranked ${input.title}`
-      event = { type: input.type, categoryId: input.categoryId, categorySlug: input.categorySlug, listId: input.listId }
-      cta = { label: 'View answers', route: 'ListBuilder', params: { categorySlug: input.categorySlug } }
-    }
+    const { systemMessageType, body, event, cta } = activityContent(input)
 
     const now = new Date()
     await db.$transaction([
@@ -239,14 +236,7 @@ export class MessagingService {
     const messages = await db.message.findMany({
       where: {
         conversationId,
-        ...(cursor
-          ? {
-              OR: [
-                { createdAt: { lt: new Date(cursor.createdAt) } },
-                { createdAt: new Date(cursor.createdAt), id: { lt: cursor.id } },
-              ],
-            }
-          : {}),
+        ...olderThanCursor(cursor, 'createdAt'),
       },
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       take: limit + 1,

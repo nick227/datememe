@@ -176,11 +176,9 @@ async function deliverSystemMessage(profileId: string, set: any) {
 
   // 2. Draft the rich text body
   const totalInteractions = (set.sampleSummary as any)?.messages || 0
-  let body = `Your activity this week\n${totalInteractions} people interacted with your profile\n\n`
-  
-  for (const insight of set.insights) {
-    body += `${insight.label} ↑\n${insight.value}\n\n`
-  }
+  const lines = ['Your activity this week', `${totalInteractions} people interacted with your profile`, '']
+  for (const insight of set.insights) lines.push(`${insight.label} ↑`, insight.value, '')
+  const body = lines.join('\n')
 
   // 3. Idempotent check & transactional delivery
   await db.$transaction(async (tx) => {
@@ -188,9 +186,9 @@ async function deliverSystemMessage(profileId: string, set: any) {
     const existingMessage = await tx.message.findFirst({
       where: {
         conversationId: systemConversation!.id,
-        systemMessageType: 'ACTIVITY_DIGEST',
-        attachments: { string_contains: set.id } // crude json match to find set.id
-      }
+        attachments: { path: '$.insightSetId', equals: set.id },
+      },
+      select: { id: true },
     })
 
     if (existingMessage) {

@@ -21,6 +21,18 @@ export function normalizeLimit(limit?: number, max = 100, fallback = 20) {
   return Math.min(Math.max(Number(limit ?? fallback), 1), max)
 }
 
+/** Rows strictly older than a `{createdAt, id}` cursor. One Date, shared by both OR branches. */
+export function olderThanCursor(cursor: CursorPayload | null, field: 'createdAt' | 'updatedAt') {
+  if (!cursor) return {}
+  const at = new Date(cursor.createdAt)
+  return {
+    OR: [
+      { [field]: { lt: at } },
+      { [field]: at, id: { lt: cursor.id } },
+    ],
+  }
+}
+
 /**
  * Simpler opaque cursor for result sets ranked by relevance/popularity rather than
  * chronological order (autocomplete, discovery) — encodes a plain row offset instead
