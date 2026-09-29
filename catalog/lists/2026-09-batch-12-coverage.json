@@ -1,0 +1,84 @@
+[
+  {
+    "schemaVersion": 1,
+    "groupSlug": "lifestyle-hobbies",
+    "entityTypeSlug": "animal",
+    "createEntityType": { "label": "Animal", "pluralLabel": "Animals" },
+    "title": "Dream Pet",
+    "prompt": "What pet do you have, or want someday?",
+    "axes": ["pets", "lifestyle", "home"],
+    "values": ["Dog", "Cat", "Rabbit", "Parrot", "Hamster", "Goldfish", "Turtle", "Horse", "Bearded dragon", "Hedgehog", "Backyard chickens", "No pets for me"],
+    "isAbstract": true
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "lifestyle-hobbies",
+    "entityTypeSlug": "animal",
+    "title": "Favorite Animals",
+    "prompt": "Which animals do you love most?",
+    "axes": ["pets", "nature", "personality"],
+    "values": ["Dog", "Cat", "Otter", "Red panda", "Penguin", "Dolphin", "Elephant", "Capybara", "Octopus", "Sloth", "Owl", "Tiger"],
+    "isAbstract": true
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "lifestyle-hobbies",
+    "entityTypeSlug": "social-habit",
+    "createEntityType": { "label": "Social Habit", "pluralLabel": "Social Habits" },
+    "title": "Making Plans",
+    "prompt": "How do you make plans with friends?",
+    "axes": ["social", "communication", "personality"],
+    "values": ["Booked weeks ahead", "Totally spontaneous", "Always the organizer", "Waits to be invited", "Sends a calendar invite", "Standing weekly hang", "Last-minute yes", "Group-chat poll", "\"Maybe\" until the last second", "Cancels if it rains", "Brings a plus-one", "Leaves room to bail"],
+    "isAbstract": true
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "food-drink",
+    "entityTypeSlug": "food",
+    "title": "Go-To Breakfast",
+    "prompt": "What's your go-to breakfast?",
+    "axes": ["food", "routine", "lifestyle"],
+    "values": ["Eggs and bacon", "Avocado toast", "Cereal", "Smoothie", "Oatmeal", "Bagel and cream cheese", "Pancakes", "Breakfast burrito", "Yogurt and granola", "Just coffee", "Leftover pizza", "Skip breakfast"],
+    "isAbstract": true
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "lifestyle-hobbies",
+    "entityTypeSlug": "daily-habit",
+    "title": "Cleaning Style",
+    "prompt": "What's your cleaning style?",
+    "axes": ["home", "routine", "lifestyle"],
+    "values": ["Clean as I go", "Sunday reset", "Only when guests are coming", "The robot vacuum handles it", "Monthly deep clean", "Organized chaos", "Label everything", "Dishes can soak overnight", "Making the bed", "Hire a cleaner", "The clothes chair", "Stress-cleaning"],
+    "isAbstract": true
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "food-drink",
+    "entityTypeSlug": "beverage",
+    "title": "Your Bar Order",
+    "prompt": "What's your usual bar order?",
+    "axes": ["nightlife", "food", "lifestyle"],
+    "values": ["Cheap beer", "IPA", "Glass of red wine", "Vodka soda", "Tequila soda", "Hard seltzer", "Whiskey neat", "Cider", "Rosé", "Shots for the table", "Mocktail", "Water, I'm driving"],
+    "isAbstract": true
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "lifestyle-hobbies",
+    "entityTypeSlug": "pet-peeve",
+    "title": "Money Pet Peeves",
+    "prompt": "Which money habits drive you up the wall?",
+    "axes": ["money", "values", "dating"],
+    "values": ["Never pays you back", "Splits the bill to the penny", "Brags about what things cost", "Always \"forgot\" their wallet", "Bad tipper", "Crypto talk on a first date", "Designer everything, no savings", "Venmo requests for everything", "Won't chip in for the appetizer they ate", "Asks what you make", "Lends money and never lets you forget", "Cheap gifts, expensive taste"],
+    "isAbstract": true
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "travel",
+    "entityTypeSlug": "city",
+    "title": "Underrated Cities",
+    "prompt": "Which underrated city would you tell a friend to visit?",
+    "axes": ["travel", "adventure", "taste"],
+    "values": ["Lisbon", "Porto", "Mexico City", "Montreal", "Budapest", "Copenhagen", "Kyoto", "Cape Town", "Edinburgh", "Medellín", "Ljubljana", "Oaxaca"],
+    "isAbstract": false
+  }
+]
