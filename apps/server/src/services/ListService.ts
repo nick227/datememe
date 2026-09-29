@@ -128,14 +128,14 @@ export class ListService {
 
       await tx.jobQueue.createMany({ data: jobsToCreate })
 
-      const list = await tx.list.findUniqueOrThrow({ where: { id: upserted.id }, select: LIST_PREVIEW_SELECT })
-      return { list, becameComplete: isComplete && !wasComplete }
+      return tx.list.findUniqueOrThrow({ where: { id: upserted.id }, select: LIST_PREVIEW_SELECT })
     })
 
-    // Only the first completed submission becomes activity. Editing a completed
-    // list later should not spam the user's history; the event itself is also
-    // idempotent in case this request is retried.
-    if (result.becameComplete) {
+    // Try the idempotent activity write on every completed save, not only the
+    // incomplete→complete transition. If the list transaction succeeds but a
+    // later activity write temporarily fails, a normal client retry repairs the
+    // missing record without ever creating a duplicate.
+    if (isComplete) {
       await systemActivity.recordListCompleted(profileId, {
         id: category.id,
         slug: category.slug,
@@ -144,6 +144,6 @@ export class ListService {
       })
     }
 
-    return serializeListForViewer(result.list, profileId)
+    return serializeListForViewer(result, profileId)
   }
 }
