@@ -99,6 +99,19 @@ describe('user submissions join the list for everyone', () => {
     expect((await taxonomy.searchCategoryEntities(slug, otherProfileId, {})).data.map((entity) => entity.id)).toContain(inPoolId)
   })
 
+  it('offers values in the admin order, not by popularity', async () => {
+    const rows = await db.categoryEntity.findMany({ where: { categoryId: curatedId, isExcluded: false }, orderBy: { sortOrder: 'asc' }, select: { entityId: true } })
+    const reversed = rows.map((r) => r.entityId).reverse()
+    await db.entity.update({ where: { id: reversed[reversed.length - 1]! }, data: { usageCount: { increment: 1000 } } })
+    try {
+      for (const [sortOrder, entityId] of reversed.entries()) await db.categoryEntity.update({ where: { categoryId_entityId: { categoryId: curatedId, entityId } }, data: { sortOrder } })
+      const found = await taxonomy.searchCategoryEntities(slug, profileId, { limit: 100 })
+      expect(found.data.map((entity) => entity.id)).toEqual(reversed)
+    } finally {
+      await db.entity.update({ where: { id: reversed[reversed.length - 1]! }, data: { usageCount: { decrement: 1000 } } })
+    }
+  })
+
   it('publishes onto a tagged list and lifts an exclusion', async () => {
     const submitted = await taxonomy.submitEntity(profileId, `${slug}-filtered`, 'Cowboy Bebop')
     const customId = submitted.submittedEntity.id

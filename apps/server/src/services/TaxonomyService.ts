@@ -1,4 +1,3 @@
-import { curatedPool } from '../lib/categoryPool'
 import { db, Prisma } from '@project/db'
 import { decodeOffsetCursor, encodeOffsetCursor, normalizeLimit } from '../lib/pagination'
 import { similarity } from '../lib/levenshtein'
@@ -122,18 +121,19 @@ export class TaxonomyService {
       ? [{ canonicalName: { contains: opts.q } }, { aliases: { some: { alias: { contains: opts.q } } } }]
       : null
 
-    const rows = await db.entity.findMany({
+    // A list's order is its admin order (CategoryEntity.sortOrder); popularity and
+    // name only break ties. Pending/rejected values show only to their submitter.
+    const rows = (await db.categoryEntity.findMany({
       where: {
-        ...curatedPool(category),
-        AND: [{ OR: statusOr }, ...(searchOr ? [{ OR: searchOr }] : [])],
+        categoryId: category.id,
+        isExcluded: false,
+        entity: { mergedIntoId: null, AND: [{ OR: statusOr }, ...(searchOr ? [{ OR: searchOr }] : [])] },
       },
-      // Alphabetically APPROVED < PENDING < REJECTED, so this also puts live entities
-      // first without a separate CASE expression — documented, not accidental.
-      orderBy: [{ status: 'asc' }, { usageCount: 'desc' }, { canonicalName: 'asc' }],
+      orderBy: [{ sortOrder: 'asc' }, { entity: { usageCount: 'desc' } }, { entity: { canonicalName: 'asc' } }],
       skip: offset,
       take: limit + 1,
-      select: ENTITY_SELECT,
-    })
+      select: { entity: { select: ENTITY_SELECT } },
+    })).map((row) => row.entity)
 
     const hasMore = rows.length > limit
     const items = hasMore ? rows.slice(0, limit) : rows
