@@ -18,8 +18,6 @@ import type { MessagesStackParamList } from '../../../navigation/types'
 
 type Props = NativeStackScreenProps<MessagesStackParamList, 'Conversations'>
 
-
-
 export function ConversationsScreen({ navigation }: Props) {
   const me = useCurrentUser()
   const myProfileId = me.data?.profile?.id
@@ -29,20 +27,10 @@ export function ConversationsScreen({ navigation }: Props) {
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState('all')
   const allRows = conversations.data?.pages.flatMap((p) => p.data) ?? []
-  
-  // Enforce sort rule: unread human > recent human > unread system > recent system
+
+  // Activity is part of message history, not a secondary notification bucket.
+  // Human and SYSTEM threads therefore share one strict last-activity chronology.
   const sortedRows = [...allRows].sort((a: any, b: any) => {
-    // 1. Rank Unread Human
-    const aHumanUnread = a.type !== 'SYSTEM' && a.hasUnread
-    const bHumanUnread = b.type !== 'SYSTEM' && b.hasUnread
-    if (aHumanUnread && !bHumanUnread) return -1
-    if (bHumanUnread && !aHumanUnread) return 1
-
-    // 2. Rank Type (Human > System)
-    if (a.type !== 'SYSTEM' && b.type === 'SYSTEM') return -1
-    if (b.type !== 'SYSTEM' && a.type === 'SYSTEM') return 1
-
-    // 3. Rank Recent (Time)
     const aTime = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0
     const bTime = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0
     return bTime - aTime
@@ -51,6 +39,9 @@ export function ConversationsScreen({ navigation }: Props) {
   const query = search.trim().toLowerCase()
   let rows = query
     ? sortedRows.filter((item) => {
+        if (item.type === 'SYSTEM') {
+          return 'activity'.includes(query) || item.lastMessageBody?.toLowerCase().includes(query)
+        }
         const other = item.participants.find((p: any) => p.id !== myProfileId) ?? item.participants[0]
         return (
           other?.displayName?.toLowerCase().includes(query) ||
@@ -88,8 +79,6 @@ export function ConversationsScreen({ navigation }: Props) {
     })
   }
 
-
-
   if (conversations.isError) {
     return (
       <ScreenContainer testID="screen.conversations" width="full">
@@ -103,7 +92,6 @@ export function ConversationsScreen({ navigation }: Props) {
       <FlatList
         data={(conversations.isLoading ? [1, 2, 3, 4, 5] : rows) as any[]}
         keyExtractor={(item) => (typeof item === 'number' ? String(item) : item.id)}
-        // Full-bleed scroll box, constrained content width
         contentContainerStyle={[styles.listContent, { width: '100%', maxWidth: CANVAS_WIDTH, alignSelf: 'center' }]}
         onEndReached={() => conversations.hasNextPage && conversations.fetchNextPage()}
         ListHeaderComponent={
@@ -123,7 +111,7 @@ export function ConversationsScreen({ navigation }: Props) {
                 />
               </View>
             )}
-            <FilterChipsRow 
+            <FilterChipsRow
               chips={[{ id: 'all', label: 'All' }, { id: 'unread', label: 'Unread' }]}
               selectedIds={[filter]}
               onSelect={setFilter}
@@ -147,11 +135,11 @@ export function ConversationsScreen({ navigation }: Props) {
             return (
               <SystemConversationRow
                 conversationId={item.id}
-                title="Datememe"
-                previewText={item.lastMessageBody || 'New updates available'}
+                title="Activity"
+                previewText={item.lastMessageBody || 'Your activity history'}
                 createdAt={item.lastMessageAt}
                 isUnread={item.hasUnread}
-                onPress={() => navigation.navigate('Conversation', { conversationId: item.id, displayName: 'Datememe' })}
+                onPress={() => navigation.navigate('Conversation', { conversationId: item.id, displayName: 'Activity' })}
               />
             )
           }
@@ -184,9 +172,9 @@ const styles = StyleSheet.create({
     width: '100%',
     alignSelf: 'center',
   },
-  searchContainer: { 
-    paddingHorizontal: spacing.lg, 
-    marginBottom: spacing.md 
+  searchContainer: {
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.md,
   },
   dropdownPlaceholder: {
     ...type.label,
@@ -196,5 +184,5 @@ const styles = StyleSheet.create({
     marginLeft: 56 + spacing.md + spacing.lg,
     width: '100%',
     alignSelf: 'center',
-  }
+  },
 })
