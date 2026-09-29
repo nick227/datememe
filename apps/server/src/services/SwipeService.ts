@@ -35,7 +35,7 @@ export class SwipeService {
       throw { statusCode: 404, message: 'Profile not found' }
     }
 
-    await db.swipe.upsert({
+    const swipe = await db.swipe.upsert({
       where: { actorProfileId_targetProfileId: { actorProfileId, targetProfileId } },
       update: { action },
       create: { actorProfileId, targetProfileId, action },
@@ -44,9 +44,9 @@ export class SwipeService {
     if (action === 'PASS') return { matched: false as const }
 
     // A Like is also a durable activity record for the person who made it.
-    // The event key makes retries safe, so calling submitSwipe twice does not
-    // create duplicate history rows.
-    await systemActivity.recordProfileLiked(actorProfileId, target)
+    // The swipe id is stable across request retries but changes after an
+    // unmatch deletes the old swipe, so legitimate later re-likes survive.
+    await systemActivity.recordProfileLiked(actorProfileId, target, swipe.id)
 
     const mirror = await db.swipe.findUnique({
       where: { actorProfileId_targetProfileId: { actorProfileId: targetProfileId, targetProfileId: actorProfileId } },
@@ -55,7 +55,7 @@ export class SwipeService {
     if (!mirror || mirror.action !== 'LIKE') {
       // Keep the existing "someone liked you" behavior, but do not add this
       // extra row when the Like immediately becomes a match (the match event is clearer).
-      await systemActivity.recordProfileLikedYou(targetProfileId, actor)
+      await systemActivity.recordProfileLikedYou(targetProfileId, actor, swipe.id)
       return { matched: false as const }
     }
 
