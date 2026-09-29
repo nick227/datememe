@@ -200,6 +200,7 @@ async function deliverSystemMessage(profileId: string, set: any) {
     const attachments = {
       insightSetId: set.id,
       fingerprint: set.fingerprint,
+      notify: true,
       cta: {
         label: 'View activity',
         route: 'Activity',
@@ -207,6 +208,7 @@ async function deliverSystemMessage(profileId: string, set: any) {
       }
     }
 
+    const deliveredAt = new Date()
     await tx.message.create({
       data: {
         conversationId: systemConversation!.id,
@@ -216,11 +218,18 @@ async function deliverSystemMessage(profileId: string, set: any) {
       }
     })
 
+    // Message inserts do not update the parent row. Inbox chronology is driven
+    // by Conversation.updatedAt, so every system delivery must bump it explicitly.
+    await tx.conversation.update({
+      where: { id: systemConversation!.id },
+      data: { updatedAt: deliveredAt }
+    })
+
     await tx.profileInsightSet.update({
       where: { id: set.id },
       data: { 
         deliveryStatus: 'DELIVERED',
-        lastDeliveredAt: new Date()
+        lastDeliveredAt: deliveredAt
       }
     })
   })
