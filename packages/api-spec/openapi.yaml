@@ -583,13 +583,61 @@ components:
           description: '"🔒 New message" when the caller is free-tier and didn''t send the last message (docs §8 receiving gate); null when there are no messages yet.'
         hasUnread: { type: boolean }
 
+    SystemEvent:
+      type: object
+      required: [type]
+      properties:
+        type:
+          type: string
+          enum: [PROFILE_LIKED, PROFILE_LIKED_YOU, MATCH, LIST_COMPLETED, ACTIVITY_DIGEST]
+        profileId: { type: string }
+        conversationId: { type: string }
+        categoryId: { type: string }
+        categorySlug: { type: string }
+        listId: { type: string }
+        insightSetId: { type: string }
+
+    SystemCta:
+      type: object
+      required: [label, route, params]
+      properties:
+        label: { type: string }
+        route: { type: string, enum: [ProfileDetail, Conversation, ListBuilder, Activity] }
+        params:
+          type: object
+          properties:
+            profileId: { type: string }
+            displayName: { type: string }
+            conversationId: { type: string }
+            categorySlug: { type: string }
+            shortLabel: { type: string }
+            insightSetId: { type: string }
+
+    SystemData:
+      type: object
+      required: [eventKey, event]
+      description: Navigation payload for one Activity event. Stored in Message.attachments; never returned as chat media.
+      properties:
+        eventKey: { type: string }
+        event: { $ref: '#/components/schemas/SystemEvent' }
+        cta: { $ref: '#/components/schemas/SystemCta' }
+        notify: { type: boolean }
+
     Message:
       type: object
-      required: [id, conversationId, senderId, locked, createdAt]
+      required: [id, conversationId, senderId, systemMessageType, body, attachments, systemData, locked, createdAt]
       properties:
         id: { type: string }
         conversationId: { type: string }
-        senderId: { type: string }
+        senderId:
+          type: string
+          nullable: true
+          description: Null on an Activity event. A person's message always has the sender's profile id.
+        systemMessageType:
+          type: string
+          nullable: true
+          enum: [WELCOME, LIKE, MATCH, ACTIVITY_DIGEST, ACCOUNT, SAFETY]
+          description: Set on an Activity event; null on a person's message.
         body:
           type: string
           nullable: true
@@ -597,7 +645,7 @@ components:
         attachments:
           type: array
           nullable: true
-          description: Media on a person's message. Always null on system (activity) messages — see `systemData`.
+          description: Media on a person's message. Null on an Activity event — see `systemData`.
           items:
             type: object
             required: [type, url]
@@ -607,35 +655,11 @@ components:
               mimeType: { type: string }
               width: { type: integer }
               height: { type: integer }
-        systemMessageType:
-          type: string
-          nullable: true
-          enum: [LIKE, MATCH, ACTIVITY_DIGEST, null]
-          description: Set on activity messages in the SYSTEM conversation; null on a person's message.
         systemData:
-          type: object
           nullable: true
-          additionalProperties: true
-          description: Structured data of an activity message (null on a person's message). Stored in the message's attachments column; returned here so `attachments` keeps one meaning.
-          properties:
-            eventKey: { type: string }
-            event:
-              type: object
-              additionalProperties: true
-              properties:
-                type: { type: string, description: 'PROFILE_LIKED, PROFILE_LIKED_YOU, MATCH, LIST_COMPLETED, …' }
-            cta:
-              type: object
-              required: [label, route]
-              properties:
-                label: { type: string }
-                route: { type: string }
-                params:
-                  type: object
-                  additionalProperties: { type: string }
-            notify: { type: boolean }
-            insightSetId: { type: string }
-            fingerprint: { type: string }
+          description: Activity navigation payload. Null on a person's message.
+          allOf:
+            - $ref: '#/components/schemas/SystemData'
         locked: { type: boolean }
         createdAt: { type: string, format: date-time }
 

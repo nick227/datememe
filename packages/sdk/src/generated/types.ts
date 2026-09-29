@@ -1875,14 +1875,50 @@ export interface components {
             lastMessageBody: string | null;
             hasUnread: boolean;
         };
+        SystemEvent: {
+            /** @enum {string} */
+            type: "PROFILE_LIKED" | "PROFILE_LIKED_YOU" | "MATCH" | "LIST_COMPLETED" | "ACTIVITY_DIGEST";
+            profileId?: string;
+            conversationId?: string;
+            categoryId?: string;
+            categorySlug?: string;
+            listId?: string;
+            insightSetId?: string;
+        };
+        SystemCta: {
+            label: string;
+            /** @enum {string} */
+            route: "ProfileDetail" | "Conversation" | "ListBuilder" | "Activity";
+            params: {
+                profileId?: string;
+                displayName?: string;
+                conversationId?: string;
+                categorySlug?: string;
+                shortLabel?: string;
+                insightSetId?: string;
+            };
+        };
+        /** @description Navigation payload for one Activity event. Stored in Message.attachments; never returned as chat media. */
+        SystemData: {
+            eventKey: string;
+            event: components["schemas"]["SystemEvent"];
+            cta?: components["schemas"]["SystemCta"];
+            notify?: boolean;
+        };
         Message: {
             id: string;
             conversationId: string;
-            senderId: string;
+            /** @description Null on an Activity event. A person's message always has the sender's profile id. */
+            senderId: string | null;
+            /**
+             * @description Set on an Activity event; null on a person's message.
+             * @enum {string|null}
+             */
+            systemMessageType: "WELCOME" | "LIKE" | "MATCH" | "ACTIVITY_DIGEST" | "ACCOUNT" | "SAFETY" | null;
             /** @description Null when `locked` is true — free-tier recipient, see docs §8. */
-            body?: string | null;
-            /** @description Media on a person's message. Always null on system (activity) messages — see `systemData`. */
-            attachments?: {
+            body: string | null;
+            /** @description Media on a person's message. Null on an Activity event — see `systemData`. */
+            attachments: {
                 /** @enum {string} */
                 type: "image" | "video";
                 url: string;
@@ -1890,33 +1926,8 @@ export interface components {
                 width?: number;
                 height?: number;
             }[] | null;
-            /**
-             * @description Set on activity messages in the SYSTEM conversation; null on a person's message.
-             * @enum {string|null}
-             */
-            systemMessageType?: "LIKE" | "MATCH" | "ACTIVITY_DIGEST" | null;
-            /** @description Structured data of an activity message (null on a person's message). Stored in the message's attachments column; returned here so `attachments` keeps one meaning. */
-            systemData?: ({
-                eventKey?: string;
-                event?: {
-                    /** @description PROFILE_LIKED, PROFILE_LIKED_YOU, MATCH, LIST_COMPLETED, … */
-                    type?: string;
-                } & {
-                    [key: string]: unknown;
-                };
-                cta?: {
-                    label: string;
-                    route: string;
-                    params?: {
-                        [key: string]: string;
-                    };
-                };
-                notify?: boolean;
-                insightSetId?: string;
-                fingerprint?: string;
-            } & {
-                [key: string]: unknown;
-            }) | null;
+            /** @description Activity navigation payload. Null on a person's message. */
+            systemData: components["schemas"]["SystemData"] | null;
             locked: boolean;
             /** Format: date-time */
             createdAt: string;

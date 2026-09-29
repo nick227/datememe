@@ -3,6 +3,7 @@ import { decodeCursor, encodeCursor, normalizeLimit } from '../lib/pagination'
 import { PROFILE_FULL_SELECT, serializeProfile } from '../lib/serializers'
 import { enforceLimit, resolveEntitlements, Entitlements, startOfUtcDay } from '../lib/entitlements'
 import { isBlockedEitherWay } from '../lib/blocks'
+import { toSystemData } from '../lib/systemData'
 
 // serializeProfile (below) always reads genderIdentity/bio/seekingGenders/
 // isA/lookingFor/locationLabel/onboardingStep/photos — PROFILE_SUMMARY_SELECT omits most of
@@ -60,8 +61,6 @@ export function serializeConversation(conversation: any, viewerProfileId: string
   }
 }
 
-const isPlainObject = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v)
-
 function serializeMessage(message: any, viewerProfileId: string, entitlements: Entitlements) {
   const isSystem = !!message.systemMessageType
   const isOwn = message.senderId === viewerProfileId
@@ -69,13 +68,11 @@ function serializeMessage(message: any, viewerProfileId: string, entitlements: E
   return {
     id: message.id,
     conversationId: message.conversationId,
-    senderId: message.senderId,
+    senderId: message.senderId ?? null,
     systemMessageType: message.systemMessageType ?? null,
     body: locked ? null : message.body,
-    // One column, two meanings: media on a person's message, structured event data
-    // on an activity message. The API keeps them apart (attachments vs systemData).
     attachments: locked || isSystem || !Array.isArray(message.attachments) ? null : message.attachments,
-    systemData: isSystem && isPlainObject(message.attachments) ? message.attachments : null,
+    systemData: isSystem ? toSystemData(message.attachments) : null,
     locked,
     createdAt: message.createdAt,
   }

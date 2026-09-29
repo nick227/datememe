@@ -29,8 +29,20 @@ import { hapticLight, hapticSuccess } from '../../../lib/haptics'
 
 type Props = NativeStackScreenProps<MessagesStackParamList, 'Conversation'>
 
-function systemEventTitle(item: any) {
-  switch (item.systemData?.event?.type) {
+type ActivityCta = {
+  label: string
+  route: string
+  params?: {
+    profileId?: string
+    displayName?: string
+    conversationId?: string
+    categorySlug?: string
+    shortLabel?: string
+  }
+}
+
+function systemEventTitle(eventType: string | undefined) {
+  switch (eventType) {
     case 'PROFILE_LIKED': return 'Like sent'
     case 'PROFILE_LIKED_YOU': return 'New like'
     case 'MATCH': return 'Match'
@@ -39,7 +51,7 @@ function systemEventTitle(item: any) {
   }
 }
 
-function supportsSystemCta(cta: any) {
+function supportsSystemCta(cta: ActivityCta | null | undefined): cta is ActivityCta {
   return cta?.route === 'ProfileDetail' || cta?.route === 'Conversation' || cta?.route === 'ListBuilder'
 }
 
@@ -78,7 +90,7 @@ export function ConversationScreen({ route, navigation }: Props) {
   const myLastMessage = rows.find((m) => m.senderId === myProfileId)
   const isSeen = !!(myLastMessage && otherReadAt && new Date(otherReadAt) >= new Date(myLastMessage.createdAt))
 
-  const isSystemThread = conversation?.type === 'SYSTEM'
+  const isSystemThread = conversation?.type === 'SYSTEM' || rows.some((message) => message.systemMessageType != null)
   const contextLine = isSystemThread ? null : '8 shared favorites · strongest overlap: Music'
 
   async function handleSend() {
@@ -210,7 +222,7 @@ export function ConversationScreen({ route, navigation }: Props) {
     })
   }
 
-  function handleSystemCta(cta: any) {
+  function handleSystemCta(cta: ActivityCta) {
     if (!supportsSystemCta(cta)) return
 
     if (cta.route === 'ProfileDetail' && cta.params?.profileId) {
@@ -254,8 +266,9 @@ export function ConversationScreen({ route, navigation }: Props) {
         <Pressable
           testID="conversation.profile"
           style={styles.headerProfile}
+          disabled={isSystemThread}
           onPress={() =>
-            !isSystemThread && otherParticipant &&
+            otherParticipant &&
             (navigation.getParent()?.navigate as any)('Discover', {
               screen: 'ProfileDetail',
               params: { profileId: otherParticipant.id, displayName: otherParticipant.displayName },
@@ -318,18 +331,23 @@ export function ConversationScreen({ route, navigation }: Props) {
               const actionable = supportsSystemCta(cta)
               return (
                 <View style={styles.systemCardContainer}>
-                  <View style={styles.systemCard}>
-                    <Text style={styles.systemCardTitle}>{systemEventTitle(item)}</Text>
+                  <Pressable
+                    testID={`conversation.system.${item.id}`}
+                    style={styles.systemCard}
+                    disabled={!actionable}
+                    onPress={() => actionable && handleSystemCta(cta)}
+                  >
+                    <Text style={styles.systemCardTitle}>{systemEventTitle(item.systemData?.event?.type)}</Text>
                     <Text style={styles.systemCardBody}>{item.body}</Text>
-                    {actionable && cta && (
-                      <Pressable testID={`conversation.system.${item.id}.cta`} style={styles.systemCardCta} onPress={() => handleSystemCta(cta)}>
+                    {actionable && (
+                      <View testID={`conversation.system.${item.id}.cta`} style={styles.systemCardCta}>
                         <Text style={styles.systemCardCtaText}>{cta.label}</Text>
-                      </Pressable>
+                      </View>
                     )}
                     <Text style={styles.systemCardTime}>
                       {new Date(item.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                     </Text>
-                  </View>
+                  </Pressable>
                 </View>
               )
             }

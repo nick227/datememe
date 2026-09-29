@@ -482,13 +482,94 @@ describe('OpenAPI response contract — real serialization, not just service obj
       const inbox = await app.inject({ method: 'GET', url: '/conversations', headers: { authorization: `Bearer ${adminSession.token}` } })
       expect(inbox.statusCode).toBe(200)
       expect(inbox.json().data.find((c: any) => c.id === conversationId)).toMatchObject({ type: 'SYSTEM', initiatedById: null })
+      expect(message.senderId).toBeNull()
       expect(message.attachments).toBeNull()
       expect(message.systemMessageType).toBe('ACTIVITY_DIGEST')
-      expect(message.systemData).toMatchObject({ event: { type: 'LIST_COMPLETED' }, cta: { route: 'ListBuilder', params: { categorySlug: 'top-movies' } } })
+      expect(message.systemData).toEqual({
+        eventKey: expect.any(String),
+        event: { type: 'LIST_COMPLETED', categoryId: 'c1', categorySlug: 'top-movies', listId: 'l1' },
+        cta: { label: 'View answers', route: 'ListBuilder', params: { categorySlug: 'top-movies' } },
+        notify: true,
+      })
     } finally {
       await db.message.deleteMany({ where: { conversationId } })
       await db.conversationParticipant.deleteMany({ where: { conversationId } })
       await db.conversation.delete({ where: { id: conversationId } })
+    }
+  })
+
+  it('a legacy insight payload and a person message both survive GET /conversations/:id/messages', async () => {
+    const app = await buildRealApiApp()
+    const profile = await db.profile.findUniqueOrThrow({ where: { userId: adminUser.id } })
+    const other = await db.user.create({
+      data: {
+        email: `contract-msg-${Date.now()}@example.com`,
+        passwordHash: 'x',
+        profile: { create: { username: `contract-msg-${Date.now()}`, displayName: 'Other', birthdate: new Date('1992-01-01T00:00:00.000Z') } },
+      },
+      include: { profile: true },
+    })
+    const conversation = await db.conversation.create({
+      data: {
+        type: 'USER',
+        initiatedById: profile.id,
+        participants: { create: [{ profileId: profile.id }, { profileId: other.profile!.id }] },
+      },
+    })
+    const activity = await db.conversation.create({
+      data: { type: 'SYSTEM', participants: { create: [{ profileId: profile.id }] } },
+    })
+    await db.message.create({
+      data: {
+        conversationId: activity.id,
+        systemMessageType: 'ACTIVITY_DIGEST',
+        body: 'Your activity this week',
+        attachments: {
+          insightSetId: 'set-1',
+          fingerprint: 'fp',
+          notify: true,
+          cta: { label: 'View activity', route: 'Activity', params: { insightSetId: 'set-1' } },
+        },
+      },
+    })
+    await new MessagingService().sendMessage(adminUser.id, profile.id, conversation.id, 'hello')
+    try {
+      const insight = await app.inject({
+        method: 'GET',
+        url: `/conversations/${activity.id}/messages?limit=30`,
+        headers: { authorization: `Bearer ${adminSession.token}` },
+      })
+      expect(insight.statusCode).toBe(200)
+      expect(insight.json().data[0]).toMatchObject({
+        senderId: null,
+        attachments: null,
+        systemData: {
+          eventKey: 'insight:set-1',
+          event: { type: 'ACTIVITY_DIGEST', insightSetId: 'set-1' },
+          cta: { label: 'View activity', route: 'Activity', params: { insightSetId: 'set-1' } },
+          notify: true,
+        },
+      })
+
+      const chat = await app.inject({
+        method: 'GET',
+        url: `/conversations/${conversation.id}/messages?limit=30`,
+        headers: { authorization: `Bearer ${adminSession.token}` },
+      })
+      expect(chat.statusCode).toBe(200)
+      expect(chat.json().data[0]).toMatchObject({
+        senderId: profile.id,
+        systemMessageType: null,
+        systemData: null,
+        body: 'hello',
+        attachments: null,
+      })
+    } finally {
+      await db.message.deleteMany({ where: { conversationId: { in: [conversation.id, activity.id] } } })
+      await db.conversationParticipant.deleteMany({ where: { conversationId: { in: [conversation.id, activity.id] } } })
+      await db.conversation.deleteMany({ where: { id: { in: [conversation.id, activity.id] } } })
+      await db.profile.deleteMany({ where: { userId: other.id } })
+      await db.user.deleteMany({ where: { id: other.id } })
     }
   })
 })
