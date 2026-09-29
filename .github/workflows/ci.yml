@@ -44,6 +44,14 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile
 
+      # Workspace apps import @project/db through its dist entrypoint. A clean
+      # CI checkout has neither generated Prisma Client nor packages/db/dist,
+      # so prepare both before recursive typechecking.
+      - name: Prepare DB package
+        run: |
+          pnpm --filter @project/db exec prisma generate --schema=prisma/schema.prisma
+          pnpm --filter @project/db build
+
       - name: Typecheck
         run: pnpm typecheck
 
