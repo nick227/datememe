@@ -198,6 +198,7 @@ async function deliverSystemMessage(profileId: string, set: any) {
     }
 
     const attachments = {
+      eventType: 'ACTIVITY_DIGEST',
       insightSetId: set.id,
       fingerprint: set.fingerprint,
       cta: {
@@ -206,6 +207,7 @@ async function deliverSystemMessage(profileId: string, set: any) {
         params: { insightSetId: set.id }
       }
     }
+    const deliveredAt = new Date()
 
     await tx.message.create({
       data: {
@@ -216,11 +218,19 @@ async function deliverSystemMessage(profileId: string, set: any) {
       }
     })
 
+    // Message relation writes do not touch Conversation.updatedAt. Keep the
+    // same activity clock used by the main messaging service so this digest
+    // lands in the correct chronological position in the inbox.
+    await tx.conversation.update({
+      where: { id: systemConversation!.id },
+      data: { updatedAt: deliveredAt }
+    })
+
     await tx.profileInsightSet.update({
       where: { id: set.id },
       data: { 
         deliveryStatus: 'DELIVERED',
-        lastDeliveredAt: new Date()
+        lastDeliveredAt: deliveredAt
       }
     })
   })
