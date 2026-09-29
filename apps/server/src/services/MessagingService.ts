@@ -30,17 +30,20 @@ export function serializeConversation(conversation: any, viewerProfileId: string
   const viewerParticipant = conversation.participants.find((p: any) => p.profile.id === viewerProfileId)
 
   if (lastMessage) {
+    const isSystem = conversation.type === 'SYSTEM' || !!lastMessage.systemMessageType
     const isOwn = lastMessage.senderId === viewerProfileId
-    const locked = !isOwn && !entitlements['messaging.readIncoming']
+    const locked = !isSystem && !isOwn && !entitlements['messaging.readIncoming']
     lastMessageBody = locked ? '🔒 New message' : lastMessage.body
 
     if (!isOwn && viewerParticipant) {
-      hasUnread = !viewerParticipant.lastReadAt || new Date(lastMessage.createdAt) > new Date(viewerParticipant.lastReadAt)
+      const shouldNotify = !isSystem || (lastMessage.attachments as any)?.notify !== false
+      hasUnread = shouldNotify && (!viewerParticipant.lastReadAt || new Date(lastMessage.createdAt) > new Date(viewerParticipant.lastReadAt))
     }
   }
 
   return {
     id: conversation.id,
+    type: conversation.type,
     status: conversation.status,
     initiatedById: conversation.initiatedById,
     participants: conversation.participants.map((p: any) => {
@@ -58,18 +61,26 @@ export function serializeConversation(conversation: any, viewerProfileId: string
 }
 
 function serializeMessage(message: any, viewerProfileId: string, entitlements: Entitlements) {
+  const isSystem = !!message.systemMessageType
   const isOwn = message.senderId === viewerProfileId
-  const locked = !isOwn && !entitlements['messaging.readIncoming']
+  const locked = !isSystem && !isOwn && !entitlements['messaging.readIncoming']
   return {
     id: message.id,
     conversationId: message.conversationId,
     senderId: message.senderId,
+    systemMessageType: message.systemMessageType,
     body: locked ? null : message.body,
     attachments: locked ? null : message.attachments,
     locked,
     createdAt: message.createdAt,
   }
 }
+
+type SystemActivityInput =
+  | { type: 'PROFILE_LIKED'; eventKey: string; displayName: string; profileId: string; notify?: boolean }
+  | { type: 'PROFILE_LIKED_YOU'; eventKey: string; displayName: string; profileId: string; notify?: boolean }
+  | { type: 'MATCH'; eventKey: string; displayName: string; profileId: string; conversationId: string; notify?: boolean }
+  | { type: 'LIST_COMPLETED'; eventKey: string; title: string; categoryId: string; categorySlug: string; listId: string; notify?: boolean }
 
 export class MessagingService {
   async listConversations(viewerUserId: string, viewerProfileId: string, opts: { cursor?: string; limit?: number }) {
@@ -83,13 +94,13 @@ export class MessagingService {
         ...(cursor
           ? {
               OR: [
-                { createdAt: { lt: new Date(cursor.createdAt) } },
-                { createdAt: new Date(cursor.createdAt), id: { lt: cursor.id } },
+                { updatedAt: { lt: new Date(cursor.createdAt) } },
+                { updatedAt: new Date(cursor.createdAt), id: { lt: cursor.id } },
               ],
             }
           : {}),
       },
-      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
       take: limit + 1,
       include: CONVERSATION_INCLUDE,
     })
@@ -97,9 +108,87 @@ export class MessagingService {
     const hasMore = conversations.length > limit
     const page = hasMore ? conversations.slice(0, limit) : conversations
     const last = page[page.length - 1]
-    const nextCursor = hasMore && last ? encodeCursor({ createdAt: last.createdAt.toISOString(), id: last.id }) : null
+    // Pagination helpers call the timestamp `createdAt`, but inbox ordering is by
+    // conversation activity. Store updatedAt in that cursor slot intentionally.
+    const nextCursor = hasMore && last ? encodeCursor({ createdAt: last.updatedAt.toISOString(), id: last.id }) : null
 
     return { data: page.map((c) => serializeConversation(c, viewerProfileId, entitlements)), meta: { hasMore, nextCursor } }
+  }
+
+  /**
+   * Append a durable event to the viewer's one-person SYSTEM conversation.
+   * `eventKey` makes retries idempotent without requiring another schema field;
+   * structured navigation data lives in attachments instead of being parsed from copy.
+   */
+  async recordSystemActivity(profileId: string, input: SystemActivityInput) {
+    let conversation = await db.conversation.findFirst({
+      where: { type: 'SYSTEM', participants: { some: { profileId } } },
+      select: { id: true },
+    })
+
+    if (!conversation) {
+      conversation = await db.conversation.create({
+        data: {
+          type: 'SYSTEM',
+          initiatedById: null,
+          participants: { create: [{ profileId }] },
+        },
+        select: { id: true },
+      })
+    }
+
+    const existing = await db.message.findMany({
+      where: { conversationId: conversation.id, systemMessageType: { not: null } },
+      select: { id: true, attachments: true },
+    })
+    if (existing.some((m) => (m.attachments as any)?.eventKey === input.eventKey)) {
+      return { created: false as const, conversationId: conversation.id }
+    }
+
+    let systemMessageType: 'LIKE' | 'MATCH' | 'ACTIVITY_DIGEST'
+    let body: string
+    let event: Record<string, unknown>
+    let cta: { label: string; route: string; params: Record<string, string> }
+
+    if (input.type === 'PROFILE_LIKED') {
+      systemMessageType = 'LIKE'
+      body = `You liked ${input.displayName}`
+      event = { type: input.type, profileId: input.profileId }
+      cta = { label: 'View profile', route: 'ProfileDetail', params: { profileId: input.profileId, displayName: input.displayName } }
+    } else if (input.type === 'PROFILE_LIKED_YOU') {
+      systemMessageType = 'LIKE'
+      body = `${input.displayName} liked you`
+      event = { type: input.type, profileId: input.profileId }
+      cta = { label: 'View profile', route: 'ProfileDetail', params: { profileId: input.profileId, displayName: input.displayName } }
+    } else if (input.type === 'MATCH') {
+      systemMessageType = 'MATCH'
+      body = `You matched with ${input.displayName}`
+      event = { type: input.type, profileId: input.profileId, conversationId: input.conversationId }
+      cta = { label: 'Open conversation', route: 'Conversation', params: { conversationId: input.conversationId, displayName: input.displayName } }
+    } else {
+      systemMessageType = 'ACTIVITY_DIGEST'
+      body = `You ranked ${input.title}`
+      event = { type: input.type, categoryId: input.categoryId, categorySlug: input.categorySlug, listId: input.listId }
+      cta = { label: 'View answers', route: 'ListBuilder', params: { categorySlug: input.categorySlug } }
+    }
+
+    const now = new Date()
+    await db.$transaction([
+      db.message.create({
+        data: {
+          conversationId: conversation.id,
+          senderId: null,
+          systemMessageType,
+          body,
+          attachments: { eventKey: input.eventKey, event, cta, notify: input.notify !== false },
+        },
+      }),
+      // Message inserts do not touch Conversation.updatedAt; bump it so the
+      // system thread naturally falls into inbox chronology with human threads.
+      db.conversation.update({ where: { id: conversation.id }, data: { updatedAt: now } }),
+    ])
+
+    return { created: true as const, conversationId: conversation.id }
   }
 
   /**
@@ -113,6 +202,7 @@ export class MessagingService {
 
     const existing = await db.conversation.findFirst({
       where: {
+        type: 'USER',
         AND: [
           { participants: { some: { profileId: initiatorProfileId } } },
           { participants: { some: { profileId: otherProfileId } } },
@@ -124,6 +214,7 @@ export class MessagingService {
 
     const created = await db.conversation.create({
       data: {
+        type: 'USER',
         initiatedById: initiatorProfileId,
         participants: { create: [{ profileId: initiatorProfileId }, { profileId: otherProfileId }] },
       },
@@ -178,6 +269,11 @@ export class MessagingService {
   async sendMessage(viewerUserId: string, viewerProfileId: string, conversationId: string, body?: string, attachments?: any[]) {
     await this._assertParticipant(viewerProfileId, conversationId)
 
+    const conversation = await db.conversation.findUnique({ where: { id: conversationId }, select: { type: true } })
+    if (conversation?.type === 'SYSTEM') {
+      throw { statusCode: 403, message: 'System activity is read-only' }
+    }
+
     const otherParticipant = await db.conversationParticipant.findFirst({
       where: { conversationId, profileId: { not: viewerProfileId } },
     })
@@ -194,14 +290,15 @@ export class MessagingService {
       enforceLimit(limit, sentToday, `Free members can send up to ${limit} messages per day`)
     }
 
-    const message = await db.message.create({ 
-      data: { 
-        conversationId, 
-        senderId: viewerProfileId, 
+    const message = await db.message.create({
+      data: {
+        conversationId,
+        senderId: viewerProfileId,
         body: body || null,
-        attachments: attachments ?? Prisma.JsonNull
-      } 
+        attachments: attachments ?? Prisma.JsonNull,
+      },
     })
+    await db.conversation.update({ where: { id: conversationId }, data: { updatedAt: new Date() } })
 
     if (otherParticipant) {
       await db.jobQueue.create({
@@ -211,7 +308,7 @@ export class MessagingService {
             recipientProfileId: otherParticipant.profileId,
             title: 'New Match Message',
             body: 'You received a new message.',
-            data: { conversationId }
+            data: { conversationId },
           },
         },
       })
@@ -227,6 +324,9 @@ export class MessagingService {
    */
   async unmatchConversation(viewerProfileId: string, conversationId: string) {
     await this._assertParticipant(viewerProfileId, conversationId)
+    const conversation = await db.conversation.findUnique({ where: { id: conversationId }, select: { type: true } })
+    if (conversation?.type === 'SYSTEM') throw { statusCode: 400, message: 'System activity cannot be unmatched' }
+
     const otherParticipant = await db.conversationParticipant.findFirst({
       where: { conversationId, profileId: { not: viewerProfileId } },
     })
