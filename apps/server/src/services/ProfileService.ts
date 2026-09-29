@@ -1,7 +1,8 @@
-import { db } from '@project/db'
+import { db, Prisma } from '@project/db'
 import { resolveEntitlements } from '../lib/entitlements'
 import { isBlockedEitherWay } from '../lib/blocks'
 import { PROFILE_FULL_SELECT, serializeProfile } from '../lib/serializers'
+import { AttributeSide } from '../lib/profileAttributes'
 
 export class ProfileService {
   /**
@@ -32,6 +33,8 @@ export class ProfileService {
       genderIdentity?: string | null
       bio?: string | null
       seekingGenders?: string[]
+      isA?: string[]
+      lookingFor?: string[]
       locationLat?: number | null
       locationLng?: number | null
       locationLabel?: string | null
@@ -40,7 +43,7 @@ export class ProfileService {
       isDiscoverable?: boolean
     },
   ) {
-    const { seekingGenders, photos, ...rest } = input
+    const { seekingGenders, photos, isA, lookingFor, ...rest } = input
 
     await db.$transaction(async (tx) => {
       await tx.profile.update({ where: { id: profileId }, data: rest })
@@ -52,6 +55,8 @@ export class ProfileService {
           })
         }
       }
+      if (isA) await replaceAttributes(tx, profileId, 'IS', isA)
+      if (lookingFor) await replaceAttributes(tx, profileId, 'SEEKING', lookingFor)
       if (photos) {
         // Whole-array replace, driven by the URLs POST /media/upload returns — the
         // client uploads first, then PATCHes the resulting URL list here.
@@ -70,4 +75,10 @@ export class ProfileService {
     })
     return serializeProfile(profile, { revealPhoto: true })
   }
+}
+
+async function replaceAttributes(tx: Prisma.TransactionClient, profileId: string, side: AttributeSide, keys: string[]) {
+  await tx.profileAttribute.deleteMany({ where: { profileId, side } })
+  if (!keys.length) return
+  await tx.profileAttribute.createMany({ data: keys.map((key) => ({ profileId, key, side })) })
 }

@@ -2,6 +2,7 @@
 // JSON shape can't drift between the taxonomy and list endpoints.
 
 import { computeAge } from './age'
+import { attributeKeys } from './profileAttributes'
 
 export const PROFILE_FULL_SELECT = {
   id: true,
@@ -16,6 +17,7 @@ export const PROFILE_FULL_SELECT = {
   isDiscoverable: true,
   onboardingStep: true,
   seekingGenders: true,
+  attributes: { select: { key: true, side: true }, orderBy: { key: 'asc' as const } },
   photos: { select: { url: true, sortOrder: true }, orderBy: { sortOrder: 'asc' as const } }
 } as const
 
@@ -38,6 +40,8 @@ export function serializeProfile(profile: any, opts: { revealPhoto: boolean }) {
     genderIdentity: profile.genderIdentity,
     bio: profile.bio,
     seekingGenders: (profile.seekingGenders ?? []).map((g: any) => g.gender),
+    isA: attributeKeys(profile.attributes, 'IS'),
+    lookingFor: attributeKeys(profile.attributes, 'SEEKING'),
     locationLabel: profile.locationLabel,
     avatarUrl: opts.revealPhoto ? profile.avatarUrl : null,
     photos: opts.revealPhoto ? (profile.photos ?? []).map((p: any) => p.url) : [],

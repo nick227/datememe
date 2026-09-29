@@ -5,13 +5,15 @@ import { Typography } from '../../../ui/Typography'
 import { TextField } from '../../../ui/TextField'
 import { Button } from '../../../ui/Button'
 import { colors, spacing } from '../../../theme'
+import { AttributeFields } from './AttributeFields'
+import { ChoiceChips } from './ChoiceChips'
 
 type Profile = components['schemas']['Profile']
 const GENDERS = [{ value: 'MALE', label: 'Man' }, { value: 'FEMALE', label: 'Woman' }, { value: 'NON_BINARY', label: 'Nonbinary' }]
-const SEEKING = [{ value: 'MALE', label: 'Men' }, { value: 'FEMALE', label: 'Women' }, { value: 'NON_BINARY', label: 'Nonbinary people' }]
+const SEEKING = [{ value: 'MALE', label: 'Men' }, { value: 'FEMALE', label: 'Women' }, { value: 'NON_BINARY', label: 'Nonbinary' }]
 
 export function ProfileDetailsEditor({ profile }: { profile: Profile }) {
-  const initial = { displayName: profile.displayName, bio: profile.bio ?? '', locationLabel: profile.locationLabel ?? '', genderIdentity: profile.genderIdentity, seekingGenders: profile.seekingGenders }
+  const initial = { displayName: profile.displayName, bio: profile.bio ?? '', locationLabel: profile.locationLabel ?? '', genderIdentity: profile.genderIdentity, seekingGenders: profile.seekingGenders, isA: profile.isA, lookingFor: profile.lookingFor }
   const [saved, setSaved] = useState(initial)
   const [draft, setDraft] = useState(initial)
   const [message, setMessage] = useState('')
@@ -31,7 +33,7 @@ export function ProfileDetailsEditor({ profile }: { profile: Profile }) {
     setError('')
     try {
       const result = await update.mutateAsync({ ...draft, displayName: draft.displayName.trim(), bio: draft.bio.trim() || null, locationLabel: draft.locationLabel.trim() || null })
-      const next = { displayName: result.displayName, bio: result.bio ?? '', locationLabel: result.locationLabel ?? '', genderIdentity: result.genderIdentity, seekingGenders: result.seekingGenders }
+      const next = { displayName: result.displayName, bio: result.bio ?? '', locationLabel: result.locationLabel ?? '', genderIdentity: result.genderIdentity, seekingGenders: result.seekingGenders, isA: result.isA, lookingFor: result.lookingFor }
       setDraft(next)
       setSaved(next)
       setMessage('Your details are saved')
@@ -50,16 +52,16 @@ export function ProfileDetailsEditor({ profile }: { profile: Profile }) {
           <Typography variant="bodyMuted" style={styles.ageHelp}>From your birthdate at signup</Typography>
         </View>
         <Typography variant="label" style={styles.fieldLabel}>Gender</Typography>
-        <View style={styles.chips}>
-          {GENDERS.map(option => <Pressable key={option.value} accessibilityRole="button" accessibilityState={{ selected: draft.genderIdentity === option.value }} disabled={update.isPending} onPress={() => change({ genderIdentity: draft.genderIdentity === option.value ? null : option.value })} style={[styles.chip, draft.genderIdentity === option.value && styles.selected]}><Typography style={[styles.chipText, draft.genderIdentity === option.value && styles.selectedText]}>{option.label}</Typography></Pressable>)}
-        </View>
+        <ChoiceChips mode="single" options={GENDERS} selected={draft.genderIdentity ? [draft.genderIdentity] : []} disabled={update.isPending} onToggle={(value) => change({ genderIdentity: draft.genderIdentity === value ? null : value })} />
         <TextField testID="profile.gender" accessibilityLabel="Gender, in your own words" placeholder="Or describe your gender" value={draft.genderIdentity && !GENDERS.some(option => option.value === draft.genderIdentity) ? draft.genderIdentity : ''} onChangeText={genderIdentity => change({ genderIdentity: genderIdentity || null })} editable={!update.isPending} style={styles.input} />
-        <Typography variant="label" style={styles.fieldLabel}>Looking for</Typography>
+        <Typography variant="label" style={styles.fieldLabel}>Interested in</Typography>
         <Typography variant="bodyMuted" style={styles.helper}>Who would you like to meet? Choose all that apply.</Typography>
-        <View style={styles.chips}>
-          {SEEKING.map(option => <Pressable key={option.value} accessibilityRole="checkbox" accessibilityState={{ checked: draft.seekingGenders.includes(option.value) }} disabled={update.isPending} onPress={() => change({ seekingGenders: draft.seekingGenders.includes(option.value) ? draft.seekingGenders.filter(value => value !== option.value) : [...draft.seekingGenders, option.value] })} style={[styles.chip, draft.seekingGenders.includes(option.value) && styles.selected]}><Typography style={[styles.chipText, draft.seekingGenders.includes(option.value) && styles.selectedText]}>{option.label}</Typography></Pressable>)}
-          {draft.seekingGenders.filter(value => !SEEKING.some(option => option.value === value)).map(value => <Pressable key={value} accessibilityRole="checkbox" accessibilityState={{ checked: true }} disabled={update.isPending} onPress={() => change({ seekingGenders: draft.seekingGenders.filter(gender => gender !== value) })} style={[styles.chip, styles.selected]}><Typography style={styles.selectedText}>{value} ×</Typography></Pressable>)}
-        </View>
+        <ChoiceChips mode="multi" options={SEEKING} selected={draft.seekingGenders} disabled={update.isPending} onToggle={(value) => change({ seekingGenders: draft.seekingGenders.includes(value) ? draft.seekingGenders.filter(item => item !== value) : [...draft.seekingGenders, value] })} />
+        {draft.seekingGenders.some(value => !SEEKING.some(option => option.value === value)) ? (
+          <ChoiceChips mode="multi" options={draft.seekingGenders.filter(value => !SEEKING.some(option => option.value === value)).map(value => ({ value, label: `${value} ×` }))} selected={draft.seekingGenders} disabled={update.isPending} onToggle={(value) => change({ seekingGenders: draft.seekingGenders.filter(gender => gender !== value) })} />
+        ) : null}
+        <AttributeFields title="I am" helper="Tap everything that fits you." selected={draft.isA} disabled={update.isPending} onChange={(isA) => change({ isA })} />
+        <AttributeFields title="Looking for" helper="Tap everything you want to find." selected={draft.lookingFor} disabled={update.isPending} onChange={(lookingFor) => change({ lookingFor })} />
         <TextField testID="profile.about" accessibilityLabel="About you" label="About" placeholder="A little about you and what you enjoy…" value={draft.bio} onChangeText={bio => change({ bio })} maxLength={150} multiline editable={!update.isPending} style={[styles.input, styles.bio]} />
         <Typography variant="bodyMuted" style={styles.counter}>{draft.bio.length} / 150</Typography>
       </View>
@@ -81,11 +83,6 @@ const styles = StyleSheet.create({
   ageHelp: { fontSize: 12, maxWidth: 160 },
   fieldLabel: { marginBottom: spacing.sm },
   helper: { fontSize: 12 },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginTop: spacing.sm, marginBottom: spacing.lg },
-  chip: { minHeight: 44, paddingHorizontal: spacing.lg, paddingVertical: spacing.md, borderRadius: 24, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface },
-  chipText: { fontSize: 13 },
-  selected: { backgroundColor: colors.accent, borderColor: colors.accent },
-  selectedText: { color: colors.white, fontSize: 13 },
   bio: { minHeight: 108, textAlignVertical: 'top', lineHeight: 24 },
   counter: { textAlign: 'right', fontSize: 12 },
   saveRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },

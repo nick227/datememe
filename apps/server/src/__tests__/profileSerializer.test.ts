@@ -22,6 +22,21 @@ describe('profile age and photo serialization', () => {
     expect(serializeProfile(profile, { revealPhoto: true }).age).toBe(31)
   })
 
+  it('splits attributes into is and looking for, defaulting both to empty', () => {
+    expect(serializeProfile(profile, { revealPhoto: true }).isA).toEqual([])
+    expect(serializeProfile(profile, { revealPhoto: true }).lookingFor).toEqual([])
+    const result = serializeProfile({
+      ...profile,
+      attributes: [
+        { key: 'MUSICIAN', side: 'IS' },
+        { key: 'FRIEND', side: 'SEEKING' },
+        { key: 'WRITER', side: 'IS' },
+      ],
+    }, { revealPhoto: true })
+    expect(result.isA).toEqual(['MUSICIAN', 'WRITER'])
+    expect(result.lookingFor).toEqual(['FRIEND'])
+  })
+
   it('keeps photos gated when age is visible', () => {
     const result = serializeProfile(profile, { revealPhoto: false })
     expect(result.age).toEqual(expect.any(Number))

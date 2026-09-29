@@ -8,6 +8,8 @@ type Props = {
   genderIdentity?: string | null
   locationLabel?: string | null
   seekingGenders?: string[]
+  isA?: string
+  lookingFor?: string
 }
 
 function formatValue(val?: string | null) {
@@ -15,7 +17,7 @@ function formatValue(val?: string | null) {
   return val.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
 }
 
-export function ProfileBasicInfo({ displayName, age, genderIdentity, locationLabel, seekingGenders }: Props) {
+export function ProfileBasicInfo({ displayName, age, genderIdentity, locationLabel, seekingGenders, isA, lookingFor }: Props) {
   const primaryLine = [displayName, age].filter(Boolean).join(', ')
   const seekingStr = seekingGenders?.length ? seekingGenders.map(formatValue).join(', ') : 'Not specified'
 
@@ -35,8 +37,16 @@ export function ProfileBasicInfo({ displayName, age, genderIdentity, locationLab
           <Typography variant="body" style={styles.vitalValue}>{formatValue(genderIdentity)}</Typography>
         </View>
         <View style={styles.vitalRow}>
-          <Typography variant="label" style={styles.vitalLabel}>Seeking</Typography>
+          <Typography variant="label" style={styles.vitalLabel}>Interested in</Typography>
           <Typography variant="body" style={styles.vitalValue}>{seekingStr}</Typography>
+        </View>
+        <View style={styles.vitalRow}>
+          <Typography variant="label" style={styles.vitalLabel}>I am</Typography>
+          <Typography variant="body" style={styles.vitalValue}>{isA || 'Not specified'}</Typography>
+        </View>
+        <View style={styles.vitalRow}>
+          <Typography variant="label" style={styles.vitalLabel}>Looking for</Typography>
+          <Typography variant="body" style={styles.vitalValue}>{lookingFor || 'Not specified'}</Typography>
         </View>
       </View>
     </View>
@@ -62,7 +72,7 @@ const styles = StyleSheet.create({
     alignItems: 'baseline',
   },
   vitalLabel: {
-    width: 80,
+    width: 108,
     color: colors.inkMuted,
   },
   vitalValue: {

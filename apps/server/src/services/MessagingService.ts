@@ -5,7 +5,7 @@ import { enforceLimit, resolveEntitlements, Entitlements, startOfUtcDay } from '
 import { isBlockedEitherWay } from '../lib/blocks'
 
 // serializeProfile (below) always reads genderIdentity/bio/seekingGenders/
-// locationLabel/onboardingStep/photos — PROFILE_SUMMARY_SELECT omits most of
+// isA/lookingFor/locationLabel/onboardingStep/photos — PROFILE_SUMMARY_SELECT omits most of
 // these, so those fields serialize as `undefined`, and the OpenAPI Profile
 // schema marks them required (nullable is fine, missing isn't): every
 // /conversations response 500'd on this before the fix. A conversation only

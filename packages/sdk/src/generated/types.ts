@@ -1607,6 +1607,8 @@ export interface components {
             error: string;
             code?: string;
         };
+        /** @enum {string} */
+        ProfileAttributeKey: "FRIEND" | "RELATIONSHIP" | "MARRIAGE" | "COLLABORATOR" | "BUSINESS_PARTNER" | "INVESTOR" | "ACTOR" | "MUSICIAN" | "WRITER";
         Profile: {
             id: string;
             userId: string;
@@ -1618,6 +1620,10 @@ export interface components {
             /** @description Short optional tagline — not a bio essay, see docs §1/§3. */
             bio: string | null;
             seekingGenders: string[];
+            /** @description Attributes this profile claims. Stored for a later discovery filter; not applied to the feed yet. */
+            isA: components["schemas"]["ProfileAttributeKey"][];
+            /** @description Attributes this profile wants to meet. Stored for a later discovery filter; not applied to the feed yet. */
+            lookingFor: components["schemas"]["ProfileAttributeKey"][];
             locationLabel: string | null;
             /** @description Null for a free-tier viewer looking at someone else's profile — see docs §8 photo gate. Also null when the profile genuinely has no avatar; see `photosLocked` to tell the two apart. */
             avatarUrl: string | null;
@@ -1703,6 +1709,8 @@ export interface components {
             genderIdentity?: string | null;
             bio?: string | null;
             seekingGenders?: string[];
+            isA?: components["schemas"]["ProfileAttributeKey"][];
+            lookingFor?: components["schemas"]["ProfileAttributeKey"][];
             locationLat?: number | null;
             locationLng?: number | null;
             locationLabel?: string | null;

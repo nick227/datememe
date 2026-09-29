@@ -158,6 +158,7 @@ model Profile {
   reportsFiled           Report[]                  @relation("ReportReporter")
   reportsReceived        Report[]                  @relation("ReportTargetProfile")
   quickPickSignals       QuickPickSignal[]
+  attributes             ProfileAttribute[]
 
   @@index([locationLat, locationLng])
 }
@@ -217,6 +218,23 @@ model ProfileSeekingGender {
   profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
 
   @@id([profileId, gender])
+}
+
+// Not applied by discovery yet. (key, side) is the shape that filter will query.
+enum ProfileAttributeSide {
+  IS
+  SEEKING
+}
+
+model ProfileAttribute {
+  profileId String
+  key       String
+  side      ProfileAttributeSide
+
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@id([profileId, key, side])
+  @@index([key, side])
 }
 
 model ProfilePhoto {

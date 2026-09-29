@@ -5,6 +5,7 @@ import { useConversations, useDiscoverFeed, useMyLists, useProfile, useProfileLi
 import { ScreenContainer } from '../../../ui/ScreenContainer'
 import { ProfileImageGallery } from '../../../ui/content/ProfileImageGallery'
 import { ProfileBasicInfo } from '../../../ui/content/ProfileBasicInfo'
+import { formatAttributeKeys } from '../../profile/profileAttributes'
 import { Icon } from '../../../ui/Icon'
 import { EmptyState } from '../../../ui/EmptyState'
 import { MatchDimensionsBreakdown } from '../components/MatchDimensionsBreakdown'
@@ -221,6 +222,8 @@ export function ProfileDetailScreen({ route, navigation }: Props) {
             genderIdentity={profile.data?.genderIdentity}
             locationLabel={profile.data?.locationLabel}
             seekingGenders={profile.data?.seekingGenders}
+            isA={formatAttributeKeys(profile.data?.isA ?? [])}
+            lookingFor={formatAttributeKeys(profile.data?.lookingFor ?? [])}
           />
 
           <View style={styles.body}>

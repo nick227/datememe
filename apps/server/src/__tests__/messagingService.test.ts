@@ -54,6 +54,8 @@ describe('MessagingService', () => {
       expect(p).toHaveProperty('genderIdentity')
       expect(p).toHaveProperty('bio')
       expect(p).toHaveProperty('seekingGenders')
+      expect(p).toHaveProperty('isA')
+      expect(p).toHaveProperty('lookingFor')
       expect(p).toHaveProperty('locationLabel')
       expect(p).toHaveProperty('onboardingStep')
     }
