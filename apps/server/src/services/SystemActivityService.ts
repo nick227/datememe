@@ -20,42 +20,39 @@ type RecordInput = {
  * have to parse prose.
  */
 export class SystemActivityService {
-  private async getOrCreateSystemConversation(profileId: string) {
-    const existing = await db.conversation.findFirst({
-      where: { type: 'SYSTEM', participants: { some: { profileId } } },
-    })
-    if (existing) return existing
-
-    return db.conversation.create({
-      data: {
-        type: 'SYSTEM',
-        participants: { create: [{ profileId }] },
-      },
-    })
-  }
-
   private async record(input: RecordInput) {
-    const conversation = await this.getOrCreateSystemConversation(input.recipientProfileId)
-
-    const existing = await db.message.findFirst({
-      where: {
-        conversationId: conversation.id,
-        attachments: { string_contains: input.eventKey },
-      },
-    })
-    if (existing) return existing
-
-    const now = new Date()
     return db.$transaction(async (tx) => {
-      // Retry-safe: API retries and repeated saves must not duplicate history.
-      const duplicate = await tx.message.findFirst({
-        where: {
-          conversationId: conversation.id,
-          attachments: { string_contains: input.eventKey },
-        },
-      })
-      if (duplicate) return duplicate
+      // Serialize system-activity writes for this recipient. This protects both
+      // the one-SYSTEM-thread invariant and event idempotency when the same API
+      // request is retried concurrently; relation/JSON fields have no useful
+      // unique constraint for either invariant today.
+      await tx.$queryRaw`SELECT id FROM Profile WHERE id = ${input.recipientProfileId} FOR UPDATE`
 
+      let conversation = await tx.conversation.findFirst({
+        where: { type: 'SYSTEM', participants: { some: { profileId: input.recipientProfileId } } },
+      })
+      if (!conversation) {
+        conversation = await tx.conversation.create({
+          data: {
+            type: 'SYSTEM',
+            participants: { create: [{ profileId: input.recipientProfileId }] },
+          },
+        })
+      }
+
+      // Prisma/MySQL `string_contains` is not reliable for matching a value
+      // nested inside a JSON object. Read this user's system-message metadata
+      // and compare the structured key exactly instead.
+      const prior = await tx.message.findMany({
+        where: { conversationId: conversation.id, systemMessageType: input.systemMessageType },
+        select: { id: true, attachments: true },
+      })
+      const duplicateId = prior.find((m) => (m.attachments as any)?.eventKey === input.eventKey)?.id
+      if (duplicateId) {
+        return tx.message.findUniqueOrThrow({ where: { id: duplicateId } })
+      }
+
+      const now = new Date()
       const message = await tx.message.create({
         data: {
           conversationId: conversation.id,
