@@ -37,7 +37,7 @@ The corrected AAB finished successfully on September 26, 2026 UTC: `com.datememe
 
 SHA-256: `ca0f5ab680f3f751443e46779416dababe8759ec514c98416d75181b4e478e22`. Local bundle: `C:\Users\Administrator\Downloads\datememe-staging-v3.aab`. Version code 2 is superseded because native photo upload exposed an Expo multipart incompatibility during emulator testing.
 
-Source is isolated branch `codex/android-qa-release`, commit `f2ea325`, based on `2227e24` plus compile, logout, and native multipart upload fixes. Later ongoing UI, messaging, taxonomy, and test changes in the main workspace are outside this artifact. The release worktree is `/tmp/datememe-android-release-worktree`; the branch retains the committed source independently of that temporary path.
+Source is isolated branch `codex/android-qa-release`, commit `f2ea325`, based on `2227e24` plus compile, logout, and native multipart upload fixes. Later ongoing UI, messaging, taxonomy, and test changes in the main workspace are outside this artifact. The build used the temporary worktree `/tmp/datememe-android-release-worktree`, which was removed by a later local environment restart. Branch `codex/android-qa-release` retains the committed source; check out the recorded commit for reproduction.
 
 The source passed mobile and SDK typecheck, all 14 build config tests, and all eight SDK regression tests, including logout/session expiry and native/web multipart requests. The final native EAS build succeeded.
 
@@ -82,13 +82,28 @@ An additional native journey used a newly registered synthetic adult account, Ta
 
 Search selection worked with direct taps. UIAutomator clipped the absolute dropdown's accessibility bounds, causing the initial scripted taps to miss; this was corrected in the manual test coordinates, with no search code change.
 
-The expired-session cache fix is in main commit `0161d57` and backported as `ea58866`; the upgrade navigation fix is in isolated release commit `ae8b296`. Release source at `ae8b296` passes mobile/SDK typecheck and all nine SDK tests, including removing another account's cached lists/messages and ignoring late responses after session expiry. **These later fixes are not in the code-3 APK/AAB and still need native validation in a subsequent candidate.** Main's ongoing admin, messaging, and content UI changes still fail the full mobile typecheck; that workspace is not the source of the tested artifact.
+The expired-session cache fix is in main commit `0161d57` and backported as `ea58866`; the upgrade navigation fix is in isolated release commit `ae8b296`. Release source at `ae8b296` passes mobile/SDK typecheck and all nine SDK tests, including removing another account's cached lists/messages and ignoring late responses after session expiry. **These later fixes are not in the code-3 APK/AAB and still need native validation in a subsequent candidate.** At that prebuild check, main's ongoing admin, messaging, and content UI changes failed the full mobile typecheck; that workspace was not the source of the tested artifact. This does not describe subsequent main changes.
 
 The universal code-3 APK was installed over the emulator's split installation using the same signing identity. Cold launch retained the new account and its one completed list/five picks. The inspected crash and ReactNativeJS/AndroidRuntime logs contained no Datememe crash or runtime error. Physical-phone coverage is still pending.
 
 ## Corrected candidate — September 29 UTC
 
-Expo account usage was checked before starting another build: Free plan, 3 of 15 Android builds used, zero overage. A free-plan AAB build for source `ae8b296` is in progress as [7f2918ed-c05b-4377-833b-64093533ab25](https://expo.dev/accounts/hzane111/projects/datememe/builds/7f2918ed-c05b-4377-833b-64093533ab25), version code `4`. It includes the expired-session cache and conversation upgrade-route fixes. No Play registration or paid plan was initiated. Build completion and native verification must be recorded before treating it as the replacement for code 3.
+The corrected AAB completed successfully at `2026-09-29T03:39:24.984Z`: [EAS build 7f2918ed-c05b-4377-833b-64093533ab25](https://expo.dev/accounts/hzane111/projects/datememe/builds/7f2918ed-c05b-4377-833b-64093533ab25) · [signed AAB](https://expo.dev/artifacts/eas/SZR5y8s_fRlSxsNtWpL-j72P8TVvkWeYXaidJQv87L0.aab). Source is release commit `ae8b2966b775022d7959af49f642997f79e58f5d`, version `1.0.0`, code `4`, package `com.datememe.app.staging`. It includes the expired-session cache and conversation upgrade-route fixes. Later work on main is outside this artifact.
+
+Local artifacts in `C:\Users\Administrator\Downloads`:
+
+| Artifact | Bytes | SHA-256 |
+| --- | ---: | --- |
+| `datememe-staging-v4.aab` | 67,264,978 | `b1bb42e31a8b54ca741fa5b21bbdba8f5939a8decb7a8f03657b375622e0d596` |
+| `datememe-staging-v4-universal.apk` | 100,346,884 | `de5437bacfb74fdcbe52be968037b5a3d96e3b4439e2e1504a24671bc7882d2c` |
+
+The universal APK was generated locally from that exact AAB with Google bundletool 1.18.3 and the existing EAS staging signing identity. Bundle validation, APK signature/certificate verification, and 16 KB ZIP alignment passed. It includes ARM64, ARMv7, x86, and x86_64, min API 24 and target API 36. Temporary local signing exports were removed after packaging. Checksums are stored beside both artifacts.
+
+Expo usage after the build remains on the Free plan: 4 of 15 Android builds used, zero overage and zero estimated cost. No Play registration or paid plan was initiated.
+
+Code 4 installed as an update over code 3. The existing emulator became very slow during installation/startup; after a full emulator cold boot without wiping data, the app loaded Taylor QA and the saved one-list/five-pick state. Both locked-message **Unlock** and daily-limit **Go Premium** opened the paywall. Two short native messages were confirmed by the recipient API session. Paywall Back returns to Lists; selecting Messages restores the existing conversation.
+
+This pass found an additional Android composer defect: the visible software keyboard covers the input, and a longer draft expands the unconstrained text-field wrapper until Send leaves the screen. Short messages can be sent after dismissing the keyboard. A minimal layout correction is being prepared; code 4 is retained as evidence, not an approval of the messaging typing experience. Physical-phone coverage remains pending.
 
 ## Remaining release gates
 

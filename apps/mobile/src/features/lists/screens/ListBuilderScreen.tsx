@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
-import { FlatList, Keyboard, Platform, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native'
+import { FlatList, Keyboard, Platform, Pressable, StyleSheet, useWindowDimensions, View, ScrollView } from 'react-native'
+import Animated, { LinearTransition } from 'react-native-reanimated'
+import { ChevronUp, ChevronDown } from 'lucide-react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { useCategory, useCategoryEntities, useMyLists, useSubmitEntity, useUpsertList } from '@project/sdk'
@@ -42,6 +44,7 @@ export function ListBuilderScreen({ route, navigation }: Props) {
   const [picked, setPicked] = useState<PickedItem[]>([])
   const [isOverlayVisible, setIsOverlayVisible] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
+  const [isListExpanded, setIsListExpanded] = useState(true)
   const hydrated = useRef(false)
   const isSaving = useRef(false)
   const saveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -195,14 +198,19 @@ export function ListBuilderScreen({ route, navigation }: Props) {
   const pickedRanks = picked.reduce((acc, p) => ({ ...acc, [p.entityId]: p.rank }), {} as Record<string, number>)
 
   const RightPane = (
-    <View style={styles.rightPane}>
+    <Animated.ScrollView 
+      style={[styles.rightPane, { maxHeight: isListExpanded ? 280 : 112 }]}
+      showsVerticalScrollIndicator={false}
+      keyboardShouldPersistTaps="handled"
+      layout={LinearTransition.duration(200)}
+    >
       <RankingBoard
         items={picked}
         maxItems={maxItems}
         onRemove={handleRemove}
         onReorder={handleReorder}
       />
-    </View>
+    </Animated.ScrollView>
   )
 
   const question = category.data?.prompt ?? shortLabel
@@ -225,6 +233,20 @@ export function ListBuilderScreen({ route, navigation }: Props) {
             {question}
           </Typography>
           {RightPane}
+          {maxItems > 2 && (
+            <Pressable
+              testID="list-builder.toggle"
+              style={styles.toggleButton}
+              hitSlop={12}
+              onPress={() => setIsListExpanded(prev => !prev)}
+            >
+              {isListExpanded ? (
+                <ChevronUp size={24} color={colors.inkMuted} />
+              ) : (
+                <ChevronDown size={24} color={colors.inkMuted} />
+              )}
+            </Pressable>
+          )}
           <View style={styles.searchWrapper}>
             <SearchBar testID="list-builder.search" value={query} onChangeText={setQuery} placeholder="Type your own..." />
             {isOverlayVisible && (
@@ -301,7 +323,14 @@ const styles = StyleSheet.create({
   },
   rightPane: {
     zIndex: 1,
-    flexShrink: 0,
+    flexShrink: 1,
+  },
+  toggleButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.sm,
+    width: '100%',
+    zIndex: 1,
   },
   searchWrapper: {
     marginTop: spacing.md,

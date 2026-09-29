@@ -1,26 +1,26 @@
 # Android QA builds
 
-The current candidate is the **version-code-3 staging AAB**, built successfully and installed on the emulator using its generated APK set. Use the artifact, source commit, and results in [Android launch validation](android-launch-validation.md). It fixes logout navigation and native photo upload failures found in earlier builds. **Play developer registration and upload are deferred by choice while private testing continues.** The current focus is emulator regression and direct installation on one physical Android phone; physical-phone coverage is still pending. Staging has versioned migrations and a persistent media volume, documented in [mobile data operations](mobile-data-operations.md). Broad automation remains deferred until after first market exposure.
+The current private-test candidate is the **version-code-4 staging AAB** and its locally generated universal APK. It contains the logout, native photo upload, expired-session cache, and messaging upgrade-route fixes. Use the exact artifact/source and coverage in [Android launch validation](android-launch-validation.md). **Play developer registration and upload remain deferred by choice.** Physical-phone coverage is pending. Staging already has versioned migrations and a persistent media volume; see [mobile data operations](mobile-data-operations.md). Broad automation remains deferred.
 
-The [first Play Internal release packet](android-play-internal.md) is retained for later and contains the exact artifact, release notes, signing details, and manual upload/tester steps. Neither Play registration nor another EAS APK build is required to continue private testing of the existing AAB.
+The [first Play Internal release packet](android-play-internal.md) is historical code-3 material retained for later. Use the code-4 files below for current private testing. Neither Play registration nor another cloud APK build is required.
 
-## Direct phone installation from the existing AAB
+## Direct phone installation
 
-An installable universal APK has now been generated locally from that exact AAB: `C:\Users\Administrator\Downloads\datememe-staging-v3-universal.apk` (100,346,884 bytes). It includes ARM64/ARMv7 phone architectures and both emulator architectures, retains package `com.datememe.app.staging` and version code `3`, and uses the existing EAS staging signing identity. Signature verification and 16 KB ZIP alignment passed. SHA-256: `91bfdb424010a4185545e32a21c2da225fec7eb9574c82fe31ccbdcd39a573f1`.
+Install `C:\Users\Administrator\Downloads\datememe-staging-v4-universal.apk` (100,346,884 bytes). It includes ARM64/ARMv7 phone architectures and both emulator architectures, uses package `com.datememe.app.staging`, version `1.0.0`, code `4`, and retains the EAS staging signing identity. APK signature verification and 16 KB ZIP alignment passed. SHA-256: `de5437bacfb74fdcbe52be968037b5a3d96e3b4439e2e1504a24671bc7882d2c`.
 
-Transfer this APK to the phone and open it, allowing installation from that file source if Android prompts. Alternatively, install it with ADB using the selected phone serial. This uses the existing bundle without another cloud build or Play registration. The adjacent README records known v3 limitations. The later session-expiry cache and messaging upgrade-route source fixes are **not included** in this unchanged v3 artifact.
+Transfer the APK to the phone and open it, allowing installation from that file source if Android prompts. Alternatively, install with `adb -s PHONE_SERIAL install -r APK_PATH`, selecting the phone explicitly while the emulator is connected. This updates prior QA installations without uninstalling or clearing app data. The adjacent README contains setup instructions and the focused test checklist. Newer ongoing changes on main are outside this pinned release candidate.
 
-The universal APK above is ready to install. As an optional alternative, connect a phone and authorize USB debugging, then use Google's `bundletool` to generate and install a smaller device-specific APK set from the AAB:
+The universal APK is ready to install. As an optional alternative, connect a phone and authorize USB debugging, then use Google's `bundletool` to generate a smaller device-specific APK set from `datememe-staging-v4.aab`:
 
-1. Select the phone's ADB serial explicitly, especially while the emulator is connected.
-2. Run `bundletool build-apks` with the existing version-code-3 AAB, `--connected-device`, and the phone's `--device-id`, supplying the **existing EAS staging signing identity** privately. This generates device-specific APKs locally; it does not rebuild the app in EAS. Do not use the default debug signing identity.
-3. Run `bundletool install-apks` with the resulting `.apks` archive and the same phone serial. The emulator's existing x86_64 APK set is not a substitute for the phone's required APKs.
+1. Select the phone's ADB serial explicitly.
+2. Run `bundletool build-apks` with the code-4 AAB, `--connected-device`, and the phone's `--device-id`, supplying the **existing EAS staging signing identity** privately. Do not use the default debug signing identity.
+3. Run `bundletool install-apks` with the resulting `.apks` archive and the same phone serial.
 
-These are the official [bundletool device generation and installation steps](https://developer.android.com/tools/bundletool). Keep signing material outside the repository. Confirm package `com.datememe.app.staging`, version `1.0.0`, code `3`, then follow the focused checks below. Record actual results only after installation; no physical-phone test has been completed yet.
+These are the official [bundletool device generation and installation steps](https://developer.android.com/tools/bundletool). Keep signing material outside the repository. The AAB cannot be installed directly. Record actual physical-phone results after installation; emulator results do not establish phone coverage.
 
 ## Superseded first QA artifact
 
-The code-1 APK below is historical evidence of the initial standalone milestone. Use the current code-3 AAB for further launch validation.
+The code-1 APK below is historical evidence of the initial standalone milestone. Use the current code-4 candidate for further private testing.
 
 - [EAS build d40dec2f-55d8-422a-b98f-e5601527b508](https://expo.dev/accounts/hzane111/projects/datememe/builds/d40dec2f-55d8-422a-b98f-e5601527b508) finished successfully on September 23, 2026.
 - [Download the signed APK](https://expo.dev/artifacts/eas/bkBnlG_LAyEpoNblmyVdq3LpeD-eBuY__YCujb__4os.apk): version `1.0.0`, Android version code `1`, package `com.datememe.app.staging`.
@@ -98,7 +98,7 @@ pnpm --filter mobile qa:config
 pnpm --filter mobile qa:store:build
 ```
 
-The final command starts an EAS AAB build; it does not submit to Google Play. Code `3` is the latest validated artifact; preserve the remote counter so subsequent uploads advance it. Inspect each completed AAB's package, staging endpoint, version, version code, and signing identity before upload, and retain its build ID and source commit.
+The final command starts an EAS AAB build; it does not submit to Google Play. Code `4` is the latest successfully built artifact; preserve the remote counter so subsequent uploads advance it. Inspect each completed AAB's package, staging endpoint, version, version code, and signing identity before upload, and retain its build ID and source commit.
 
 This AAB is intended for a separate **Datememe QA** Play application with package `com.datememe.app.staging`, using its internal testing track and staging data. It cannot become the future production `com.datememe.app` application: [Play fixes the package name after the first upload](https://support.google.com/googleplay/android-developer/answer/9845334). Production needs its own package registration, signing setup, backend configuration, and build profile; `app.config.ts` currently permits only staging EAS profiles and must also be updated. Any applicable [production-access testing requirements](https://support.google.com/googleplay/android-developer/answer/14151465) must be satisfied for the production app.
 
