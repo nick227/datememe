@@ -98,14 +98,25 @@ components:
     # ── Identity ──────────────────────────────────────────
     # Closed vocabulary for Profile.isA / Profile.lookingFor. Same keys on
     # both sides so a later discovery filter can match IS against SEEKING.
+    # The first block is every chip in apps/mobile PROFILE_ATTRIBUTE_GROUPS.
+    # The second block is no longer offered in the app, but already-saved
+    # rows must still round-trip on PATCH /profiles/me.
     ProfileAttributeKey:
       type: string
       enum:
         [
+          DATING,
           FRIEND,
           RELATIONSHIP,
-          MARRIAGE,
           COLLABORATOR,
+          COFFEE,
+          MARRIAGE,
+          ONLINE,
+          MEN,
+          WOMEN,
+          NONBINARY,
+          OTHER,
+          NOT_SPECIFIED,
           BUSINESS_PARTNER,
           INVESTOR,
           ACTOR,

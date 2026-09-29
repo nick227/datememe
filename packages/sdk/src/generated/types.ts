@@ -1608,7 +1608,7 @@ export interface components {
             code?: string;
         };
         /** @enum {string} */
-        ProfileAttributeKey: "FRIEND" | "RELATIONSHIP" | "MARRIAGE" | "COLLABORATOR" | "BUSINESS_PARTNER" | "INVESTOR" | "ACTOR" | "MUSICIAN" | "WRITER";
+        ProfileAttributeKey: "DATING" | "FRIEND" | "RELATIONSHIP" | "COLLABORATOR" | "COFFEE" | "MARRIAGE" | "ONLINE" | "MEN" | "WOMEN" | "NONBINARY" | "OTHER" | "NOT_SPECIFIED" | "BUSINESS_PARTNER" | "INVESTOR" | "ACTOR" | "MUSICIAN" | "WRITER";
         Profile: {
             id: string;
             userId: string;
