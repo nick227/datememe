@@ -1,8 +1,10 @@
 import { db } from '@project/db'
 import { MessagingService } from './MessagingService'
+import { SystemActivityService } from './SystemActivityService'
 import { isBlockedEitherWay } from '../lib/blocks'
 
 const messagingService = new MessagingService()
+const systemActivity = new SystemActivityService()
 
 /**
  * See docs/data-schema-proposal.md §7: a Match is derived (two opposite-direction
@@ -19,7 +21,12 @@ export class SwipeService {
     if (actorProfileId === targetProfileId) {
       throw { statusCode: 400, message: 'Cannot swipe on yourself' }
     }
-    const target = await db.profile.findUnique({ where: { id: targetProfileId } })
+
+    const [actor, target] = await Promise.all([
+      db.profile.findUnique({ where: { id: actorProfileId }, select: { id: true, displayName: true } }),
+      db.profile.findUnique({ where: { id: targetProfileId }, select: { id: true, displayName: true } }),
+    ])
+    if (!actor) throw { statusCode: 404, message: 'Profile not found' }
     if (!target) throw { statusCode: 404, message: 'Profile not found' }
 
     // Discovery already excludes blocked pairs, but guard the write path directly too
@@ -36,12 +43,28 @@ export class SwipeService {
 
     if (action === 'PASS') return { matched: false as const }
 
+    // A Like is also a durable activity record for the person who made it.
+    // The event key makes retries safe, so calling submitSwipe twice does not
+    // create duplicate history rows.
+    await systemActivity.recordProfileLiked(actorProfileId, target)
+
     const mirror = await db.swipe.findUnique({
       where: { actorProfileId_targetProfileId: { actorProfileId: targetProfileId, targetProfileId: actorProfileId } },
     })
-    if (!mirror || mirror.action !== 'LIKE') return { matched: false as const }
+
+    if (!mirror || mirror.action !== 'LIKE') {
+      // Keep the existing "someone liked you" behavior, but do not add this
+      // extra row when the Like immediately becomes a match (the match event is clearer).
+      await systemActivity.recordProfileLikedYou(targetProfileId, actor)
+      return { matched: false as const }
+    }
 
     const conversation = await messagingService.getOrCreateConversation(actorUserId, actorProfileId, targetProfileId)
+    await Promise.all([
+      systemActivity.recordMatch(actorProfileId, target, conversation.id),
+      systemActivity.recordMatch(targetProfileId, actor, conversation.id),
+    ])
+
     return { matched: true as const, conversation }
   }
 }
