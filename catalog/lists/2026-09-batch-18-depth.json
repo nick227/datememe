@@ -1,0 +1,291 @@
+[
+  {
+    "schemaVersion": 1,
+    "groupSlug": "dating-relationships",
+    "entityTypeSlug": "relationship-habit",
+    "title": "Relationship Boundaries",
+    "prompt": "Which of these are fine with you in a relationship?",
+    "axes": [
+      "dating",
+      "boundaries",
+      "trust"
+    ],
+    "values": [
+      "Sharing locations",
+      "Staying friends with exes",
+      "Close friends of any gender",
+      "Nights out without each other",
+      "Separate trips with friends",
+      "Knowing each other's phone passcodes",
+      "Posting us online",
+      "Keeping the relationship private",
+      "Following exes on social",
+      "Liking other people's photos",
+      "Reading each other's texts",
+      "Talking to exes about us"
+    ],
+    "isAbstract": true
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "dating-relationships",
+    "entityTypeSlug": "relationship-habit",
+    "title": "Moving for Love",
+    "prompt": "How far would you move for a relationship?",
+    "axes": [
+      "dating",
+      "logistics",
+      "commitment"
+    ],
+    "values": [
+      "Across town",
+      "To a new city",
+      "To another state",
+      "To another country",
+      "Somewhere new for both of us",
+      "Only once we're engaged",
+      "Only if my job comes with me",
+      "Long distance for a while first",
+      "They'd have to move to me",
+      "I'm not moving anywhere"
+    ],
+    "isAbstract": true
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "dating-relationships",
+    "entityTypeSlug": "relationship-habit",
+    "title": "Apology Style",
+    "prompt": "How do you apologize, and what do you need to hear from a partner?",
+    "axes": [
+      "dating",
+      "communication",
+      "conflict"
+    ],
+    "values": [
+      "Say sorry right away",
+      "Show it with actions",
+      "Explain what went wrong",
+      "A plan so it won't happen again",
+      "Time before I can accept it",
+      "A handwritten note",
+      "A hug says it",
+      "A small gift",
+      "Just move on, no speeches",
+      "Own it in front of friends"
+    ],
+    "isAbstract": true
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "dating-relationships",
+    "entityTypeSlug": "stress-response",
+    "createEntityType": {
+      "label": "Stress Response",
+      "pluralLabel": "Stress Responses"
+    },
+    "title": "When You're Stressed",
+    "prompt": "How do you act when you're stressed, and what helps from a partner?",
+    "axes": [
+      "communication",
+      "stress",
+      "dating"
+    ],
+    "values": [
+      "Go quiet",
+      "Vent it all out",
+      "Want a hug, not advice",
+      "Want solutions",
+      "Need to be alone",
+      "Clean everything",
+      "Work out",
+      "Need a distraction",
+      "Make a to-do list",
+      "Get short with people",
+      "Call my family",
+      "Sleep it off"
+    ],
+    "isAbstract": true
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "lifestyle-hobbies",
+    "entityTypeSlug": "social-obligation",
+    "createEntityType": {
+      "label": "Social Obligation",
+      "pluralLabel": "Social Obligations"
+    },
+    "title": "Can't-Miss Events",
+    "prompt": "Which events do you always show up for?",
+    "axes": [
+      "social",
+      "family",
+      "obligations"
+    ],
+    "values": [
+      "Friends' weddings",
+      "Birthday dinners",
+      "Weekly family dinner",
+      "Holidays with family",
+      "Game day with the group",
+      "Friends' housewarmings",
+      "Work happy hours",
+      "Baby showers",
+      "Family reunions",
+      "Coworker farewells",
+      "Religious services with family",
+      "Kids' birthday parties"
+    ],
+    "isAbstract": true
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "career",
+    "entityTypeSlug": "work-tradeoff",
+    "createEntityType": {
+      "label": "Work Trade-off",
+      "pluralLabel": "Work Trade-offs"
+    },
+    "title": "Work-Life Trade-offs",
+    "prompt": "Which trade-offs would you make for work?",
+    "axes": [
+      "career",
+      "balance",
+      "values"
+    ],
+    "values": [
+      "Stay late when it matters",
+      "Never work weekends",
+      "Phone off after hours",
+      "Move cities for a job",
+      "Take a pay cut for flexibility",
+      "Answer email on vacation",
+      "Long commute for a better job",
+      "Take every vacation day",
+      "Relocate for a partner's job",
+      "Work while sick",
+      "Skip plans for a deadline",
+      "Quit a job that hurts my health"
+    ],
+    "isAbstract": true
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "lifestyle-hobbies",
+    "entityTypeSlug": "impulse-buy",
+    "createEntityType": {
+      "label": "Impulse Buy",
+      "pluralLabel": "Impulse Buys"
+    },
+    "title": "Impulse Buys",
+    "prompt": "What do you buy without thinking twice?",
+    "axes": [
+      "money",
+      "spending",
+      "lifestyle"
+    ],
+    "values": [
+      "Takeout",
+      "Clothes online",
+      "Snacks at checkout",
+      "Concert tickets",
+      "Tech gadgets",
+      "Books",
+      "Skincare",
+      "Plants",
+      "Home decor",
+      "Stuff for my pet",
+      "Flights",
+      "Gym gear",
+      "Nothing, I never impulse buy"
+    ],
+    "isAbstract": true
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "lifestyle-hobbies",
+    "entityTypeSlug": "daily-habit",
+    "title": "Tipping and Generosity",
+    "prompt": "How do you handle tips, loans and treating people?",
+    "axes": [
+      "money",
+      "values",
+      "generosity"
+    ],
+    "values": [
+      "Tip 20% every time",
+      "Tip big",
+      "Round up the bill",
+      "Treat friends often",
+      "Lend money to friends",
+      "Never lend money",
+      "Pay back to the cent",
+      "Donate every month",
+      "Split tabs exactly",
+      "Cover a friend who's short",
+      "Tip only for great service",
+      "Give gifts instead of cash"
+    ],
+    "isAbstract": true
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "lifestyle-hobbies",
+    "entityTypeSlug": "sleep-preference",
+    "createEntityType": {
+      "label": "Sleep Preference",
+      "pluralLabel": "Sleep Preferences"
+    },
+    "title": "Sleep Setup",
+    "prompt": "How do you need your bedroom set up to sleep?",
+    "axes": [
+      "home",
+      "sleep",
+      "compatibility"
+    ],
+    "values": [
+      "Fan on all night",
+      "Cold room",
+      "Blackout curtains",
+      "White noise",
+      "Total silence",
+      "TV on to fall asleep",
+      "Pets in the bed",
+      "Separate blankets",
+      "Window open",
+      "King bed or nothing",
+      "Phone by the bed",
+      "Separate bedrooms someday"
+    ],
+    "isAbstract": true
+  },
+  {
+    "schemaVersion": 1,
+    "groupSlug": "lifestyle-hobbies",
+    "entityTypeSlug": "planning-style",
+    "createEntityType": {
+      "label": "Planning Style",
+      "pluralLabel": "Planning Styles"
+    },
+    "title": "Planning the Future",
+    "prompt": "How do you plan for the future?",
+    "axes": [
+      "future",
+      "planning",
+      "personality"
+    ],
+    "values": [
+      "A detailed five-year plan",
+      "Big goals, no timeline",
+      "Go with the flow",
+      "Plan week by week",
+      "Bucket list",
+      "Vision board",
+      "Retirement spreadsheet",
+      "Plan vacations a year ahead",
+      "Plans change for the right person",
+      "Let life surprise me"
+    ],
+    "isAbstract": true
+  }
+]
