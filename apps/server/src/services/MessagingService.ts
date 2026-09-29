@@ -26,21 +26,26 @@ export function serializeConversation(conversation: any, viewerProfileId: string
   const lastMessage = conversation.messages[0]
   let lastMessageBody = null
   let hasUnread = false
+  const isSystemThread = conversation.type === 'SYSTEM'
 
   const viewerParticipant = conversation.participants.find((p: any) => p.profile.id === viewerProfileId)
 
   if (lastMessage) {
     const isOwn = lastMessage.senderId === viewerProfileId
-    const locked = !isOwn && !entitlements['messaging.readIncoming']
+    // System activity is product-owned history, not another member's paid
+    // message. It is always readable and never creates a self-generated
+    // unread badge merely because the sender is null.
+    const locked = !isSystemThread && !isOwn && !entitlements['messaging.readIncoming']
     lastMessageBody = locked ? '🔒 New message' : lastMessage.body
 
-    if (!isOwn && viewerParticipant) {
+    if (!isSystemThread && !isOwn && viewerParticipant) {
       hasUnread = !viewerParticipant.lastReadAt || new Date(lastMessage.createdAt) > new Date(viewerParticipant.lastReadAt)
     }
   }
 
   return {
     id: conversation.id,
+    type: conversation.type,
     status: conversation.status,
     initiatedById: conversation.initiatedById,
     participants: conversation.participants.map((p: any) => {
@@ -57,13 +62,14 @@ export function serializeConversation(conversation: any, viewerProfileId: string
   }
 }
 
-function serializeMessage(message: any, viewerProfileId: string, entitlements: Entitlements) {
+function serializeMessage(message: any, viewerProfileId: string, entitlements: Entitlements, isSystemThread = false) {
   const isOwn = message.senderId === viewerProfileId
-  const locked = !isOwn && !entitlements['messaging.readIncoming']
+  const locked = !isSystemThread && !isOwn && !entitlements['messaging.readIncoming']
   return {
     id: message.id,
     conversationId: message.conversationId,
     senderId: message.senderId,
+    systemMessageType: message.systemMessageType ?? null,
     body: locked ? null : message.body,
     attachments: locked ? null : message.attachments,
     locked,
@@ -77,19 +83,22 @@ export class MessagingService {
     const cursor = decodeCursor(opts.cursor)
     const entitlements = await resolveEntitlements(viewerUserId)
 
+    // updatedAt is intentionally the inbox activity clock. sendMessage and all
+    // system activity writers touch the Conversation when they append a row,
+    // so a persistent SYSTEM thread can interleave chronologically with humans.
     const conversations = await db.conversation.findMany({
       where: {
         participants: { some: { profileId: viewerProfileId } },
         ...(cursor
           ? {
               OR: [
-                { createdAt: { lt: new Date(cursor.createdAt) } },
-                { createdAt: new Date(cursor.createdAt), id: { lt: cursor.id } },
+                { updatedAt: { lt: new Date(cursor.createdAt) } },
+                { updatedAt: new Date(cursor.createdAt), id: { lt: cursor.id } },
               ],
             }
           : {}),
       },
-      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
       take: limit + 1,
       include: CONVERSATION_INCLUDE,
     })
@@ -97,7 +106,9 @@ export class MessagingService {
     const hasMore = conversations.length > limit
     const page = hasMore ? conversations.slice(0, limit) : conversations
     const last = page[page.length - 1]
-    const nextCursor = hasMore && last ? encodeCursor({ createdAt: last.createdAt.toISOString(), id: last.id }) : null
+    // The generic cursor payload calls its timestamp createdAt; for the inbox
+    // the opaque value is Conversation.updatedAt.
+    const nextCursor = hasMore && last ? encodeCursor({ createdAt: last.updatedAt.toISOString(), id: last.id }) : null
 
     return { data: page.map((c) => serializeConversation(c, viewerProfileId, entitlements)), meta: { hasMore, nextCursor } }
   }
@@ -113,6 +124,7 @@ export class MessagingService {
 
     const existing = await db.conversation.findFirst({
       where: {
+        type: 'USER',
         AND: [
           { participants: { some: { profileId: initiatorProfileId } } },
           { participants: { some: { profileId: otherProfileId } } },
@@ -124,6 +136,7 @@ export class MessagingService {
 
     const created = await db.conversation.create({
       data: {
+        type: 'USER',
         initiatedById: initiatorProfileId,
         participants: { create: [{ profileId: initiatorProfileId }, { profileId: otherProfileId }] },
       },
@@ -138,7 +151,8 @@ export class MessagingService {
     conversationId: string,
     opts: { cursor?: string; limit?: number },
   ) {
-    await this._assertParticipant(viewerProfileId, conversationId)
+    const participant = await this._assertParticipant(viewerProfileId, conversationId)
+    const isSystemThread = participant.conversation.type === 'SYSTEM'
     const limit = normalizeLimit(opts.limit)
     const cursor = decodeCursor(opts.cursor)
     const entitlements = await resolveEntitlements(viewerUserId)
@@ -165,7 +179,7 @@ export class MessagingService {
     const nextCursor = hasMore && last ? encodeCursor({ createdAt: last.createdAt.toISOString(), id: last.id }) : null
 
     return {
-      data: page.map((m) => serializeMessage(m, viewerProfileId, entitlements)),
+      data: page.map((m) => serializeMessage(m, viewerProfileId, entitlements, isSystemThread)),
       meta: { hasMore, nextCursor },
     }
   }
@@ -176,7 +190,10 @@ export class MessagingService {
    * disables further sends in both directions, but existing history stays readable.
    */
   async sendMessage(viewerUserId: string, viewerProfileId: string, conversationId: string, body?: string, attachments?: any[]) {
-    await this._assertParticipant(viewerProfileId, conversationId)
+    const participant = await this._assertParticipant(viewerProfileId, conversationId)
+    if (participant.conversation.type === 'SYSTEM') {
+      throw { statusCode: 403, message: 'System activity is read-only' }
+    }
 
     const otherParticipant = await db.conversationParticipant.findFirst({
       where: { conversationId, profileId: { not: viewerProfileId } },
@@ -194,13 +211,19 @@ export class MessagingService {
       enforceLimit(limit, sentToday, `Free members can send up to ${limit} messages per day`)
     }
 
-    const message = await db.message.create({ 
-      data: { 
-        conversationId, 
-        senderId: viewerProfileId, 
-        body: body || null,
-        attachments: attachments ?? Prisma.JsonNull
-      } 
+    const now = new Date()
+    const message = await db.$transaction(async (tx) => {
+      const created = await tx.message.create({
+        data: {
+          conversationId,
+          senderId: viewerProfileId,
+          body: body || null,
+          attachments: attachments ?? Prisma.JsonNull,
+        },
+      })
+      // A relation write does not advance Conversation.updatedAt by itself.
+      await tx.conversation.update({ where: { id: conversationId }, data: { updatedAt: now } })
+      return created
     })
 
     if (otherParticipant) {
@@ -211,7 +234,7 @@ export class MessagingService {
             recipientProfileId: otherParticipant.profileId,
             title: 'New Match Message',
             body: 'You received a new message.',
-            data: { conversationId }
+            data: { conversationId },
           },
         },
       })
@@ -226,7 +249,9 @@ export class MessagingService {
    * and deletes the Conversation itself (cascades to its Messages).
    */
   async unmatchConversation(viewerProfileId: string, conversationId: string) {
-    await this._assertParticipant(viewerProfileId, conversationId)
+    const participant = await this._assertParticipant(viewerProfileId, conversationId)
+    if (participant.conversation.type === 'SYSTEM') throw { statusCode: 404, message: 'Conversation not found' }
+
     const otherParticipant = await db.conversationParticipant.findFirst({
       where: { conversationId, profileId: { not: viewerProfileId } },
     })
@@ -262,7 +287,9 @@ export class MessagingService {
   private async _assertParticipant(profileId: string, conversationId: string) {
     const participant = await db.conversationParticipant.findUnique({
       where: { conversationId_profileId: { conversationId, profileId } },
+      include: { conversation: { select: { type: true } } },
     })
     if (!participant) throw { statusCode: 404, message: 'Conversation not found' }
+    return participant
   }
 }
