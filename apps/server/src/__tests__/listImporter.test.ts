@@ -119,4 +119,26 @@ describe('ListImporterService', () => {
     expect(report.status).toBe('SUCCESS')
     expect(await db.entityType.findUnique({ where: { slug: `${prefix}-candy` } })).toMatchObject({ label: 'Candy', pluralLabel: 'Candies' })
   })
+
+  it('refuses new values that would silently widen a list offering its whole type', async () => {
+    const peeve = await db.entityType.create({ data: { slug: `${prefix}-peeve`, label: 'Peeve', pluralLabel: 'Peeves' } })
+    const wide = list({ entityTypeSlug: peeve.slug, title: `${prefix} Work Peeves`, pool: 'entity-type', values: values(`${prefix} Loud chewing`) })
+    expect((await importer.importList(wide)).status).toBe('SUCCESS')
+    const validate = async (over: Partial<ListSeedInput>) => {
+      const next = list({ entityTypeSlug: peeve.slug, title: `${prefix} Date Peeves`, ...over })
+      const report = await importer.importList(next, true)
+      await importer.fullTypeExposures([{ list: next, report }])
+      return report
+    }
+    const oneNew = values(`${prefix} Love-bombing`)
+
+    const widened = await validate({ values: oneNew })
+    expect(widened.status).toBe('ERROR')
+    expect(widened.errors.join()).toMatch(new RegExp(`"${prefix} Work Peeves" offers in full; publishing would expand it from 8 to 9 choices`))
+    expect((await validate({ values: oneNew, alsoExpands: [`${prefix} Work Peeves`] })).status).toBe('DRY_RUN')
+    expect((await validate({ values: values(`${prefix} Loud chewing`) })).status).toBe('DRY_RUN') // reuses only
+
+    await db.category.update({ where: { slug: key(`${prefix} Work Peeves`) }, data: { poolMode: 'CURATED' } })
+    expect((await validate({ values: oneNew })).status).toBe('DRY_RUN')
+  })
 })

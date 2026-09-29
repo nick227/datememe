@@ -23,6 +23,8 @@ export const ListSeedInputV1 = z.object({
   requiredTags: z.array(z.string()).optional().describe('Optional tags required for this category'),
   pool: z.enum(['curated', 'entity-type']).default('curated')
     .describe("'curated' (default): the list's values are its choices. 'entity-type': every entity of the type — only for deliberately broad lists like Movies"),
+  alsoExpands: z.array(z.string()).optional()
+    .describe('Titles of existing lists that offer every value of this type and are meant to gain its new values (e.g. "Top Movies"). Any other such list fails validation'),
 })
 
 export type ListSeedInput = z.input<typeof ListSeedInputV1>
@@ -178,6 +180,41 @@ export class ListImporterService {
     }
     if (report.errors.length) report.status = 'ERROR'
     return report
+  }
+
+  /**
+   * New values join their type, so an existing list that offers every value of
+   * it (not curated, no required tags) silently gains them — batches reusing
+   * pet-peeve grew Workplace Pet Peeves from 10 to 45 choices. For each such
+   * list, errors on the batch's lists that would create values of the type,
+   * unless a list of that type in the batch names it in alsoExpands (title or slug).
+   */
+  async fullTypeExposures(batch: { list: ListSeedInput; report: ImportReport }[]) {
+    const types = new Map<string, { created: Set<string>; creators: ImportReport[]; ack: Set<string> }>()
+    for (const { list, report } of batch) {
+      const t = types.get(list.entityTypeSlug) ?? { created: new Set<string>(), creators: [], ack: new Set<string>() }
+      for (const a of list.alsoExpands ?? []) t.ack.add(a.toLowerCase())
+      if (report.status !== 'ERROR' && report.entitiesCreated.length) {
+        report.entitiesCreated.forEach((n) => t.created.add(key(n)))
+        t.creators.push(report)
+      }
+      types.set(list.entityTypeSlug, t)
+    }
+    for (const [slug, t] of types) {
+      if (!t.created.size) continue
+      const type = await db.entityType.findUnique({ where: { slug }, select: { id: true } })
+      if (!type) continue // created by this batch: no list offers it yet
+      const exposed = await db.category.findMany({
+        where: { entityTypeId: type.id, isActive: true, poolMode: { not: 'CURATED' }, requiredTags: { none: {} } },
+        select: { slug: true, shortLabel: true },
+      })
+      if (!exposed.length) continue
+      const now = await db.entity.count({ where: { entityTypeId: type.id, status: 'APPROVED', mergedIntoId: null } })
+      for (const c of exposed.filter((c) => !t.ack.has(c.shortLabel.toLowerCase()) && !t.ack.has(c.slug))) {
+        const error = `Adds ${t.created.size} value(s) to type '${slug}', which "${c.shortLabel}" offers in full; publishing would expand it from ${now} to ${now + t.created.size} choices. Curate it (catalog-backfill-pools.ts), or add "alsoExpands": ["${c.shortLabel}"] if it is meant to grow`
+        for (const r of t.creators) { r.errors.push(error); r.status = 'ERROR' }
+      }
+    }
   }
 
   /**

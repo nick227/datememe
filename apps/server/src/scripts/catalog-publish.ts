@@ -56,6 +56,8 @@ async function main() {
     titles.set(titleKey, `${list.title} (${file.split('/').pop()})`)
     reports.push(report)
   }
+  // Across the batch: new values must not silently widen a list that offers its whole type.
+  await importer.fullTypeExposures(lists.map(({ list }, i) => ({ list, report: reports[i]! })))
   const invalid = reports.filter((r) => r.status === 'ERROR')
 
   if (!dryRun && !invalid.length) {
