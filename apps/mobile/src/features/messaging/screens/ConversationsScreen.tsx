@@ -18,6 +18,10 @@ import type { MessagesStackParamList } from '../../../navigation/types'
 
 type Props = NativeStackScreenProps<MessagesStackParamList, 'Conversations'>
 
+type InboxConversation = NonNullable<ReturnType<typeof useConversations>['data']>['pages'][number]['data'][number] & {
+  type?: 'USER' | 'SYSTEM'
+}
+
 export function ConversationsScreen({ navigation }: Props) {
   const me = useCurrentUser()
   const myProfileId = me.data?.profile?.id
@@ -26,11 +30,11 @@ export function ConversationsScreen({ navigation }: Props) {
   const sheet = useActionSheet()
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState('all')
-  const allRows = conversations.data?.pages.flatMap((p) => p.data) ?? []
+  const allRows = (conversations.data?.pages.flatMap((p) => p.data) ?? []) as InboxConversation[]
 
   // Activity is part of the same chronological inbox as human messages. Do not
   // pin SYSTEM below people; its latest event should naturally land where it happened.
-  const sortedRows = [...allRows].sort((a: any, b: any) => {
+  const sortedRows = [...allRows].sort((a, b) => {
     const aTime = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0
     const bTime = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0
     return bTime - aTime
