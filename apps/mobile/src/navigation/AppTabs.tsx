@@ -43,7 +43,7 @@ export function AppTabs() {
         headerShown: false,
         animation: 'fade',
         tabBarShowLabel: false,
-        unmountOnBlur: true,
+        popToTopOnBlur: true,
         tabBarButtonTestID: `tab.${route.name.toLowerCase()}`,
         tabBarActiveTintColor: colors.accent,
         tabBarInactiveTintColor: colors.inkMuted,
@@ -64,6 +64,7 @@ export function AppTabs() {
         name="Messages"
         component={MessagesStack}
         options={{
+          popToTopOnBlur: false,
           tabBarBadge: unreadCount > 0 ? unreadCount : undefined,
           tabBarBadgeStyle: { backgroundColor: colors.primary },
         }}

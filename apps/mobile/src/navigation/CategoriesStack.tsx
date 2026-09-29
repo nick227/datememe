@@ -10,7 +10,11 @@ export function CategoriesStack() {
   return (
     <Stack.Navigator screenOptions={defaultScreenOptions}>
       <Stack.Screen name="Categories" component={CategoriesScreen} />
-      <Stack.Screen name="ListBuilder" component={ListBuilderScreen} />
+      <Stack.Screen 
+        name="ListBuilder" 
+        component={ListBuilderScreen}
+        getId={({ params }) => params?.categorySlug} 
+      />
     </Stack.Navigator>
   )
 }
