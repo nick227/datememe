@@ -74,26 +74,28 @@ export class SystemActivityService {
     })
   }
 
-  recordProfileLiked(actorProfileId: string, target: ProfileRef) {
+  recordProfileLiked(actorProfileId: string, target: ProfileRef, swipeId: string) {
     return this.record({
       recipientProfileId: actorProfileId,
       systemMessageType: 'LIKE',
-      eventKey: `profile-liked:${actorProfileId}:${target.id}`,
+      // Swipe ids survive retries but change after an unmatch deletes the old
+      // swipe, so a genuine later re-like becomes a new piece of history.
+      eventKey: `profile-liked:${actorProfileId}:${swipeId}`,
       eventType: 'PROFILE_LIKED',
       body: `You liked ${target.displayName}`,
-      data: { profileId: target.id, displayName: target.displayName },
+      data: { profileId: target.id, displayName: target.displayName, swipeId },
       cta: { label: 'View profile', route: 'ProfileDetail', params: { profileId: target.id, displayName: target.displayName } },
     })
   }
 
-  recordProfileLikedYou(recipientProfileId: string, actor: ProfileRef) {
+  recordProfileLikedYou(recipientProfileId: string, actor: ProfileRef, swipeId: string) {
     return this.record({
       recipientProfileId,
       systemMessageType: 'LIKE',
-      eventKey: `profile-liked-you:${recipientProfileId}:${actor.id}`,
+      eventKey: `profile-liked-you:${recipientProfileId}:${swipeId}`,
       eventType: 'PROFILE_LIKED_YOU',
       body: `${actor.displayName} liked your profile`,
-      data: { profileId: actor.id, displayName: actor.displayName },
+      data: { profileId: actor.id, displayName: actor.displayName, swipeId },
       cta: { label: 'View profile', route: 'ProfileDetail', params: { profileId: actor.id, displayName: actor.displayName } },
     })
   }
@@ -102,7 +104,9 @@ export class SystemActivityService {
     return this.record({
       recipientProfileId,
       systemMessageType: 'MATCH',
-      eventKey: `match:${recipientProfileId}:${other.id}`,
+      // A new match after an unmatch creates a new USER conversation, making
+      // this key retry-safe without erasing legitimate later match history.
+      eventKey: `match:${recipientProfileId}:${conversationId}`,
       eventType: 'MATCH',
       body: `You matched with ${other.displayName}`,
       data: { profileId: other.id, displayName: other.displayName, conversationId },
@@ -115,6 +119,8 @@ export class SystemActivityService {
     return this.record({
       recipientProfileId: profileId,
       systemMessageType: 'ACTIVITY_DIGEST',
+      // A user's list is one persistent answer set, so subsequent edits do not
+      // create new history rows for the same category.
       eventKey: `list-completed:${profileId}:${list.id}`,
       eventType: 'LIST_COMPLETED',
       body: `You ${verb} ${list.shortLabel}`,
