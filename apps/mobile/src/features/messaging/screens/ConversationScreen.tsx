@@ -60,6 +60,15 @@ function conversationHeaderFacts(person: { locationLabel?: string | null; age?: 
   return { basics: basics.join(' · '), factoid: person.bio?.trim() ?? '' }
 }
 
+function MessageAvatar({ uri, initial }: { uri?: string | null; initial: string }) {
+  if (uri) return <Image source={{ uri }} style={styles.messageAvatar} />
+  return (
+    <View style={[styles.messageAvatar, styles.messageAvatarFallback]}>
+      <Text style={styles.messageAvatarInitial}>{initial.charAt(0).toUpperCase()}</Text>
+    </View>
+  )
+}
+
 function findById<T extends { id: string }>(pages: { data: T[] }[] | undefined, id: string) {
   if (!pages) return undefined
   for (const page of pages) {
@@ -339,7 +348,7 @@ export function ConversationScreen({ route, navigation }: Props) {
           {messages.isLoading ? (
             <View testID="conversation.loading" style={[styles.messages, { flex: 1 }]}>
               {[0, 1, 2, 3, 4].map((i) => (
-                <View key={i} style={[styles.bubbleRow, i % 2 === 0 && styles.bubbleRowOwn]}>
+                <View key={i} style={styles.bubbleRow}>
                   <Skeleton width={140 + (i % 3) * 30} height={40} style={{ borderRadius: radius.lg }} />
                 </View>
               ))}
@@ -389,44 +398,46 @@ export function ConversationScreen({ route, navigation }: Props) {
                 const isLastInGroup = !prevItem || prevItem.senderId !== item.senderId
                 if (!item.body && !item.attachments?.length) return null
 
+                const avatarUrl = isOwn ? me.data?.profile?.avatarUrl : otherParticipant?.avatarUrl
+                const avatarInitial = isOwn ? (me.data?.profile?.displayName ?? 'You') : (otherParticipant?.displayName ?? displayName)
+
                 return (
-                  <View style={[
-                    styles.bubbleRow,
-                    isOwn && styles.bubbleRowOwn,
-                    !isLastInGroup && { marginBottom: 2 }
-                  ]}>
-                  <View style={isOwn ? styles.bubbleColumnOwn : styles.bubbleColumn}>
-                      <Pressable
-                        testID={`conversation.message.${item.id}`}
-                        style={[styles.bubble, isOwn ? styles.bubbleOwn : styles.bubbleOther]}
-                        onLongPress={() => !isOwn && handleReportMessage(item.id)}
-                      >
-                        {item.attachments?.map((att: any, i: number) => (
-                          <View key={i} style={styles.bubbleAttachmentContainer}>
-                            {att.type === 'image' ? (
-                              <Image
-                                source={{ uri: att.url }}
-                                style={styles.bubbleImage}
-                                resizeMode="cover"
-                              />
-                            ) : null}
-                          </View>
-                        ))}
+                  <View style={[styles.bubbleRow, !isLastInGroup && { marginBottom: 2 }]}>
+                    <View style={styles.bubbleStack}>
+                      <View style={styles.bubbleCluster}>
+                        <Pressable
+                          testID={`conversation.message.${item.id}`}
+                          style={[styles.bubble, isOwn ? styles.bubbleOwn : styles.bubbleOther]}
+                          onLongPress={() => !isOwn && handleReportMessage(item.id)}
+                        >
+                          {item.attachments?.map((att: any, i: number) => (
+                            <View key={i} style={styles.bubbleAttachmentContainer}>
+                              {att.type === 'image' ? (
+                                <Image
+                                  source={{ uri: att.url }}
+                                  style={styles.bubbleImage}
+                                  resizeMode="cover"
+                                />
+                              ) : null}
+                            </View>
+                          ))}
 
-                        {item.body ? (
-                          <Text style={isOwn ? styles.bodyOwn : styles.bodyOther}>{item.body}</Text>
-                        ) : null}
+                          {item.body ? (
+                            <Text style={isOwn ? styles.bodyOwn : styles.bodyOther}>{item.body}</Text>
+                          ) : null}
 
-                        {isLastInGroup && (
-                          <Text style={isOwn ? styles.timeOwn : styles.timeOther}>
-                            {new Date(item.createdAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
-                          </Text>
-                        )}
-                      </Pressable>
-                    {isOwn && isSeen && item.id === myLastMessage?.id && (
-                      <Text style={styles.seenText}>Seen</Text>
-                    )}
-                  </View>
+                          {isLastInGroup && (
+                            <Text style={isOwn ? styles.timeOwn : styles.timeOther}>
+                              {new Date(item.createdAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+                            </Text>
+                          )}
+                        </Pressable>
+                        <MessageAvatar uri={avatarUrl} initial={avatarInitial} />
+                      </View>
+                      {isOwn && isSeen && item.id === myLastMessage?.id && (
+                        <Text style={styles.seenText}>Seen</Text>
+                      )}
+                    </View>
                   </View>
                 )
               }}
@@ -536,26 +547,28 @@ const styles = StyleSheet.create({
     backgroundColor: colors.border,
   },
   messages: { paddingHorizontal: spacing.md, paddingVertical: spacing.md, flexGrow: 1 },
-  bubbleRow: { flexDirection: 'row', marginBottom: spacing.md },
-  bubbleRowOwn: { justifyContent: 'flex-end' },
-  bubbleColumn: { alignItems: 'flex-start' },
-  bubbleColumnOwn: { alignItems: 'flex-end' },
-  seenText: { color: colors.inkMuted, fontSize: 11, marginTop: 2 },
+  bubbleRow: { flexDirection: 'row', justifyContent: 'flex-end', marginBottom: spacing.md },
+  bubbleStack: { alignItems: 'flex-end', maxWidth: '85%' },
+  bubbleCluster: { flexDirection: 'row', alignItems: 'flex-end', gap: spacing.xs },
+  seenText: { color: colors.inkMuted, fontSize: 11, marginTop: 2, marginRight: 26 },
   bubble: {
-    maxWidth: '80%',
+    minWidth: 128,
+    maxWidth: '100%',
+    flexShrink: 1,
     borderRadius: radius.lg,
     paddingVertical: 10,
     paddingHorizontal: 14,
-    borderWidth: borderWidth.thick,
-    borderColor: colors.ink,
   },
   bubbleOwn: { backgroundColor: colors.ink },
-  bubbleOther: { backgroundColor: colors.wheat },
+  bubbleOther: { backgroundColor: '#EEF1FF' },
+  messageAvatar: { width: 22, height: 22, borderRadius: radius.pill },
+  messageAvatarFallback: { backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center' },
+  messageAvatarInitial: { color: colors.ink, fontSize: 10, fontWeight: '700' },
 
   bodyOwn: { color: colors.white, fontSize: 15, lineHeight: 20 },
   bodyOther: { color: colors.ink, fontSize: 15, lineHeight: 20 },
   timeOwn: { color: 'rgba(255,255,255,0.7)', fontSize: 11, alignSelf: 'flex-end', marginTop: 4 },
-  timeOther: { color: colors.inkMuted, fontSize: 11, alignSelf: 'flex-start', marginTop: 4 },
+  timeOther: { color: colors.inkMuted, fontSize: 11, alignSelf: 'flex-end', marginTop: 4 },
 
   systemCardContainer: {
     alignItems: 'center',
