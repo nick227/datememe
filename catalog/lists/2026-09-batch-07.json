@@ -187,6 +187,8 @@
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "favorite-viral-videos",
+    "adminEditedAt": null,
     "groupSlug": "film-tv",
     "entityTypeSlug": "viral-video",
     "createEntityType": {
@@ -210,7 +212,17 @@
       "Sneezing Panda",
       "Keyboard Cat",
       "Double Rainbow",
-      "Evolution of Dance"
+      "Evolution of Dance",
+      "Gangnam Style",
+      "Damn Daniel",
+      "Chewbacca Mom",
+      "Bed Intruder Song",
+      "Dramatic Chipmunk",
+      "Christian the Lion",
+      "Friday (Rebecca Black)",
+      "Diet Coke and Mentos",
+      "The Duck Song",
+      "Obama Girl"
     ],
     "isAbstract": true
   }

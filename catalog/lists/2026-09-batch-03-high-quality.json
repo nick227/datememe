@@ -1,6 +1,8 @@
 [
   {
     "schemaVersion": 1,
+    "categorySlug": "favorite-superheroes",
+    "adminEditedAt": null,
     "groupSlug": "film-tv",
     "entityTypeSlug": "superhero",
     "title": "Favorite Superheroes",
@@ -24,7 +26,13 @@
       "Hulk",
       "Deadpool",
       "Green Lantern",
-      "Aquaman"
+      "Aquaman",
+      "Black Widow",
+      "Doctor Strange",
+      "Daredevil",
+      "Storm",
+      "Scarlet Witch",
+      "Invincible"
     ],
     "isAbstract": false
   },
@@ -326,6 +334,8 @@
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "favorite-musicals",
+    "adminEditedAt": null,
     "groupSlug": "film-tv",
     "entityTypeSlug": "musical",
     "title": "Favorite Musicals",
@@ -347,7 +357,15 @@
       "Dear Evan Hansen",
       "Hadestown",
       "Into the Woods",
-      "West Side Story"
+      "West Side Story",
+      "Mamma Mia!",
+      "The Book of Mormon",
+      "Hairspray",
+      "Six",
+      "Moulin Rouge!",
+      "Cats",
+      "Grease",
+      "Fiddler on the Roof"
     ],
     "isAbstract": false
   }

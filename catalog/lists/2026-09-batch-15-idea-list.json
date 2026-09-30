@@ -261,6 +261,8 @@
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "favorite-horror-movies",
+    "adminEditedAt": null,
     "groupSlug": "film-tv",
     "entityTypeSlug": "movie",
     "title": "Favorite Horror Movies",
@@ -284,7 +286,13 @@
       "It Follows",
       "Rosemary's Baby",
       "The Babadook",
-      "Midsommar"
+      "Midsommar",
+      "The Conjuring",
+      "Jaws",
+      "A Quiet Place",
+      "Sinister",
+      "The Witch",
+      "Talk to Me"
     ],
     "isAbstract": false,
     "alsoExpands": [

@@ -100,6 +100,8 @@
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "top-movie-soundtracks",
+    "adminEditedAt": null,
     "groupSlug": "film-tv",
     "entityTypeSlug": "movie",
     "title": "Top Movie Soundtracks",
@@ -119,7 +121,17 @@
       "Inception",
       "Titanic",
       "Saturday Night Fever",
-      "The Bodyguard"
+      "The Bodyguard",
+      "Purple Rain",
+      "Grease",
+      "Top Gun",
+      "Dirty Dancing",
+      "La La Land",
+      "Black Panther",
+      "Trainspotting",
+      "O Brother, Where Art Thou?",
+      "The Graduate",
+      "Drive"
     ],
     "isAbstract": false
   },
@@ -199,6 +211,8 @@
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "favorite-film-composers",
+    "adminEditedAt": null,
     "groupSlug": "film-tv",
     "entityTypeSlug": "composer",
     "title": "Favorite Film Composers",
@@ -218,7 +232,17 @@
       "Trent Reznor",
       "Thomas Newman",
       "Alexandre Desplat",
-      "Michael Giacchino"
+      "Michael Giacchino",
+      "James Horner",
+      "Jerry Goldsmith",
+      "Joe Hisaishi",
+      "Ludwig Göransson",
+      "Hildur Guðnadóttir",
+      "Bernard Herrmann",
+      "Vangelis",
+      "Ramin Djawadi",
+      "Justin Hurwitz",
+      "Clint Mansell"
     ],
     "isAbstract": false
   },

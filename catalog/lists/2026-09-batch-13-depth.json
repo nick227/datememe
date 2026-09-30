@@ -99,13 +99,15 @@
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "funniest-sitcoms",
+    "adminEditedAt": null,
     "groupSlug": "film-tv",
     "entityTypeSlug": "tv-show",
     "title": "Funniest Sitcoms",
     "prompt": "Which sitcoms make you laugh the hardest?",
     "axes": ["humor", "tv", "taste"],
     "alsoExpands": ["Top TV Shows"],
-    "values": ["The Office", "Friends", "Parks and Recreation", "Seinfeld", "Brooklyn Nine-Nine", "It's Always Sunny in Philadelphia", "Arrested Development", "Schitt's Creek", "Community", "Frasier", "Scrubs", "The Simpsons", "New Girl", "Abbott Elementary"],
+    "values": ["The Office", "Friends", "Parks and Recreation", "Seinfeld", "Brooklyn Nine-Nine", "It's Always Sunny in Philadelphia", "Arrested Development", "Schitt's Creek", "Community", "Frasier", "Scrubs", "The Simpsons", "New Girl", "Abbott Elementary", "Curb Your Enthusiasm", "30 Rock", "How I Met Your Mother", "Veep", "What We Do in the Shadows", "Everybody Loves Raymond"],
     "isAbstract": false
   },
   {

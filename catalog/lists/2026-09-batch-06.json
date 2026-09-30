@@ -149,6 +149,8 @@
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "favorite-animated-movies",
+    "adminEditedAt": null,
     "groupSlug": "film-tv",
     "entityTypeSlug": "movie",
     "title": "Favorite Animated Movies",
@@ -168,12 +170,24 @@
       "WALL-E",
       "Inside Out",
       "The Incredibles",
-      "Aladdin"
+      "Aladdin",
+      "Spirited Away",
+      "Coco",
+      "Ratatouille",
+      "Monsters, Inc.",
+      "Zootopia",
+      "Frozen",
+      "Kung Fu Panda",
+      "The Iron Giant",
+      "Fantastic Mr. Fox",
+      "Despicable Me"
     ],
     "isAbstract": false
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "favorite-comedy-movies",
+    "adminEditedAt": null,
     "groupSlug": "film-tv",
     "entityTypeSlug": "movie",
     "title": "Favorite Comedy Movies",
@@ -193,7 +207,17 @@
       "Mean Girls",
       "Shaun of the Dead",
       "Monty Python and the Holy Grail",
-      "Tropic Thunder"
+      "Tropic Thunder",
+      "Airplane!",
+      "Groundhog Day",
+      "The Big Lebowski",
+      "Ferris Bueller's Day Off",
+      "Office Space",
+      "Napoleon Dynamite",
+      "Zoolander",
+      "Hot Fuzz",
+      "Legally Blonde",
+      "Borat"
     ],
     "isAbstract": false
   },
@@ -236,6 +260,8 @@
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "favorite-talk-show-hosts",
+    "adminEditedAt": null,
     "groupSlug": "film-tv",
     "entityTypeSlug": "tv-personality",
     "title": "Favorite Talk Show Hosts",
@@ -255,12 +281,24 @@
       "Oprah Winfrey",
       "Ellen DeGeneres",
       "Craig Ferguson",
-      "Seth Meyers"
+      "Seth Meyers",
+      "Johnny Carson",
+      "John Oliver",
+      "Trevor Noah",
+      "Graham Norton",
+      "Jay Leno",
+      "James Corden",
+      "Kelly Clarkson",
+      "Drew Barrymore",
+      "Arsenio Hall",
+      "Samantha Bee"
     ],
     "isAbstract": false
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "top-documentaries",
+    "adminEditedAt": null,
     "groupSlug": "film-tv",
     "entityTypeSlug": "movie",
     "title": "Top Documentaries",
@@ -280,12 +318,24 @@
       "Icarus",
       "13th",
       "Man on Wire",
-      "Won't You Be My Neighbor?"
+      "Won't You Be My Neighbor?",
+      "March of the Penguins",
+      "Super Size Me",
+      "An Inconvenient Truth",
+      "Searching for Sugar Man",
+      "The Social Dilemma",
+      "Grizzly Man",
+      "Hoop Dreams",
+      "Bowling for Columbine",
+      "Amy",
+      "Fyre"
     ],
     "isAbstract": false
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "favorite-action-movies",
+    "adminEditedAt": null,
     "groupSlug": "film-tv",
     "entityTypeSlug": "movie",
     "title": "Favorite Action Movies",
@@ -305,7 +355,17 @@
       "Gladiator",
       "Raiders of the Lost Ark",
       "Mission: Impossible - Fallout",
-      "Aliens"
+      "Aliens",
+      "Top Gun: Maverick",
+      "Speed",
+      "The Bourne Identity",
+      "Kill Bill: Volume 1",
+      "Heat",
+      "Predator",
+      "Lethal Weapon",
+      "Crouching Tiger, Hidden Dragon",
+      "The Raid",
+      "Face/Off"
     ],
     "isAbstract": false
   }

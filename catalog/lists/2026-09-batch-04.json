@@ -1,6 +1,8 @@
 [
   {
     "schemaVersion": 1,
+    "categorySlug": "top-sci-fi-movies",
+    "adminEditedAt": null,
     "groupSlug": "film-tv",
     "entityTypeSlug": "movie",
     "title": "Top Sci-Fi Movies",
@@ -18,7 +20,19 @@
       "Alien",
       "Interstellar",
       "Back to the Future",
-      "Dune"
+      "Dune",
+      "2001: A Space Odyssey",
+      "The Terminator",
+      "E.T. the Extra-Terrestrial",
+      "Jurassic Park",
+      "Arrival",
+      "Children of Men",
+      "Ex Machina",
+      "The Martian",
+      "Gravity",
+      "District 9",
+      "Edge of Tomorrow",
+      "Minority Report"
     ],
     "isAbstract": false
   },
@@ -98,6 +112,8 @@
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "top-90s-movies",
+    "adminEditedAt": null,
     "groupSlug": "film-tv",
     "entityTypeSlug": "movie",
     "title": "Top 90s Movies",
@@ -117,7 +133,17 @@
       "Goodfellas",
       "Titanic",
       "Terminator 2: Judgment Day",
-      "The Shawshank Redemption"
+      "The Shawshank Redemption",
+      "Toy Story",
+      "Saving Private Ryan",
+      "Home Alone",
+      "Good Will Hunting",
+      "The Usual Suspects",
+      "Heat",
+      "Braveheart",
+      "Men in Black",
+      "Clueless",
+      "American Beauty"
     ],
     "isAbstract": false
   },
@@ -197,6 +223,8 @@
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "top-anime-movies",
+    "adminEditedAt": null,
     "groupSlug": "film-tv",
     "entityTypeSlug": "movie",
     "title": "Top Anime Movies",
@@ -216,12 +244,24 @@
       "Howl's Moving Castle",
       "Perfect Blue",
       "Grave of the Fireflies",
-      "A Silent Voice"
+      "A Silent Voice",
+      "Ponyo",
+      "Kiki's Delivery Service",
+      "Nausicaä of the Valley of the Wind",
+      "Castle in the Sky",
+      "The Boy and the Heron",
+      "Paprika",
+      "Weathering with You",
+      "Suzume",
+      "Wolf Children",
+      "The Girl Who Leapt Through Time"
     ],
     "isAbstract": false
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "favorite-super-villains",
+    "adminEditedAt": null,
     "groupSlug": "film-tv",
     "entityTypeSlug": "fictional-character",
     "title": "Favorite Super Villains",
@@ -241,7 +281,17 @@
       "Loki",
       "Green Goblin",
       "Lex Luthor",
-      "Sauron"
+      "Sauron",
+      "Bane",
+      "Harley Quinn",
+      "Erik Killmonger",
+      "Scar",
+      "Pennywise",
+      "Hans Gruber",
+      "Agent Smith",
+      "Ursula",
+      "Cruella de Vil",
+      "Norman Bates"
     ],
     "isAbstract": false
   }
