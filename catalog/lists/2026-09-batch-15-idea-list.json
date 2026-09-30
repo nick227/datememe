@@ -279,10 +279,7 @@
       "Breaking Open the Head",
       "The Immortality Key"
     ],
-    "isAbstract": false,
-    "alsoExpands": [
-      "Books"
-    ]
+    "isAbstract": false
   },
   {
     "schemaVersion": 1,

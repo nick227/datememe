@@ -56,7 +56,7 @@
     "title": "Bedtime Routine",
     "prompt": "How do you wind down before bed?",
     "axes": ["routine", "wellness", "comfort"],
-    "values": ["Scrolling in bed", "Reading a few pages", "A show in the background", "Hot shower", "Skincare routine", "Podcast or sleep story", "White noise", "Herbal tea", "Meditation app", "Setting out tomorrow's clothes", "Asleep the second I lie down", "Lying awake overthinking", "Audio Book", "Meditation", "Journaling", "Stretching", "Late-night snack", "Talking with my partner", "Sleep mask and earplugs", "Planning tomorrow"],
+    "values": ["Scrolling in bed", "Reading a few pages", "A show in the background", "Hot shower", "Skincare routine", "Podcast or sleep story", "White noise", "Herbal tea", "Meditation app", "Setting out tomorrow's clothes", "Asleep the second I lie down", "Lying awake overthinking", "Journaling", "Stretching", "Late-night snack", "Talking with my partner", "Sleep mask and earplugs", "Planning tomorrow"],
     "isAbstract": true
   },
   {
