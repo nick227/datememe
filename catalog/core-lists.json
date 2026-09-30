@@ -1,6 +1,6 @@
 {
   "$comment": "The core compatibility set (approved 2026-09-29): the lists every member is steered toward first, in this order — the first five are a useful first session. Chosen for broad answerability, compatibility signal and low overlap with each other (embedding comparison against the full catalog). Synced to the `core` SitePickGroup by apps/server/src/scripts/sync-core-lists.ts; the Lists feed pins it and Discover's improve-matches module leads with its unanswered lists. Scoring does not use it yet (deferred until the funnel is measured).",
-  "label": "Core lists",
+  "label": "Recommended for you",
   "lists": [
     "Relationship Values",
     "Relationship Dealbreakers",

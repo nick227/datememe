@@ -38,7 +38,7 @@ describe('core lists in the feeds', () => {
       categoryIds.push(c.id)
     }
     pickGroupId = (await db.sitePickGroup.create({
-      data: { slug: CORE_GROUP_SLUG, label: 'Core lists', sortOrder: -1, items: { create: categoryIds.map((categoryId, sortOrder) => ({ categoryId, sortOrder })) } },
+      data: { slug: CORE_GROUP_SLUG, label: 'Recommended for you', sortOrder: -1, items: { create: categoryIds.map((categoryId, sortOrder) => ({ categoryId, sortOrder })) } },
     })).id
     viewer = await makeProfile('viewer')
     await makeProfile('other')
@@ -62,7 +62,7 @@ describe('core lists in the feeds', () => {
     const page: any = await feed.getListsFeed(viewer.profileId, { limit: 20 })
     const siteModules = page.data.filter((m: any) => m.id?.startsWith('site-picks-'))
     expect(siteModules[0].id).toBe(`site-picks-${CORE_GROUP_SLUG}`)
-    expect(siteModules[0].title).toBe('Core lists · 1 of 3 done')
+    expect(siteModules[0].title).toBe('Recommended for you · 1 of 3 done')
     expect(siteModules[0].items.map((i: any) => i.title)).toEqual(['Core 2', 'Core 3', 'Core 1'])
   })
 
@@ -70,7 +70,7 @@ describe('core lists in the feeds', () => {
     const page: any = await feed.getDiscoverFeed(viewer.userId, viewer.profileId, { limit: 20 })
     const improve = page.data.find((m: any) => m.id === 'improve-matches')
     expect(improve).toBeTruthy()
-    expect(improve.title).toMatch(/Core lists · 1 of 3 done$/)
+    expect(improve.title).toMatch(/Recommended for you · 1 of 3 done$/)
     expect(improve.items.slice(0, 2).map((i: any) => i.title)).toEqual(['Core 2', 'Core 3'])
     expect(improve.context).toMatchObject({ coreCompleted: 1, coreTotal: 3 })
   })
