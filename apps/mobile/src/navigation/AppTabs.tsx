@@ -66,8 +66,13 @@ export function AppTabs() {
       <Tab.Screen
         name="Messages"
         component={MessagesStack}
+        listeners={({ navigation }) => ({
+          tabPress: (e) => {
+            e.preventDefault()
+            navigation.navigate('Messages', { screen: 'Conversations' })
+          },
+        })}
         options={{
-          popToTopOnBlur: false,
           tabBarBadge: unreadCount > 0 ? unreadCount : undefined,
           tabBarBadgeStyle: { backgroundColor: colors.primary },
         }}

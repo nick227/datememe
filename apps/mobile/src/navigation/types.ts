@@ -52,6 +52,7 @@ export type DiscoveryStackParamList = {
 export type MessagesStackParamList = {
   Conversations: undefined
   Conversation: { conversationId: string; displayName: string }
+  Paywall: undefined
   ListBuilder: PollParams
   PollResults: PollParams
 }

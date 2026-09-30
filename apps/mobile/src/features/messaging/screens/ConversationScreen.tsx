@@ -1,9 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Text, FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet, View, Image } from 'react-native'
 import { useIsFocused } from '@react-navigation/native'
 import { ActionSheet, useActionSheet } from '../../../ui/ActionSheet'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { useHeaderHeight } from '@react-navigation/elements'
 import {
   ApiError,
   useCurrentUser,
@@ -23,6 +22,7 @@ import { Icon } from '../../../ui/Icon'
 import { Skeleton } from '../../../ui/Skeleton'
 import { ErrorState } from '../../../ui/ErrorState'
 import { borderWidth, colors, radius, spacing } from '../../../theme'
+import { openPoll } from '../../../navigation/openPoll'
 import type { MessagesStackParamList } from '../../../navigation/types'
 import { Typography } from '../../../ui/Typography'
 import { hapticLight, hapticSuccess } from '../../../lib/haptics'
@@ -55,6 +55,16 @@ function supportsSystemCta(cta: ActivityCta | null | undefined): cta is Activity
   return cta?.route === 'ProfileDetail' || cta?.route === 'Conversation' || cta?.route === 'ListBuilder'
 }
 
+function findById<T extends { id: string }>(pages: { data: T[] }[] | undefined, id: string) {
+  if (!pages) return undefined
+  for (const page of pages) {
+    for (let i = 0; i < page.data.length; i++) {
+      if (page.data[i].id === id) return page.data[i]
+    }
+  }
+  return undefined
+}
+
 export function ConversationScreen({ route, navigation }: Props) {
   const { conversationId, displayName } = route.params
   const isFocused = useIsFocused()
@@ -71,17 +81,23 @@ export function ConversationScreen({ route, navigation }: Props) {
   const sheet = useActionSheet()
   const [draft, setDraft] = useState('')
   const [attachment, setAttachment] = useState<ImagePicker.ImagePickerAsset | null>(null)
+  const contentRef = useRef<View>(null)
+  const [keyboardOffset, setKeyboardOffset] = useState(0)
 
   useEffect(() => {
     markAsReadMutate()
   }, [markAsReadMutate])
-  const headerHeight = useHeaderHeight()
 
-  // Get the conversation to access the avatar
-  const conversation = conversations.data?.pages.flatMap(p => p.data).find(c => c.id === conversationId)
-  const otherParticipant = conversation?.participants.find((p: any) => p.id !== myProfileId) ?? conversation?.participants[0]
+  const conversation = useMemo(
+    () => findById(conversations.data?.pages, conversationId),
+    [conversations.data, conversationId],
+  )
+  const otherParticipant = conversation?.participants.find((p) => p.id !== myProfileId) ?? conversation?.participants[0]
 
-  const rows = messages.data?.pages.flatMap((p) => p.data) ?? []
+  const rows = useMemo(
+    () => messages.data?.pages.flatMap((p) => p.data) ?? [],
+    [messages.data],
+  )
 
   // "Seen" derives from the existing per-participant lastReadAt (no per-message
   // read model): the other participant has seen my latest message once their
@@ -90,8 +106,7 @@ export function ConversationScreen({ route, navigation }: Props) {
   const myLastMessage = rows.find((m) => m.senderId === myProfileId)
   const isSeen = !!(myLastMessage && otherReadAt && new Date(otherReadAt) >= new Date(myLastMessage.createdAt))
 
-  const isSystemThread = conversation?.type === 'SYSTEM' || rows.some((message) => message.systemMessageType != null)
-  const contextLine = isSystemThread ? null : '8 shared favorites · strongest overlap: Music'
+  const isSystemThread = conversation ? conversation.type === 'SYSTEM' : rows.some((message) => message.systemMessageType != null)
 
   async function handleSend() {
     const body = draft.trim()
@@ -129,7 +144,7 @@ export function ConversationScreen({ route, navigation }: Props) {
           message: err?.message ?? 'Your daily message allowance has been reached.',
           buttons: [
             { testID: 'conversation.dialog.not-now', text: 'Not now', style: 'cancel' },
-            { testID: 'conversation.dialog.go-premium', text: 'Go Premium', onPress: () => (navigation.getParent()?.navigate as any)('ProfileTab', { screen: 'Paywall' }) },
+            { testID: 'conversation.dialog.go-premium', text: 'Go Premium', onPress: () => navigation.navigate('Paywall') },
           ],
         })
       } else {
@@ -245,12 +260,9 @@ export function ConversationScreen({ route, navigation }: Props) {
     }
 
     if (cta.route === 'ListBuilder' && cta.params?.categorySlug) {
-      ;(navigation.getParent()?.navigate as any)('Lists', {
-        screen: 'ListBuilder',
-        params: {
-          categorySlug: cta.params.categorySlug,
-          shortLabel: cta.params.shortLabel ?? 'List',
-        },
+      openPoll(navigation, 'edit', {
+        categorySlug: cta.params.categorySlug,
+        shortLabel: cta.params.shortLabel ?? 'List',
       })
     }
   }
@@ -288,11 +300,6 @@ export function ConversationScreen({ route, navigation }: Props) {
           )}
           <View style={styles.headerTextContainer}>
             <Typography variant="heading">{isSystemThread ? 'Activity' : displayName}</Typography>
-            {contextLine && (
-              <Typography variant="label" style={styles.headerContext}>
-                {contextLine}
-              </Typography>
-            )}
           </View>
         </Pressable>
 
@@ -306,161 +313,161 @@ export function ConversationScreen({ route, navigation }: Props) {
       </View>
       <View style={styles.headerDivider} />
 
-      {messages.isLoading ? (
-        <View testID="conversation.loading" style={[styles.messages, { flex: 1 }]}>
-          {[0, 1, 2, 3, 4].map((i) => (
-            <View key={i} style={[styles.bubbleRow, i % 2 === 0 && styles.bubbleRowOwn]}>
-              <Skeleton width={140 + (i % 3) * 30} height={40} style={{ borderRadius: radius.lg }} />
+      <View
+        ref={contentRef}
+        style={styles.content}
+        onLayout={() => contentRef.current?.measureInWindow((_x, y) => setKeyboardOffset(y))}
+      >
+        {/* Both headers are custom, so measure the content's screen offset. */}
+        <KeyboardAvoidingView
+          style={styles.content}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={keyboardOffset}
+        >
+          {messages.isLoading ? (
+            <View testID="conversation.loading" style={[styles.messages, { flex: 1 }]}>
+              {[0, 1, 2, 3, 4].map((i) => (
+                <View key={i} style={[styles.bubbleRow, i % 2 === 0 && styles.bubbleRowOwn]}>
+                  <Skeleton width={140 + (i % 3) * 30} height={40} style={{ borderRadius: radius.lg }} />
+                </View>
+              ))}
             </View>
-          ))}
-        </View>
-      ) : messages.isError ? (
-        <View style={{ flex: 1 }}>
-          <ErrorState testID="conversation.error" subtitle="Couldn't load this conversation." onRetry={() => messages.refetch()} />
-        </View>
-      ) : (
-        <FlatList
-          data={rows}
-          keyExtractor={(item) => item.id}
-          inverted
-          contentContainerStyle={styles.messages}
-          onEndReached={() => messages.hasNextPage && messages.fetchNextPage()}
-          renderItem={({ item, index }) => {
-            if (isSystemThread) {
-              const cta = item.systemData?.cta
-              const actionable = supportsSystemCta(cta)
-              return (
-                <View style={styles.systemCardContainer}>
-                  <Pressable
-                    testID={`conversation.system.${item.id}`}
-                    style={styles.systemCard}
-                    disabled={!actionable}
-                    onPress={() => actionable && handleSystemCta(cta)}
-                  >
-                    <Text style={styles.systemCardTitle}>{systemEventTitle(item.systemData?.event?.type)}</Text>
-                    <Text style={styles.systemCardBody}>{item.body}</Text>
-                    {actionable && (
-                      <View testID={`conversation.system.${item.id}.cta`} style={styles.systemCardCta}>
-                        <Text style={styles.systemCardCtaText}>{cta.label}</Text>
-                      </View>
+          ) : messages.isError ? (
+            <View style={{ flex: 1 }}>
+              <ErrorState testID="conversation.error" subtitle="Couldn't load this conversation." onRetry={() => messages.refetch()} />
+            </View>
+          ) : (
+            <FlatList
+              style={styles.content}
+              data={rows}
+              keyExtractor={(item) => item.id}
+              inverted
+              contentContainerStyle={styles.messages}
+              onEndReached={() => messages.hasNextPage && messages.fetchNextPage()}
+              renderItem={({ item, index }) => {
+                if (isSystemThread) {
+                  const cta = item.systemData?.cta
+                  const actionable = supportsSystemCta(cta)
+                  return (
+                    <View style={styles.systemCardContainer}>
+                      <Pressable
+                        testID={`conversation.system.${item.id}`}
+                        style={styles.systemCard}
+                        disabled={!actionable}
+                        onPress={() => actionable && handleSystemCta(cta)}
+                      >
+                        <Text style={styles.systemCardTitle}>{systemEventTitle(item.systemData?.event?.type)}</Text>
+                        <Text style={styles.systemCardBody}>{item.body}</Text>
+                        {actionable && (
+                          <View testID={`conversation.system.${item.id}.cta`} style={styles.systemCardCta}>
+                            <Text style={styles.systemCardCtaText}>{cta.label}</Text>
+                          </View>
+                        )}
+                        <Text style={styles.systemCardTime}>
+                          {new Date(item.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                        </Text>
+                      </Pressable>
+                    </View>
+                  )
+                }
+
+                const isOwn = item.senderId === myProfileId
+                const prevItem = rows[index - 1] // Newer message (rendered below this one)
+
+                const isLastInGroup = !prevItem || prevItem.senderId !== item.senderId
+
+                const body = item.locked ? 'New message' : item.body
+
+                return (
+                  <View style={[
+                    styles.bubbleRow,
+                    isOwn && styles.bubbleRowOwn,
+                    !isLastInGroup && { marginBottom: 2 }
+                  ]}>
+                  <View style={isOwn ? styles.bubbleColumnOwn : styles.bubbleColumn}>
+                      <Pressable
+                        testID={`conversation.message.${item.id}`}
+                        style={[styles.bubble, isOwn ? styles.bubbleOwn : styles.bubbleOther]}
+                        onLongPress={() => !isOwn && !item.locked && handleReportMessage(item.id)}
+                      >
+                        {item.locked ? null : item.attachments?.map((att: any, i: number) => (
+                          <View key={i} style={styles.bubbleAttachmentContainer}>
+                            {att.type === 'image' ? (
+                              <Image
+                                source={{ uri: att.url }}
+                                style={styles.bubbleImage}
+                                resizeMode="cover"
+                              />
+                            ) : null}
+                          </View>
+                        ))}
+
+                        {body ? (
+                          <Text style={item.locked ? styles.bodyLocked : isOwn ? styles.bodyOwn : styles.bodyOther}>{body}</Text>
+                        ) : null}
+
+                        {isLastInGroup && (
+                          <Text style={isOwn ? styles.timeOwn : styles.timeOther}>
+                            {new Date(item.createdAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+                          </Text>
+                        )}
+                      </Pressable>
+                    {isOwn && isSeen && item.id === myLastMessage?.id && (
+                      <Text style={styles.seenText}>Seen</Text>
                     )}
-                    <Text style={styles.systemCardTime}>
-                      {new Date(item.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                    </Text>
+                  </View>
+                  </View>
+                )
+              }}
+            />
+          )}
+
+          {!isSystemThread && (
+            <View style={styles.composerWrapper}>
+              {attachment && (
+                <View style={styles.attachmentPreviewContainer}>
+                  <Image source={{ uri: attachment.uri }} style={styles.attachmentPreview} />
+                  <Pressable testID="conversation.attachment.remove" style={styles.attachmentRemoveBtn} onPress={() => setAttachment(null)}>
+                    <Icon name="X" size={12} color={colors.white} />
                   </Pressable>
                 </View>
-              )
-            }
-
-            const isOwn = item.senderId === myProfileId
-            const prevItem = rows[index - 1] // Newer message (rendered below this one)
-
-            const isLastInGroup = !prevItem || prevItem.senderId !== item.senderId
-
-            return (
-              <View style={[
-                styles.bubbleRow,
-                isOwn && styles.bubbleRowOwn,
-                !isLastInGroup && { marginBottom: 2 }
-              ]}>
-              <View style={isOwn ? styles.bubbleColumnOwn : styles.bubbleColumn}>
-                {item.locked ? (
-                  <Pressable
-                    testID={`conversation.message.${item.id}.unlock`}
-                    style={styles.lockedContainer}
-                    onPress={() => (navigation.getParent()?.navigate as any)('ProfileTab', { screen: 'Paywall' })}
-                  >
-                    <View style={[styles.bubble, styles.bubbleLocked]}>
-                      <Icon name="Lock" size={16} color={colors.primary} />
-                      <Text style={styles.lockedText}>Premium message</Text>
-                    </View>
-                    <View style={styles.unlockBtn}>
-                      <Text style={styles.unlockBtnText}>Unlock</Text>
-                    </View>
-                  </Pressable>
-                ) : (
-                  <Pressable
-                    testID={`conversation.message.${item.id}`}
-                    style={[styles.bubble, isOwn ? styles.bubbleOwn : styles.bubbleOther]}
-                    onLongPress={() => !isOwn && handleReportMessage(item.id)}
-                  >
-                    {item.attachments?.map((att: any, i: number) => (
-                      <View key={i} style={styles.bubbleAttachmentContainer}>
-                        {att.type === 'image' ? (
-                          <Image
-                            source={{ uri: att.url }}
-                            style={styles.bubbleImage}
-                            resizeMode="cover"
-                          />
-                        ) : null}
-                      </View>
-                    ))}
-
-                    {item.body ? (
-                      <Text style={isOwn ? styles.bodyOwn : styles.bodyOther}>{item.body}</Text>
-                    ) : null}
-
-                    {isLastInGroup && (
-                      <Text style={isOwn ? styles.timeOwn : styles.timeOther}>
-                        {new Date(item.createdAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
-                      </Text>
-                    )}
-                  </Pressable>
-                )}
-                {isOwn && isSeen && item.id === myLastMessage?.id && (
-                  <Text style={styles.seenText}>Seen</Text>
-                )}
-              </View>
-              </View>
-            )
-          }}
-        />
-      )}
-
-      {!isSystemThread && (
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={headerHeight}>
-          <View style={styles.composerWrapper}>
-            {attachment && (
-              <View style={styles.attachmentPreviewContainer}>
-                <Image source={{ uri: attachment.uri }} style={styles.attachmentPreview} />
-                <Pressable testID="conversation.attachment.remove" style={styles.attachmentRemoveBtn} onPress={() => setAttachment(null)}>
-                  <Icon name="X" size={12} color={colors.white} />
-                </Pressable>
-              </View>
-            )}
-            <View style={styles.composer}>
-              <Pressable testID="conversation.attach" style={styles.attachButton} onPress={pickImage}>
-                <Icon name="Plus" size={24} color={colors.inkMuted} />
-              </Pressable>
-              <TextField testID="conversation.compose"
-                value={draft}
-                onChangeText={setDraft}
-                placeholder="Message…"
-                multiline
-                style={styles.inputField}
-              />
-              {(draft.trim().length > 0 || attachment) && (
-                <Animated.View entering={ZoomIn.duration(200)} exiting={ZoomOut.duration(200)}>
-                  <Pressable
-                    testID="conversation.send"
-                    style={styles.sendButton}
-                    onPress={handleSend}
-                    disabled={sendMessage.isPending || uploadMedia.isPending}
-                  >
-                    <Icon name="Send" size={20} color={colors.white} />
-                  </Pressable>
-                </Animated.View>
               )}
+              <View style={styles.composer}>
+                <Pressable testID="conversation.attach" style={styles.attachButton} onPress={pickImage}>
+                  <Icon name="Plus" size={24} color={colors.inkMuted} />
+                </Pressable>
+                <TextField testID="conversation.compose"
+                  value={draft}
+                  onChangeText={setDraft}
+                  placeholder="Message…"
+                  multiline
+                  containerStyle={styles.inputContainer}
+                  style={styles.inputField}
+                />
+                {(draft.trim().length > 0 || attachment) && (
+                  <Animated.View entering={ZoomIn.duration(200)} exiting={ZoomOut.duration(200)}>
+                    <Pressable
+                      testID="conversation.send"
+                      style={styles.sendButton}
+                      onPress={handleSend}
+                      disabled={sendMessage.isPending || uploadMedia.isPending}
+                    >
+                      <Icon name="Send" size={20} color={colors.white} />
+                    </Pressable>
+                  </Animated.View>
+                )}
+              </View>
             </View>
-          </View>
+          )}
         </KeyboardAvoidingView>
-      )}
+      </View>
       <ActionSheet testID="conversation.dialog" config={sheet.config} onDismiss={sheet.dismiss} />
     </ScreenContainer>
   )
 }
 
 const styles = StyleSheet.create({
+  content: { flex: 1 },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -487,11 +494,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  headerContext: {
-    color: colors.inkMuted,
-    fontSize: 11,
-    marginTop: 2,
-  },
   headerAvatar: {
     width: 32,
     height: 32,
@@ -515,36 +517,12 @@ const styles = StyleSheet.create({
     borderWidth: borderWidth.thick,
     borderColor: colors.ink,
   },
-  bubbleOwn: { backgroundColor: colors.primary },
-  bubbleOther: { backgroundColor: colors.surfaceMuted },
-
-  lockedContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  bubbleLocked: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    borderWidth: borderWidth.thin,
-    borderColor: colors.ink,
-  },
-  lockedText: { color: colors.primary, fontSize: 15, fontWeight: '600' },
-  unlockBtn: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: radius.pill,
-  },
-  unlockBtnText: {
-    color: colors.white,
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
+  bubbleOwn: { backgroundColor: colors.ink },
+  bubbleOther: { backgroundColor: colors.wheat },
 
   bodyOwn: { color: colors.white, fontSize: 15, lineHeight: 20 },
   bodyOther: { color: colors.ink, fontSize: 15, lineHeight: 20 },
+  bodyLocked: { color: colors.inkMuted, fontSize: 15, lineHeight: 20 },
   timeOwn: { color: 'rgba(255,255,255,0.7)', fontSize: 11, alignSelf: 'flex-end', marginTop: 4 },
   timeOther: { color: colors.inkMuted, fontSize: 11, alignSelf: 'flex-start', marginTop: 4 },
 
@@ -612,9 +590,12 @@ const styles = StyleSheet.create({
     paddingRight: spacing.xs,
     paddingVertical: 2, // inner padding
   },
-  inputField: {
+  inputContainer: {
     flex: 1,
+    minWidth: 0,
     marginBottom: 0,
+  },
+  inputField: {
     backgroundColor: 'transparent',
     borderWidth: 0,
     minHeight: 44,

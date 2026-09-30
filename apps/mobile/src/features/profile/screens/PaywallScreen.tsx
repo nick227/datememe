@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native'
-import type { NativeStackScreenProps } from '@react-navigation/native-stack'
+import { useNavigation } from '@react-navigation/native'
 import { ApiError, useCurrentUser, useDevPurchase, usePlans, useRedeemCoupon } from '@project/sdk'
 import { ScreenContainer } from '../../../ui/ScreenContainer'
 import { TopNavigation } from '../../../ui/TopNavigation'
@@ -8,10 +8,7 @@ import { TextField } from '../../../ui/TextField'
 import { Button } from '../../../ui/Button'
 import { ActionSheet, useActionSheet } from '../../../ui/ActionSheet'
 import { borderWidth, colors, radius, spacing, type } from '../../../theme'
-import type { ProfileStackParamList } from '../../../navigation/types'
 import { Typography } from '../../../ui/Typography'
-
-type Props = NativeStackScreenProps<ProfileStackParamList, 'Paywall'>
 
 const PERKS = [
   'Read every message you receive',
@@ -19,7 +16,8 @@ const PERKS = [
   "See other members' photos",
 ]
 
-export function PaywallScreen({ navigation }: Props) {
+export function PaywallScreen() {
+  const navigation = useNavigation()
   const me = useCurrentUser()
   const plans = usePlans()
   const devPurchase = useDevPurchase()
@@ -27,13 +25,17 @@ export function PaywallScreen({ navigation }: Props) {
   const sheet = useActionSheet()
   const [couponCode, setCouponCode] = useState('')
 
+  function leave() {
+    if (navigation.canGoBack()) navigation.goBack()
+  }
+
   async function handleSubscribe(planSlug: string) {
     try {
       await devPurchase.mutateAsync({ planSlug })
       sheet.show({
         title: 'You’re premium!',
         message: 'This used the dev-purchase simulation — real Apple/Google IAP wiring is a follow-up.',
-        buttons: [{ testID: 'paywall.dialog.ok', text: 'OK', onPress: () => navigation.goBack() }],
+        buttons: [{ testID: 'paywall.dialog.ok', text: 'OK', onPress: leave }],
       })
     } catch (err: any) {
       sheet.show({ title: 'Purchase failed', message: err?.message ?? 'Try again in a moment', buttons: [{ testID: 'paywall.dialog.ok', text: 'OK' }] })
@@ -50,7 +52,7 @@ export function PaywallScreen({ navigation }: Props) {
           message: result.grant
             ? `Your code unlocked MEMBER${result.grant.expiresAt ? ` until ${new Date(result.grant.expiresAt).toLocaleDateString()}` : ' — lifetime'}.`
             : `This code is a ${result.redemption.discountPercent}% discount — it's recorded on your account, and applies once you subscribe.`,
-          buttons: [{ testID: 'paywall.dialog.ok', text: 'OK', onPress: () => result.grant && navigation.goBack() }],
+          buttons: [{ testID: 'paywall.dialog.ok', text: 'OK', onPress: () => result.grant && leave() }],
         })
       },
       onError: (err) => sheet.show({ title: 'Could not redeem code', message: err instanceof ApiError ? err.message : 'Try again in a moment.', buttons: [{ testID: 'paywall.dialog.ok', text: 'OK' }] }),
@@ -61,7 +63,7 @@ export function PaywallScreen({ navigation }: Props) {
 
   return (
     <ScreenContainer testID="screen.paywall" width="narrow">
-      <TopNavigation testID="paywall.header" alignment="left" leftAction="back" onLeftAction={() => navigation.goBack()} title="Go Premium" />
+      <TopNavigation testID="paywall.header" alignment="left" leftAction="back" onLeftAction={leave} title="Go Premium" />
       <View style={styles.perks}>
         {PERKS.map((perk) => (
           <Text key={perk} style={styles.perk}>
