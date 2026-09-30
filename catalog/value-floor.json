@@ -1,0 +1,6 @@
+{
+  "$comment": "Target value count per list, read by `pnpm prod:list-values`. Precedence: --floor N, then lists[slug], then groups[slug], then default. Keys are Category slugs (lists) and CategoryGroup slugs (groups). The list builder shows the first 20 values before search, hence the default.",
+  "default": 20,
+  "groups": {},
+  "lists": {}
+}

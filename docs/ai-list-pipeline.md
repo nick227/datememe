@@ -16,6 +16,8 @@ Generate useful new Lists without duplicating the catalog.
 3. Inspect existing groups and entity types
 4. Avoid semantic duplicates
 
+To see how many values each list offers (against a floor), and to find lists that need more: `pnpm prod:list-values` (read-only) — see `docs/list-values-runbook.md`.
+
 ## Generate
 5. Create list JSON only (in `catalog/lists/`).
 6. AI supplies names and content, **not** IDs, slugs, QIDs, or media paths.
