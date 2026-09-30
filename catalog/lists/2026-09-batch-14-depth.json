@@ -20,7 +20,15 @@
       "First date is on me",
       "Joint account for dates",
       "Pay for dinner, they get drinks",
-      "Depends on the date"
+      "Depends on the date",
+      "Round up and tip big",
+      "Whoever loses the bet pays",
+      "Split by what we ordered",
+      "Birthday person never pays",
+      "Card roulette",
+      "Cash only",
+      "Share apps, pay our own entrées",
+      "Let the parents pay"
     ],
     "isAbstract": true
   },
@@ -60,6 +68,8 @@
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "social-battery",
+    "adminEditedAt": null,
     "groupSlug": "lifestyle-hobbies",
     "entityTypeSlug": "social-habit",
     "title": "Social Battery",
@@ -77,7 +87,15 @@
       "Small groups only",
       "Talk to strangers anywhere",
       "Warm up slowly",
-      "Home by 10"
+      "Home by 10",
+      "Extrovert with limits",
+      "Need a buddy at big events",
+      "Fine with crowds, not small talk",
+      "Phone calls drain me",
+      "Recharge at the gym",
+      "Energized by concerts",
+      "One night home a week, minimum",
+      "Party once a month, then hibernate"
     ],
     "isAbstract": true
   },
@@ -139,6 +157,8 @@
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "weeknight-routine",
+    "adminEditedAt": null,
     "groupSlug": "lifestyle-hobbies",
     "entityTypeSlug": "daily-habit",
     "title": "Weeknight Routine",
@@ -156,7 +176,15 @@
       "Reading in bed early",
       "Side project time",
       "Phone call with family",
-      "Doom-scrolling"
+      "Doom-scrolling",
+      "Date night",
+      "Meal prep",
+      "Walking the dog",
+      "Video call with friends",
+      "Volunteering",
+      "Bath and a book",
+      "Night run",
+      "Early to bed"
     ],
     "isAbstract": true
   },

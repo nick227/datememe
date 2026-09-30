@@ -153,6 +153,8 @@
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "can-t-miss-events",
+    "adminEditedAt": null,
     "groupSlug": "lifestyle-hobbies",
     "entityTypeSlug": "social-obligation",
     "createEntityType": {
@@ -178,7 +180,15 @@
       "Family reunions",
       "Coworker farewells",
       "Religious services with family",
-      "Kids' birthday parties"
+      "Kids' birthday parties",
+      "Graduations",
+      "Anniversary dinners",
+      "Annual friends' trip",
+      "Bachelor and bachelorette parties",
+      "New Year's Eve with friends",
+      "Kids' games and recitals",
+      "Work holiday party",
+      "Friends' shows and gigs"
     ],
     "isAbstract": true
   },
@@ -305,6 +315,8 @@
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "planning-the-future",
+    "adminEditedAt": null,
     "groupSlug": "lifestyle-hobbies",
     "entityTypeSlug": "planning-style",
     "createEntityType": {
@@ -328,7 +340,17 @@
       "Retirement spreadsheet",
       "Plan vacations a year ahead",
       "Plans change for the right person",
-      "Let life surprise me"
+      "Let life surprise me",
+      "Five-year plan with my partner",
+      "Saving up for a house",
+      "Goals in my notes app",
+      "New Year's resolutions",
+      "Career first, the rest later",
+      "One big trip a year",
+      "Quarterly goal check-ins",
+      "Big decisions made together",
+      "Plan around family",
+      "Ready to retire early"
     ],
     "isAbstract": true
   }

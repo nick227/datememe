@@ -312,6 +312,8 @@
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "decision-making-style",
+    "adminEditedAt": null,
     "groupSlug": "lifestyle-hobbies",
     "entityTypeSlug": "decision-style",
     "createEntityType": {
@@ -337,7 +339,15 @@
       "Ask my family",
       "Trust the numbers",
       "Flip a coin",
-      "Wait for a sign"
+      "Wait for a sign",
+      "Make a spreadsheet",
+      "Read every review",
+      "Ask the internet",
+      "Let my partner decide",
+      "Pick the first option",
+      "Go with the cheaper one",
+      "Change my mind three times",
+      "Tarot or astrology"
     ],
     "isAbstract": true
   },
@@ -376,6 +386,8 @@
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "hosting-style",
+    "adminEditedAt": null,
     "groupSlug": "lifestyle-hobbies",
     "entityTypeSlug": "social-habit",
     "title": "Hosting Style",
@@ -397,7 +409,15 @@
       "Movie night on the couch",
       "Big backyard cookout",
       "Small groups only",
-      "Guests stay over anytime"
+      "Guests stay over anytime",
+      "Potluck organizer",
+      "Wine and cheese night",
+      "Makes the cocktails",
+      "Watch parties for the big game",
+      "Sunday pasta night",
+      "Kids and pets welcome",
+      "Deep-cleans before anyone comes",
+      "Stressed until guests arrive"
     ],
     "isAbstract": true
   }

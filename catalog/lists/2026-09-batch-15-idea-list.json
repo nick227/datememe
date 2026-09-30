@@ -224,6 +224,8 @@
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "getting-ready-routine",
+    "adminEditedAt": null,
     "groupSlug": "lifestyle-hobbies",
     "entityTypeSlug": "daily-habit",
     "title": "Getting-Ready Routine",
@@ -245,7 +247,15 @@
       "Teeth whitening",
       "Spray tan",
       "Five minutes and I'm out",
-      "None of these"
+      "None of these",
+      "Getting-ready playlist",
+      "Try on three outfits",
+      "Hair takes an hour",
+      "Lint roller, always",
+      "Ironed outfit",
+      "Eyebrows done",
+      "Contacts in",
+      "Close shave"
     ],
     "isAbstract": true
   },

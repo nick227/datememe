@@ -41,13 +41,15 @@
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "your-role-at-a-party",
+    "adminEditedAt": null,
     "groupSlug": "lifestyle-hobbies",
     "entityTypeSlug": "party-role",
     "createEntityType": { "label": "Party Role", "pluralLabel": "Party Roles" },
     "title": "Your Role at a Party",
     "prompt": "Who are you at a party?",
     "axes": ["social", "personality"],
-    "values": ["The DJ", "The host", "In the kitchen", "On the dance floor", "Knows everyone", "Deep-conversation corner", "By the snack table", "Taking all the photos", "Leaves early", "Last one standing", "Befriends the pets", "Starts the games"],
+    "values": ["The DJ", "The host", "In the kitchen", "On the dance floor", "Knows everyone", "Deep-conversation corner", "By the snack table", "Taking all the photos", "Leaves early", "Last one standing", "Befriends the pets", "Starts the games", "The bartender", "Brings the speaker", "Plays wingman", "Cleans up as I go", "Arrives fashionably late", "Outside by the fire pit", "Orders the late-night pizza", "Keeps an eye on the drunk friend"],
     "isAbstract": true
   },
   {

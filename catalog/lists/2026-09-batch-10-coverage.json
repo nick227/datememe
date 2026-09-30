@@ -23,34 +23,40 @@
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "self-care-non-negotiables",
+    "adminEditedAt": null,
     "groupSlug": "lifestyle-hobbies",
     "entityTypeSlug": "daily-habit",
     "createEntityType": { "label": "Daily Habit", "pluralLabel": "Daily Habits" },
     "title": "Self-Care Non-Negotiables",
     "prompt": "Which self-care habits do you never skip?",
     "axes": ["wellness", "routine", "lifestyle"],
-    "values": ["Eight hours of sleep", "Daily workout", "Skincare routine", "Therapy", "Drinking enough water", "Time alone", "Phone-free time", "Meal prep", "Getting outside every day", "Stretching", "Weekly call with family", "Saying no to plans"],
+    "values": ["Eight hours of sleep", "Daily workout", "Skincare routine", "Therapy", "Drinking enough water", "Time alone", "Phone-free time", "Meal prep", "Getting outside every day", "Stretching", "Weekly call with family", "Saying no to plans", "Journaling", "Meditation", "Regular massages", "A Sunday reset", "Daily vitamins", "Annual checkups", "Reading before bed", "Curating my feed"],
     "isAbstract": true
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "morning-routine",
+    "adminEditedAt": null,
     "groupSlug": "lifestyle-hobbies",
     "entityTypeSlug": "daily-habit",
     "title": "Morning Routine",
     "prompt": "What's non-negotiable in your morning routine?",
     "axes": ["routine", "lifestyle", "personality"],
-    "values": ["Coffee before words", "Hitting snooze", "Morning workout", "Shower first thing", "A real breakfast", "Scrolling in bed", "Making the bed", "Skincare routine", "Walking the dog", "Journaling", "News or a podcast", "Out the door in 10 minutes"],
+    "values": ["Coffee before words", "Hitting snooze", "Morning workout", "Shower first thing", "A real breakfast", "Scrolling in bed", "Making the bed", "Skincare routine", "Walking the dog", "Journaling", "News or a podcast", "Out the door in 10 minutes", "Meditation", "Stretching", "Cold shower", "Email before getting up", "Lemon water", "Reading", "Coffee on the commute", "Quiet time before anyone's up"],
     "isAbstract": true
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "sense-of-humor",
+    "adminEditedAt": null,
     "groupSlug": "lifestyle-hobbies",
     "entityTypeSlug": "humor-style",
     "createEntityType": { "label": "Humor Style", "pluralLabel": "Humor Styles" },
     "title": "Sense of Humor",
     "prompt": "What kind of humor gets you every time?",
     "axes": ["humor", "personality", "communication"],
-    "values": ["Dry and deadpan", "Sarcastic", "Dark humor", "Absurd and surreal", "Puns and dad jokes", "Self-deprecating", "Wholesome", "Physical comedy", "Roasting your friends", "Witty wordplay", "Cringe comedy", "Speaks fluent meme"],
+    "values": ["Dry and deadpan", "Sarcastic", "Dark humor", "Absurd and surreal", "Puns and dad jokes", "Self-deprecating", "Wholesome", "Physical comedy", "Roasting your friends", "Witty wordplay", "Cringe comedy", "Speaks fluent meme", "Observational", "Satire", "Impressions", "Quotes movies constantly", "Pranks", "Inside jokes forever", "Laughs at my own jokes", "Chaotic energy"],
     "isAbstract": true
   },
   {
@@ -93,23 +99,27 @@
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "texting-style",
+    "adminEditedAt": null,
     "groupSlug": "lifestyle-hobbies",
     "entityTypeSlug": "texting-style",
     "createEntityType": { "label": "Texting Style", "pluralLabel": "Texting Styles" },
     "title": "Texting Style",
     "prompt": "What's your texting style?",
     "axes": ["social", "communication", "personality"],
-    "values": ["Replies instantly", "Voice notes", "Double-texter", "Sends paragraphs", "One-word replies", "Memes instead of words", "Leaves people on read", "Reacts instead of replying", "Just calls", "Emoji in every text", "Replies three days later", "Perfect punctuation"],
+    "values": ["Replies instantly", "Voice notes", "Double-texter", "Sends paragraphs", "One-word replies", "Memes instead of words", "Leaves people on read", "Reacts instead of replying", "Just calls", "Emoji in every text", "Replies three days later", "Perfect punctuation", "All lowercase", "Typos everywhere", "GIF replies", "Sends TikToks all day", "Texts at 2 a.m.", "Read receipts off", "Ends every text with \"lol\"", "\"k.\""],
     "isAbstract": true
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "perfect-night-out",
+    "adminEditedAt": null,
     "groupSlug": "lifestyle-hobbies",
     "entityTypeSlug": "weekend-vibe",
     "title": "Perfect Night Out",
     "prompt": "What's your perfect night out?",
     "axes": ["nightlife", "social", "lifestyle"],
-    "values": ["Night out at a club", "Going to a concert", "Dive bar", "Cocktail lounge", "Karaoke", "Comedy show", "Trivia night", "Rooftop bar", "Late-night diner", "Wine bar", "Brewery", "House party"],
+    "values": ["Night out at a club", "Going to a concert", "Dive bar", "Cocktail lounge", "Karaoke", "Comedy show", "Trivia night", "Rooftop bar", "Late-night diner", "Wine bar", "Brewery", "House party", "Jazz club", "Sports bar for the big game", "Drag show", "Speakeasy", "Dinner and a movie", "Arcade bar", "Salsa night", "Night market"],
     "isAbstract": true
   },
   {

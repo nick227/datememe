@@ -25,22 +25,26 @@
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "group-chat-role",
+    "adminEditedAt": null,
     "groupSlug": "lifestyle-hobbies",
     "entityTypeSlug": "texting-style",
     "title": "Group Chat Role",
     "prompt": "Who are you in the group chat?",
     "axes": ["social", "communication", "personality"],
-    "values": ["The planner", "The lurker", "The meme supplier", "The hype person", "Mutes it for weeks", "Answers messages from last Tuesday", "Twenty texts in a row", "Only reacts", "\"Wait, what happened?\"", "The fact-checker", "Starts the drama", "Screenshots everything"],
+    "values": ["The planner", "The lurker", "The meme supplier", "The hype person", "Mutes it for weeks", "Answers messages from last Tuesday", "Twenty texts in a row", "Only reacts", "\"Wait, what happened?\"", "The fact-checker", "Starts the drama", "Screenshots everything", "Renames the chat", "Sends 40 photos after every trip", "Voice-note sender", "Posts news articles", "Checks everyone got home safe", "Leaves the chat dramatically", "Only shows up for birthdays", "Spoils every show"],
     "isAbstract": true
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "friend-hangouts",
+    "adminEditedAt": null,
     "groupSlug": "lifestyle-hobbies",
     "entityTypeSlug": "weekend-vibe",
     "title": "Friend Hangouts",
     "prompt": "How do you like to hang out with friends?",
     "axes": ["social", "lifestyle", "personality"],
-    "values": ["Hosting a dinner party", "Trivia night", "Game night", "Bottomless brunch", "Watching the game", "Coffee catch-up", "Working out together", "Movie night on the couch", "Pickleball", "Group trip", "Cooking together at someone's place", "Long walk and a talk"],
+    "values": ["Hosting a dinner party", "Trivia night", "Game night", "Bottomless brunch", "Watching the game", "Coffee catch-up", "Working out together", "Movie night on the couch", "Pickleball", "Group trip", "Cooking together at someone's place", "Long walk and a talk", "Bar crawl", "Beach day", "Camping trip", "Road trip", "Bowling", "Book club", "Wine night in", "Pottery or painting class"],
     "isAbstract": true
   },
   {

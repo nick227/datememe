@@ -22,13 +22,15 @@
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "making-plans",
+    "adminEditedAt": null,
     "groupSlug": "lifestyle-hobbies",
     "entityTypeSlug": "social-habit",
     "createEntityType": { "label": "Social Habit", "pluralLabel": "Social Habits" },
     "title": "Making Plans",
     "prompt": "How do you make plans with friends?",
     "axes": ["social", "communication", "personality"],
-    "values": ["Booked weeks ahead", "Totally spontaneous", "Always the organizer", "Waits to be invited", "Sends a calendar invite", "Standing weekly hang", "Last-minute yes", "Group-chat poll", "\"Maybe\" until the last second", "Cancels if it rains", "Brings a plus-one", "Leaves room to bail"],
+    "values": ["Booked weeks ahead", "Totally spontaneous", "Always the organizer", "Waits to be invited", "Sends a calendar invite", "Standing weekly hang", "Last-minute yes", "Group-chat poll", "\"Maybe\" until the last second", "Cancels if it rains", "Brings a plus-one", "Leaves room to bail", "Shared calendar", "Plans the whole itinerary", "\"Let's hang soon\" and never does", "Makes reservations", "Confirms the day of", "Needs a week's notice", "Always suggests the same spot", "Running late, every time"],
     "isAbstract": true
   },
   {
