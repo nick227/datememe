@@ -36,7 +36,14 @@
       "Keep it off social for a while",
       "Talk about the future early",
       "Engaged within a year",
-      "Travel together in the first few months"
+      "Travel together in the first few months",
+      "Married before moving in",
+      "A long engagement",
+      "We'd elope",
+      "Waiting until marriage",
+      "Kids within a few years of marrying",
+      "Meet their friends before their family",
+      "Official once we've met each other's friends"
     ],
     "isAbstract": true
   },
@@ -73,7 +80,15 @@
       "Cooking dinner together most nights",
       "Gym together",
       "Errands together",
-      "Quiet time in the same room"
+      "Quiet time in the same room",
+      "Same bedtime every night",
+      "Different bedtimes are fine",
+      "Hobbies we do together",
+      "Lunch together on workdays",
+      "Walks every evening",
+      "Lazy Sundays together",
+      "A friends' night apart every week",
+      "Invited everywhere together"
     ],
     "isAbstract": true
   },
@@ -110,7 +125,17 @@
       "Talk big decisions through together",
       "Confirm plans ahead of time",
       "Memes count as communication",
-      "Read receipts on"
+      "Read receipts on",
+      "Listen without fixing",
+      "No hints, say what you mean",
+      "Don't go silent when upset",
+      "Long talks at night",
+      "Compliments out loud",
+      "Humor during serious talks",
+      "Talk about the future openly",
+      "Phone calls on the drive home",
+      "Write it down when it's big",
+      "A quick reply, even just an emoji"
     ],
     "isAbstract": true
   },
@@ -147,7 +172,15 @@
       "Family events are non-negotiable",
       "Grandparents help with kids someday",
       "Stay at family's house when visiting",
-      "Hotel over staying with family"
+      "Hotel over staying with family",
+      "Close with the in-laws",
+      "Firm boundaries with in-laws",
+      "Parents may move in someday",
+      "Estranged, and that's okay",
+      "Family comes before friends",
+      "Cousins are my best friends",
+      "Family weighs in on big decisions",
+      "Working in the family business"
     ],
     "isAbstract": true
   },
@@ -184,7 +217,12 @@
       "Know each other's credit scores",
       "Invest together",
       "Emergency fund first",
-      "Shared travel fund"
+      "Shared travel fund",
+      "A budgeting app we both use",
+      "One shared credit card",
+      "Saving for the kids' college",
+      "A financial advisor together",
+      "One of us stays home"
     ],
     "isAbstract": true
   },

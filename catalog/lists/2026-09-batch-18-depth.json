@@ -32,7 +32,13 @@
       "Checking in when out late",
       "Sharing streaming passwords",
       "Private social accounts",
-      "Following attractive strangers"
+      "Following attractive strangers",
+      "Dating apps deleted once exclusive",
+      "One-on-one hangouts with an ex",
+      "Strip clubs at bachelor parties",
+      "A joint social account",
+      "Venting to coworkers about us",
+      "Sharing a bed with a friend on trips"
     ],
     "isAbstract": true
   },
@@ -69,7 +75,10 @@
       "Wherever rent is cheaper",
       "Somewhere warm",
       "Only for a trial year",
-      "Only to a big city"
+      "Only to a big city",
+      "Split time between two cities",
+      "Only if I can keep working remotely",
+      "Somewhere with good schools"
     ],
     "isAbstract": true
   },
@@ -106,7 +115,13 @@
       "Sit with me until we're okay",
       "A long talk that night",
       "Laugh it off together",
-      "Surprise me with something thoughtful"
+      "Surprise me with something thoughtful",
+      "Say \"I was wrong,\" not just \"I'm sorry\"",
+      "Give me space first",
+      "Make it up with quality time",
+      "Flowers",
+      "No grand gestures, just honesty",
+      "Don't bring it up again once it's settled"
     ],
     "isAbstract": true
   },
@@ -147,7 +162,17 @@
       "Eat snacks",
       "Take a long shower",
       "Watch comfort TV",
-      "Pray or meditate"
+      "Pray or meditate",
+      "Cry it out",
+      "Pretend everything's fine",
+      "Talk to my therapist",
+      "Cuddle my pet",
+      "Blast music",
+      "Play video games",
+      "Retail therapy",
+      "Have a drink",
+      "Go into overdrive at work",
+      "Get outside"
     ],
     "isAbstract": true
   },

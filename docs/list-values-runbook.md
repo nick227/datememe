@@ -22,7 +22,9 @@ Every row has a **status**, and the summary line counts each one:
 
 Batching order once `SHALLOW` is 0: compatibility and high-signal lists 20 → 30, then broad canonical lists toward 50, then entertainment and taste lists toward 40, then novelty and the long tail. Select with `--status depth-gap --group …`.
 
-Depth targets are not quotas. **Never pad a list to hit its floor.** When a domain honestly runs out of good answers (seasons, love languages, a stance on substances), give that list its own lower entry under `lists` and move on.
+Depth targets are not quotas. **Fill toward the target, never to the target at the expense of answer quality.** The first 20 are the obvious, common answers. Positions 21 and up must still be real answers a member would pick as their own, never filler or rewordings. When a list runs out of those before its target, record the count it honestly reached as its `lists` floor, which makes it `bounded`, and move on. Order within the compatibility tier: relationship and dating; communication, conflict and stress; social life, independence and togetherness; home and daily routine; money; career and work-life.
+
+**Never pad a list to hit its floor.** When a domain honestly runs out of good answers (seasons, love languages, a stance on substances), give that list its own lower entry under `lists` and move on.
 
 ## Commands
 ```bash

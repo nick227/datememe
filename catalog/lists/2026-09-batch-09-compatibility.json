@@ -10,7 +10,7 @@
     "title": "Perfect First Date",
     "prompt": "What makes the perfect first date?",
     "axes": ["dating", "social", "lifestyle"],
-    "values": ["Coffee shop", "Dinner at a nice restaurant", "Drinks at a cocktail bar", "Museum or gallery", "Picnic in the park", "Mini golf", "Live music", "Cooking together", "A hike", "Bowling or arcade", "Comedy club", "Farmers market stroll", "Brunch", "Walk and ice cream", "Trivia night", "Escape room", "Wine tasting", "Pottery class", "Street food crawl", "Karaoke"],
+    "values": ["Coffee shop", "Dinner at a nice restaurant", "Drinks at a cocktail bar", "Museum or gallery", "Picnic in the park", "Mini golf", "Live music", "Cooking together", "A hike", "Bowling or arcade", "Comedy club", "Farmers market stroll", "Brunch", "Walk and ice cream", "Trivia night", "Escape room", "Wine tasting", "Pottery class", "Street food crawl", "Karaoke", "Bookstore browse", "Aquarium or zoo", "Sunset walk on the beach", "Sports game", "Cooking class", "Axe throwing", "Ice skating", "Dessert crawl", "Night market", "Botanical garden"],
     "isAbstract": true
   },
   {
@@ -23,7 +23,7 @@
     "title": "Ideal Date Night In",
     "prompt": "What's your ideal night in together?",
     "axes": ["dating", "home", "comfort"],
-    "values": ["Cooking dinner together", "Movie marathon", "Board games", "Takeout and a new show", "Baking dessert", "Wine and cheese", "Video games", "Doing a puzzle", "Living-room karaoke", "At-home spa night", "Stargazing", "Reading side by side", "Homemade pizza night", "Blanket fort", "Rewatching a comfort show", "Records and a bottle of wine", "Painting together", "Building LEGO", "Deep-question card game", "Themed dinner night"],
+    "values": ["Cooking dinner together", "Movie marathon", "Board games", "Takeout and a new show", "Baking dessert", "Wine and cheese", "Video games", "Doing a puzzle", "Living-room karaoke", "At-home spa night", "Stargazing", "Reading side by side", "Homemade pizza night", "Blanket fort", "Rewatching a comfort show", "Records and a bottle of wine", "Painting together", "Building LEGO", "Deep-question card game", "Themed dinner night", "Candlelit dinner at home", "Making cocktails", "Kitchen dance party", "Planning our next trip", "Going through old photos", "Recreating our first date", "Documentary and a deep talk", "Fondue night", "Sunset on the balcony", "A craft night"],
     "isAbstract": true
   },
   {
@@ -36,7 +36,7 @@
     "title": "Green Flags",
     "prompt": "Which green flags do you notice first?",
     "axes": ["dating", "values", "communication"],
-    "values": ["Asks follow-up questions", "Texts back when they said they would", "Kind to servers and staff", "Makes real plans, not \"let's hang sometime\"", "Has long-time close friends", "Apologizes without excuses", "Can laugh at themselves", "Respects your time", "Has their own hobbies", "Introduces you to their friends", "Curious about new things", "Keeps small promises", "Kind to animals", "Goes to therapy", "Says what they want clearly", "Takes \"no\" well", "Admits when they're wrong", "Remembers what you told them", "Tips well", "Good relationship with their family"],
+    "values": ["Asks follow-up questions", "Texts back when they said they would", "Kind to servers and staff", "Makes real plans, not \"let's hang sometime\"", "Has long-time close friends", "Apologizes without excuses", "Can laugh at themselves", "Respects your time", "Has their own hobbies", "Introduces you to their friends", "Curious about new things", "Keeps small promises", "Kind to animals", "Goes to therapy", "Says what they want clearly", "Takes \"no\" well", "Admits when they're wrong", "Remembers what you told them", "Tips well", "Good relationship with their family", "Consistent, not hot and cold", "Celebrates your wins", "Speaks kindly about their exes", "Stays calm in conflict", "Makes you feel safe", "A really good listener", "Open about their feelings", "Checks in on consent", "Financially responsible", "Patient"],
     "isAbstract": true
   },
   {

@@ -9,7 +9,7 @@
     "title": "Relationship Dealbreakers",
     "prompt": "Which of these would be a real dealbreaker in a relationship?",
     "axes": ["values", "dating", "future"],
-    "values": ["Doesn't want kids", "Definitely wants kids", "Smokes", "Very different politics", "Different religion", "Long distance", "Doesn't like pets", "Still close with their ex", "No ambition", "Bad with money", "Hates to travel", "Never wants to move", "Heavy drinker", "Wants an open relationship", "Never wants to marry", "Workaholic", "Messy living", "Rude to my family", "No close friends", "Doesn't get along with my friends"],
+    "values": ["Doesn't want kids", "Definitely wants kids", "Smokes", "Very different politics", "Different religion", "Long distance", "Doesn't like pets", "Still close with their ex", "No ambition", "Bad with money", "Hates to travel", "Never wants to move", "Heavy drinker", "Wants an open relationship", "Never wants to marry", "Workaholic", "Messy living", "Rude to my family", "No close friends", "Doesn't get along with my friends", "Cheated before", "Jealous or controlling", "Rude to service workers", "Dishonesty", "Addiction issues", "Not ready for commitment", "Different life goals", "Still lives with their parents", "No stable job", "Bad hygiene"],
     "isAbstract": true
   },
   {
@@ -21,7 +21,7 @@
     "title": "Relationship Values",
     "prompt": "What matters most to you in a relationship?",
     "axes": ["values", "dating", "communication"],
-    "values": ["Honesty", "Loyalty", "Humor", "Independence", "Shared goals", "Physical affection", "Communication", "Trust", "Kindness", "Ambition", "Emotional support", "Time together", "Respect", "Patience", "Adventure", "Generosity", "Growing together", "Playfulness", "Forgiveness", "Equality"],
+    "values": ["Honesty", "Loyalty", "Humor", "Independence", "Shared goals", "Physical affection", "Communication", "Trust", "Kindness", "Ambition", "Emotional support", "Time together", "Respect", "Patience", "Adventure", "Generosity", "Growing together", "Playfulness", "Forgiveness", "Equality", "Commitment", "Intimacy", "Teamwork", "Consistency", "Vulnerability", "Faith", "Gratitude", "Passion", "Curiosity", "Openness"],
     "isAbstract": true
   },
   {
