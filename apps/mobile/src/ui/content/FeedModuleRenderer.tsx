@@ -4,15 +4,12 @@ import { Spotlight } from './Spotlight'
 import { River } from './River'
 import { QuickPicksModule } from './QuickPicksModule'
 import { QuickPicksSpotlight } from './QuickPicksSpotlight'
-import { PersonalHistorySummary } from './PersonalHistorySummary'
+import { UserDatumRail } from './UserDatumRail'
 import { isCollection, type ContentUnit, type FeedModule, type StructureState } from './types'
 
-// The two personal-history beats (getListsFeed's "Your lists", getDiscoverFeed's
-// "Your favorites") are identified by id, not `type` — ordinary topic-group
-// rails on Lists also carry `type: 'lists'`, so type alone can't distinguish
-// "this is the viewer's own running history" from "this is a rail of browsable
-// content that happens to be list-shaped."
-const PERSONAL_HISTORY_MODULE_IDS = new Set(['your-lists', 'your-favorites'])
+// Viewer-owned rails sit above the filter bar on Lists, Discover, and Rankings.
+// Identified by id: ordinary topic rails also use type 'lists'.
+const USER_DATUM_MODULE_IDS = new Set(['your-lists', 'your-favorites', 'rankings-yours'])
 
 type Props = {
   module: FeedModule
@@ -48,9 +45,8 @@ export function FeedModuleRenderer({ module, state, onPressItem, onPressQuickPic
 
   const shared = { testID: `feed.module.${module.id}`, title: module.title, items: module.items ?? [], state, onPressItem, zone }
 
-  // Personal history — collapsed summary, not a full structure.
-  if (PERSONAL_HISTORY_MODULE_IDS.has(module.id)) {
-    return <PersonalHistorySummary {...shared} itemNoun={module.type === 'favorites' ? 'favorite' : 'list'} />
+  if (USER_DATUM_MODULE_IDS.has(module.id)) {
+    return <UserDatumRail testID={shared.testID} title={module.title} items={module.items ?? []} onPressItem={onPressItem} />
   }
 
   // ── RESULTS = one compact, predictable grammar. ──────────────────────

@@ -40,10 +40,16 @@ export function RankingsScreen({ navigation }: Props) {
   const selectedChipIds = selectedGroupSlugs.length ? selectedGroupSlugs : [TOP_CHIP_ID]
   const selectedChipKey = selectedChipIds.join(',')
 
-  const rows = useMemo<Row[]>(
-    () => [{ rowId: 'chips', kind: 'chips' }, ...(feed.data?.data ?? []).map((m) => ({ rowId: m.id, kind: 'module' as const, module: m }))],
-    [feed.data],
-  )
+  const rows = useMemo<Row[]>(() => {
+    const modules = feed.data?.data ?? []
+    const yours = modules.find((m) => m.id === 'rankings-yours')
+    const rest = modules.filter((m) => m.id !== 'rankings-yours')
+    const list: Row[] = []
+    if (yours) list.push({ rowId: yours.id, kind: 'module', module: yours })
+    list.push({ rowId: 'chips', kind: 'chips' })
+    list.push(...rest.map((m) => ({ rowId: m.id, kind: 'module' as const, module: m })))
+    return list
+  }, [feed.data])
 
   useEffect(() => {
     listRef.current?.scrollToOffset({ offset: 0, animated: true })
@@ -95,6 +101,9 @@ export function RankingsScreen({ navigation }: Props) {
             return chips.length > 1 ? <FilterChipsRow chips={chips} selectedIds={selectedChipIds} onSelect={toggleGroup} /> : null
           }
           const module = row.module
+          if (module.id === 'rankings-yours') {
+            return <FeedModuleRenderer module={module} state="ready" onPressItem={(unit) => onPressItem(module, unit)} onPressQuickPicks={() => {}} />
+          }
           return (
           <View>
             {module.suggestedStructure === 'rail' ? (

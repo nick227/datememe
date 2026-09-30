@@ -115,19 +115,21 @@ export class RankingsService {
       }),
     }))
 
+    // The viewer's own taken rankings stay a top rail, even when a topic
+    // filter narrows the public rows below.
+    const yoursModule = allSets.some((rs) => takenCategoryIds.has(rs.category.id))
+      ? {
+          moduleKind: 'collection' as const,
+          id: 'rankings-yours',
+          type: 'results' as const,
+          title: 'My rankings',
+          suggestedStructure: 'rail' as const,
+          items: allSets.filter((rs) => takenCategoryIds.has(rs.category.id)).slice(0, RAIL_SIZE).map((rs, i) => categoryUnit(rs, i)),
+        }
+      : null
+
     // Occasional interruptions, in this order, each only if it has content.
     const rails: any[] = []
-    const yours = sets.filter((rs) => takenCategoryIds.has(rs.category.id))
-    if (yours.length) {
-      rails.push({
-        moduleKind: 'collection',
-        id: 'rankings-yours',
-        type: 'results',
-        title: "From lists you've taken",
-        suggestedStructure: 'rail',
-        items: yours.slice(0, RAIL_SIZE).map((rs, i) => categoryUnit(rs, i)),
-      })
-    }
     const races = sets
       .filter((rs) => rs.entries.length >= 2 && rs.entries[0]!.score > 0)
       .map((rs) => ({ rs, gap: (rs.entries[0]!.score - rs.entries[1]!.score) / rs.entries[0]!.score }))
@@ -165,7 +167,7 @@ export class RankingsService {
         stats: [{ value: sets.length, label: sets.length === 1 ? 'ranking' : 'rankings' }],
       },
       chips: chipGroups.length ? [{ id: 'top', label: 'All' }, ...chipGroups.map((g) => ({ id: g.slug, label: g.label }))] : [],
-      data: modules,
+      data: yoursModule ? [yoursModule, ...modules] : modules,
       meta: { hasMore: false, nextCursor: null },
     }
   }

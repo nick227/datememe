@@ -386,6 +386,24 @@ export class ContentFeedService {
     // kind:'insight' items are deliberately untouched — a comparison stat
     // about a category isn't the same "recycled card" as the category's
     // ordinary List/Grid card.
+    if (isFirstPage && historyLists.length) {
+      const categoryById = new Map(categories.map((c: any) => [c.id, c]))
+      const items = historyLists.slice(0, 12).flatMap((list: any, i: number) => {
+        const category = categoryById.get(list.categoryId) ?? list.category
+        return category ? [categoryUnitFor(category, i, myListByCategoryId)] : []
+      })
+      if (items.length) {
+        beats.unshift({
+          moduleKind: 'collection',
+          id: 'your-lists',
+          type: 'lists',
+          title: 'My lists',
+          suggestedStructure: 'rail',
+          items,
+        })
+      }
+    }
+
     const prunedBeats = selectedGroupSlugs
       ? (() => {
           const resultCategorySlugs = this.resultCategorySlugsFor(categories, groups, selectedGroupSlugs)
@@ -963,6 +981,17 @@ export class ContentFeedService {
       if (isFirstPage) {
         modules.push({ moduleKind: 'collection', id: 'quick-picks-quiz-0', type: 'quiz', title: 'Quick Picks', suggestedStructure: 'spotlight', items: [] })
       }
+    }
+
+    if (isFirstPage && favorited.length) {
+      modules.unshift({
+        moduleKind: 'collection',
+        id: 'your-favorites',
+        type: 'favorites',
+        title: 'My likes',
+        suggestedStructure: 'rail',
+        items: favorited.map((candidate: any, i: number) => toPersonUnit(candidate, i)),
+      })
     }
 
     return { ...(summaryAndChips ?? {}), data: modules, meta: page.meta, ...(page.filterNotice ? { filterNotice: page.filterNotice } : {}) }
