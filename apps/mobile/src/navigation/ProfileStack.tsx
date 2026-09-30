@@ -5,7 +5,10 @@ import { AccountScreen } from '../features/profile/screens/AccountScreen'
 import { PaywallScreen } from '../features/profile/screens/PaywallScreen'
 import { VerifyEmailScreen } from '../features/profile/screens/VerifyEmailScreen'
 import { AdminStack } from './AdminStack'
+import { ListBuilderScreen } from '../features/lists/screens/ListBuilderScreen'
+import { PollResultsScreen } from '../features/rankings/screens/PollResultsScreen'
 import { defaultScreenOptions } from './defaultScreenOptions'
+import { pollScreenId } from './openPoll'
 import type { ProfileStackParamList } from './types'
 
 const Stack = createNativeStackNavigator<ProfileStackParamList>()
@@ -19,6 +22,8 @@ export function ProfileStack() {
       <Stack.Screen name="Paywall" component={PaywallScreen} />
       <Stack.Screen name="VerifyEmail" component={VerifyEmailScreen} />
       <Stack.Screen name="Admin" component={AdminStack} />
+      <Stack.Screen name="ListBuilder" component={ListBuilderScreen} getId={pollScreenId} />
+      <Stack.Screen name="PollResults" component={PollResultsScreen} getId={pollScreenId} />
     </Stack.Navigator>
   )
 }

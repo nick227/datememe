@@ -10,14 +10,14 @@ import { Typography } from '../../../ui/Typography'
 import { PollHeader } from '../../lists/components/PollHeader'
 import { openPoll } from '../../../navigation/openPoll'
 import { colors, spacing } from '../../../theme'
-import type { MainStackParamList } from '../../../navigation/types'
+import type { PollParams } from '../../../navigation/types'
 import { RankingHero } from '../components/RankingHero'
 import { RankingBarRow } from '../components/RankingBarRow'
 import { RankingOptionSheet } from '../components/RankingOptionSheet'
 import { RelatedRankings } from '../components/RelatedRankings'
 import type { RankedOption } from '../rankingStory'
 
-type Props = NativeStackScreenProps<MainStackParamList, 'PollResults'>
+type Props = NativeStackScreenProps<{ PollResults: PollParams; ListBuilder: PollParams }, 'PollResults'>
 
 export function PollResultsScreen({ route, navigation }: Props) {
   const { categorySlug, shortLabel } = route.params

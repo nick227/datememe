@@ -16,14 +16,14 @@ import { ActionSheet, useActionSheet } from '../../../ui/ActionSheet'
 import { colors, spacing } from '../../../theme'
 import { useIsDesktop } from '../../../lib/useResponsive'
 import { openPoll } from '../../../navigation/openPoll'
-import type { MainStackParamList } from '../../../navigation/types'
+import type { PollParams } from '../../../navigation/types'
 import { Typography } from '../../../ui/Typography'
 
-// GlobalHeader body (logo + vertical padding). This screen sits above the
-// tabs, so the tab bar is not part of the leftover viewport.
+// GlobalHeader body, plus the tab bar this screen now sits above.
 const WEB_HEADER_CHROME = 52
+const WEB_TAB_BAR = 56
 
-type Props = NativeStackScreenProps<MainStackParamList, 'ListBuilder'>
+type Props = NativeStackScreenProps<{ ListBuilder: PollParams; PollResults: PollParams }, 'ListBuilder'>
 
 type PickedItem = { entityId: string; rank: number; name: string; imageUrl?: string | null }
 
@@ -35,7 +35,7 @@ export function ListBuilderScreen({ route, navigation }: Props) {
   const insets = useSafeAreaInsets()
   const { height: windowHeight } = useWindowDimensions()
   const webFrameHeight = Platform.OS === 'web'
-    ? Math.max(320, windowHeight - insets.top - WEB_HEADER_CHROME - insets.bottom)
+    ? Math.max(320, windowHeight - insets.top - WEB_HEADER_CHROME - WEB_TAB_BAR - insets.bottom)
     : undefined
 
   const [query, setQuery] = useState('')

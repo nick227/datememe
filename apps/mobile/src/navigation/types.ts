@@ -19,16 +19,18 @@ export type PollParams = { categorySlug: string; shortLabel: string }
 
 export type MainStackParamList = {
   Tabs: NavigatorScreenParams<AppTabsParamList>
-  ListBuilder: PollParams
-  PollResults: PollParams
 }
 
 export type CategoriesStackParamList = {
   Categories: undefined
+  ListBuilder: PollParams
+  PollResults: PollParams
 }
 
 export type RankingsStackParamList = {
   Rankings: undefined
+  ListBuilder: PollParams
+  PollResults: PollParams
 }
 
 export type MatchInsight = { icon: string; title: string; description: string }
@@ -36,6 +38,8 @@ export type MatchInsight = { icon: string; title: string; description: string }
 export type DiscoveryStackParamList = {
   Discover: undefined
   QuickPicks: undefined
+  ListBuilder: PollParams
+  PollResults: PollParams
   ProfileDetail: {
     profileId: string
     displayName: string
@@ -48,6 +52,8 @@ export type DiscoveryStackParamList = {
 export type MessagesStackParamList = {
   Conversations: undefined
   Conversation: { conversationId: string; displayName: string }
+  ListBuilder: PollParams
+  PollResults: PollParams
 }
 
 export type ProfileStackParamList = {
@@ -57,6 +63,8 @@ export type ProfileStackParamList = {
   Paywall: undefined
   VerifyEmail: undefined
   Admin: undefined
+  ListBuilder: PollParams
+  PollResults: PollParams
 }
 
 // Nested inside ProfileStack's "Admin" screen (see MainStack's own
