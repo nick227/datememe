@@ -121,6 +121,8 @@
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "favorite-dog-breeds",
+    "adminEditedAt": null,
     "groupSlug": "lifestyle-hobbies",
     "entityTypeSlug": "dog-breed",
     "title": "Favorite Dog Breeds",
@@ -144,12 +146,20 @@
       "Husky",
       "Pug",
       "Boxer",
-      "Border Collie"
+      "Border Collie",
+      "Australian Shepherd",
+      "Bernese Mountain Dog",
+      "Great Dane",
+      "Shih Tzu",
+      "Chihuahua",
+      "Cavalier King Charles Spaniel"
     ],
     "isAbstract": false
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "dream-cars",
+    "adminEditedAt": null,
     "groupSlug": "lifestyle-hobbies",
     "entityTypeSlug": "car",
     "title": "Dream Cars",
@@ -171,12 +181,22 @@
       "Audi R8",
       "BMW M3",
       "Mercedes-Benz G-Class",
-      "Toyota Supra"
+      "Toyota Supra",
+      "Jeep Wrangler",
+      "Ford Bronco",
+      "Land Rover Defender",
+      "Rivian R1T",
+      "Porsche Taycan",
+      "Lamborghini Huracán",
+      "Bugatti Chiron",
+      "Honda Civic Type R"
     ],
     "isAbstract": false
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "favorite-sneakers",
+    "adminEditedAt": null,
     "groupSlug": "lifestyle-hobbies",
     "entityTypeSlug": "sneaker",
     "title": "Favorite Sneakers",
@@ -197,7 +217,16 @@
       "New Balance 990",
       "Nike Air Max 90",
       "Adidas Samba",
-      "Puma Suede"
+      "Puma Suede",
+      "Nike Air Jordan 4",
+      "Adidas Superstar",
+      "New Balance 550",
+      "Nike Air Max 1",
+      "Asics Gel-Kayano 14",
+      "Hoka Clifton",
+      "On Cloud",
+      "Reebok Club C",
+      "Salomon XT-6"
     ],
     "isAbstract": false
   },
@@ -240,6 +269,8 @@
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "favorite-world-cities",
+    "adminEditedAt": null,
     "groupSlug": "lifestyle-hobbies",
     "entityTypeSlug": "city",
     "title": "Favorite World Cities",
@@ -263,7 +294,13 @@
       "Los Angeles",
       "Chicago",
       "Toronto",
-      "Singapore"
+      "Singapore",
+      "Lisbon",
+      "Mexico City",
+      "Istanbul",
+      "Bangkok",
+      "Hong Kong",
+      "Buenos Aires"
     ],
     "isAbstract": false
   },

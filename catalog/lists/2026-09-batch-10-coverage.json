@@ -152,13 +152,15 @@
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "favorite-holidays",
+    "adminEditedAt": null,
     "groupSlug": "lifestyle-hobbies",
     "entityTypeSlug": "holiday",
     "createEntityType": { "label": "Holiday", "pluralLabel": "Holidays" },
     "title": "Favorite Holidays",
     "prompt": "Which holidays do you love most?",
     "axes": ["seasons", "traditions", "family"],
-    "values": ["Christmas", "Halloween", "Thanksgiving", "New Year's Eve", "Fourth of July", "Valentine's Day", "Easter", "St. Patrick's Day", "Hanukkah", "Diwali", "Lunar New Year", "Your birthday"],
+    "values": ["Christmas", "Halloween", "Thanksgiving", "New Year's Eve", "Fourth of July", "Valentine's Day", "Easter", "St. Patrick's Day", "Hanukkah", "Diwali", "Lunar New Year", "Your birthday", "Mother's Day", "Father's Day", "Cinco de Mayo", "Mardi Gras", "Juneteenth", "Eid al-Fitr", "Passover", "Kwanzaa"],
     "isAbstract": true
   }
 ]

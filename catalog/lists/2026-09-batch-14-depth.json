@@ -256,6 +256,8 @@
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "holiday-traditions",
+    "adminEditedAt": null,
     "groupSlug": "lifestyle-hobbies",
     "entityTypeSlug": "holiday-tradition",
     "createEntityType": { "label": "Holiday Tradition", "pluralLabel": "Holiday Traditions" },
@@ -274,12 +276,22 @@
       "Big family dinner",
       "Opening one gift on Christmas Eve",
       "Holiday travel",
-      "Staying home in sweats"
+      "Staying home in sweats",
+      "Advent calendar",
+      "Gingerbread houses",
+      "Driving around to see the lights",
+      "Lighting the menorah",
+      "Midnight Mass",
+      "Family football game",
+      "Black Friday shopping",
+      "Holiday cards"
     ],
     "isAbstract": true
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "travel-dealbreakers",
+    "adminEditedAt": null,
     "groupSlug": "travel",
     "entityTypeSlug": "dealbreaker",
     "title": "Travel Dealbreakers",
@@ -297,7 +309,15 @@
       "Sleeps until noon on vacation",
       "Glued to their phone",
       "Hates flying",
-      "Never goes anywhere new"
+      "Never goes anywhere new",
+      "Complains the whole trip",
+      "Won't leave the hotel",
+      "Tourist traps only",
+      "Drinks all day, every day",
+      "Won't split costs",
+      "Overpacks for a weekend",
+      "Visits family every trip",
+      "Loud in quiet places"
     ],
     "isAbstract": true
   }

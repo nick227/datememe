@@ -832,7 +832,19 @@
       "Running",
       "Swimming",
       "Weightlifting",
-      "Yoga"
+      "Yoga",
+      "Walking",
+      "Boxing",
+      "Spin class",
+      "Dance cardio",
+      "Barre",
+      "CrossFit",
+      "Rowing",
+      "Climbing",
+      "Martial arts",
+      "Tennis",
+      "Kettlebells",
+      "Calisthenics"
     ],
     "isAbstract": true
   },
@@ -896,7 +908,17 @@
       "Rock Climbing",
       "Running",
       "Skiing",
-      "Surfing"
+      "Surfing",
+      "Paddleboarding",
+      "Snowboarding",
+      "Golf",
+      "Trail running",
+      "Sailing",
+      "Scuba diving",
+      "Horseback riding",
+      "Beach volleyball",
+      "Birdwatching",
+      "Stargazing"
     ],
     "isAbstract": false
   },

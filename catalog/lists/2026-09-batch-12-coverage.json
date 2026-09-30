@@ -1,23 +1,27 @@
 [
   {
     "schemaVersion": 1,
+    "categorySlug": "dream-pet",
+    "adminEditedAt": null,
     "groupSlug": "lifestyle-hobbies",
     "entityTypeSlug": "animal",
     "createEntityType": { "label": "Animal", "pluralLabel": "Animals" },
     "title": "Dream Pet",
     "prompt": "What pet do you have, or want someday?",
     "axes": ["pets", "lifestyle", "home"],
-    "values": ["Dog", "Cat", "Rabbit", "Parrot", "Hamster", "Goldfish", "Turtle", "Horse", "Bearded dragon", "Hedgehog", "Backyard chickens", "No pets for me"],
+    "values": ["Dog", "Cat", "Rabbit", "Parrot", "Hamster", "Goldfish", "Turtle", "Horse", "Bearded dragon", "Hedgehog", "Backyard chickens", "No pets for me", "Guinea pig", "Ferret", "Mini pig", "Snake", "Axolotl", "Tarantula", "Goat", "Alpaca"],
     "isAbstract": true
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "favorite-animals",
+    "adminEditedAt": null,
     "groupSlug": "lifestyle-hobbies",
     "entityTypeSlug": "animal",
     "title": "Favorite Animals",
     "prompt": "Which animals do you love most?",
     "axes": ["pets", "nature", "personality"],
-    "values": ["Dog", "Cat", "Otter", "Red panda", "Penguin", "Dolphin", "Elephant", "Capybara", "Octopus", "Sloth", "Owl", "Tiger"],
+    "values": ["Dog", "Cat", "Otter", "Red panda", "Penguin", "Dolphin", "Elephant", "Capybara", "Octopus", "Sloth", "Owl", "Tiger", "Lion", "Wolf", "Fox", "Giant panda", "Koala", "Giraffe", "Whale", "Horse"],
     "isAbstract": true
   },
   {

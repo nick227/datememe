@@ -231,6 +231,8 @@
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "career-ambition",
+    "adminEditedAt": null,
     "groupSlug": "career",
     "entityTypeSlug": "career-mindset",
     "createEntityType": {
@@ -256,12 +258,22 @@
       "Side hustle to full-time",
       "Leading a team",
       "Best in my field",
-      "Still figuring it out"
+      "Still figuring it out",
+      "Making partner",
+      "Financial freedom by 40",
+      "Work that helps people",
+      "An expert, not a manager",
+      "Going back to school",
+      "Public service",
+      "Creative work full-time",
+      "Impact over job titles"
     ],
     "isAbstract": true
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "your-work-schedule",
+    "adminEditedAt": null,
     "groupSlug": "career",
     "entityTypeSlug": "work-schedule",
     "createEntityType": {
@@ -287,7 +299,15 @@
       "Travel for work",
       "Long hours, big goals",
       "Student schedule",
-      "Between jobs"
+      "Between jobs",
+      "Early shift, done by 2",
+      "Split shifts",
+      "Seasonal work",
+      "Two jobs",
+      "Remote across time zones",
+      "Self-employed, always on",
+      "Part-time",
+      "Rotating schedule"
     ],
     "isAbstract": true
   },

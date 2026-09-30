@@ -194,6 +194,8 @@
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "work-life-trade-offs",
+    "adminEditedAt": null,
     "groupSlug": "career",
     "entityTypeSlug": "work-tradeoff",
     "createEntityType": {
@@ -219,7 +221,15 @@
       "Relocate for a partner's job",
       "Work while sick",
       "Skip plans for a deadline",
-      "Quit a job that hurts my health"
+      "Quit a job that hurts my health",
+      "Work from anywhere, even on trips",
+      "Take a sabbatical",
+      "Turn down a promotion for balance",
+      "Night classes while working",
+      "Stay for the benefits",
+      "Family before the next promotion",
+      "Weekend work for a big raise",
+      "Leave early for the gym"
     ],
     "isAbstract": true
   },

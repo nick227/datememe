@@ -78,24 +78,28 @@
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "travel-style",
+    "adminEditedAt": null,
     "groupSlug": "travel",
     "entityTypeSlug": "travel-style",
     "createEntityType": { "label": "Travel Style", "pluralLabel": "Travel Styles" },
     "title": "Travel Style",
     "prompt": "How do you like to travel?",
     "axes": ["travel", "lifestyle", "adventure"],
-    "values": ["Beach resort", "Backpacking", "City break", "Road trip", "Camping", "Cruise", "Ski trip", "All-inclusive", "Food-focused trip", "Adventure travel", "Museums and history", "Staycation"],
+    "values": ["Beach resort", "Backpacking", "City break", "Road trip", "Camping", "Cruise", "Ski trip", "All-inclusive", "Food-focused trip", "Adventure travel", "Museums and history", "Staycation", "Solo travel", "Luxury hotels", "Wine country", "National parks", "Festival trip", "Volunteering abroad", "Glamping", "Weekend getaways"],
     "isAbstract": true
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "favorite-time-of-year",
+    "adminEditedAt": null,
     "groupSlug": "lifestyle-hobbies",
     "entityTypeSlug": "time-of-year",
     "createEntityType": { "label": "Time of Year", "pluralLabel": "Times of Year" },
     "title": "Favorite Time of Year",
     "prompt": "What's your favorite time of year?",
     "axes": ["seasons", "lifestyle", "mood"],
-    "values": ["Early spring", "Late spring", "Early summer", "Peak summer", "Late summer", "Early fall", "Peak fall foliage", "Late fall", "The holidays", "Deep winter", "Snow days", "New Year's week"],
+    "values": ["Early spring", "Late spring", "Early summer", "Peak summer", "Late summer", "Early fall", "Peak fall foliage", "Late fall", "The holidays", "Deep winter", "Snow days", "New Year's week", "The first warm day", "Cherry blossom season", "Spring break", "Festival season", "Wedding season", "Football season", "Spooky season", "The first snowfall"],
     "isAbstract": true
   }
 ]

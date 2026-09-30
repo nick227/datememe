@@ -26,12 +26,14 @@
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "side-hustles",
+    "adminEditedAt": null,
     "groupSlug": "career",
     "entityTypeSlug": "job-title",
     "title": "Side Hustles",
     "prompt": "What's your side hustle, or the one you'd start to make extra money?",
     "axes": ["money", "career", "ambition"],
-    "values": ["Freelance designer", "Tutor", "Rideshare driver", "Dog walker", "Etsy seller", "Content creator", "Reseller", "Personal trainer", "Wedding photographer", "Furniture flipper", "Bartender", "No side hustle"],
+    "values": ["Freelance designer", "Tutor", "Rideshare driver", "Dog walker", "Etsy seller", "Content creator", "Reseller", "Personal trainer", "Wedding photographer", "Furniture flipper", "Bartender", "No side hustle", "Airbnb host", "Wedding DJ", "Virtual assistant", "Babysitter", "House sitter", "Gigging musician", "Landlord", "Freelance writer"],
     "isAbstract": true
   },
   {

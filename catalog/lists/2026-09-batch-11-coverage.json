@@ -108,22 +108,26 @@
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "travel-personality",
+    "adminEditedAt": null,
     "groupSlug": "travel",
     "entityTypeSlug": "travel-style",
     "title": "Travel Personality",
     "prompt": "What kind of travel buddy are you?",
     "axes": ["travel", "personality", "adventure"],
-    "values": ["Itinerary in a spreadsheet", "Go with the flow", "At the airport three hours early", "Packs the night before", "Finds the best food", "Takes all the photos", "Naps on every ride", "Tracks the budget", "Souvenir hunter", "Chats up the locals", "Pool day, every day", "Up for sunrise"],
+    "values": ["Itinerary in a spreadsheet", "Go with the flow", "At the airport three hours early", "Packs the night before", "Finds the best food", "Takes all the photos", "Naps on every ride", "Tracks the budget", "Souvenir hunter", "Chats up the locals", "Pool day, every day", "Up for sunrise", "Carry-on only", "Books every restaurant ahead", "Collects passport stamps", "Wanders without a map", "Keeps a travel journal", "Maximizes loyalty points", "Hits the gym even on vacation", "Overpacker"],
     "isAbstract": true
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "perfect-summer-day",
+    "adminEditedAt": null,
     "groupSlug": "lifestyle-hobbies",
     "entityTypeSlug": "weekend-vibe",
     "title": "Perfect Summer Day",
     "prompt": "What does your perfect summer day look like?",
     "axes": ["seasons", "lifestyle", "adventure"],
-    "values": ["Beach day", "Pool party", "Backyard barbecue", "Lake day", "Outdoor concert", "Ice cream run", "Farmers market", "Rooftop drinks", "Fireworks", "Boat day", "Picnic in the park", "Staying inside with the AC"],
+    "values": ["Beach day", "Pool party", "Backyard barbecue", "Lake day", "Outdoor concert", "Ice cream run", "Farmers market", "Rooftop drinks", "Fireworks", "Boat day", "Picnic in the park", "Staying inside with the AC", "Tubing down a river", "Water park", "Baseball game", "Drive-in movie", "Beach bonfire", "Watching the sunset", "Mini golf", "Hiking"],
     "isAbstract": true
   }
 ]
