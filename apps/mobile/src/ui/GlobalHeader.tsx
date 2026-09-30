@@ -3,7 +3,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { Logo } from './Logo'
 import { HeaderAvatar } from './HeaderAvatar'
 import { colors, Box } from '../theme'
-import { useNavigation } from '@react-navigation/native'
+import { navigationRef } from '../navigation/navigationRef'
 
 // The one persistent piece of chrome in the whole app — mounted once inside
 // each stack (Auth/Main) so it survives every screen underneath it. Owns the
@@ -12,9 +12,11 @@ import { useNavigation } from '@react-navigation/native'
 // needs `sticky` to stay put while the browser scrolls the rest of the page —
 // on native it's just part of the normal fixed-height column, unchanged.
 export function GlobalHeader({ showAvatar = false }: { showAvatar?: boolean }) {
-  const navigation = useNavigation()
   const goToLists = () => {
-    navigation.navigate('Tabs', { screen: 'Lists' } as never)
+    if (!navigationRef.isReady()) return
+    const root = navigationRef.getRootState()
+    if (!root?.routeNames.includes('Tabs')) return
+    navigationRef.navigate('Tabs', { screen: 'Lists' })
   }
   return (
     <SafeAreaView style={[safeStyle, webStickyStyle]} edges={['top', 'left', 'right']}>

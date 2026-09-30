@@ -6,8 +6,8 @@ import { Button } from '../../../ui/Button'
 import { EmptyState } from '../../../ui/EmptyState'
 import { Skeleton } from '../../../ui/Skeleton'
 import { Typography } from '../../../ui/Typography'
-import { ProfileListResponseCard } from '../../discovery/components/ProfileListResponseCard'
-import { PreviewListCardSkeleton } from '../../lists/components/PreviewListCardSkeleton'
+import { openPoll } from '../../../navigation/openPoll'
+import { ProfileListRow } from '../components/ProfileListRow'
 import { ProfilePhotoEditor } from '../components/ProfilePhotoEditor'
 import { ProfileDetailsEditor } from '../components/ProfileDetailsEditor'
 import { ProfileAccountSettings } from '../components/ProfileAccountSettings'
@@ -22,12 +22,8 @@ export function ProfileScreen({ navigation }: Props) {
   const profile = me.data?.profile
   const completedLists = (lists.data ?? []).filter(list => list.isComplete && list.items?.length)
 
-  function openList(list: typeof completedLists[number], rankings = false) {
-    ;(navigation.getParent()?.navigate as any)(rankings ? 'Rankings' : 'Lists', {
-      screen: rankings ? 'CategoryRanking' : 'ListBuilder',
-      params: { categorySlug: list.category.slug, shortLabel: list.category.shortLabel },
-      ...(rankings ? { initial: false } : {}),
-    })
+  function openList(list: typeof completedLists[number], mode: 'edit' | 'results') {
+    openPoll(navigation, mode, { categorySlug: list.category.slug, shortLabel: list.category.shortLabel })
   }
 
   return (
@@ -50,10 +46,10 @@ export function ProfileScreen({ navigation }: Props) {
               </View>
               <View style={styles.section}>
                 <View style={styles.headingRow}><Typography variant="title">Your lists</Typography>{lists.isSuccess ? <Typography variant="bodyMuted">{completedLists.length} {completedLists.length === 1 ? 'list' : 'lists'}</Typography> : null}</View>
-                <View style={styles.stack}>
-                  {lists.isLoading ? <><PreviewListCardSkeleton /><PreviewListCardSkeleton /></> : lists.isError ? <><Typography>Could not load your lists.</Typography><Button label="Try again" variant="secondary" onPress={() => { void lists.refetch() }} /></> : completedLists.length ? completedLists.map(list => (
-                    <ProfileListResponseCard key={list.id} list={list} ownerName={profile.displayName} isOwn onTakePoll={() => openList(list)} onPressRankings={() => openList(list, true)} />
-                  )) : <><EmptyState testID="profile.empty" title="Your taste belongs here" subtitle="Take your first poll to start sharing what you love." /><Button label="Explore polls" onPress={() => { (navigation.getParent()?.navigate as any)('Lists') }} /></>}
+                <View style={styles.listTable}>
+                  {lists.isLoading ? <><Skeleton variant="rect" width="100%" height={48} /><Skeleton variant="rect" width="100%" height={48} /></> : lists.isError ? <><Typography>Could not load your lists.</Typography><Button label="Try again" variant="secondary" onPress={() => { void lists.refetch() }} /></> : completedLists.length ? completedLists.map(list => (
+                    <ProfileListRow key={list.id} testID={`profile-list.${list.id}`} title={list.category.shortLabel} imageUrl={list.category.imageUrl} onEdit={() => openList(list, 'edit')} onResults={() => openList(list, 'results')} />
+                  )) : <><EmptyState testID="profile.empty" title="Your taste belongs here" subtitle="Take your first poll to start sharing what you love." /><Button label="Explore polls" onPress={() => { navigation.getParent()?.navigate('Lists') }} /></>}
                 </View>
               </View>
             </>
@@ -73,4 +69,5 @@ const styles = StyleSheet.create({
   headingRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: spacing.sm },
   intro: { marginTop: spacing.sm, marginBottom: spacing.xl },
   stack: { gap: spacing.xl },
+  listTable: { marginTop: spacing.md },
 })

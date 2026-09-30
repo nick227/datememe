@@ -15,16 +15,15 @@ import { Button } from '../../../ui/Button'
 import { ActionSheet, useActionSheet } from '../../../ui/ActionSheet'
 import { colors, spacing } from '../../../theme'
 import { useIsDesktop } from '../../../lib/useResponsive'
-import type { CategoriesStackParamList } from '../../../navigation/types'
+import { openPoll } from '../../../navigation/openPoll'
+import type { MainStackParamList } from '../../../navigation/types'
 import { Typography } from '../../../ui/Typography'
 
-// GlobalHeader body (logo + vertical padding) and the bottom tab bar. The
-// builder locks to the leftover viewport on web, where the app shell grows
-// with the page instead of clipping to one screen.
+// GlobalHeader body (logo + vertical padding). This screen sits above the
+// tabs, so the tab bar is not part of the leftover viewport.
 const WEB_HEADER_CHROME = 52
-const WEB_TAB_CHROME = 49
 
-type Props = NativeStackScreenProps<CategoriesStackParamList, 'ListBuilder'>
+type Props = NativeStackScreenProps<MainStackParamList, 'ListBuilder'>
 
 type PickedItem = { entityId: string; rank: number; name: string; imageUrl?: string | null }
 
@@ -36,7 +35,7 @@ export function ListBuilderScreen({ route, navigation }: Props) {
   const insets = useSafeAreaInsets()
   const { height: windowHeight } = useWindowDimensions()
   const webFrameHeight = Platform.OS === 'web'
-    ? Math.max(320, windowHeight - insets.top - WEB_HEADER_CHROME - WEB_TAB_CHROME - insets.bottom)
+    ? Math.max(320, windowHeight - insets.top - WEB_HEADER_CHROME - insets.bottom)
     : undefined
 
   const [query, setQuery] = useState('')
@@ -191,12 +190,7 @@ export function ListBuilderScreen({ route, navigation }: Props) {
   }
 
   function openPollResults() {
-    const label = category.data?.shortLabel ?? shortLabel
-    ;(navigation.getParent()?.navigate as (name: string, params: object) => void)('Rankings', {
-      screen: 'CategoryRanking',
-      params: { categorySlug, shortLabel: label },
-      initial: false,
-    })
+    openPoll(navigation, 'results', { categorySlug, shortLabel: category.data?.shortLabel ?? shortLabel })
   }
 
   // Fast picks are the initial results when no query
@@ -230,8 +224,9 @@ export function ListBuilderScreen({ route, navigation }: Props) {
           <PollHeader
             testID="list-builder.header"
             takeCount={category.data?.popularityCount}
+            actionLabel="View results"
             onBack={() => navigation.goBack()}
-            onViewResults={openPollResults}
+            onAction={openPollResults}
           />
           <Typography
             testID="list-builder.question"

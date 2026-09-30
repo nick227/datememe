@@ -15,6 +15,7 @@ import { FilterChipsRow } from '../../../ui/content/FilterChipsRow'
 import { TOP_CHIP_ID, useGroupFilterChips } from '../../../ui/content/useGroupFilterChips'
 import type { ContentUnit, FeedModule } from '../../../ui/content/types'
 import { CANVAS_WIDTH, colors, spacing } from '../../../theme'
+import { openPoll } from '../../../navigation/openPoll'
 import type { RankingsStackParamList } from '../../../navigation/types'
 
 type Props = NativeStackScreenProps<RankingsStackParamList, 'Rankings'>
@@ -49,7 +50,7 @@ export function RankingsScreen({ navigation }: Props) {
   }, [selectedChipKey])
 
   function openCategory(categorySlug: string, shortLabel: string) {
-    navigation.navigate('CategoryRanking', { categorySlug, shortLabel })
+    openPoll(navigation, 'results', { categorySlug, shortLabel })
   }
 
   function onPressItem(module: FeedModule, unit: ContentUnit) {

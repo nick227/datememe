@@ -10,7 +10,7 @@ import { MessagesStack } from './MessagesStack'
 import { ProfileStack } from './ProfileStack'
 import { Icon, type IconName } from '../ui/Icon'
 import { colors } from '../theme'
-import { useConversations } from '@project/sdk'
+import { useConversations, useCurrentUser } from '@project/sdk'
 
 const Tab = createBottomTabNavigator()
 
@@ -23,7 +23,9 @@ const ICONS: Record<string, IconName> = {
 
 export function AppTabs() {
   const queryClient = useQueryClient()
+  const me = useCurrentUser()
   const { data: conversationsData } = useConversations()
+  const initialRouteName = me.data?.profile?.onboardingStep === 0 ? 'ProfileTab' : 'Lists'
   
   // Calculate total unread conversations. (We just want an indicator, so any unread > 0 is fine)
   const unreadCount = conversationsData?.pages.flatMap(p => p.data).filter(c => c.hasUnread).length || 0
@@ -39,6 +41,7 @@ export function AppTabs() {
 
   return (
     <Tab.Navigator
+      initialRouteName={initialRouteName}
       screenOptions={({ route }) => ({
         headerShown: false,
         animation: 'fade',

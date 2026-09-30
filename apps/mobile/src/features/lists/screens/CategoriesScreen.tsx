@@ -14,6 +14,7 @@ import { ExploreBoundary } from '../../../ui/content/ExploreBoundary'
 import { TOP_CHIP_ID, useGroupFilterChips } from '../../../ui/content/useGroupFilterChips'
 import type { ContentUnit, FeedModule } from '../../../ui/content/types'
 import { CANVAS_WIDTH, spacing } from '../../../theme'
+import { openPoll } from '../../../navigation/openPoll'
 import type { CategoriesStackParamList } from '../../../navigation/types'
 
 type Props = NativeStackScreenProps<CategoriesStackParamList, 'Categories'>
@@ -86,7 +87,7 @@ export function CategoriesScreen({ navigation }: Props) {
   }, [modules, selectedGroupSlugs.length])
 
   function goToListBuilder(categorySlug: string, shortLabel: string) {
-    navigation.navigate('ListBuilder', { categorySlug, shortLabel })
+    openPoll(navigation, 'edit', { categorySlug, shortLabel })
   }
 
   function onPressItem(unit: ContentUnit) {

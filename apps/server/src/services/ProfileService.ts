@@ -46,7 +46,13 @@ export class ProfileService {
     const { seekingGenders, photos, isA, lookingFor, ...rest } = input
 
     await db.$transaction(async (tx) => {
-      await tx.profile.update({ where: { id: profileId }, data: rest })
+      const current = rest.displayName != null
+        ? await tx.profile.findUnique({ where: { id: profileId }, select: { onboardingStep: true } })
+        : null
+      await tx.profile.update({
+        where: { id: profileId },
+        data: current?.onboardingStep === 0 ? { ...rest, onboardingStep: 1 } : rest,
+      })
       if (seekingGenders) {
         await tx.profileSeekingGender.deleteMany({ where: { profileId } })
         if (seekingGenders.length) {

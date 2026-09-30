@@ -1,6 +1,8 @@
 import { Platform, View } from 'react-native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { AppTabs } from './AppTabs'
+import { ListBuilderScreen } from '../features/lists/screens/ListBuilderScreen'
+import { PollResultsScreen } from '../features/rankings/screens/PollResultsScreen'
 import { GlobalHeader } from '../ui/GlobalHeader'
 import { defaultScreenOptions } from './defaultScreenOptions'
 import type { MainStackParamList } from './types'
@@ -17,6 +19,8 @@ export function MainStack() {
       <GlobalHeader showAvatar />
       <Stack.Navigator screenOptions={defaultScreenOptions}>
         <Stack.Screen name="Tabs" component={AppTabs} />
+        <Stack.Screen name="ListBuilder" component={ListBuilderScreen} getId={({ params }) => params?.categorySlug} />
+        <Stack.Screen name="PollResults" component={PollResultsScreen} getId={({ params }) => params?.categorySlug} />
       </Stack.Navigator>
     </View>
   )

@@ -15,6 +15,7 @@ import { ExploreBoundary } from '../../../ui/content/ExploreBoundary'
 import { TOP_CHIP_ID, useGroupFilterChips } from '../../../ui/content/useGroupFilterChips'
 import type { ContentUnit, FeedModule } from '../../../ui/content/types'
 import { CANVAS_WIDTH, spacing } from '../../../theme'
+import { openPoll } from '../../../navigation/openPoll'
 import type { DiscoveryStackParamList } from '../../../navigation/types'
 
 type Props = NativeStackScreenProps<DiscoveryStackParamList, 'Discover'>
@@ -112,14 +113,9 @@ export function DiscoverFeedScreen({ navigation }: Props) {
   function onPressItem(unit: ContentUnit) {
     // Site Picks cards are lists presented inside Discover, not people
     // recommendations — same kind: 'category' unit Lists renders, so
-    // selecting one goes to the same List Builder / ranking flow as
-    // picking it from the Lists tab (cross-tab, same pattern as
-    // ConversationScreen/ProfileDetailScreen's navigation.getParent() calls).
+    // selecting one opens the shared poll editor above the current tab.
     if (unit.kind === 'category') {
-      ;(navigation.getParent()?.navigate as any)('Lists', {
-        screen: 'ListBuilder',
-        params: { categorySlug: unit.id, shortLabel: unit.title },
-      })
+      openPoll(navigation, 'edit', { categorySlug: unit.id, shortLabel: unit.title })
       return
     }
     if (unit.kind !== 'person' || !unit.profile) return

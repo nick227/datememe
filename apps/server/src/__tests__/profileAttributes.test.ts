@@ -31,4 +31,26 @@ describe('ProfileService attributes', () => {
     expect(cleared.isA).toEqual([])
     expect(cleared.lookingFor).toEqual(['FRIEND'])
   })
+
+  it('advances onboarding only when details are saved', async () => {
+    const now = Date.now()
+    const user = await db.user.create({
+      data: {
+        email: `onboard-${now}@example.com`,
+        passwordHash: 'hash',
+        profile: { create: { username: `onboard-${now}`, displayName: 'New', birthdate: new Date('1993-01-01T00:00:00.000Z') } },
+      },
+      include: { profile: true },
+    })
+    createdUserIds.push(user.id)
+
+    const photos = await service.updateMyProfile(user.profile!.id, { avatarUrl: 'https://example.com/a.jpg' })
+    expect(photos.onboardingStep).toBe(0)
+
+    const saved = await service.updateMyProfile(user.profile!.id, { displayName: 'Ready' })
+    expect(saved.onboardingStep).toBe(1)
+
+    const again = await service.updateMyProfile(user.profile!.id, { displayName: 'Ready again' })
+    expect(again.onboardingStep).toBe(1)
+  })
 })

@@ -2,7 +2,6 @@ import { FlatList, StyleSheet, View } from 'react-native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { useCategoryRankings } from '@project/sdk'
 import { ScreenContainer } from '../../../ui/ScreenContainer'
-import { TopNavigation } from '../../../ui/TopNavigation'
 import { EmptyState } from '../../../ui/EmptyState'
 import { ErrorState } from '../../../ui/ErrorState'
 import { Skeleton } from '../../../ui/Skeleton'
@@ -10,12 +9,13 @@ import { Button } from '../../../ui/Button'
 import { Typography } from '../../../ui/Typography'
 import { ResultUnitCard } from '../../../ui/content/ResultUnitCard'
 import type { ResultUnit } from '../../../ui/content/types'
+import { PollHeader } from '../../lists/components/PollHeader'
+import { openPoll } from '../../../navigation/openPoll'
 import { borderWidth, colors, spacing } from '../../../theme'
-import type { RankingsStackParamList } from '../../../navigation/types'
+import type { MainStackParamList } from '../../../navigation/types'
 
-type Props = NativeStackScreenProps<RankingsStackParamList, 'CategoryRanking'>
+type Props = NativeStackScreenProps<MainStackParamList, 'PollResults'>
 
-// Same arrow convention ResultUnitCard renders ("+2" / "-1" / "new").
 function trendFor(rank: number, previousRank: number | null) {
   if (previousRank == null) return 'new'
   if (previousRank > rank) return `+${previousRank - rank}`
@@ -23,19 +23,14 @@ function trendFor(rank: number, previousRank: number | null) {
   return undefined
 }
 
-export function CategoryRankingScreen({ route, navigation }: Props) {
+export function PollResultsScreen({ route, navigation }: Props) {
   const { categorySlug, shortLabel } = route.params
   const rankings = useCategoryRankings(categorySlug)
   const data = rankings.data
+  const title = data?.category.shortLabel ?? shortLabel
 
-  // Cross-tab into the Lists stack, same pattern as DiscoverFeedScreen's
-  // category units; `initial: false` keeps Lists' root under it for back.
-  function openListBuilder() {
-    ;(navigation.getParent()?.navigate as any)('Lists', {
-      screen: 'ListBuilder',
-      params: { categorySlug, shortLabel: data?.category.shortLabel ?? shortLabel },
-      initial: false,
-    })
+  function openEditor() {
+    openPoll(navigation, 'edit', { categorySlug, shortLabel: title })
   }
 
   const viewerTop = data?.entries.find((e) => e.viewerRank === 1)
@@ -79,12 +74,12 @@ export function CategoryRankingScreen({ route, navigation }: Props) {
                       : `Nobody else has ${viewerTopName} at #1 yet`}
                   </Typography>
                 ) : null}
-                <Button testID="category-ranking.edit" label="Edit your answers" variant="secondary" onPress={openListBuilder} />
+                <Button testID="poll-results.edit" label="Edit your answers" variant="secondary" onPress={openEditor} />
               </>
             ) : (
               <>
                 <Typography variant="heading">You haven&apos;t taken this yet</Typography>
-                <Button testID="category-ranking.take" label="Take this list" onPress={openListBuilder} />
+                <Button testID="poll-results.take" label="Take this list" onPress={openEditor} />
               </>
             )}
           </View>
@@ -94,31 +89,30 @@ export function CategoryRankingScreen({ route, navigation }: Props) {
   )
 
   return (
-    <ScreenContainer testID="screen.category-ranking" width="narrow">
-      <TopNavigation
-        testID="category-ranking.header"
-        alignment="left"
-        leftAction="back"
-        onLeftAction={() => navigation.goBack()}
-        title={data?.category.shortLabel ?? shortLabel}
+    <ScreenContainer testID="screen.poll-results" width="narrow">
+      <PollHeader
+        testID="poll-results.header"
+        takeCount={data?.takeCount ?? data?.category.popularityCount}
+        actionLabel="Edit answers"
+        onBack={() => navigation.goBack()}
+        onAction={openEditor}
       />
+      <Typography testID="poll-results.title" variant="title" style={styles.title}>{title}</Typography>
       {rankings.isLoading ? (
-        <View testID="category-ranking.loading" style={{ gap: spacing.md }}>
+        <View testID="poll-results.loading" style={{ gap: spacing.md }}>
           <Skeleton variant="text" width="70%" />
           <Skeleton variant="rect" width="100%" height={120} />
           <Skeleton variant="rect" width="100%" height={240} />
         </View>
       ) : rankings.isError && !data ? (
-        <ErrorState testID="category-ranking.error" subtitle="Couldn't load this ranking." onRetry={() => rankings.refetch()} />
+        <ErrorState testID="poll-results.error" subtitle="Couldn't load this ranking." onRetry={() => rankings.refetch()} />
       ) : (
         <FlatList
           data={units}
           keyExtractor={(u) => u.id}
           renderItem={({ item }) => <ResultUnitCard unit={item} onPress={() => {}} />}
           ListHeaderComponent={header}
-          // Unpublished = below the worker's minimum-answers threshold: no
-          // site ranking yet, so no single person's list is exposed as one.
-          ListEmptyComponent={<EmptyState testID="category-ranking.empty" title="Not enough answers yet" subtitle="The site ranking appears once a few more people answer this list." />}
+          ListEmptyComponent={<EmptyState testID="poll-results.empty" title="Not enough answers yet" subtitle="The site ranking appears once a few more people answer this list." />}
           contentContainerStyle={{ paddingBottom: spacing.section }}
         />
       )}
@@ -127,6 +121,7 @@ export function CategoryRankingScreen({ route, navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
+  title: { marginTop: spacing.sm, marginBottom: spacing.md },
   header: { gap: spacing.sm, marginBottom: spacing.lg },
   stats: { marginTop: spacing.xs },
   viewerBox: {

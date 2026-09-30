@@ -16,6 +16,7 @@ import { Rail } from '../../../ui/content/Rail'
 import type { ContentUnit } from '../../../ui/content/types'
 import { borderWidth, colors, spacing } from '../../../theme'
 import { hapticHeavy, hapticMedium } from '../../../lib/haptics'
+import { openPoll } from '../../../navigation/openPoll'
 import type { DiscoveryStackParamList } from '../../../navigation/types'
 import { Typography } from '../../../ui/Typography'
 
@@ -101,20 +102,12 @@ export function ProfileDetailScreen({ route, navigation }: Props) {
     return map
   }, [myLists.data])
 
-  // Cross-tab, same pattern as DiscoverFeedScreen's category units.
-  function openListBuilder(list: any) {
-    ;(navigation.getParent()?.navigate as any)('Lists', {
-      screen: 'ListBuilder',
-      params: { categorySlug: list.category.slug, shortLabel: list.category.shortLabel },
-    })
+  function openListBuilder(list: { category: { slug: string; shortLabel: string } }) {
+    openPoll(navigation, 'edit', { categorySlug: list.category.slug, shortLabel: list.category.shortLabel })
   }
 
-  function openSiteRankings(list: any) {
-    ;(navigation.getParent()?.navigate as any)('Rankings', {
-      screen: 'CategoryRanking',
-      params: { categorySlug: list.category.slug, shortLabel: list.category.shortLabel },
-      initial: false,
-    })
+  function openSiteRankings(list: { category: { slug: string; shortLabel: string } }) {
+    openPoll(navigation, 'results', { categorySlug: list.category.slug, shortLabel: list.category.shortLabel })
   }
 
   // Like/Pass are quick, in-page actions now — not a full-screen swipe deck's

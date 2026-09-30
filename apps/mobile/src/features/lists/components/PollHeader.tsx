@@ -6,15 +6,16 @@ import { colors, spacing } from '../../../theme'
 type Props = {
   testID?: string
   takeCount?: number
+  actionLabel: string
   onBack: () => void
-  onViewResults: () => void
+  onAction: () => void
 }
 
 export function timesTakenLabel(count: number) {
   return count === 1 ? '1 total' : `${count.toLocaleString()} total`
 }
 
-export function PollHeader({ testID, takeCount, onBack, onViewResults }: Props) {
+export function PollHeader({ testID, takeCount, actionLabel, onBack, onAction }: Props) {
   return (
     <View testID={testID} style={styles.row}>
       <Pressable
@@ -29,12 +30,12 @@ export function PollHeader({ testID, takeCount, onBack, onViewResults }: Props) 
       </Pressable>
       <View style={styles.row}>
       <Pressable
-        testID={testID ? `${testID}.results` : undefined}
-        onPress={onViewResults}
+        testID={testID ? `${testID}.action` : undefined}
+        onPress={onAction}
         hitSlop={8}
         accessibilityRole="button"
       >
-        <Typography variant="body" style={styles.results}>View results</Typography>
+        <Typography variant="body" style={styles.results}>{actionLabel}</Typography>
       </Pressable>
       {takeCount != null ? (
         <Typography testID={testID ? `${testID}.taken` : undefined} variant="bodyMuted" style={styles.taken} numberOfLines={1}>

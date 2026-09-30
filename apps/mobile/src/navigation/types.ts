@@ -1,12 +1,10 @@
+import type { NavigatorScreenParams } from '@react-navigation/native'
+
 export type AuthStackParamList = {
   Login: undefined
   Register: undefined
   ForgotPassword: undefined
   ResetPassword: { email: string }
-}
-
-export type MainStackParamList = {
-  Tabs: undefined
 }
 
 export type AppTabsParamList = {
@@ -17,14 +15,20 @@ export type AppTabsParamList = {
   ProfileTab: undefined
 }
 
+export type PollParams = { categorySlug: string; shortLabel: string }
+
+export type MainStackParamList = {
+  Tabs: NavigatorScreenParams<AppTabsParamList>
+  ListBuilder: PollParams
+  PollResults: PollParams
+}
+
 export type CategoriesStackParamList = {
   Categories: undefined
-  ListBuilder: { categorySlug: string; shortLabel: string }
 }
 
 export type RankingsStackParamList = {
   Rankings: undefined
-  CategoryRanking: { categorySlug: string; shortLabel: string }
 }
 
 export type MatchInsight = { icon: string; title: string; description: string }
