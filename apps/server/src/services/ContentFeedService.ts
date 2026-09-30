@@ -1,3 +1,4 @@
+import { CORE_GROUP_SLUG, coreTitle } from '../lib/coreLists'
 import { db } from '@project/db'
 import { decodeOffsetCursor, encodeOffsetCursor, normalizeLimit } from '../lib/pagination'
 import { ENTITY_SELECT, PROFILE_FULL_SELECT, serializeProfile, serializeEntity } from '../lib/serializers'
@@ -482,25 +483,37 @@ export class ContentFeedService {
     const categoryById = new Map(categories.map((c: any) => [c.id, c]))
 
     const modules: any[] = []
+    let finishedCore: any = null
     for (const group of sitePickGroups) {
-      const items = group.items
-        .map((item: any, i: number) => {
-          const category = categoryById.get(item.categoryId)
-          return category ? categoryUnitFor(category, i, myListByCategoryId) : null
-        })
-        .filter(Boolean)
+      const isCore = group.slug === CORE_GROUP_SLUG
+      let categoriesInGroup = group.items.map((item: any) => categoryById.get(item.categoryId)).filter(Boolean)
+      let title = group.label
+      let coreFinished = false
+      if (isCore) {
+        // Core lists: what's still unanswered comes first, with the viewer's progress in the title.
+        const isDone = (c: any) => !!myListByCategoryId.get(c.id)?.isComplete
+        const done = categoriesInGroup.filter(isDone)
+        categoriesInGroup = [...categoriesInGroup.filter((c: any) => !isDone(c)), ...done]
+        title = coreTitle(group.label, done.length, categoriesInGroup.length)
+        coreFinished = done.length === categoriesInGroup.length
+      }
+      const items = categoriesInGroup.map((category: any, i: number) => categoryUnitFor(category, i, myListByCategoryId))
       if (!items.length) continue
       // Structure will be overwritten by the deterministic Explore sequence
       // (assignExploreSequence above) — no hardcoded structure here.
-      modules.push({
+      const module = {
         moduleKind: 'collection',
         id: `site-picks-${group.slug}`,
         type: 'lists',
-        title: group.label,
+        title,
         suggestedStructure: 'grid',
         items,
-      })
+      }
+      // Pinned first (sortOrder -1) until every core list is done, then it steps aside.
+      if (coreFinished) finishedCore = module
+      else modules.push(module)
     }
+    if (finishedCore) modules.push(finishedCore)
     return modules
   }
 
@@ -728,26 +741,44 @@ export class ContentFeedService {
       let improveMatchesModule: any = null
 
       if (isFirstPage) {
-        if (!hasEnoughEvidence) {
-          const categories = await taxonomyService.listCategories(viewerProfileId)
-          const myLists = await listService.getMyLists(viewerProfileId)
-          const myListByCategoryId = new Set(myLists.map((l: any) => l.categoryId))
-          const incompleteSorted = categories
-            .filter((c: any) => !myListByCategoryId.has(c.id))
+        // Improve matches: unanswered core lists lead (catalog/core-lists.json). Before there's
+        // enough evidence, other lists fill the rail as before; after, it stays only while the
+        // core set is unfinished.
+        const coreGroup = await db.sitePickGroup.findFirst({
+          where: { slug: CORE_GROUP_SLUG, isActive: true },
+          include: { items: { orderBy: { sortOrder: 'asc' } } },
+        })
+        if (!hasEnoughEvidence || coreGroup) {
+          const [categories, myLists] = await Promise.all([taxonomyService.listCategories(viewerProfileId), listService.getMyLists(viewerProfileId)])
+          const answered = new Set(myLists.map((l: any) => l.categoryId))
+          const completed = new Set(myLists.filter((l: any) => l.isComplete).map((l: any) => l.categoryId))
+          const categoryById = new Map(categories.map((c: any) => [c.id, c]))
+          const core = (coreGroup?.items ?? []).map((item: any) => categoryById.get(item.categoryId)).filter(Boolean)
+          const coreOpen = core.filter((c: any) => !completed.has(c.id))
+          const coreIds = new Set(core.map((c: any) => c.id))
+          const others = hasEnoughEvidence ? [] : categories
+            .filter((c: any) => !answered.has(c.id) && !coreIds.has(c.id))
             .sort((a: any, b: any) => featuredScore(b) - featuredScore(a))
+          const items = [...coreOpen, ...others].slice(0, 6)
 
-          if (incompleteSorted.length) {
+          if (items.length) {
             improveMatchesModule = {
               moduleKind: 'collection',
               id: 'improve-matches',
               type: 'prompt',
-              title: 'Answer lists to see matches',
-              context: { reason: 'We need to learn your taste before we can score your compatibility' },
+              title: coreOpen.length
+                ? `${hasEnoughEvidence ? 'Sharpen your matches' : 'Answer lists to see matches'} · ${coreTitle(coreGroup!.label, core.length - coreOpen.length, core.length)}`
+                : 'Answer lists to see matches',
+              context: {
+                reason: 'We need to learn your taste before we can score your compatibility',
+                ...(core.length ? { coreCompleted: core.length - coreOpen.length, coreTotal: core.length } : {}),
+              },
               suggestedStructure: 'rail',
-              items: incompleteSorted.slice(0, 6).map((c: any, i2: number) => ({ ...toCategoryUnit(c, { completed: false }), position: i2 })),
+              items: items.map((c: any, i2: number) => ({ ...toCategoryUnit(c, { completed: false }), position: i2 })),
             }
           }
-        } else {
+        }
+        if (hasEnoughEvidence) {
           const topCandidate = page.data[0]
           if (topCandidate && topCandidate.matchPercentage !== undefined && topCandidate.matchPercentage >= 90) {
             highlightModule = {
