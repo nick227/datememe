@@ -1,22 +1,26 @@
 [
   {
     "schemaVersion": 1,
+    "categorySlug": "life-goals",
+    "adminEditedAt": null,
     "groupSlug": "dating-relationships",
     "entityTypeSlug": "life-priority",
     "title": "Life Goals",
     "prompt": "Which life goals are you actually working toward?",
     "axes": ["values", "future", "lifestyle"],
-    "values": ["Kids someday", "Getting married", "Buying a house", "Living abroad", "Starting a business", "Retiring early", "Seeing every continent", "Running a marathon", "Writing a book", "Getting a dog", "Paying off debt", "Learning another language"],
+    "values": ["Kids someday", "Getting married", "Buying a house", "Living abroad", "Starting a business", "Retiring early", "Seeing every continent", "Running a marathon", "Writing a book", "Getting a dog", "Paying off debt", "Learning another language", "Getting a graduate degree", "Building my dream home", "Learning an instrument", "Volunteering regularly", "Living in a van for a year", "Getting really fit", "Owning land", "Growing my own food"],
     "isAbstract": true
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "dating-profile-red-flags",
+    "adminEditedAt": null,
     "groupSlug": "dating-relationships",
     "entityTypeSlug": "pet-peeve",
     "title": "Dating Profile Red Flags",
     "prompt": "Which dating-profile red flags make you swipe left?",
     "axes": ["dating", "values", "humor"],
-    "values": ["Only group photos", "Empty bio", "Sunglasses in every pic", "Holding a fish", "Opens with \"hey\"", "\"Just ask\"", "Shirtless mirror selfie", "Height requirement", "Looking for a partner in crime", "All photos are filtered", "Won't move off the app", "A list of what they don't want"],
+    "values": ["Only group photos", "Empty bio", "Sunglasses in every pic", "Holding a fish", "Opens with \"hey\"", "\"Just ask\"", "Shirtless mirror selfie", "Height requirement", "Looking for a partner in crime", "All photos are filtered", "Won't move off the app", "A list of what they don't want", "Photos from ten years ago", "An ex cropped out of every photo", "Crypto in the bio", "\"No drama\"", "Only gym pics", "Just an Instagram handle", "Car selfie", "\"Fluent in sarcasm\""],
     "isAbstract": true
   },
   {

@@ -1,6 +1,8 @@
 [
   {
     "schemaVersion": 1,
+    "categorySlug": "relationship-boundaries",
+    "adminEditedAt": null,
     "groupSlug": "dating-relationships",
     "entityTypeSlug": "relationship-habit",
     "title": "Relationship Boundaries",
@@ -22,12 +24,22 @@
       "Following exes on social",
       "Liking other people's photos",
       "Reading each other's texts",
-      "Talking to exes about us"
+      "Talking to exes about us",
+      "Talking about our fights with friends",
+      "Flirting as a joke",
+      "Dancing with others at a party",
+      "Texting people late at night",
+      "Checking in when out late",
+      "Sharing streaming passwords",
+      "Private social accounts",
+      "Following attractive strangers"
     ],
     "isAbstract": true
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "moving-for-love",
+    "adminEditedAt": null,
     "groupSlug": "dating-relationships",
     "entityTypeSlug": "relationship-habit",
     "title": "Moving for Love",
@@ -47,12 +59,24 @@
       "Only if my job comes with me",
       "Long distance for a while first",
       "They'd have to move to me",
-      "I'm not moving anywhere"
+      "I'm not moving anywhere",
+      "After a year of dating",
+      "Only if we're already living together",
+      "Anywhere, if it's the one",
+      "Somewhere near my family",
+      "Back to my hometown",
+      "Wherever their career takes us",
+      "Wherever rent is cheaper",
+      "Somewhere warm",
+      "Only for a trial year",
+      "Only to a big city"
     ],
     "isAbstract": true
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "apology-style",
+    "adminEditedAt": null,
     "groupSlug": "dating-relationships",
     "entityTypeSlug": "relationship-habit",
     "title": "Apology Style",
@@ -72,12 +96,24 @@
       "A hug says it",
       "A small gift",
       "Just move on, no speeches",
-      "Own it in front of friends"
+      "Own it in front of friends",
+      "Apologize without a \"but\"",
+      "Ask what I need to feel better",
+      "Let me vent first",
+      "Never over text",
+      "A text is fine for small stuff",
+      "Cook me dinner",
+      "Sit with me until we're okay",
+      "A long talk that night",
+      "Laugh it off together",
+      "Surprise me with something thoughtful"
     ],
     "isAbstract": true
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "when-you-re-stressed",
+    "adminEditedAt": null,
     "groupSlug": "dating-relationships",
     "entityTypeSlug": "stress-response",
     "createEntityType": {
@@ -103,7 +139,15 @@
       "Make a to-do list",
       "Get short with people",
       "Call my family",
-      "Sleep it off"
+      "Sleep it off",
+      "Cook something",
+      "Go for a drive",
+      "Journal",
+      "Scroll my phone",
+      "Eat snacks",
+      "Take a long shower",
+      "Watch comfort TV",
+      "Pray or meditate"
     ],
     "isAbstract": true
   },

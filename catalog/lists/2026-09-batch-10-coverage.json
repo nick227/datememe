@@ -55,34 +55,40 @@
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "life-priorities",
+    "adminEditedAt": null,
     "groupSlug": "dating-relationships",
     "entityTypeSlug": "life-priority",
     "createEntityType": { "label": "Life Priority", "pluralLabel": "Life Priorities" },
     "title": "Life Priorities",
     "prompt": "What matters most to you in life right now?",
     "axes": ["values", "lifestyle", "future"],
-    "values": ["Family", "Career", "Adventure", "Faith", "Health", "Financial security", "Friendships", "Creativity", "Travel", "Making a difference", "Personal growth", "Having fun"],
+    "values": ["Family", "Career", "Adventure", "Faith", "Health", "Financial security", "Friendships", "Creativity", "Travel", "Making a difference", "Personal growth", "Having fun", "Peace of mind", "Independence", "Community", "Learning", "Freedom", "Stability", "Success", "Legacy"],
     "isAbstract": true
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "dating-pet-peeves",
+    "adminEditedAt": null,
     "groupSlug": "dating-relationships",
     "entityTypeSlug": "pet-peeve",
     "title": "Dating Pet Peeves",
     "prompt": "Which dating habits are instant dealbreakers?",
     "axes": ["dating", "values", "communication"],
-    "values": ["On their phone the whole date", "Rude to the server", "Late without texting", "Talks about their ex", "Never asks you a question", "Cancels last minute", "Bad tipper", "Only talks about work", "Love-bombing", "Vague plans, no follow-through", "Mean about their friends", "Slow fades instead of saying no"],
+    "values": ["On their phone the whole date", "Rude to the server", "Late without texting", "Talks about their ex", "Never asks you a question", "Cancels last minute", "Bad tipper", "Only talks about work", "Love-bombing", "Vague plans, no follow-through", "Mean about their friends", "Slow fades instead of saying no", "Interrupts constantly", "Drinks too much", "Checks out other people", "Negative about everything", "Brings up marriage on date one", "Brags about money", "Chews with their mouth open", "Splits the check to the penny"],
     "isAbstract": true
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "how-you-show-love",
+    "adminEditedAt": null,
     "groupSlug": "dating-relationships",
     "entityTypeSlug": "love-language",
     "createEntityType": { "label": "Love Language", "pluralLabel": "Love Languages" },
     "title": "How You Show Love",
     "prompt": "How do you show a partner you care?",
     "axes": ["dating", "communication", "affection"],
-    "values": ["Words of affirmation", "Quality time", "Physical touch", "Acts of service", "Thoughtful gifts", "Cooking for them", "Planning surprises", "Sending memes all day", "Handwritten notes", "Remembering the little things", "Making them a playlist", "Long phone calls"],
+    "values": ["Words of affirmation", "Quality time", "Physical touch", "Acts of service", "Thoughtful gifts", "Cooking for them", "Planning surprises", "Sending memes all day", "Handwritten notes", "Remembering the little things", "Making them a playlist", "Long phone calls", "Saving them the last bite", "Hyping them up in public", "Checking in when they're stressed", "Doing their least favorite chore", "Planning trips together", "Sending flowers", "Showing up to their stuff", "Learning their hobbies"],
     "isAbstract": true
   },
   {

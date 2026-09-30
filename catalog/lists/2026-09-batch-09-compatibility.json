@@ -1,6 +1,8 @@
 [
   {
     "schemaVersion": 1,
+    "categorySlug": "perfect-first-date",
+    "adminEditedAt": null,
     "groupSlug": "dating-relationships",
     "createGroup": { "label": "Dating & Relationships" },
     "entityTypeSlug": "date-idea",
@@ -8,29 +10,33 @@
     "title": "Perfect First Date",
     "prompt": "What makes the perfect first date?",
     "axes": ["dating", "social", "lifestyle"],
-    "values": ["Coffee shop", "Dinner at a nice restaurant", "Drinks at a cocktail bar", "Museum or gallery", "Picnic in the park", "Mini golf", "Live music", "Cooking together", "A hike", "Bowling or arcade", "Comedy club", "Farmers market stroll"],
+    "values": ["Coffee shop", "Dinner at a nice restaurant", "Drinks at a cocktail bar", "Museum or gallery", "Picnic in the park", "Mini golf", "Live music", "Cooking together", "A hike", "Bowling or arcade", "Comedy club", "Farmers market stroll", "Brunch", "Walk and ice cream", "Trivia night", "Escape room", "Wine tasting", "Pottery class", "Street food crawl", "Karaoke"],
     "isAbstract": true
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "ideal-date-night-in",
+    "adminEditedAt": null,
     "groupSlug": "dating-relationships",
     "entityTypeSlug": "date-night-in",
     "createEntityType": { "label": "Date Night In", "pluralLabel": "Date Nights In" },
     "title": "Ideal Date Night In",
     "prompt": "What's your ideal night in together?",
     "axes": ["dating", "home", "comfort"],
-    "values": ["Cooking dinner together", "Movie marathon", "Board games", "Takeout and a new show", "Baking dessert", "Wine and cheese", "Video games", "Doing a puzzle", "Living-room karaoke", "At-home spa night", "Stargazing", "Reading side by side"],
+    "values": ["Cooking dinner together", "Movie marathon", "Board games", "Takeout and a new show", "Baking dessert", "Wine and cheese", "Video games", "Doing a puzzle", "Living-room karaoke", "At-home spa night", "Stargazing", "Reading side by side", "Homemade pizza night", "Blanket fort", "Rewatching a comfort show", "Records and a bottle of wine", "Painting together", "Building LEGO", "Deep-question card game", "Themed dinner night"],
     "isAbstract": true
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "green-flags",
+    "adminEditedAt": null,
     "groupSlug": "dating-relationships",
     "entityTypeSlug": "green-flag",
     "createEntityType": { "label": "Green Flag", "pluralLabel": "Green Flags" },
     "title": "Green Flags",
     "prompt": "Which green flags do you notice first?",
     "axes": ["dating", "values", "communication"],
-    "values": ["Asks follow-up questions", "Texts back when they said they would", "Kind to servers and staff", "Makes real plans, not \"let's hang sometime\"", "Has long-time close friends", "Apologizes without excuses", "Can laugh at themselves", "Respects your time", "Has their own hobbies", "Introduces you to their friends", "Curious about new things", "Keeps small promises"],
+    "values": ["Asks follow-up questions", "Texts back when they said they would", "Kind to servers and staff", "Makes real plans, not \"let's hang sometime\"", "Has long-time close friends", "Apologizes without excuses", "Can laugh at themselves", "Respects your time", "Has their own hobbies", "Introduces you to their friends", "Curious about new things", "Keeps small promises", "Kind to animals", "Goes to therapy", "Says what they want clearly", "Takes \"no\" well", "Admits when they're wrong", "Remembers what you told them", "Tips well", "Good relationship with their family"],
     "isAbstract": true
   },
   {

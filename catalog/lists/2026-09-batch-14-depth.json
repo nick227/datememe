@@ -26,6 +26,8 @@
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "conflict-style",
+    "adminEditedAt": null,
     "groupSlug": "dating-relationships",
     "entityTypeSlug": "conflict-style",
     "createEntityType": { "label": "Conflict Style", "pluralLabel": "Conflict Styles" },
@@ -44,7 +46,15 @@
       "Avoid it and hope it passes",
       "Hear them out, then respond",
       "Hug it out",
-      "Debate it like a lawyer"
+      "Debate it like a lawyer",
+      "Take a timeout and circle back",
+      "Keep my voice down",
+      "Get loud, then get over it",
+      "Let it go if it's small",
+      "Write down both sides",
+      "Cool off with a workout",
+      "Ask a friend's opinion",
+      "Couples therapy if it keeps happening"
     ],
     "isAbstract": true
   },
@@ -73,6 +83,8 @@
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "family-priorities",
+    "adminEditedAt": null,
     "groupSlug": "dating-relationships",
     "entityTypeSlug": "life-priority",
     "title": "Family Priorities",
@@ -90,7 +102,15 @@
       "Taking care of my parents",
       "Starting a family young",
       "Building my own traditions",
-      "Chosen family"
+      "Chosen family",
+      "Adopting someday",
+      "One kid is enough",
+      "A big family",
+      "Kids only after 35",
+      "Raising kids bilingual",
+      "A stay-at-home parent",
+      "Putting my partner first",
+      "Pets are my kids"
     ],
     "isAbstract": true
   },

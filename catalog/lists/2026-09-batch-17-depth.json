@@ -1,6 +1,8 @@
 [
   {
     "schemaVersion": 1,
+    "categorySlug": "relationship-pace",
+    "adminEditedAt": null,
     "groupSlug": "dating-relationships",
     "entityTypeSlug": "relationship-habit",
     "createEntityType": {
@@ -26,12 +28,22 @@
       "Engaged within two years",
       "No rush on labels",
       "Know within three dates",
-      "Matching pace, whatever it is"
+      "Matching pace, whatever it is",
+      "\"I love you\" within a few months",
+      "Wait a year for \"I love you\"",
+      "Meet friends early",
+      "Social-media official early",
+      "Keep it off social for a while",
+      "Talk about the future early",
+      "Engaged within a year",
+      "Travel together in the first few months"
     ],
     "isAbstract": true
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "together-time",
+    "adminEditedAt": null,
     "groupSlug": "dating-relationships",
     "entityTypeSlug": "relationship-habit",
     "title": "Together Time",
@@ -53,12 +65,22 @@
       "Working side by side",
       "Every vacation together",
       "Sleep over most nights",
-      "Our own space, even living together"
+      "Our own space, even living together",
+      "Texting all day when apart",
+      "Date night every week",
+      "Separate bedrooms someday",
+      "A shared morning routine",
+      "Cooking dinner together most nights",
+      "Gym together",
+      "Errands together",
+      "Quiet time in the same room"
     ],
     "isAbstract": true
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "communication-needs",
+    "adminEditedAt": null,
     "groupSlug": "dating-relationships",
     "entityTypeSlug": "relationship-habit",
     "title": "Communication Needs",
@@ -80,12 +102,22 @@
       "Quick replies",
       "No texting while we're together",
       "Share the little things",
-      "Honest feedback, even when it stings"
+      "Honest feedback, even when it stings",
+      "Goodnight texts",
+      "Voice notes",
+      "Video calls when apart",
+      "Tell me when something's wrong",
+      "Talk big decisions through together",
+      "Confirm plans ahead of time",
+      "Memes count as communication",
+      "Read receipts on"
     ],
     "isAbstract": true
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "family-involvement",
+    "adminEditedAt": null,
     "groupSlug": "dating-relationships",
     "entityTypeSlug": "relationship-habit",
     "title": "Family Involvement",
@@ -107,12 +139,22 @@
       "Live near either family",
       "Independent from family",
       "Help support family financially",
-      "Chosen family counts too"
+      "Chosen family counts too",
+      "Parents visit often",
+      "Sunday family dinners",
+      "Meet their family within a few months",
+      "Family doesn't need to know everything",
+      "Family events are non-negotiable",
+      "Grandparents help with kids someday",
+      "Stay at family's house when visiting",
+      "Hotel over staying with family"
     ],
     "isAbstract": true
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "money-as-a-couple",
+    "adminEditedAt": null,
     "groupSlug": "dating-relationships",
     "entityTypeSlug": "relationship-habit",
     "title": "Money as a Couple",
@@ -134,7 +176,15 @@
       "Prenup is smart",
       "Talk money before moving in",
       "No questions about personal spending",
-      "Save for goals together"
+      "Save for goals together",
+      "Combine after marriage",
+      "Separate fun money each",
+      "Talk before big purchases",
+      "Pay off debt before merging",
+      "Know each other's credit scores",
+      "Invest together",
+      "Emergency fund first",
+      "Shared travel fund"
     ],
     "isAbstract": true
   },
