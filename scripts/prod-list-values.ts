@@ -1,8 +1,7 @@
-import { execFileSync } from 'child_process'
-import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'fs'
+import { appendFileSync, mkdirSync, readFileSync, writeFileSync } from 'fs'
 import { resolve } from 'path'
-import mysql from 'mysql2/promise'
-import { key, legacyAsciiKey } from '../apps/server/src/lib/identityKey'
+import { key } from '../apps/server/src/lib/identityKey'
+import { ROOT, connect, die, loadCatalog, mapEntriesToLists } from './lib/listsDb'
 
 // Read-only inspector: how many values each list offers, against a floor.
 // Phase 1 of the list-filling workflow — see docs/list-values-runbook.md.
@@ -23,9 +22,7 @@ import { key, legacyAsciiKey } from '../apps/server/src/lib/identityKey'
 // "values" = a list's CategoryEntity rows that are not excluded and whose
 // entity is APPROVED and not merged. Pending submissions are counted apart.
 
-const ROOT = resolve(__dirname, '..')
 const FLOOR_FILE = resolve(ROOT, 'catalog/value-floor.json')
-const LISTS_DIR = resolve(ROOT, 'catalog/lists')
 const MAX_VALUE_LISTS = 10 // --values is the expensive output; make the caller narrow first
 
 const USAGE = `usage: pnpm prod:list-values [options]
@@ -50,11 +47,6 @@ type Opts = {
   min?: number; max?: number; floor?: number; limit?: number
   belowFloor: boolean; includeInactive: boolean; values: boolean; json: boolean; snapshot: boolean; selftest: boolean; local: boolean
   sort: 'values' | 'gap' | 'takes' | 'title'; url?: string
-}
-
-function die(message: string): never {
-  console.error(`✗ ${message}`)
-  process.exit(1)
 }
 
 function parseArgs(argv: string[]): Opts {
@@ -96,71 +88,12 @@ function parseArgs(argv: string[]): Opts {
   return o
 }
 
-/** Minimal .env reader: this script only needs two keys and must not depend on dotenv. */
-function readEnvFile(): Record<string, string> {
-  const file = resolve(ROOT, '.env')
-  if (!existsSync(file)) return {}
-  const out: Record<string, string> = {}
-  for (const line of readFileSync(file, 'utf8').split('\n')) {
-    const m = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)\s*$/)
-    if (m) out[m[1]!] = m[2]!.replace(/^(['"])(.*)\1$/, '$2')
-  }
-  return out
-}
-
-function hostPort(url: string) {
-  const u = new URL(url)
-  return `${u.hostname}:${u.port || '3306'}`
-}
-
-/** Resolves the database URL and proves it is the intended target. Never prints credentials. */
-function resolveTarget(o: Opts) {
-  const env = { ...readEnvFile(), ...process.env } as Record<string, string | undefined>
-  if (o.local) {
-    const url = env.DATABASE_URL
-    if (!url) die('--local: no DATABASE_URL in .env')
-    if (hostPort(url) === env.RAILWAY_DATEMEME_DATABASE_PROXY) die('--local: DATABASE_URL points at the production proxy; drop --local')
-    return { name: 'local', url, where: `db=${hostPort(url)}` }
-  }
-  const proxy = env.RAILWAY_DATEMEME_DATABASE_PROXY
-  if (!proxy) die('RAILWAY_DATEMEME_DATABASE_PROXY is not set in .env; cannot verify the target')
-  let url = o.url
-  if (!url) {
-    try {
-      url = execFileSync('railway', ['variables', '--service', 'MySQL', '--environment', 'production', '--kv'], { cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] })
-        .split('\n').find((l) => l.startsWith('MYSQL_PUBLIC_URL='))?.slice('MYSQL_PUBLIC_URL='.length).trim()
-    } catch (error: any) {
-      die(`railway CLI failed (${String(error.stderr ?? error.message).trim().split('\n').pop()}); run \`railway login\` / \`railway link\`, or pass --url`)
-    }
-    if (!url) die('MySQL in production has no MYSQL_PUBLIC_URL (enable public networking) — or pass --url')
-  }
-  let actual: string
-  try { actual = hostPort(url) } catch { die('the database URL is not a valid mysql:// URL') }
-  if (actual !== proxy) die(`target mismatch: URL points at ${actual}, RAILWAY_DATEMEME_DATABASE_PROXY is ${proxy}. Refusing to run.`)
-  return { name: 'production', url, where: `proxy=${proxy}` }
-}
-
-/** Opens one connection, locks it read-only, and proves a write is refused. */
-async function openReadOnly(url: string) {
-  const conn = await mysql.createConnection({ uri: url, connectTimeout: 15000, dateStrings: true, supportBigNumbers: true, bigNumberStrings: false })
-  await conn.query('SET SESSION TRANSACTION READ ONLY')
-  // A write that matches no rows, so it is harmless even if the lock failed.
-  // Under a read-only session MySQL/MariaDB refuse it before looking at rows.
-  try {
-    await conn.query(`UPDATE Category SET slug = slug WHERE id = '__list_values_readonly_probe__'`)
-  } catch (error: any) {
-    if (error.errno === 1792) return conn // ER_CANT_EXECUTE_IN_READ_ONLY_TRANSACTION
-    await conn.end()
-    throw new Error(`read-only probe failed unexpectedly: ${error.code ?? error.message}`)
-  }
-  await conn.end()
-  throw new Error('read-only probe was NOT refused — this session can write. Aborting before any read.')
-}
-
 type Row = {
   id: string; slug: string; title: string; groupSlug: string; groupLabel: string; typeSlug: string
   isActive: boolean; maxItems: number; takes: number; values: number; pending: number; excluded: number; inactive: number
   adminEditedAt: string | null; floor: number; gap: number; file: string | null
+  /** Pinned catalog entry synced before the latest Admin edit: its additions are skipped until re-synced. */
+  stale: boolean
 }
 
 const LIST_SQL = `
@@ -189,22 +122,6 @@ function readFloors(): FloorConfig {
   return cfg
 }
 
-/** slug → catalog file for every list a file defines (by key, legacy key or exact title, as the importer matches). */
-function catalogFiles() {
-  const bySlug = new Map<string, string>()
-  const byTitle = new Map<string, string>()
-  for (const f of readdirSync(LISTS_DIR).filter((n) => n.endsWith('.json')).sort()) {
-    const parsed = JSON.parse(readFileSync(resolve(LISTS_DIR, f), 'utf8'))
-    for (const l of Array.isArray(parsed) ? parsed : [parsed]) {
-      if (typeof l?.title !== 'string') continue
-      bySlug.set(key(l.title), f)
-      bySlug.set(legacyAsciiKey(l.title), f)
-      byTitle.set(l.title, f)
-    }
-  }
-  return (slug: string, title: string) => bySlug.get(slug) ?? byTitle.get(title) ?? null
-}
-
 function stats(rows: Row[]) {
   const counts = rows.map((r) => r.values).sort((a, b) => a - b)
   const total = counts.reduce((s, n) => s + n, 0)
@@ -229,6 +146,7 @@ function table(rows: Row[]) {
       r.excluded && `excluded:${r.excluded}`,
       r.adminEditedAt && 'admin-edited',
       !r.file && 'no-file',
+      r.stale && 'stale',
       !r.isActive && 'inactive',
     ].filter(Boolean).join(',')
     return [String(r.values), String(r.floor), String(r.gap), String(r.takes), r.groupSlug, r.title, notes]
@@ -240,15 +158,7 @@ function table(rows: Row[]) {
 
 async function main() {
   const o = parseArgs(process.argv.slice(2))
-  const target = resolveTarget(o)
-
-  let conn: Awaited<ReturnType<typeof openReadOnly>>
-  try {
-    conn = await openReadOnly(target.url)
-  } catch (error: any) {
-    die(String(error.message).replace(/mysql:\/\/[^@\s]*@/g, 'mysql://***@'))
-  }
-  console.log(`target=${target.name} ${target.where} readonly=verified`)
+  const { target, conn } = await connect(o)
   if (o.selftest) {
     await conn.end()
     console.log(`LIST_VALUES_SELFTEST ${JSON.stringify({ target: target.name, readonly: true })}`)
@@ -256,7 +166,6 @@ async function main() {
   }
 
   const floors = readFloors()
-  const fileFor = catalogFiles()
   let rows: Row[] = []
   let active: Row[] = []
   let matched: Row[] = []
@@ -272,9 +181,15 @@ async function main() {
         isActive: Boolean(r.isActive), maxItems: Number(r.maxItems), takes: Number(r.takes),
         values, pending: Number(r.pendingCount), excluded: Number(r.excludedCount), inactive: Number(r.inactiveCount),
         adminEditedAt: r.adminEditedAt && r.adminEditedAt !== 'null' ? r.adminEditedAt : null,
-        floor, gap: Math.max(0, floor - values), file: fileFor(r.slug, r.title),
+        floor, gap: Math.max(0, floor - values), file: null, stale: false,
       }
     })
+    const entries = mapEntriesToLists(loadCatalog(), rows)
+    for (const r of rows) {
+      const ref = entries.get(r.slug)
+      r.file = ref?.file.name ?? null
+      r.stale = !!ref?.entry.categorySlug && (ref.entry.adminEditedAt ?? null) !== r.adminEditedAt
+    }
 
     // Unknown slugs in the filters or the floor file are mistakes, not empty results.
     const groupSlugs = new Set(rows.map((r) => r.groupSlug))
@@ -360,4 +275,4 @@ async function main() {
   console.log(`LIST_VALUES ${JSON.stringify(marker)}`)
 }
 
-main().catch((error) => die(String(error?.message ?? error).replace(/mysql:\/\/[^@\s]*@/g, 'mysql://***@')))
+main().catch((error) => die(String(error?.message ?? error)))

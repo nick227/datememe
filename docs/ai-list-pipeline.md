@@ -46,6 +46,7 @@ A file holds one list or an array of lists — one file per generated batch is t
 - Every new list needs a cover brief in `catalog/cover-briefs.json`.
 - `groupSlug` must exist. An unknown `entityTypeSlug` is an error unless `createEntityType` says the new type is intentional.
 - `values` may also be `{ "name": "…" }` objects. Duplicates (by key) are errors.
+- **Pinned entries** (`categorySlug` + `adminEditedAt`) are written by `pnpm prod:list-stub`, never by hand or AI. They target that exact list and never create one; see `docs/list-values-runbook.md`. One entry per list: two entries resolving to the same list are an error.
 - **File order is presentation order.** The list builder shows a list's values in its order (admin order; pick count only breaks ties) and shows only the first 20 until someone searches. Put the strongest, most common answers first; long-tail values go after the first 20.
 - Re-importing never modifies an existing category or entity — edits made by admins in production win.
 

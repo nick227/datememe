@@ -37,6 +37,7 @@ async function main() {
 
   const importer = new ListImporterService()
   const titles = new Map<string, string>()
+  const targets = new Map<string, string>()
   const reports: (ImportReport & { file: string })[] = []
   
   const batchManifest = {
@@ -51,9 +52,13 @@ async function main() {
   // Validate everything first so a bad file can't leave a half-published run.
   for (const { file, list } of lists) {
     const report = { ...(await importer.importList(list, true, batchManifest)), file }
-    const titleKey = key(String(list.title ?? ''))
-    if (titles.has(titleKey)) report.errors.push(`Title duplicates "${titles.get(titleKey)}"`), report.status = 'ERROR'
-    titles.set(titleKey, `${list.title} (${file.split('/').pop()})`)
+    // One entry per list: by resolved list (pinned entries may carry any title), and by title for unpinned ones.
+    const where = `${list.title} (${file.split('/').pop()})`
+    const titleKey = list.categorySlug ? undefined : key(String(list.title ?? ''))
+    const dup = (report.categorySlug && targets.get(report.categorySlug)) || (titleKey && titles.get(titleKey))
+    if (dup) report.errors.push(`Duplicates "${dup}" — one entry per list`), report.status = 'ERROR'
+    if (report.categorySlug) targets.set(report.categorySlug, where)
+    if (titleKey) titles.set(titleKey, where)
     reports.push(report)
   }
   const invalid = reports.filter((r) => r.status === 'ERROR')
@@ -76,6 +81,7 @@ async function main() {
     newEntities: reports.reduce((n, r) => n + (r.status === 'ERROR' ? 0 : r.entitiesCreated.length), 0),
     choicesAdded: reports.reduce((n, r) => n + (r.status === 'ERROR' ? 0 : r.choicesAdded), 0),
     warnings: reports.reduce((n, r) => n + (r.status === 'ERROR' ? 0 : r.warnings.length), 0),
+    stale: reports.filter((r) => r.status !== 'ERROR' && r.stale).length,
     unchangedLists: reports.filter((r) => r.status !== 'ERROR' && !r.categoryCreated && !r.entitiesCreated.length && !r.choicesAdded && !r.expanded.length).length,
   }
   console.log(`CATALOG ${JSON.stringify(summary)}`)

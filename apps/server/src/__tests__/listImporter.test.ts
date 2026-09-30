@@ -91,6 +91,41 @@ describe('ListImporterService', () => {
     expect(await db.entity.count({ where: { entityTypeId: type.id, canonicalName: `${prefix} Brand New` } })).toBe(0)
   })
 
+  it('a pinned entry targets its list by slug whatever its title, and never creates one', async () => {
+    await importer.importList(list({ title: `${prefix} Pinned`, values: values(`${prefix} Nuts`) }))
+    const category = await db.category.findFirstOrThrow({ where: { slug: key(`${prefix} Pinned`) } })
+    // Renamed in Admin since: an unpinned entry would now create a second list; a pinned one can't.
+    const pinned = list({ categorySlug: category.slug, adminEditedAt: null, title: `${prefix} Renamed Elsewhere`, values: [...values(`${prefix} Nuts`), `${prefix} Seeds`] })
+    const report = await importer.importList(pinned)
+    expect(report).toMatchObject({ status: 'SUCCESS', categoryCreated: false, categorySlug: category.slug, choicesAdded: 1 })
+    expect(await db.category.count({ where: { slug: key(`${prefix} Renamed Elsewhere`) } })).toBe(0)
+    const missing = await importer.importList(list({ categorySlug: `${prefix}-no-such-list`, title: `${prefix} Ghost` }))
+    expect(missing.status).toBe('ERROR')
+    expect(missing.errors.join()).toMatch(/Pinned list .* does not exist/)
+    expect(await db.category.count({ where: { slug: key(`${prefix} Ghost`) } })).toBe(0)
+  })
+
+  it('a pinned entry adds to an Admin-edited list only while synced with its latest edit', async () => {
+    await importer.importList(list({ title: `${prefix} Synced`, values: values(`${prefix} Olives`) }))
+    const category = await db.category.findFirstOrThrow({ where: { slug: key(`${prefix} Synced`) } })
+    const stamp = '2026-09-29T08:00:00.000Z'
+    await db.category.update({ where: { id: category.id }, data: { metadata: { adminEditedAt: stamp } } })
+    const grow = (marker: string | null, extra: string) => list({ categorySlug: category.slug, adminEditedAt: marker, title: `${prefix} Synced`, values: [...values(`${prefix} Olives`), extra] })
+
+    const synced = await importer.importList(grow(stamp, `${prefix} Figs`))
+    expect(synced).toMatchObject({ status: 'SUCCESS', choicesAdded: 1 })
+    expect(synced.stale).toBeFalsy()
+
+    // Another Admin edit after the sync: the entry is stale and adds nothing.
+    await db.category.update({ where: { id: category.id }, data: { metadata: { adminEditedAt: '2026-09-30T08:00:00.000Z' } } })
+    for (const marker of [stamp, null]) {
+      const stale = await importer.importList(grow(marker, `${prefix} Dates`))
+      expect(stale).toMatchObject({ status: 'SUCCESS', choicesAdded: 0, stale: true })
+      expect(stale.warnings.join()).toMatch(/stale: .*Re-sync/)
+    }
+    expect(await db.entity.count({ where: { entityTypeId: type.id, canonicalName: `${prefix} Dates` } })).toBe(0)
+  })
+
   it('ignores a legacy pool: entity-type and still curates the list', async () => {
     await importer.importList({ ...list({ title: `${prefix} Broad` }), pool: 'entity-type' } as ListSeedInput)
     const category = await db.category.findFirstOrThrow({ where: { slug: key(`${prefix} Broad`) }, include: { _count: { select: { curatedEntities: true } } } })

@@ -48,7 +48,7 @@ function report() {
   const s = summary as any
   const lines = [`environment: ${envName} @ ${s.deployedCommit ?? '?'}${s.schema ? ', schema matches' : ''}`]
   const catalog = s.publish ?? s.validate
-  if (catalog) lines.push(`catalog:     ${catalog.lists} lists checked, ${catalog.newCategories} new categories, ${catalog.newEntities} new entities, ${catalog.errors} errors${s.publish ? '' : ' (validate only)'}`)
+  if (catalog) lines.push(`catalog:     ${catalog.lists} lists checked, ${catalog.newCategories} new categories, ${catalog.newEntities} new entities, ${catalog.errors} errors${catalog.stale ? `, ${catalog.stale} stale (re-sync with prod:list-stub)` : ''}${s.publish ? '' : ' (validate only)'}`)
   if (s.review) lines.push(`review:      ${s.review.applied} decisions applied, ${s.review.stillPending} still pending`)
   if (s.identify) lines.push(`identity:    ${s.identify.autoAccepted} accepted, ${s.identify.toReview} to review, ${s.identify.remaining} not yet checked${s.identify.stoppedEarly ? ' (rate-limited, resumes next run)' : ''}; ${s.identify.verified} already verified`)
   if (s.coversReview) lines.push(`cover picks: ${s.coversReview.applied} applied, ${s.coversReview.stillPending} still pending`)

@@ -9,6 +9,10 @@ const valueName = z.union([z.string(), z.object({ name: z.string() })]).transfor
 
 export const ListSeedInputV1 = z.object({
   schemaVersion: z.literal(1),
+  categorySlug: z.string().min(1).optional()
+    .describe('Code-written by `pnpm prod:list-stub`, never by AI: pins the entry to this existing list, whatever its title. Never creates a list'),
+  adminEditedAt: z.string().nullable().optional()
+    .describe('Code-written with categorySlug: the list\'s Admin edit stamp when the entry was synced from the database'),
   groupSlug: z.string().describe('Slug of the CategoryGroup (e.g. film-tv, music)'),
   createGroup: z.object({ label: z.string() }).optional()
     .describe('Only when groupSlug is new on purpose; otherwise an unknown group is an error'),
@@ -40,6 +44,8 @@ export type ImportReport = {
   expanded: string[]
   warnings: string[]
   errors: string[]
+  /** A pinned entry synced before the list's latest Admin edit: skipped until re-synced. */
+  stale?: boolean
 }
 
 // CategoryGroup slug -> SitePickGroup slug for auto-assignment.
@@ -96,9 +102,16 @@ export class ListImporterService {
         if (report.errors.length) return
 
         // Existing categories keep whatever admins have since edited.
-        // By slug, else by displayed title (older lists' slugs don't follow their titles: "Artists" is favorite-artists-all-time).
-        const existing = await tx.category.findFirst({ where: { slug: { in: [...new Set([key(data.title), legacyAsciiKey(data.title)])] } } })
-          ?? await tx.category.findFirst({ where: { shortLabel: data.title } })
+        // A pinned entry names its list exactly; otherwise by slug, else by displayed
+        // title (older lists' slugs don't follow their titles: "Artists" is favorite-artists-all-time).
+        const existing = data.categorySlug
+          ? await tx.category.findUnique({ where: { slug: data.categorySlug } })
+          : await tx.category.findFirst({ where: { slug: { in: [...new Set([key(data.title), legacyAsciiKey(data.title)])] } } })
+            ?? await tx.category.findFirst({ where: { shortLabel: data.title } })
+        if (data.categorySlug && !existing) {
+          report.errors.push(`Pinned list '${data.categorySlug}' does not exist; a pinned entry never creates a list`)
+          return
+        }
         if (existing) report.categorySlug = existing.slug
         report.categoryCreated = !existing
         // Reusing a same-titled category of another type would put this list's
@@ -120,9 +133,19 @@ export class ListImporterService {
         const expansions = await this.expansionTargets(tx, data, entityType?.id, names, resolved, report)
         if (report.errors.length) return
         // The database is the truth once an admin has edited a list (Admin → Lists):
-        // a file never re-adds values the admin removed. Report the difference instead.
-        const adminEditedAt = (existing?.metadata as any)?.adminEditedAt as string | undefined
-        if (existing && adminEditedAt) {
+        // a file never re-adds values the admin removed. A pinned entry may add values
+        // only while it is synced with the list's latest Admin edit (the stub copied the
+        // database after that edit, so anything new in the file is new, not a removal).
+        const adminEditedAt = ((existing?.metadata as any)?.adminEditedAt as string | undefined) ?? null
+        if (existing && data.categorySlug && (data.adminEditedAt ?? null) !== adminEditedAt) {
+          const missing = names.filter((n) => !offered.has(resolved.get(n) ?? ''))
+          report.stale = true
+          report.warnings.push(`stale: "${existing.shortLabel}" was edited in Admin (${adminEditedAt ?? 'reset'}) after this entry was synced (${data.adminEditedAt ?? 'never edited'}); not adding ${missing.length} value(s). Re-sync: pnpm prod:list-stub --list ${existing.slug}`)
+          report.choicesAdded = 0
+          report.entitiesCreated = []
+          return
+        }
+        if (existing && adminEditedAt && !data.categorySlug) {
           const missing = names.filter((n) => !offered.has(resolved.get(n) ?? ''))
           if (missing.length) report.warnings.push(`"${existing.shortLabel}" was edited in Admin (${adminEditedAt.slice(0, 10)}); file differs — not adding ${missing.length} value(s): ${missing.slice(0, 5).join(', ')}${missing.length > 5 ? ', …' : ''}`)
           report.choicesAdded = 0
