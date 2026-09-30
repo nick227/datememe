@@ -11,89 +11,108 @@ export type RankedOption = {
 }
 
 const CLOSE_RACE = 0.15
-
-export function firstPlacePercent(option: Pick<RankedOption, 'firstPlaceCount'>, takeCount: number) {
-  return takeCount > 0 ? Math.round((option.firstPlaceCount / takeCount) * 100) : 0
-}
+const COUNT_UNTIL = 10
 
 export function barFraction(score: number, leaderScore: number) {
   return leaderScore > 0 ? score / leaderScore : 0
 }
 
-function pointsAhead(lead: number, orderingMode: 'RANKED' | 'UNRANKED') {
-  const unit = orderingMode === 'RANKED' ? 'point' : 'pick'
-  return `${lead} ${unit}${lead === 1 ? '' : 's'}`
+function ordinal(n: number) {
+  const mod100 = n % 100
+  if (mod100 >= 11 && mod100 <= 13) return `${n}th`
+  switch (n % 10) {
+    case 1: return `${n}st`
+    case 2: return `${n}nd`
+    case 3: return `${n}rd`
+    default: return `${n}th`
+  }
+}
+
+function amount(count: number, total: number) {
+  if (total < COUNT_UNTIL) return String(count)
+  return `${Math.round((count / total) * 100)}%`
+}
+
+function peopleLine(takeCount: number) {
+  return takeCount === 1 ? '1 person ranked this' : `${takeCount} people ranked this`
 }
 
 export function trendSentence(option: Pick<RankedOption, 'rank' | 'previousRank'>) {
   if (option.previousRank == null) return 'New since yesterday'
-  if (option.previousRank > option.rank) return `↑ ${option.previousRank - option.rank} since yesterday`
-  if (option.previousRank < option.rank) return `↓ ${option.rank - option.previousRank} since yesterday`
+  const delta = option.previousRank - option.rank
+  if (delta > 0) return `Up ${delta} since yesterday`
+  if (delta < 0) return `Down ${-delta} since yesterday`
   return null
 }
 
-export function rankingHero(options: RankedOption[], takeCount: number, orderingMode: 'RANKED' | 'UNRANKED') {
-  const winner = options[0]
-  if (!winner) return null
-  const next = options[1]
-  const lead = next ? winner.score - next.score : null
-  const close = lead != null && winner.score > 0 && (lead <= 1 || lead / winner.score <= CLOSE_RACE)
-  const yours = options.find((option) => option.viewerRank === 1)
-  const marginLine = next == null || lead == null
-    ? null
-    : lead === 0
-      ? `Tied with ${next.name}`
-      : `${close ? 'Only ' : ''}${pointsAhead(lead, orderingMode)} ahead of ${next.name}`
-
-  return {
-    peopleLine: `${takeCount} ${takeCount === 1 ? 'person' : 'people'} ranked this`,
-    winnerName: winner.name,
-    firstPlaceLine: orderingMode === 'RANKED' ? `${firstPlacePercent(winner, takeCount)}% ranked it #1` : null,
-    marginLine,
-    trendLine: trendSentence(winner),
-    yoursLine: yoursLine(yours),
-    insights: insightLines(options, takeCount, orderingMode, winner),
-  }
+function raceLine(winner: RankedOption, next: RankedOption | undefined, takeCount: number) {
+  if (!next || takeCount <= 1) return null
+  if (winner.score === next.score) return `${winner.name} and ${next.name} are tied`
+  const lead = winner.score - next.score
+  const close = winner.score > 0 && (lead <= 1 || lead / winner.score <= CLOSE_RACE)
+  return close ? `${winner.name} just leads ${next.name}` : `${winner.name} leads ${next.name}`
 }
 
-function yoursLine(yours: RankedOption | undefined) {
-  if (!yours) return null
-  if (yours.rank === 1) return 'You agree with the crowd'
-  return `Your #1: ${yours.name} · site #${yours.rank}`
+function youLine(option: RankedOption, takeCount: number, surface: 'row' | 'sheet') {
+  if (option.viewerRank == null || takeCount <= 1) return null
+  if (option.viewerRank === 1) {
+    if (surface === 'row' && option.rank === 1) return null
+    return 'Your first pick'
+  }
+  if (option.viewerRank === option.rank) return 'Same as you'
+  return `You ranked it ${ordinal(option.viewerRank)}`
 }
 
-function insightLines(options: RankedOption[], takeCount: number, orderingMode: 'RANKED' | 'UNRANKED', winner: RankedOption) {
-  const lines: string[] = []
-  if (orderingMode === 'RANKED') {
-    const mostFirst = [...options].sort((a, b) => b.firstPlaceCount - a.firstPlaceCount || a.rank - b.rank)[0]
-    if (mostFirst && mostFirst.id !== winner.id && mostFirst.firstPlaceCount > winner.firstPlaceCount) {
-      lines.push(`Most #1 votes: ${mostFirst.name}`)
-    }
-    if (takeCount >= 3 && winner.pickPercent >= 50 && firstPlacePercent(winner, takeCount) >= 25) {
-      lines.push(`Consensus pick: ${winner.name}`)
-    }
-  }
-  const rising = options.find((option) => option.id !== winner.id && option.previousRank != null && option.previousRank - option.rank >= 3)
-  if (rising && rising.previousRank != null) lines.push(`Rising: ${rising.name} ↑ ${rising.previousRank - rising.rank}`)
-  const challenger = options.find((option) => option.id !== winner.id && option.previousRank == null && option.rank <= 5)
-  if (challenger) lines.push(`New: ${challenger.name}`)
-  return lines.slice(0, 3)
+export function crowdLine(option: RankedOption, takeCount: number, orderingMode: 'RANKED' | 'UNRANKED') {
+  if (takeCount <= 1 || option.pickCount === 0) return null
+  const picked = amount(option.pickCount, takeCount)
+  const first = amount(option.firstPlaceCount, takeCount)
+  if (orderingMode === 'UNRANKED' || option.firstPlaceCount === 0) return `Of ${takeCount}, ${picked} picked it`
+  if (option.firstPlaceCount === option.pickCount) return `Of ${takeCount}, ${first} put it first`
+  return `Of ${takeCount}, ${picked} picked it and ${first} put it first`
 }
 
 export function barCaption(option: RankedOption, takeCount: number, orderingMode: 'RANKED' | 'UNRANKED') {
-  const parts = [`${option.pickPercent}% picked it`]
-  if (orderingMode === 'RANKED') parts.push(`${firstPlacePercent(option, takeCount)}% ranked it #1`)
-  if (option.viewerRank != null) parts.push(`You: #${option.viewerRank}`)
-  return parts.join(' · ')
+  const parts = [crowdLine(option, takeCount, orderingMode), youLine(option, takeCount, 'row')].filter((line): line is string => line != null)
+  return parts.length ? parts.join(' · ') : null
+}
+
+export function rankingSummary(options: RankedOption[], takeCount: number, orderingMode: 'RANKED' | 'UNRANKED') {
+  const winner = options[0]
+  if (!winner) return []
+  const lines = [peopleLine(takeCount)]
+  const race = raceLine(winner, options[1], takeCount)
+  if (race) lines.push(race)
+  const trend = trendSentence(winner)
+  if (trend && winner.previousRank !== winner.rank) lines.push(trend)
+  const yours = options.find((option) => option.viewerRank === 1)
+  if (yours && takeCount <= 1) lines.push('This is your ranking')
+  else if (yours?.rank === 1) lines.push('Your first pick is in the lead')
+  else if (yours) lines.push(`Your first pick, ${yours.name}, placed ${ordinal(yours.rank)}`)
+  const aside = asideLine(options, takeCount, orderingMode, winner)
+  if (aside) lines.push(aside)
+  return lines
+}
+
+function asideLine(options: RankedOption[], takeCount: number, orderingMode: 'RANKED' | 'UNRANKED', winner: RankedOption) {
+  if (orderingMode === 'RANKED' && takeCount > 1) {
+    const mostFirst = [...options].sort((a, b) => b.firstPlaceCount - a.firstPlaceCount || a.rank - b.rank)[0]
+    if (mostFirst && mostFirst.id !== winner.id && mostFirst.firstPlaceCount > winner.firstPlaceCount) {
+      return `Of ${takeCount}, ${amount(mostFirst.firstPlaceCount, takeCount)} put ${mostFirst.name} first`
+    }
+  }
+  const rising = options.find((option) => option.id !== winner.id && option.previousRank != null && option.previousRank - option.rank >= 3)
+  if (rising?.previousRank != null) return `${rising.name} climbed ${rising.previousRank - rising.rank} places since yesterday`
+  const challenger = options.find((option) => option.id !== winner.id && option.previousRank == null && option.rank <= 5)
+  if (challenger) return `${challenger.name} is new since yesterday`
+  return null
 }
 
 export function optionSheetLines(option: RankedOption, takeCount: number, orderingMode: 'RANKED' | 'UNRANKED') {
-  const points = `${option.score} ${option.score === 1 ? 'point' : 'points'}`
-  const lines = [`#${option.rank} overall · ${points}`, `${option.pickPercent}% picked it`]
-  if (orderingMode === 'RANKED') lines.push(`${firstPlacePercent(option, takeCount)}% put it #1`)
+  if (takeCount <= 1) {
+    const place = option.rank === 1 ? 'First on the only ranking' : `${ordinal(option.rank)} on the only ranking`
+    return [place]
+  }
   const trend = trendSentence(option)
-  if (trend && option.previousRank !== option.rank) lines.push(trend)
-  if (option.viewerRank != null) lines.push(`Your rank: #${option.viewerRank}`)
-  lines.push(`${option.pickCount} ${option.pickCount === 1 ? 'person' : 'people'} picked it`)
-  return lines
+  return [crowdLine(option, takeCount, orderingMode), trend && option.previousRank !== option.rank ? trend : null, youLine(option, takeCount, 'sheet')].filter((line): line is string => line != null)
 }

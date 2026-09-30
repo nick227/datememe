@@ -16,7 +16,7 @@ export function RankingOptionSheet({ option, takeCount, orderingMode, onClose }:
     <AnimatedSheet testID="poll-results.option" visible={option != null} onClose={onClose} sheetStyle={styles.sheet}>
       {option ? (
         <View>
-          <Typography variant="title" style={styles.name}>{option.name}</Typography>
+          <Typography variant="heading" style={styles.name}>{option.name}</Typography>
           {optionSheetLines(option, takeCount, orderingMode).map((line) => (
             <Typography key={line} variant="body" style={styles.line}>{line}</Typography>
           ))}
@@ -40,7 +40,7 @@ const styles = StyleSheet.create({
     paddingTop: spacing.xl,
     paddingBottom: spacing.xxl,
   },
-  name: { textTransform: 'uppercase', marginBottom: spacing.md },
+  name: { marginBottom: spacing.md },
   line: { marginBottom: spacing.xs },
   close: { marginTop: spacing.lg },
   closeText: { letterSpacing: 0, textTransform: 'none', color: colors.ink },

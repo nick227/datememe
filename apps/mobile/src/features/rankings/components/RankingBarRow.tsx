@@ -13,18 +13,18 @@ type Props = {
 
 export function RankingBarRow({ option, leaderScore, takeCount, orderingMode, onPress }: Props) {
   const fraction = barFraction(option.score, leaderScore)
+  const caption = barCaption(option, takeCount, orderingMode)
   return (
     <Pressable testID={`poll-results.row.${option.rank}`} onPress={onPress} style={styles.row} accessibilityRole="button">
       <View style={styles.top}>
         <Typography variant="label" style={styles.rank}>#{option.rank}</Typography>
         <Typography variant="heading" style={styles.name} numberOfLines={1}>{option.name}</Typography>
-        <Typography variant="bodyMuted" style={styles.points}>{option.score}</Typography>
       </View>
       <View style={styles.track}>
         <View style={[styles.fill, { flex: fraction }]} />
         <View style={{ flex: Math.max(1 - fraction, 0) }} />
       </View>
-      <Typography variant="bodyMuted" style={styles.caption}>{barCaption(option, takeCount, orderingMode)}</Typography>
+      {caption ? <Typography variant="bodyMuted" style={styles.caption}>{caption}</Typography> : null}
     </Pressable>
   )
 }
@@ -34,8 +34,7 @@ const styles = StyleSheet.create({
   top: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   rank: { width: 36, letterSpacing: 0, textTransform: 'none', color: colors.inkMuted },
   name: { flex: 1, fontSize: 16 },
-  points: { fontVariant: ['tabular-nums'] },
-  track: { height: 8, flexDirection: 'row', backgroundColor: colors.surfaceMuted, marginLeft: 44 },
-  fill: { height: 8, backgroundColor: colors.ink },
+  track: { height: 12, flexDirection: 'row', backgroundColor: colors.surfaceMuted, marginLeft: 44 },
+  fill: { height: 12, backgroundColor: colors.ink },
   caption: { marginLeft: 44, fontSize: 13 },
 })

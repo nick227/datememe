@@ -9,7 +9,7 @@ import { Skeleton } from '../../../ui/Skeleton'
 import { Typography } from '../../../ui/Typography'
 import { PollHeader } from '../../lists/components/PollHeader'
 import { openPoll } from '../../../navigation/openPoll'
-import { colors, spacing } from '../../../theme'
+import { spacing } from '../../../theme'
 import type { PollParams } from '../../../navigation/types'
 import { RankingHero } from '../components/RankingHero'
 import { RankingBarRow } from '../components/RankingBarRow'
@@ -49,9 +49,6 @@ export function PollResultsScreen({ route, navigation }: Props) {
       {data.isPublished ? (
         <RankingHero options={options} takeCount={takeCount} orderingMode={orderingMode} />
       ) : null}
-      {data.isPublished && orderingMode === 'RANKED' ? (
-        <Typography variant="bodyMuted" style={styles.note}>Ranked lists award more points to higher positions.</Typography>
-      ) : null}
     </View>
   ) : null
 
@@ -59,7 +56,6 @@ export function PollResultsScreen({ route, navigation }: Props) {
     <ScreenContainer testID="screen.poll-results" width="narrow">
       <PollHeader
         testID="poll-results.header"
-        takeCount={data?.takeCount ?? data?.category.popularityCount}
         actionLabel={data?.viewerHasTaken ? 'Edit answers' : 'Take this list'}
         onBack={() => navigation.goBack()}
         onAction={openEditor}
@@ -105,5 +101,4 @@ export function PollResultsScreen({ route, navigation }: Props) {
 const styles = StyleSheet.create({
   title: { marginTop: spacing.sm, marginBottom: spacing.md },
   header: { gap: spacing.sm },
-  note: { marginBottom: spacing.sm, fontSize: 13, color: colors.inkMuted },
 })
