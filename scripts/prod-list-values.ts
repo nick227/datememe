@@ -30,7 +30,8 @@ const USAGE = `usage: pnpm prod:list-values [options]
   --group <slug>         CategoryGroup slug, exact (alias --group-slug; repeatable)
   --type <slug>          EntityType slug, exact (repeatable)
   --min N / --max N      value-count range
-  --below-floor          only lists with values < floor
+  --below-floor          only lists with values < floor (their depth target)
+  --shallow              only lists below the minimum (value-floor.json; the builder shows 20 before search)
   --floor N              override every list's floor for this run
   --sort values|gap|takes|title   (default values)
   --limit N              print at most N rows (summary still counts all)
@@ -45,12 +46,12 @@ const USAGE = `usage: pnpm prod:list-values [options]
 type Opts = {
   lists: string[]; groups: string[]; types: string[]
   min?: number; max?: number; floor?: number; limit?: number
-  belowFloor: boolean; includeInactive: boolean; values: boolean; json: boolean; snapshot: boolean; selftest: boolean; local: boolean
+  belowFloor: boolean; shallow: boolean; includeInactive: boolean; values: boolean; json: boolean; snapshot: boolean; selftest: boolean; local: boolean
   sort: 'values' | 'gap' | 'takes' | 'title'; url?: string
 }
 
 function parseArgs(argv: string[]): Opts {
-  const o: Opts = { lists: [], groups: [], types: [], belowFloor: false, includeInactive: false, values: false, json: false, snapshot: false, selftest: false, local: false, sort: 'values' }
+  const o: Opts = { lists: [], groups: [], types: [], belowFloor: false, shallow: false, includeInactive: false, values: false, json: false, snapshot: false, selftest: false, local: false, sort: 'values' }
   const args = argv.filter((a) => a !== '--')
   const int = (flag: string, v: string | undefined) => {
     if (v === undefined || !/^\d+$/.test(v)) die(`${flag} needs a whole number\n${USAGE}`)
@@ -74,6 +75,7 @@ function parseArgs(argv: string[]): Opts {
       }
       case '--url': o.url = next(); break
       case '--below-floor': o.belowFloor = true; break
+      case '--shallow': o.shallow = true; break
       case '--include-inactive': o.includeInactive = true; break
       case '--values': o.values = true; break
       case '--json': o.json = true; break
@@ -111,18 +113,19 @@ const LIST_SQL = `
   LEFT JOIN Entity e ON e.id = ce.entityId
   GROUP BY c.id, c.slug, c.shortLabel, c.isActive, c.maxItems, c.popularityCount, g.slug, g.label, t.slug, c.metadata`
 
-type FloorConfig = { default: number; groups: Record<string, number>; lists: Record<string, number> }
+type FloorConfig = { minimum: number; default: number; groups: Record<string, number>; lists: Record<string, number> }
 
 function readFloors(): FloorConfig {
   const raw = JSON.parse(readFileSync(FLOOR_FILE, 'utf8'))
-  const cfg: FloorConfig = { default: raw.default, groups: raw.groups ?? {}, lists: raw.lists ?? {} }
+  const cfg: FloorConfig = { minimum: raw.minimum ?? 0, default: raw.default, groups: raw.groups ?? {}, lists: raw.lists ?? {} }
   const ok = (n: unknown) => Number.isInteger(n) && (n as number) >= 0
+  if (!ok(cfg.minimum)) die(`${FLOOR_FILE}: "minimum" must be a whole number`)
   if (!ok(cfg.default)) die(`${FLOOR_FILE}: "default" must be a whole number`)
   for (const [k, v] of [...Object.entries(cfg.groups), ...Object.entries(cfg.lists)]) if (!ok(v)) die(`${FLOOR_FILE}: "${k}" must be a whole number`)
   return cfg
 }
 
-function stats(rows: Row[]) {
+function stats(rows: Row[], minimum: number) {
   const counts = rows.map((r) => r.values).sort((a, b) => a - b)
   const total = counts.reduce((s, n) => s + n, 0)
   const mid = counts.length >> 1
@@ -133,6 +136,7 @@ function stats(rows: Row[]) {
     median: !counts.length ? 0 : counts.length % 2 ? counts[mid]! : (counts[mid - 1]! + counts[mid]!) / 2,
     min: counts[0] ?? 0,
     max: counts[counts.length - 1] ?? 0,
+    shallow: rows.filter((r) => r.values < minimum).length,
     belowFloor: rows.filter((r) => r.gap > 0).length,
     gapTotal: rows.reduce((s, r) => s + r.gap, 0),
   }
@@ -208,7 +212,8 @@ async function main() {
       && (!o.types.length || o.types.includes(r.typeSlug))
       && (o.min === undefined || r.values >= o.min)
       && (o.max === undefined || r.values <= o.max)
-      && (!o.belowFloor || r.gap > 0))
+      && (!o.belowFloor || r.gap > 0)
+      && (!o.shallow || r.values < floors.minimum))
     const cmp: Record<Opts['sort'], (a: Row, b: Row) => number> = {
       values: (a, b) => a.values - b.values || a.title.localeCompare(b.title),
       gap: (a, b) => b.gap - a.gap || a.title.localeCompare(b.title),
@@ -240,11 +245,11 @@ async function main() {
     await conn.end()
   }
 
-  const s = stats(active)
+  const s = stats(active, floors.minimum)
   const shown = matched.slice(0, o.limit ?? matched.length)
   const strip = ({ id: _id, ...r }: Row) => r
   const n = (x: number) => x.toLocaleString('en-US')
-  console.log(`LISTS ${s.lists}  VALUES ${n(s.values)}  AVG ${s.avg.toFixed(2)}  MEDIAN ${s.median}  MIN ${s.min}  MAX ${s.max}  BELOW_FLOOR ${s.belowFloor}  GAP ${n(s.gapTotal)}  (active lists; floor default ${o.floor ?? floors.default})`)
+  console.log(`LISTS ${s.lists}  VALUES ${n(s.values)}  AVG ${s.avg.toFixed(2)}  MEDIAN ${s.median}  MIN ${s.min}  MAX ${s.max}  SHALLOW ${s.shallow}  BELOW_FLOOR ${s.belowFloor}  GAP ${n(s.gapTotal)}  (active lists; minimum ${floors.minimum}, floor default ${o.floor ?? floors.default})`)
 
   if (o.json) {
     console.log(JSON.stringify(shown.map((r) => {
@@ -262,14 +267,14 @@ async function main() {
   }
   if (shown.length < matched.length) console.log(`… ${matched.length - shown.length} more (raise --limit)`)
 
-  const marker = { target: target.name, lists: s.lists, values: s.values, avg: s.avg, median: s.median, min: s.min, max: s.max, belowFloor: s.belowFloor, gap: s.gapTotal, floor: o.floor ?? floors.default, matched: matched.length, shown: shown.length }
+  const marker = { target: target.name, lists: s.lists, values: s.values, avg: s.avg, median: s.median, min: s.min, max: s.max, shallow: s.shallow, minimum: floors.minimum, belowFloor: s.belowFloor, gap: s.gapTotal, floor: o.floor ?? floors.default, matched: matched.length, shown: shown.length }
 
   if (o.snapshot) {
     const dir = resolve(ROOT, 'catalog/review')
     mkdirSync(dir, { recursive: true })
     const at = new Date().toISOString()
     writeFileSync(resolve(dir, `list-values.${target.name}.json`), JSON.stringify({ at, summary: s, floors, lists: active.map(strip) }, null, 2) + '\n')
-    appendFileSync(resolve(dir, `list-values.${target.name}.history.jsonl`), JSON.stringify({ at, ...s, floor: floors.default }) + '\n')
+    appendFileSync(resolve(dir, `list-values.${target.name}.history.jsonl`), JSON.stringify({ at, ...s, minimum: floors.minimum, floor: floors.default }) + '\n')
     console.error(`snapshot: catalog/review/list-values.${target.name}.json (+ .history.jsonl)`)
   }
   console.log(`LIST_VALUES ${JSON.stringify(marker)}`)

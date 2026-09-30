@@ -1,6 +1,30 @@
 {
-  "$comment": "Target value count per list, read by `pnpm prod:list-values`. Precedence: --floor N, then lists[slug], then groups[slug], then default. Keys are Category slugs (lists) and CategoryGroup slugs (groups). The list builder shows the first 20 values before search, hence the default.",
-  "default": 20,
-  "groups": {},
-  "lists": {}
+  "$comment": "Two layers, read by `pnpm prod:list-values`. `minimum`: the presentation floor — the list builder shows 20 values before search, so a list below it is shallow. Floors (`default`, `groups`, `lists`): the catalog depth target that `gap` measures. Floor precedence: --floor N, then lists[slug], then groups[slug], then default. Keys are Category slugs (lists) and CategoryGroup slugs (groups). Compatibility, lifestyle, money, home, career and travel lists use the default 30; entertainment and taste domains 40; broad canonical lists 50. A list whose domain honestly can't reach its floor gets its own lower entry here rather than padded values.",
+  "minimum": 20,
+  "default": 30,
+  "groups": {
+    "film-tv": 40,
+    "music": 40,
+    "food-drink": 40,
+    "literature": 40,
+    "gaming": 40,
+    "podcasts": 40,
+    "tabletop": 40,
+    "sports": 40,
+    "creators": 40,
+    "craft": 40
+  },
+  "lists": {
+    "top-movies": 50,
+    "top-tv-shows": 50,
+    "favorite-books": 50,
+    "favorite-authors": 50,
+    "favorite-artists-all-time": 50,
+    "top-albums": 50,
+    "favorite-video-games": 50,
+    "top-podcasts": 50,
+    "favorite-board-games": 50,
+    "favorite-sports-teams": 50,
+    "favorite-youtubers": 50
+  }
 }

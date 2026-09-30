@@ -7,18 +7,19 @@ How an AI agent inspects how many values each list offers, against a floor. **Ph
 - **values** = the list's `CategoryEntity` rows that are not excluded, whose entity is `APPROVED` and not merged. Pending user submissions are shown as `pending:N` and never counted.
 - **floor** = target value count. **gap** = `max(0, floor - values)`.
 
-## Floor
-`catalog/value-floor.json` (committed). Precedence, first match wins:
-1. `--floor N` on the command line
-2. `lists[<category slug>]`
-3. `groups[<group slug>]`
-4. `default` (20 — the list builder shows 20 values before search)
+## Minimum and floors
+`catalog/value-floor.json` (committed) has two layers:
+- **`minimum` (20): the presentation floor.** The list builder shows the first 20 values before search, so a list below 20 is **shallow**. Shallow lists come first. Because values are appended, a list's first 20 are its strongest; keep new additions strong enough to deserve their place if they end up in the first 20.
+- **Floors: the catalog depth target** that `gap` measures. `default` 30 covers compatibility, lifestyle, money, home, career and travel. `groups` sets 40 for entertainment and taste domains (film-tv, music, food-drink, literature, gaming, podcasts, tabletop, sports, creators, craft). `lists` sets 50 for broad canonical lists (Top Movies, Top TV Shows, Books, Authors, Artists, Albums, Video Games, Podcasts, Board Games, Sports Teams, YouTubers).
 
-The production catalog audit still uses its own minimum of 8 (`needs-values` in `apps/worker/src/lib/catalogAudit.ts`); it does not read this file yet.
+Floor precedence, first match wins: `--floor N`, then `lists[<category slug>]`, then `groups[<group slug>]`, then `default`.
+
+**Never pad a list to hit its floor.** When a domain honestly runs out of good answers (seasons, love languages, a stance on substances), give that list its own lower entry under `lists` and move on.
 
 ## Commands
 ```bash
 pnpm prod:list-values                                      # summary + every active list
+pnpm prod:list-values --shallow --sort gap                # below the minimum of 20: fix these first
 pnpm prod:list-values --below-floor --sort gap --limit 20
 pnpm prod:list-values --list "Top Movies"                  # slug, or title substring; repeatable
 pnpm prod:list-values --group dating-relationships --max 15
@@ -34,10 +35,10 @@ Filters combine (AND). Unknown options, group slugs and type slugs are errors, n
 ## Reading the output
 ```
 target=production proxy=altaria.proxy.rlwy.net:52742 readonly=verified
-LISTS 193  VALUES 2,486  AVG 12.88  MEDIAN 12  MIN 8  MAX 87  BELOW_FLOOR 184  GAP 1,506  (active lists; floor default 20)
+LISTS 193  VALUES 3,438  AVG 17.81  MEDIAN 20  MIN 8  MAX 87  SHALLOW 67  BELOW_FLOOR 192  GAP 3,249  (active lists; minimum 20, floor default 30)
 values  floor  gap  takes  group       title               notes
 8       20     12   2      food-drink  Grocery Stores      no-file
-LIST_VALUES {"target":"production","lists":193,...,"matched":2,"shown":2}
+LIST_VALUES {"target":"production","lists":193,...,"shallow":67,"minimum":20,...,"matched":2,"shown":2}
 ```
 - The summary line always covers **all active lists**; the table shows only the matches.
 - **Token rule:** read the final `LIST_VALUES {…}` line first. Ask for `--values` only for the exact lists you are about to work on.
