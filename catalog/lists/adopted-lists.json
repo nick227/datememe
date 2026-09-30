@@ -138,7 +138,8 @@
       "Wendover Productions",
       "Real Engineering",
       "Steve Mould",
-      "Sabine Hossenfelder"
+      "Sabine Hossenfelder",
+      "Johnny Harris"
     ],
     "isAbstract": false
   },
@@ -362,7 +363,18 @@
       "Peacock",
       "Prime Video",
       "Twitch",
-      "YouTube Premium"
+      "YouTube Premium",
+      "YouTube",
+      "Paramount+",
+      "Apple TV",
+      "YouTube TV",
+      "Tubi",
+      "Pluto TV",
+      "Fubo",
+      "Sling TV",
+      "Shudder",
+      "Mubi",
+      "Criterion Channel"
     ],
     "isAbstract": false
   },
@@ -1109,7 +1121,10 @@
       "R.E.M.",
       "The Smashing Pumpkins",
       "Weezer",
-      "Jay-Z"
+      "Jay-Z",
+      "Red Hot Chili Peppers",
+      "Rage Against the Machine",
+      "Spice Girls"
     ],
     "isAbstract": false
   },
@@ -1134,7 +1149,18 @@
       "Kendrick Lamar",
       "Nas",
       "Tyler, the Creator",
-      "Wu-Tang Clan"
+      "Wu-Tang Clan",
+      "Eminem",
+      "Tupac Shakur",
+      "The Notorious B.I.G.",
+      "Lil Wayne",
+      "Dr. Dre",
+      "Snoop Dogg",
+      "Missy Elliott",
+      "Nicki Minaj",
+      "Travis Scott",
+      "A Tribe Called Quest",
+      "Lauryn Hill"
     ],
     "isAbstract": false
   },
@@ -1387,7 +1413,16 @@
       "Safari",
       "Safari (Mobile)",
       "Tor Browser",
-      "Vivaldi"
+      "Vivaldi",
+      "Samsung Internet",
+      "Opera GX",
+      "Chromium",
+      "Zen Browser",
+      "Dia",
+      "ChatGPT Atlas",
+      "Comet",
+      "LibreWolf",
+      "Firefox Focus"
     ],
     "isAbstract": false
   },
