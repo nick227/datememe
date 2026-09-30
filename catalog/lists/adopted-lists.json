@@ -23,7 +23,15 @@
       "Pet-Friendly Office",
       "Remote Work",
       "Stock Options",
-      "Unlimited PTO"
+      "Unlimited PTO",
+      "Parental Leave",
+      "Annual Bonus",
+      "Learning Budget",
+      "Home Office Stipend",
+      "Mental Health Days",
+      "Wellness Stipend",
+      "Sabbatical",
+      "Casual Dress Code"
     ],
     "isAbstract": true
   },
@@ -76,7 +84,15 @@
       "Renaissance",
       "Rococo",
       "Romanticism",
-      "Surrealism"
+      "Surrealism",
+      "Art Nouveau",
+      "Art Deco",
+      "Street Art",
+      "Anime",
+      "Photorealism",
+      "Gothic",
+      "Ukiyo-e",
+      "Dada"
     ],
     "isAbstract": true
   },
@@ -350,7 +366,9 @@
       "Sofia Coppola",
       "Stanley Kubrick",
       "Steven Spielberg",
-      "Wes Anderson"
+      "Wes Anderson",
+      "Hayao Miyazaki",
+      "Spike Lee"
     ],
     "isAbstract": false
   },
@@ -405,7 +423,19 @@
       "Safeway",
       "Target",
       "Trader Joe's",
-      "Whole Foods"
+      "Whole Foods",
+      "Walmart",
+      "Publix",
+      "Wegmans",
+      "Sam's Club",
+      "Sprouts Farmers Market",
+      "Albertsons",
+      "Meijer",
+      "Hy-Vee",
+      "Food Lion",
+      "Stop & Shop",
+      "WinCo Foods",
+      "Erewhon"
     ],
     "isAbstract": false
   },
@@ -488,7 +518,12 @@
       "Pineapple",
       "Prosciutto",
       "Sausage",
-      "Spinach"
+      "Spinach",
+      "Ham",
+      "Chicken",
+      "Tomatoes",
+      "Ricotta",
+      "Hot honey"
     ],
     "isAbstract": true
   },
@@ -544,7 +579,17 @@
       "Mashed Potatoes",
       "Pizza",
       "Ramen",
-      "Tacos"
+      "Tacos",
+      "Chicken Noodle Soup",
+      "Lasagna",
+      "Pancakes",
+      "Chili",
+      "Chicken Pot Pie",
+      "Dumplings",
+      "Pho",
+      "Meatloaf",
+      "Biscuits and Gravy",
+      "Cookies"
     ],
     "isAbstract": false
   },
@@ -672,7 +717,18 @@
       "LA Fitness",
       "OrangeTheory",
       "Planet Fitness",
-      "YMCA"
+      "YMCA",
+      "Life Time",
+      "Blink Fitness",
+      "CrossFit",
+      "F45 Training",
+      "SoulCycle",
+      "Barry's",
+      "Club Pilates",
+      "Pure Barre",
+      "Snap Fitness",
+      "EoS Fitness",
+      "Chuze Fitness"
     ],
     "isAbstract": false
   },
@@ -724,7 +780,17 @@
       "Modern Farmhouse",
       "Rustic",
       "Scandinavian",
-      "Traditional"
+      "Traditional",
+      "Japandi",
+      "Art Deco",
+      "Contemporary",
+      "Maximalist",
+      "Mediterranean",
+      "Transitional",
+      "Shabby Chic",
+      "Wabi-Sabi",
+      "Hollywood Regency",
+      "Cottagecore"
     ],
     "isAbstract": false
   },
@@ -777,7 +843,17 @@
       "Leo Tolstoy",
       "Mark Twain",
       "Stephen King",
-      "Toni Morrison"
+      "Toni Morrison",
+      "Ernest Hemingway",
+      "George Orwell",
+      "J.R.R. Tolkien",
+      "F. Scott Fitzgerald",
+      "Haruki Murakami",
+      "Gabriel García Márquez",
+      "Virginia Woolf",
+      "Maya Angelou",
+      "Neil Gaiman",
+      "Colleen Hoover"
     ],
     "isAbstract": false
   },
@@ -862,7 +938,19 @@
       "Non-fiction",
       "Romance",
       "Science Fiction",
-      "Thriller"
+      "Thriller",
+      "Literary Fiction",
+      "Young Adult",
+      "Memoir",
+      "True Crime",
+      "Classics",
+      "Self-Help",
+      "Dystopian",
+      "Biography",
+      "Graphic Novels",
+      "Romantasy",
+      "Poetry",
+      "Humor"
     ],
     "isAbstract": true
   },
@@ -1108,7 +1196,10 @@
       "New York Yankees",
       "Real Madrid",
       "Scuderia Ferrari",
-      "Toronto Maple Leafs"
+      "Toronto Maple Leafs",
+      "Kansas City Chiefs",
+      "Liverpool FC",
+      "Pittsburgh Steelers"
     ],
     "isAbstract": false
   },
@@ -1171,7 +1262,18 @@
       "Snapchat",
       "TikTok",
       "Twitter / X",
-      "YouTube"
+      "YouTube",
+      "WhatsApp",
+      "Discord",
+      "Threads",
+      "Twitch",
+      "Telegram",
+      "Bluesky",
+      "Tumblr",
+      "BeReal",
+      "Strava",
+      "Letterboxd",
+      "Goodreads"
     ],
     "isAbstract": false
   },
@@ -1257,7 +1359,15 @@
       "New Zealand",
       "Peru",
       "South Africa",
-      "Thailand"
+      "Thailand",
+      "Spain",
+      "Mexico",
+      "Portugal",
+      "Costa Rica",
+      "Morocco",
+      "Norway",
+      "Egypt",
+      "Indonesia"
     ],
     "isAbstract": false
   },
@@ -1290,7 +1400,11 @@
       "Sequoia",
       "Yellowstone",
       "Yosemite",
-      "Zion"
+      "Zion",
+      "Grand Teton",
+      "Bryce Canyon",
+      "Shenandoah",
+      "Hawaii Volcanoes"
     ],
     "isAbstract": false
   }

@@ -51,9 +51,11 @@
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "favorite-music-festivals",
+    "adminEditedAt": null,
     "groupSlug": "music",
     "entityTypeSlug": "music-festival",
-    "title": "Favorite Music Festivals",
+    "title": "Music Festivals",
     "prompt": "What are your dream music festivals to attend?",
     "axes": [
       "music",
@@ -70,7 +72,17 @@
       "Ultra Music Festival",
       "EDC",
       "Reading and Leeds",
-      "Primavera Sound"
+      "Primavera Sound",
+      "SXSW",
+      "Burning Man",
+      "Rolling Loud",
+      "Pitchfork",
+      "Governors Ball",
+      "Outside Lands",
+      "Stagecoach",
+      "Electric Forest",
+      "Roskilde",
+      "Fuji Rock"
     ],
     "isAbstract": false
   },
@@ -101,9 +113,11 @@
   },
   {
     "schemaVersion": 1,
-    "groupSlug": "film-tv",
+    "categorySlug": "favorite-youtubers",
+    "adminEditedAt": null,
+    "groupSlug": "creators",
     "entityTypeSlug": "youtuber",
-    "title": "Favorite YouTubers",
+    "title": "YouTubers",
     "prompt": "Who are your favorite YouTube creators?",
     "axes": [
       "entertainment",
@@ -120,7 +134,17 @@
       "Logan Paul",
       "Emma Chamberlain",
       "Casey Neistat",
-      "Ryan Higa"
+      "Ryan Higa",
+      "3Blue1Brown",
+      "Tom Scott",
+      "SmarterEveryDay",
+      "Kurzgesagt",
+      "Linus Tech Tips",
+      "Mark Rober",
+      "Veritasium",
+      "Rhett & Link",
+      "Smosh",
+      "Philip DeFranco"
     ],
     "isAbstract": false
   },

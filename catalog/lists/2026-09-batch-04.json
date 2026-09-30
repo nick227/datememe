@@ -24,9 +24,11 @@
   },
   {
     "schemaVersion": 1,
-    "groupSlug": "lifestyle-hobbies",
+    "categorySlug": "favorite-game-consoles",
+    "adminEditedAt": null,
+    "groupSlug": "gaming",
     "entityTypeSlug": "game-console",
-    "title": "Favorite Game Consoles",
+    "title": "Game Consoles",
     "prompt": "What are the greatest video game consoles ever?",
     "axes": [
       "gaming",
@@ -43,7 +45,17 @@
       "GameCube",
       "Sega Genesis",
       "Game Boy Advance",
-      "Xbox One"
+      "Xbox One",
+      "Super Nintendo (SNES)",
+      "Xbox Series X",
+      "PC",
+      "PlayStation 4",
+      "Nintendo Wii",
+      "Nintendo Entertainment System (NES)",
+      "PlayStation",
+      "Game Boy",
+      "Nintendo DS",
+      "Steam Deck"
     ],
     "isAbstract": false
   },

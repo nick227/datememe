@@ -1,12 +1,14 @@
 [
   {
     "schemaVersion": 1,
+    "categorySlug": "favorite-artists-all-time",
+    "adminEditedAt": null,
     "groupSlug": "music",
     "entityTypeSlug": "band",
     "title": "Artists",
     "prompt": "Who are your favorite artists of all time?",
     "axes": ["music", "taste"],
-    "values": ["The Beatles", "Michael Jackson", "Queen", "Led Zeppelin", "Madonna", "Beyoncé", "Taylor Swift", "Kanye West", "Nas", "The Weeknd", "Kendrick Lamar", "Drake", "Radiohead", "Nirvana", "Frank Ocean", "Eminem", "Outkast", "Billie Eilish"],
+    "values": ["The Beatles", "Michael Jackson", "Queen", "Led Zeppelin", "Madonna", "Beyoncé", "Taylor Swift", "Kanye West", "Nas", "The Weeknd", "Kendrick Lamar", "Drake", "Radiohead", "Nirvana", "Frank Ocean", "Eminem", "Outkast", "Billie Eilish", "Prince", "Rihanna"],
     "isAbstract": false
   },
   {
