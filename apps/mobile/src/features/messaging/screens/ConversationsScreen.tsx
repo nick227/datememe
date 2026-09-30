@@ -23,12 +23,11 @@ function otherParticipant(item: InboxItem, myProfileId: string | undefined) {
   return item.participants.find((p) => p.id !== myProfileId) ?? item.participants[0]
 }
 
-function matchesQuery(item: InboxItem, query: string, myProfileId: string | undefined) {
-  if (item.type === 'SYSTEM') {
-    return 'activity'.includes(query) || !!item.lastMessageBody?.toLowerCase().includes(query)
-  }
-  const other = otherParticipant(item, myProfileId)
-  return !!other?.displayName?.toLowerCase().includes(query) || !!item.lastMessageBody?.toLowerCase().includes(query)
+function inboxSearchText(item: InboxItem, myProfileId: string | undefined) {
+  const body = item.lastMessageBody?.toLowerCase() ?? ''
+  if (item.type === 'SYSTEM') return body ? `activity ${body}` : 'activity'
+  const name = otherParticipant(item, myProfileId)?.displayName?.toLowerCase() ?? ''
+  return body ? `${name} ${body}` : name
 }
 
 export function ConversationsScreen({ navigation }: Props) {
@@ -44,26 +43,33 @@ export function ConversationsScreen({ navigation }: Props) {
     [conversations.data],
   )
   const query = search.trim().toLowerCase()
-  const { rows, unreadCount } = useMemo(() => {
-    const unreadOnly = filter === 'unread'
-    let unreadCount = 0
-    if (!query && !unreadOnly) {
-      for (const item of allRows) if (item.hasUnread) unreadCount += 1
-      return { rows: allRows, unreadCount }
-    }
+  const searching = query.length > 0
+  const unreadCount = useMemo(() => {
+    let count = 0
+    for (let i = 0; i < allRows.length; i++) if (allRows[i].hasUnread) count += 1
+    return count
+  }, [allRows])
+  const searchText = useMemo(() => {
+    if (!searching) return null
+    const text = new Array<string>(allRows.length)
+    for (let i = 0; i < allRows.length; i++) text[i] = inboxSearchText(allRows[i], myProfileId)
+    return text
+  }, [allRows, myProfileId, searching])
+  const rows = useMemo(() => {
+    if (!searching && filter !== 'unread') return allRows
     const visible: InboxItem[] = []
-    for (const item of allRows) {
-      if (item.hasUnread) unreadCount += 1
-      if (unreadOnly && !item.hasUnread) continue
-      if (query && !matchesQuery(item, query, myProfileId)) continue
+    for (let i = 0; i < allRows.length; i++) {
+      const item = allRows[i]
+      if (filter === 'unread' && !item.hasUnread) continue
+      if (searching && !searchText?.[i].includes(query)) continue
       visible.push(item)
     }
-    return { rows: visible, unreadCount }
-  }, [allRows, query, filter, myProfileId])
-  const pageFacts = [
+    return visible
+  }, [allRows, searchText, searching, query, filter])
+  const pageFacts = useMemo(() => [
     { value: allRows.length, label: allRows.length === 1 ? 'conversation' : 'conversations' },
     { value: unreadCount, label: 'unread' },
-  ]
+  ], [allRows.length, unreadCount])
 
   function confirmUnmatch(conversationId: string, otherDisplayName: string) {
     hapticMedium()

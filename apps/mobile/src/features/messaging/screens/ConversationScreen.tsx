@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Text, FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet, View, Image } from 'react-native'
 import { useIsFocused } from '@react-navigation/native'
 import { ActionSheet, useActionSheet } from '../../../ui/ActionSheet'
@@ -56,9 +56,60 @@ function supportsSystemCta(cta: ActivityCta | null | undefined): cta is Activity
 }
 
 function conversationHeaderFacts(person: { locationLabel?: string | null; age?: number | null; bio?: string | null }) {
-  const basics = [person.locationLabel?.trim() || null, person.age != null ? String(person.age) : null].filter((part): part is string => !!part)
-  return { basics: basics.join(' · '), factoid: person.bio?.trim() ?? '' }
+  const place = person.locationLabel?.trim() || ''
+  const age = person.age != null ? String(person.age) : ''
+  const basics = place && age ? `${place} · ${age}` : place || age
+  return { basics, factoid: person.bio?.trim() ?? '' }
 }
+
+type BubbleAttachment = { type?: string; url?: string }
+
+const MessageBubble = memo(function MessageBubble({
+  item,
+  isOwn,
+  isLastInGroup,
+  showSeen,
+  avatarUrl,
+  avatarInitial,
+  onReport,
+}: {
+  item: { id: string; body?: string | null; createdAt: string; attachments?: BubbleAttachment[] | null }
+  isOwn: boolean
+  isLastInGroup: boolean
+  showSeen: boolean
+  avatarUrl?: string | null
+  avatarInitial: string
+  onReport: (messageId: string) => void
+}) {
+  const time = isLastInGroup
+    ? new Date(item.createdAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+    : ''
+  return (
+    <View style={[styles.bubbleRow, !isLastInGroup && styles.bubbleRowGrouped]}>
+      <View style={styles.bubbleStack}>
+        <View style={styles.bubbleCluster}>
+          <Pressable
+            testID={`conversation.message.${item.id}`}
+            style={[styles.bubble, isOwn ? styles.bubbleOwn : styles.bubbleOther]}
+            onLongPress={() => !isOwn && onReport(item.id)}
+          >
+            {item.attachments?.map((att, i) =>
+              att.type === 'image' && att.url ? (
+                <View key={i} style={styles.bubbleAttachmentContainer}>
+                  <Image source={{ uri: att.url }} style={styles.bubbleImage} resizeMode="cover" />
+                </View>
+              ) : null,
+            )}
+            {item.body ? <Text style={isOwn ? styles.bodyOwn : styles.bodyOther}>{item.body}</Text> : null}
+            {time ? <Text style={isOwn ? styles.timeOwn : styles.timeOther}>{time}</Text> : null}
+          </Pressable>
+          <MessageAvatar uri={avatarUrl} initial={avatarInitial} />
+        </View>
+        {showSeen ? <Text style={styles.seenText}>Seen</Text> : null}
+      </View>
+    </View>
+  )
+})
 
 function MessageAvatar({ uri, initial }: { uri?: string | null; initial: string }) {
   if (uri) return <Image source={{ uri }} style={styles.messageAvatar} />
@@ -113,14 +164,35 @@ export function ConversationScreen({ route, navigation }: Props) {
     [messages.data],
   )
 
+  // Newest message is index 0 (the list is inverted). One walk finds my latest
+  // message and, until the conversation row loads, whether this is a system thread.
+  const thread = useMemo(() => {
+    const knownType = conversation != null
+    let system = conversation?.type === 'SYSTEM'
+    let myLastId: string | undefined
+    let myLastAt: string | undefined
+    for (let i = 0; i < rows.length; i++) {
+      const message = rows[i]
+      if (myLastId == null && message.senderId === myProfileId) {
+        myLastId = message.id
+        myLastAt = message.createdAt
+      }
+      if (!knownType && message.systemMessageType != null) system = true
+      if (myLastId != null && (knownType || system)) break
+    }
+    return { system, myLastId, myLastAt }
+  }, [rows, myProfileId, conversation])
+
   // "Seen" derives from the existing per-participant lastReadAt (no per-message
   // read model): the other participant has seen my latest message once their
   // lastReadAt catches up to it. Only ever shown under that one message.
-  const otherReadAt = conversation?.participantReadState?.find((p: any) => p.profileId === otherParticipant?.id)?.lastReadAt
-  const myLastMessage = rows.find((m) => m.senderId === myProfileId)
-  const isSeen = !!(myLastMessage && otherReadAt && new Date(otherReadAt) >= new Date(myLastMessage.createdAt))
+  const otherReadAt = conversation?.participantReadState?.find((p) => p.profileId === otherParticipant?.id)?.lastReadAt
+  const isSeen = useMemo(() => {
+    if (!thread.myLastAt || !otherReadAt) return false
+    return new Date(otherReadAt).getTime() >= new Date(thread.myLastAt).getTime()
+  }, [thread.myLastAt, otherReadAt])
 
-  const isSystemThread = conversation ? conversation.type === 'SYSTEM' : rows.some((message) => message.systemMessageType != null)
+  const isSystemThread = thread.system
   const headerFacts = isSystemThread || !otherParticipant ? null : conversationHeaderFacts(otherParticipant)
 
   async function handleSend() {
@@ -181,7 +253,7 @@ export function ConversationScreen({ route, navigation }: Props) {
     }
   }
 
-  function fileReport(reason: string, targetMessageId?: string) {
+  const fileReport = useCallback((reason: string, targetMessageId?: string) => {
     if (!otherParticipant) return
     submitReport.mutate(
       targetMessageId
@@ -192,7 +264,7 @@ export function ConversationScreen({ route, navigation }: Props) {
         onError: () => sheet.show({ title: 'Could not send report', message: 'Try again in a moment.', buttons: [{ testID: 'conversation.dialog.ok', text: 'OK' }] }),
       },
     )
-  }
+  }, [otherParticipant, submitReport, sheet])
 
   function handleReport() {
     sheet.show({
@@ -208,7 +280,7 @@ export function ConversationScreen({ route, navigation }: Props) {
     })
   }
 
-  function handleReportMessage(messageId: string) {
+  const reportMessage = useCallback((messageId: string) => {
     sheet.show({
       title: 'Report this message',
       message: "What's the issue?",
@@ -219,7 +291,7 @@ export function ConversationScreen({ route, navigation }: Props) {
         { testID: 'conversation.dialog.spam', text: 'Spam', onPress: () => fileReport('Spam', messageId) },
       ],
     })
-  }
+  }, [sheet, fileReport])
 
   function handleUnmatch() {
     sheet.show({
@@ -393,52 +465,20 @@ export function ConversationScreen({ route, navigation }: Props) {
                 }
 
                 const isOwn = item.senderId === myProfileId
-                const prevItem = rows[index - 1] // Newer message (rendered below this one)
-
+                const prevItem = rows[index - 1]
                 const isLastInGroup = !prevItem || prevItem.senderId !== item.senderId
                 if (!item.body && !item.attachments?.length) return null
 
-                const avatarUrl = isOwn ? me.data?.profile?.avatarUrl : otherParticipant?.avatarUrl
-                const avatarInitial = isOwn ? (me.data?.profile?.displayName ?? 'You') : (otherParticipant?.displayName ?? displayName)
-
                 return (
-                  <View style={[styles.bubbleRow, !isLastInGroup && { marginBottom: 2 }]}>
-                    <View style={styles.bubbleStack}>
-                      <View style={styles.bubbleCluster}>
-                        <Pressable
-                          testID={`conversation.message.${item.id}`}
-                          style={[styles.bubble, isOwn ? styles.bubbleOwn : styles.bubbleOther]}
-                          onLongPress={() => !isOwn && handleReportMessage(item.id)}
-                        >
-                          {item.attachments?.map((att: any, i: number) => (
-                            <View key={i} style={styles.bubbleAttachmentContainer}>
-                              {att.type === 'image' ? (
-                                <Image
-                                  source={{ uri: att.url }}
-                                  style={styles.bubbleImage}
-                                  resizeMode="cover"
-                                />
-                              ) : null}
-                            </View>
-                          ))}
-
-                          {item.body ? (
-                            <Text style={isOwn ? styles.bodyOwn : styles.bodyOther}>{item.body}</Text>
-                          ) : null}
-
-                          {isLastInGroup && (
-                            <Text style={isOwn ? styles.timeOwn : styles.timeOther}>
-                              {new Date(item.createdAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
-                            </Text>
-                          )}
-                        </Pressable>
-                        <MessageAvatar uri={avatarUrl} initial={avatarInitial} />
-                      </View>
-                      {isOwn && isSeen && item.id === myLastMessage?.id && (
-                        <Text style={styles.seenText}>Seen</Text>
-                      )}
-                    </View>
-                  </View>
+                  <MessageBubble
+                    item={item}
+                    isOwn={isOwn}
+                    isLastInGroup={isLastInGroup}
+                    showSeen={isOwn && isSeen && item.id === thread.myLastId}
+                    avatarUrl={isOwn ? me.data?.profile?.avatarUrl : otherParticipant?.avatarUrl}
+                    avatarInitial={isOwn ? (me.data?.profile?.displayName ?? 'You') : (otherParticipant?.displayName ?? displayName)}
+                    onReport={reportMessage}
+                  />
                 )
               }}
             />
@@ -548,6 +588,7 @@ const styles = StyleSheet.create({
   },
   messages: { paddingHorizontal: spacing.md, paddingVertical: spacing.md, flexGrow: 1 },
   bubbleRow: { flexDirection: 'row', justifyContent: 'flex-end', marginBottom: spacing.md },
+  bubbleRowGrouped: { marginBottom: 2 },
   bubbleStack: { alignItems: 'flex-end', maxWidth: '85%' },
   bubbleCluster: { flexDirection: 'row', alignItems: 'flex-end', gap: spacing.xs },
   seenText: { color: colors.inkMuted, fontSize: 11, marginTop: 2, marginRight: 26 },
