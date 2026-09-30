@@ -9,6 +9,7 @@ import type { AgeBucket } from '../lib/geo'
 import { TaxonomyService } from './TaxonomyService'
 import { ListService } from './ListService'
 import { DiscoveryService, readDiscoveryPage } from './DiscoveryService'
+import { groupIdsWithResults } from '../lib/resultGroups'
 
 const taxonomyService = new TaxonomyService()
 const listService = new ListService()
@@ -138,7 +139,7 @@ export class ContentFeedService {
     // unfiltered (the "All" chip).
     const selectedGroupSlugs = opts.groupSlugs?.length ? new Set(opts.groupSlugs) : null
 
-    const [categories, myLists, groups, sitePickGroups, categoryResultSets] = await Promise.all([
+    const [categories, myLists, groups, sitePickGroups, categoryResultSets, publishedGroupIds] = await Promise.all([
       taxonomyService.listCategories(viewerProfileId),
       listService.getMyLists(viewerProfileId),
       db.categoryGroup.findMany({ orderBy: { sortOrder: 'asc' } }),
@@ -156,6 +157,7 @@ export class ContentFeedService {
         include: { entries: { orderBy: { rank: 'asc' }, take: 10 } },
         orderBy: { takeCount: 'desc' },
       }),
+      groupIdsWithResults(),
     ])
 
     const myListByCategoryId = new Map(myLists.map((l: any) => [l.categoryId, l]))
@@ -433,7 +435,7 @@ export class ContentFeedService {
               ],
               featuredEntity: this.mostRecentPick(completedLists),
             },
-            chips: [{ id: 'top', label: 'All' }, ...groups.map((g: any) => ({ id: g.slug, label: g.label }))],
+            chips: [{ id: 'top', label: 'All' }, ...groups.filter((g: any) => publishedGroupIds.has(g.id)).map((g: any) => ({ id: g.slug, label: g.label }))],
           }
         : {}),
       data: page,
@@ -680,11 +682,13 @@ export class ContentFeedService {
     let peopleGridTitle = 'People'
 
     if (isFirstPage) {
-      const [groups, matchCount, favoritedResult] = await Promise.all([
+      const [groups, matchCount, favoritedResult, publishedGroupIds] = await Promise.all([
         db.categoryGroup.findMany({ orderBy: { sortOrder: 'asc' } }),
         db.conversationParticipant.count({ where: { profileId: viewerProfileId } }),
         this.getFavoritedCandidates(viewerUserId, viewerProfileId, fullPhotoAccess),
+        groupIdsWithResults(),
       ])
+      const chipGroups = groups.filter((g: any) => publishedGroupIds.has(g.id))
       favorited = favoritedResult
 
       // Demographic and category filters are combinable (see
@@ -716,7 +720,7 @@ export class ContentFeedService {
           { id: 'age-30s', label: '30s' },
           { id: 'age-40s', label: '40s' },
           { id: 'age-50plus', label: '50+' },
-          ...groups.map((g: any) => ({ id: g.slug, label: g.label })),
+          ...chipGroups.map((g: any) => ({ id: g.slug, label: g.label })),
         ],
       }
 

@@ -2,6 +2,7 @@ import { db } from '@project/db'
 import { CATEGORY_SELECT, ENTITY_SELECT, serializeCategory, serializeEntity } from '../lib/serializers'
 import { ListService } from './ListService'
 import { metric, toCategoryUnit } from './ContentFeedService'
+import { groupIdsWithResults } from '../lib/resultGroups'
 
 const listService = new ListService()
 
@@ -38,7 +39,7 @@ function percent(part: number, whole: number) {
  */
 export class RankingsService {
   async getRankingsFeed(viewerProfileId: string, opts: { groupSlugs?: string[] } = {}) {
-    const [resultSets, myLists, groups] = await Promise.all([
+    const [resultSets, myLists, groups, publishedGroupIds] = await Promise.all([
       db.resultSet.findMany({
         where: { ...LIST_SCORE_SET, takeCount: { gt: 0 } },
         include: { entries: { orderBy: { rank: 'asc' }, take: RIVER_PREVIEW_SIZE } },
@@ -46,6 +47,7 @@ export class RankingsService {
       }),
       listService.getMyLists(viewerProfileId),
       db.categoryGroup.findMany({ orderBy: { sortOrder: 'asc' }, select: { id: true, slug: true, label: true } }),
+      groupIdsWithResults(),
     ])
 
     const categoryRows = await db.category.findMany({
@@ -65,9 +67,7 @@ export class RankingsService {
       .map((rs) => ({ ...rs, category: categoryById.get(rs.scopeValue), entries: rs.entries.filter((e) => entityById.has(e.subjectId)) }))
       .filter((rs): rs is typeof rs & { category: NonNullable<typeof rs.category> } => !!rs.category && rs.entries.length > 0)
 
-    // Chips only for groups that actually have a published ranking — keeps
-    // empty topics (and any leftover test-fixture groups) out of the bar.
-    const publishedGroupIds = new Set(allSets.map((rs) => rs.category.groupId))
+    // Same bar as Lists and Discover: only groups with a published ranking.
     const chipGroups = groups.filter((g) => publishedGroupIds.has(g.id))
     const selected = opts.groupSlugs?.length ? new Set(opts.groupSlugs) : null
     const selectedGroupIds = selected ? new Set(groups.filter((g) => selected.has(g.slug)).map((g) => g.id)) : null
