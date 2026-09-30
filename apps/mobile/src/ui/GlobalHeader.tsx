@@ -24,9 +24,9 @@ export function GlobalHeader({ showAvatar = false }: { showAvatar?: boolean }) {
         flexDirection="row"
         alignItems="center"
         justifyContent="space-between"
-        paddingHorizontal="sm"
         paddingVertical="sm"
-        maxWidth={1230}
+        paddingLeft="lg"
+        maxWidth={1200}
         width="100%"
         style={{
           marginLeft: 'auto',

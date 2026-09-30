@@ -16,8 +16,8 @@ const Tab = createBottomTabNavigator()
 
 const ICONS: Record<string, IconName> = {
   Lists: 'ListChecks',
-  Rankings: 'Trophy',
-  Discover: 'Flame',
+  Rankings: 'Flame',
+  Discover: 'User',
   Messages: 'MessageCircle',
 }
 

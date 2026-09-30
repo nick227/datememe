@@ -7,6 +7,7 @@ import { EmptyState } from '../../../ui/EmptyState'
 import { ErrorState } from '../../../ui/ErrorState'
 import { Skeleton } from '../../../ui/Skeleton'
 import { RankingPreview } from '../components/RankingPreview'
+import { RankingRaceRail } from '../components/RankingRaceRail'
 import { PageHeader } from '../../../ui/content/PageHeader'
 import { FeedModuleRenderer } from '../../../ui/content/FeedModuleRenderer'
 import { Rail } from '../../../ui/content/Rail'
@@ -104,14 +105,28 @@ export function RankingsScreen({ navigation }: Props) {
             return <FeedModuleRenderer module={module} state="ready" onPressItem={(unit) => onPressItem(module, unit)} onPressQuickPicks={() => {}} />
           }
           if (module.id.startsWith(CATEGORY_MODULE_PREFIX)) {
+            const categorySlug = module.id.slice(CATEGORY_MODULE_PREFIX.length)
+            const shortLabel = module.title ?? ''
             return (
               <RankingPreview
                 testID={`feed.module.${module.id}`}
-                title={module.title ?? ''}
+                title={shortLabel}
                 imageUrl={module.imageCardUrl || module.imageUrl}
-                reason={module.context?.reason}
+                takeCount={module.context?.takeCount ?? 0}
+                answered={module.context?.viewerHasAnswered === true}
                 items={module.items ?? []}
-                onOpen={() => openCategory(module.id.slice(CATEGORY_MODULE_PREFIX.length), module.title ?? '')}
+                onOpen={() => openCategory(categorySlug, shortLabel)}
+                onAnswer={() => openPoll(navigation, 'edit', { categorySlug, shortLabel })}
+              />
+            )
+          }
+          if (module.id === 'rankings-close-races') {
+            return (
+              <RankingRaceRail
+                testID={`feed.module.${module.id}`}
+                title={module.title}
+                items={module.items ?? []}
+                onPressItem={(unit) => onPressItem(module, unit)}
               />
             )
           }

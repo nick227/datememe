@@ -13,10 +13,8 @@ type Props = {
 }
 
 export function ResultUnitCard({ unit, onPress }: Props) {
-  const isTop3 = unit.rank && unit.rank <= 3
-
   return (
-    <PressableScale testID={`results.card.${unit.id}`} onPress={onPress} style={[styles.row, isTop3 && styles.rowTop3]}>
+    <PressableScale testID={`results.card.${unit.id}`} onPress={onPress} style={styles.row}>
       <Box width={40} alignItems="center">
         <Typography variant="display" style={styles.rankNumber}>
           #{unit.rank}
@@ -66,9 +64,6 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.border,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.xs,
-  },
-  rowTop3: {
-    backgroundColor: 'rgba(0,0,0,0.02)',
   },
   rankNumber: {
     fontSize: 20,

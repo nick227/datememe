@@ -1,10 +1,10 @@
 import { db } from '@project/db'
 import { CATEGORY_SELECT, ENTITY_SELECT, serializeCategory, serializeEntity } from '../lib/serializers'
 import { ListService } from './ListService'
-import { metric, toCategoryUnit } from './ContentFeedService'
 import { groupIdsWithResults } from '../lib/resultGroups'
 import { relatedRankings } from '../lib/relatedRankings'
 import { pollFaces } from '../lib/pollFaces'
+import { rankingModules, type ViewerList } from '../lib/rankingFeed'
 
 const listService = new ListService()
 
@@ -13,45 +13,10 @@ const listService = new ListService()
 // have a set at all, so nothing here needs to know the threshold.
 const LIST_SCORE_SET = { subjectType: 'ENTITY', metric: 'LIST_SCORE', scopeType: 'CATEGORY', window: 'ALL_TIME' } as const
 
-const RIVER_PREVIEW_SIZE = 3
-const RAIL_SIZE = 10
 const DETAIL_ENTRY_LIMIT = 50
-// "Closest race" = #2 within this fraction of #1's score.
-const CLOSE_RACE_GAP = 0.15
-// Rows are the page; a rail interrupts after this many ranking blocks.
-const RAIL_EVERY = 3
-
-// Same arrow convention ResultUnitCard renders: "+2" up, "-1" down, "new".
-function trendFor(rank: number, previousRank: number | null) {
-  if (previousRank == null) return 'new'
-  if (previousRank > rank) return `+${previousRank - rank}`
-  if (previousRank < rank) return `${previousRank - rank}`
-  return undefined
-}
 
 function percent(part: number, whole: number) {
   return whole > 0 ? Math.round((part / whole) * 100) : 0
-}
-
-function voteLine(takeCount: number, entries: { rank: number; score: number; previousRank: number | null }[]) {
-  const votes = `${takeCount} ${takeCount === 1 ? 'vote' : 'votes'}`
-  const top = entries[0]
-  const next = entries[1]
-  if (!top || !next || top.score <= 0) return votes
-  const lead = top.score - next.score
-  if (lead <= 1 || lead / top.score <= CLOSE_RACE_GAP) return `${votes} · close race`
-  if (top.previousRank != null && top.previousRank > top.rank) return `${votes} · ↑ ${top.previousRank - top.rank} since yesterday`
-  return votes
-}
-
-async function scoreTotalBySet(resultSetIds: string[]) {
-  if (!resultSetIds.length) return new Map<string, number>()
-  const rows = await db.resultEntry.groupBy({
-    by: ['resultSetId'],
-    where: { resultSetId: { in: resultSetIds } },
-    _sum: { score: true },
-  })
-  return new Map(rows.map((row) => [row.resultSetId, row._sum.score ?? 0]))
 }
 
 /**
@@ -65,7 +30,7 @@ export class RankingsService {
     const [resultSets, myLists, groups, publishedGroupIds] = await Promise.all([
       db.resultSet.findMany({
         where: { ...LIST_SCORE_SET, takeCount: { gt: 0 } },
-        include: { entries: { orderBy: { rank: 'asc' }, take: RIVER_PREVIEW_SIZE } },
+        include: { entries: { orderBy: { rank: 'asc' }, take: DETAIL_ENTRY_LIMIT } },
         orderBy: [{ takeCount: 'desc' }, { scopeValue: 'asc' }],
       }),
       listService.getMyLists(viewerProfileId),
@@ -96,93 +61,6 @@ export class RankingsService {
     const selectedGroupIds = selected ? new Set(groups.filter((g) => selected.has(g.slug)).map((g) => g.id)) : null
     const sets = selectedGroupIds ? allSets.filter((rs) => selectedGroupIds.has(rs.category.groupId)) : allSets
 
-    const takenCategoryIds = new Set(myLists.filter((l: any) => l.items.length).map((l: any) => l.categoryId))
-    const scoreTotals = await scoreTotalBySet(allSets.map((rs) => rs.id))
-
-    function categoryUnit(rs: (typeof sets)[number], index: number, subtitle?: string) {
-      const top = entityById.get(rs.entries[0]!.subjectId)!
-      return {
-        ...toCategoryUnit({ ...rs.category, topPick: top }, { completed: takenCategoryIds.has(rs.category.id), hasAnswered: takenCategoryIds.has(rs.category.id) }),
-        subtitle: subtitle ?? `#1 ${top.canonicalName}`,
-        metrics: [metric('popularity', 'answered', rs.takeCount, 'primary')],
-        position: index,
-      }
-    }
-
-    // The "rankings-top-" prefix is the client's contract for "this module
-    // is one category's ranking" — the slug after it routes to the full page.
-    const rowModules = sets.map((rs) => ({
-      moduleKind: 'collection',
-      id: `rankings-top-${rs.category.slug}`,
-      type: 'results',
-      // shortLabel already reads as a title ("Top Athletes", "Favorite Authors").
-      title: rs.category.shortLabel,
-      imageCardUrl: rs.category.imageCardUrl || null,
-      imageUrl: rs.category.imageUrl || null,
-      context: { zone: 'results', reason: voteLine(rs.takeCount, rs.entries) },
-      suggestedStructure: 'river',
-      items: rs.entries.map((entry, i) => {
-        const entity = entityById.get(entry.subjectId)!
-        return {
-          id: entry.id,
-          kind: 'result',
-          resultType: 'entity',
-          title: entity.canonicalName,
-          imageUrl: entity.imageUrl,
-          rank: entry.rank,
-          trend: trendFor(entry.rank, entry.previousRank),
-          position: i,
-          metrics: [metric('percentile', 'of points', percent(entry.score, scoreTotals.get(rs.id) ?? 0), 'primary')],
-          entity,
-        }
-      }),
-    }))
-
-    // The viewer's own taken rankings stay a top rail, even when a topic
-    // filter narrows the public rows below.
-    const yoursModule = allSets.some((rs) => takenCategoryIds.has(rs.category.id))
-      ? {
-          moduleKind: 'collection' as const,
-          id: 'rankings-yours',
-          type: 'results' as const,
-          title: 'My rankings',
-          suggestedStructure: 'rail' as const,
-          items: allSets.filter((rs) => takenCategoryIds.has(rs.category.id)).slice(0, RAIL_SIZE).map((rs, i) => categoryUnit(rs, i)),
-        }
-      : null
-
-    // Occasional interruptions, in this order, each only if it has content.
-    const rails: any[] = []
-    const races = sets
-      .filter((rs) => rs.entries.length >= 2 && rs.entries[0]!.score > 0)
-      .map((rs) => ({ rs, gap: (rs.entries[0]!.score - rs.entries[1]!.score) / rs.entries[0]!.score }))
-      .filter((r) => r.gap <= CLOSE_RACE_GAP)
-      .sort((a, b) => a.gap - b.gap)
-      .slice(0, RAIL_SIZE)
-    if (races.length) {
-      rails.push({
-        moduleKind: 'collection',
-        id: 'rankings-close-races',
-        type: 'comparison',
-        title: 'Closest races',
-        suggestedStructure: 'rail',
-        items: races.map(({ rs }, i) => {
-          const margin = rs.entries[0]!.score - rs.entries[1]!.score
-          return {
-            ...categoryUnit(rs, i, `${rs.category.shortLabel} · ${margin === 0 ? 'Tied' : `${margin} pts apart`}`),
-            title: `${entityById.get(rs.entries[0]!.subjectId)!.canonicalName} vs ${entityById.get(rs.entries[1]!.subjectId)!.canonicalName}`,
-          }
-        }),
-      })
-    }
-
-    // Rows lead, and a rail only ever breaks up a run of RAIL_EVERY of them.
-    const modules: any[] = []
-    rowModules.forEach((row, i) => {
-      modules.push(row)
-      if ((i + 1) % RAIL_EVERY === 0 && rails.length) modules.push(rails.shift())
-    })
-
     return {
       summary: {
         title: 'Rankings',
@@ -190,7 +68,7 @@ export class RankingsService {
         stats: [{ value: sets.length, label: sets.length === 1 ? 'ranking' : 'rankings' }],
       },
       chips: chipGroups.length ? [{ id: 'top', label: 'All' }, ...chipGroups.map((g) => ({ id: g.slug, label: g.label }))] : [],
-      data: yoursModule ? [yoursModule, ...modules] : modules,
+      data: rankingModules({ sets, allSets, entityById, lists: myLists as ViewerList[] }),
       meta: { hasMore: false, nextCursor: null },
     }
   }

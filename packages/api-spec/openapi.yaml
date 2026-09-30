@@ -977,6 +977,18 @@ components:
             Present when a filter is active — marks this module as the
             canonical answer to the filter (results) vs. the always-present
             browse feed below it (explore). Absent when unfiltered.
+        takeCount:
+          type: integer
+          description: How many people completed this ranking. Present on ranking preview modules.
+        preview:
+          type: string
+          enum: [full, compact]
+          description: >
+            Ranking preview shape. `full` lists every stored result. `compact`
+            is the close-race special case and lists only the top 3.
+        viewerHasAnswered:
+          type: boolean
+          description: Whether the viewer has saved answers for this ranking.
 
     # ContentCollection and InteractiveModule are documented here as the two
     # logical shapes a FeedModule takes, but the wire schema below (FeedModule)
@@ -2871,13 +2883,12 @@ paths:
       description: >
         Read-only over the ResultSets RankingsRebuildJob rebuilds on a timer
         (only published categories — enough answers — exist there). Mostly
-        `rankings-top-{slug}` modules (one category's top 3, rest of the id
-        = the category slug). Each row's `percentile` metric is that option's
-        share of the list's ranking points. `context.reason` is the vote
-        count plus a race note ("142 votes · close race"). Occasionally
-        interrupted by a rail ("Closest races"). `chips` = "All" + only the
-        groups that have at least one published ranking; `groupSlugs` filters
-        to those groups.
+        `rankings-top-{slug}` modules (one category's full result list, rest
+        of the id = the category slug). Each row's subtitle is the pick rate
+        ("60% picked it"). Close races are not repeated as lists: they are
+        one horizontal card rail (`rankings-close-races`) placed after the
+        first list. `chips` = "All" + only the groups that have at least one
+        published ranking; `groupSlugs` filters to those groups.
         Not paginated — `meta.hasMore` is always false.
       parameters:
         - $ref: '#/components/parameters/GroupSlugs'

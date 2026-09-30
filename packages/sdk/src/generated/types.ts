@@ -421,7 +421,7 @@ export interface paths {
         };
         /**
          * The Rankings tab — site-wide aggregate answers as a FeedModule stream
-         * @description Read-only over the ResultSets RankingsRebuildJob rebuilds on a timer (only published categories — enough answers — exist there). Mostly `rankings-top-{slug}` modules (one category's top 3, rest of the id = the category slug). Each row's `percentile` metric is that option's share of the list's ranking points. `context.reason` is the vote count plus a race note ("142 votes · close race"). Occasionally interrupted by a rail ("Closest races"). `chips` = "All" + only the groups that have at least one published ranking; `groupSlugs` filters to those groups. Not paginated — `meta.hasMore` is always false.
+         * @description Read-only over the ResultSets RankingsRebuildJob rebuilds on a timer (only published categories — enough answers — exist there). Mostly `rankings-top-{slug}` modules (one category's results, rest of the id = the category slug). The standard preview lists every stored result. `context.preview=compact` is the close-race special case and lists only the top 3. Each row's subtitle is the pick rate ("60% picked it"). Rails (closest races, biggest leads, moved up, most answered) break up the list. `chips` = "All" + only the groups that have at least one published ranking; `groupSlugs` filters to those groups. Not paginated — `meta.hasMore` is always false.
          */
         get: operations["getRankingsFeed"];
         put?: never;
@@ -2122,6 +2122,15 @@ export interface components {
              * @enum {string}
              */
             zone?: "results" | "explore";
+            /** @description How many people completed this ranking. Present on ranking preview modules. */
+            takeCount?: number;
+            /**
+             * @description Ranking preview shape. `full` lists every stored result. `compact` is the close-race special case and lists only the top 3.
+             * @enum {string}
+             */
+            preview?: "full" | "compact";
+            /** @description Whether the viewer has saved answers for this ranking. */
+            viewerHasAnswered?: boolean;
         };
         FeedModule: {
             /** @enum {string} */

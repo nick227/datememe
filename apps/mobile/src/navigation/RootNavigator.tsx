@@ -1,4 +1,4 @@
-  import { ActivityIndicator, View } from 'react-native'
+import { ActivityIndicator, View } from 'react-native'
 import { DefaultTheme, NavigationContainer, type Theme } from '@react-navigation/native'
 import { useCurrentUser } from '@project/sdk'
 import { AuthStack } from './AuthStack'

@@ -91,7 +91,6 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md, 
     paddingHorizontal: spacing.lg,
     backgroundColor: colors.surface,
-    maxWidth: 800,
     width: '100%',
     alignSelf: 'center',
   },

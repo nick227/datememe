@@ -101,9 +101,17 @@ The universal APK was generated locally from that exact AAB with Google bundleto
 
 Expo usage after the build remains on the Free plan: 4 of 15 Android builds used, zero overage and zero estimated cost. No Play registration or paid plan was initiated.
 
-Code 4 installed as an update over code 3. The existing emulator became very slow during installation/startup; after a full emulator cold boot without wiping data, the app loaded Taylor QA and the saved one-list/five-pick state. Both locked-message **Unlock** and daily-limit **Go Premium** opened the paywall. Two short native messages were confirmed by the recipient API session. Paywall Back returns to Lists; selecting Messages restores the existing conversation.
+Code 4 installed as an update over code 3. The existing emulator became very slow during installation/startup; after a full emulator cold boot without wiping data, the app loaded Taylor QA and the saved one-list/five-pick state. Both locked-message **Unlock** and daily-limit **Go Premium** opened the paywall. Two short native messages were confirmed by the recipient API session. The rejected daily-limit draft remained when returning from the paywall. A later logout returned immediately to Login, and signing in as Casey showed Casey's profile and four lists/twelve picks instead of Taylor's one list/five picks. Paywall Back returns to Lists; selecting Messages restores the existing conversation.
 
 This pass found an additional Android composer defect: the visible software keyboard covers the input, and a longer draft expands the unconstrained text-field wrapper until Send leaves the screen. Short messages can be sent after dismissing the keyboard. A minimal layout correction is being prepared; code 4 is retained as evidence, not an approval of the messaging typing experience. Physical-phone coverage remains pending.
+
+## Composer and navigation correction — September 29 UTC
+
+The code-4 pass also reproduced a first-visit navigation problem: after opening an incoming message's paywall before visiting Profile, Back returned to Lists and the Profile button reopened the paywall instead of exposing profile/account settings. Messaging paywall navigation now sets `initial: false` so the Profile route remains beneath Paywall, following [React Navigation's nested initial-route behavior](https://reactnavigation.org/docs/nesting-navigators/#rendering-initial-route-defined-in-the-navigator).
+
+The layout fix wraps the messages and composer together in keyboard avoidance on Android and gives the text-field wrapper constrained flex space, preserving room for Send as the draft grows. The equivalent changes have been applied to current main while retaining its newer system-conversation UI. Main's full mobile typecheck still reports unrelated admin, discovery, profile-editor, and content-card errors; the isolated release source passes.
+
+Isolated release branch `codex/android-qa-composer` at `c5ac6a1cc85b5be94d40342004beca8dff4cb6c7` contains the composer and first-visit paywall corrections. Mobile typecheck and 14 build-configuration checks passed. The new [version-code-6 AAB build](https://expo.dev/accounts/hzane111/projects/datememe/builds/e8a3d91d-c3f0-4709-bd03-89d20657b6bd) is pending; it must complete and pass native checks before replacing code 4. The earlier code-5 build `f4b21554-1671-4225-97bc-6558aec50161` was canceled in the queue to include the additional navigation fix in one candidate. No code-5 artifact was tested or distributed.
 
 ## Remaining release gates
 
