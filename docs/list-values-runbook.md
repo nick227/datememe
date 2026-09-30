@@ -14,12 +14,21 @@ How an AI agent inspects how many values each list offers, against a floor. **Ph
 
 Floor precedence, first match wins: `--floor N`, then `lists[<category slug>]`, then `groups[<group slug>]`, then `default`.
 
-**Never pad a list to hit its floor.** When a domain honestly runs out of good answers (seasons, love languages, a stance on substances), give that list its own lower entry under `lists` and move on.
+Every row has a **status**, and the summary line counts each one:
+- `shallow`: below the minimum. This is a product-quality problem, so fix these first.
+- `depth-gap`: at the minimum, below its depth target. Incomplete, not broken.
+- `complete`: at or past its target.
+- `bounded`: has its own `lists` floor below its normal target, and meets it. Its own floor is also its minimum, so a list with five honest answers isn't shallow.
+
+Batching order once `SHALLOW` is 0: compatibility and high-signal lists 20 → 30, then broad canonical lists toward 50, then entertainment and taste lists toward 40, then novelty and the long tail. Select with `--status depth-gap --group …`.
+
+Depth targets are not quotas. **Never pad a list to hit its floor.** When a domain honestly runs out of good answers (seasons, love languages, a stance on substances), give that list its own lower entry under `lists` and move on.
 
 ## Commands
 ```bash
 pnpm prod:list-values                                      # summary + every active list
 pnpm prod:list-values --shallow --sort gap                # below the minimum of 20: fix these first
+pnpm prod:list-values --status depth-gap --group dating-relationships
 pnpm prod:list-values --below-floor --sort gap --limit 20
 pnpm prod:list-values --list "Top Movies"                  # slug, or title substring; repeatable
 pnpm prod:list-values --group dating-relationships --max 15
@@ -35,9 +44,9 @@ Filters combine (AND). Unknown options, group slugs and type slugs are errors, n
 ## Reading the output
 ```
 target=production proxy=altaria.proxy.rlwy.net:52742 readonly=verified
-LISTS 193  VALUES 3,438  AVG 17.81  MEDIAN 20  MIN 8  MAX 87  SHALLOW 67  BELOW_FLOOR 192  GAP 3,249  (active lists; minimum 20, floor default 30)
-values  floor  gap  takes  group       title               notes
-8       20     12   2      food-drink  Grocery Stores      no-file
+LISTS 193  VALUES 3,438  AVG 17.81  MEDIAN 20  MIN 8  MAX 87  SHALLOW 67  DEPTH_GAP 125  COMPLETE 1  BOUNDED 0  GAP 3,249  (active lists; minimum 20, floor default 30)
+values  floor  gap  status   takes  group       title               notes
+8       40     32   shallow  2      food-drink  Grocery Stores      no-file
 LIST_VALUES {"target":"production","lists":193,...,"shallow":67,"minimum":20,...,"matched":2,"shown":2}
 ```
 - The summary line always covers **all active lists**; the table shows only the matches.

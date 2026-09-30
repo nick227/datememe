@@ -31,7 +31,8 @@ const USAGE = `usage: pnpm prod:list-values [options]
   --type <slug>          EntityType slug, exact (repeatable)
   --min N / --max N      value-count range
   --below-floor          only lists with values < floor (their depth target)
-  --shallow              only lists below the minimum (value-floor.json; the builder shows 20 before search)
+  --status <s>           shallow | depth-gap | complete | bounded (repeatable; see Row.status)
+  --shallow              same as --status shallow
   --floor N              override every list's floor for this run
   --sort values|gap|takes|title   (default values)
   --limit N              print at most N rows (summary still counts all)
@@ -46,12 +47,12 @@ const USAGE = `usage: pnpm prod:list-values [options]
 type Opts = {
   lists: string[]; groups: string[]; types: string[]
   min?: number; max?: number; floor?: number; limit?: number
-  belowFloor: boolean; shallow: boolean; includeInactive: boolean; values: boolean; json: boolean; snapshot: boolean; selftest: boolean; local: boolean
+  belowFloor: boolean; statuses: Status[]; includeInactive: boolean; values: boolean; json: boolean; snapshot: boolean; selftest: boolean; local: boolean
   sort: 'values' | 'gap' | 'takes' | 'title'; url?: string
 }
 
 function parseArgs(argv: string[]): Opts {
-  const o: Opts = { lists: [], groups: [], types: [], belowFloor: false, shallow: false, includeInactive: false, values: false, json: false, snapshot: false, selftest: false, local: false, sort: 'values' }
+  const o: Opts = { lists: [], groups: [], types: [], belowFloor: false, statuses: [], includeInactive: false, values: false, json: false, snapshot: false, selftest: false, local: false, sort: 'values' }
   const args = argv.filter((a) => a !== '--')
   const int = (flag: string, v: string | undefined) => {
     if (v === undefined || !/^\d+$/.test(v)) die(`${flag} needs a whole number\n${USAGE}`)
@@ -75,7 +76,12 @@ function parseArgs(argv: string[]): Opts {
       }
       case '--url': o.url = next(); break
       case '--below-floor': o.belowFloor = true; break
-      case '--shallow': o.shallow = true; break
+      case '--shallow': o.statuses.push('shallow'); break
+      case '--status': {
+        const v = next()
+        if (!STATUSES.includes(v as Status)) die(`--status must be one of ${STATUSES.join(', ')}`)
+        o.statuses.push(v as Status); break
+      }
       case '--include-inactive': o.includeInactive = true; break
       case '--values': o.values = true; break
       case '--json': o.json = true; break
@@ -96,7 +102,18 @@ type Row = {
   adminEditedAt: string | null; floor: number; gap: number; file: string | null
   /** Pinned catalog entry synced before the latest Admin edit: its additions are skipped until re-synced. */
   stale: boolean
+  /**
+   * shallow: below the minimum (the builder shows 20 before search) — a product-quality problem.
+   * depth-gap: at the minimum, below its depth target — incomplete, not broken.
+   * complete: at or past its target.
+   * bounded: a per-list floor below its normal target (a domain with few honest answers), and met.
+   * A bounded list's own floor is also its minimum, so it is never shallow for being small.
+   */
+  status: Status
 }
+
+const STATUSES = ['shallow', 'depth-gap', 'complete', 'bounded'] as const
+type Status = (typeof STATUSES)[number]
 
 const LIST_SQL = `
   SELECT c.id, c.slug, c.shortLabel AS title, c.isActive, c.maxItems, c.popularityCount AS takes,
@@ -125,7 +142,12 @@ function readFloors(): FloorConfig {
   return cfg
 }
 
-function stats(rows: Row[], minimum: number) {
+function statusOf(values: number, floor: number, bounded: boolean, minimum: number): Status {
+  if (bounded) return values >= floor ? 'bounded' : values < Math.min(minimum, floor) ? 'shallow' : 'depth-gap'
+  return values < minimum ? 'shallow' : values < floor ? 'depth-gap' : 'complete'
+}
+
+function stats(rows: Row[]) {
   const counts = rows.map((r) => r.values).sort((a, b) => a - b)
   const total = counts.reduce((s, n) => s + n, 0)
   const mid = counts.length >> 1
@@ -136,14 +158,14 @@ function stats(rows: Row[], minimum: number) {
     median: !counts.length ? 0 : counts.length % 2 ? counts[mid]! : (counts[mid - 1]! + counts[mid]!) / 2,
     min: counts[0] ?? 0,
     max: counts[counts.length - 1] ?? 0,
-    shallow: rows.filter((r) => r.values < minimum).length,
+    ...Object.fromEntries(STATUSES.map((st) => [st, rows.filter((r) => r.status === st).length])) as Record<Status, number>,
     belowFloor: rows.filter((r) => r.gap > 0).length,
     gapTotal: rows.reduce((s, r) => s + r.gap, 0),
   }
 }
 
 function table(rows: Row[]) {
-  const head = ['values', 'floor', 'gap', 'takes', 'group', 'title', 'notes']
+  const head = ['values', 'floor', 'gap', 'status', 'takes', 'group', 'title', 'notes']
   const body = rows.map((r) => {
     const notes = [
       r.pending && `pending:${r.pending}`,
@@ -153,7 +175,7 @@ function table(rows: Row[]) {
       r.stale && 'stale',
       !r.isActive && 'inactive',
     ].filter(Boolean).join(',')
-    return [String(r.values), String(r.floor), String(r.gap), String(r.takes), r.groupSlug, r.title, notes]
+    return [String(r.values), String(r.floor), String(r.gap), r.status, String(r.takes), r.groupSlug, r.title, notes]
   })
   const widths = head.map((h, i) => Math.max(h.length, ...body.map((b) => b[i]!.length)))
   const line = (cells: string[]) => cells.map((c, i) => (i === cells.length - 1 ? c : c.padEnd(widths[i]!))).join('  ').trimEnd()
@@ -186,6 +208,7 @@ async function main() {
         values, pending: Number(r.pendingCount), excluded: Number(r.excludedCount), inactive: Number(r.inactiveCount),
         adminEditedAt: r.adminEditedAt && r.adminEditedAt !== 'null' ? r.adminEditedAt : null,
         floor, gap: Math.max(0, floor - values), file: null, stale: false,
+        status: statusOf(values, floor, floors.lists[r.slug] !== undefined && floors.lists[r.slug]! < (floors.groups[r.groupSlug] ?? floors.default), floors.minimum),
       }
     })
     const entries = mapEntriesToLists(loadCatalog(), rows)
@@ -213,7 +236,7 @@ async function main() {
       && (o.min === undefined || r.values >= o.min)
       && (o.max === undefined || r.values <= o.max)
       && (!o.belowFloor || r.gap > 0)
-      && (!o.shallow || r.values < floors.minimum))
+      && (!o.statuses.length || o.statuses.includes(r.status)))
     const cmp: Record<Opts['sort'], (a: Row, b: Row) => number> = {
       values: (a, b) => a.values - b.values || a.title.localeCompare(b.title),
       gap: (a, b) => b.gap - a.gap || a.title.localeCompare(b.title),
@@ -245,11 +268,11 @@ async function main() {
     await conn.end()
   }
 
-  const s = stats(active, floors.minimum)
+  const s = stats(active)
   const shown = matched.slice(0, o.limit ?? matched.length)
   const strip = ({ id: _id, ...r }: Row) => r
   const n = (x: number) => x.toLocaleString('en-US')
-  console.log(`LISTS ${s.lists}  VALUES ${n(s.values)}  AVG ${s.avg.toFixed(2)}  MEDIAN ${s.median}  MIN ${s.min}  MAX ${s.max}  SHALLOW ${s.shallow}  BELOW_FLOOR ${s.belowFloor}  GAP ${n(s.gapTotal)}  (active lists; minimum ${floors.minimum}, floor default ${o.floor ?? floors.default})`)
+  console.log(`LISTS ${s.lists}  VALUES ${n(s.values)}  AVG ${s.avg.toFixed(2)}  MEDIAN ${s.median}  MIN ${s.min}  MAX ${s.max}  SHALLOW ${s.shallow}  DEPTH_GAP ${s['depth-gap']}  COMPLETE ${s.complete}  BOUNDED ${s.bounded}  GAP ${n(s.gapTotal)}  (active lists; minimum ${floors.minimum}, floor default ${o.floor ?? floors.default})`)
 
   if (o.json) {
     console.log(JSON.stringify(shown.map((r) => {
@@ -267,7 +290,7 @@ async function main() {
   }
   if (shown.length < matched.length) console.log(`… ${matched.length - shown.length} more (raise --limit)`)
 
-  const marker = { target: target.name, lists: s.lists, values: s.values, avg: s.avg, median: s.median, min: s.min, max: s.max, shallow: s.shallow, minimum: floors.minimum, belowFloor: s.belowFloor, gap: s.gapTotal, floor: o.floor ?? floors.default, matched: matched.length, shown: shown.length }
+  const marker = { target: target.name, lists: s.lists, values: s.values, avg: s.avg, median: s.median, min: s.min, max: s.max, shallow: s.shallow, depthGap: s['depth-gap'], complete: s.complete, bounded: s.bounded, minimum: floors.minimum, belowFloor: s.belowFloor, gap: s.gapTotal, floor: o.floor ?? floors.default, matched: matched.length, shown: shown.length }
 
   if (o.snapshot) {
     const dir = resolve(ROOT, 'catalog/review')
