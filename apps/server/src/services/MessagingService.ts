@@ -43,8 +43,7 @@ export function serializeConversation(conversation: any, viewerProfileId: string
   if (lastMessage) {
     const isSystem = conversation.type === 'SYSTEM' || !!lastMessage.systemMessageType
     const isOwn = lastMessage.senderId === viewerProfileId
-    const locked = !isSystem && !isOwn && !entitlements['messaging.readIncoming']
-    lastMessageBody = locked ? '🔒 New message' : lastMessage.body
+    lastMessageBody = lastMessage.body
     if (!isOwn && viewerParticipant) {
       const shouldNotify = !isSystem || (lastMessage.attachments as any)?.notify !== false
       hasUnread = shouldNotify && (!viewerParticipant.lastReadAt || lastMessage.createdAt > viewerParticipant.lastReadAt)
@@ -67,16 +66,16 @@ export function serializeConversation(conversation: any, viewerProfileId: string
 function serializeMessage(message: any, viewerProfileId: string, entitlements: Entitlements) {
   const isSystem = !!message.systemMessageType
   const isOwn = message.senderId === viewerProfileId
-  const locked = !isSystem && !isOwn && !entitlements['messaging.readIncoming']
+  const hideAttachments = !isSystem && !isOwn && !entitlements['messaging.readIncoming']
   return {
     id: message.id,
     conversationId: message.conversationId,
     senderId: message.senderId ?? null,
     systemMessageType: message.systemMessageType ?? null,
-    body: locked ? null : message.body,
-    attachments: locked || isSystem || !Array.isArray(message.attachments) ? null : message.attachments,
+    body: message.body,
+    attachments: hideAttachments || isSystem || !Array.isArray(message.attachments) ? null : message.attachments,
     systemData: isSystem ? toSystemData(message.attachments) : null,
-    locked,
+    locked: false,
     createdAt: message.createdAt,
   }
 }

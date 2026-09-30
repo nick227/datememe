@@ -55,6 +55,11 @@ function supportsSystemCta(cta: ActivityCta | null | undefined): cta is Activity
   return cta?.route === 'ProfileDetail' || cta?.route === 'Conversation' || cta?.route === 'ListBuilder'
 }
 
+function conversationHeaderFacts(person: { locationLabel?: string | null; age?: number | null; bio?: string | null }) {
+  const basics = [person.locationLabel?.trim() || null, person.age != null ? String(person.age) : null].filter((part): part is string => !!part)
+  return { basics: basics.join(' · '), factoid: person.bio?.trim() ?? '' }
+}
+
 function findById<T extends { id: string }>(pages: { data: T[] }[] | undefined, id: string) {
   if (!pages) return undefined
   for (const page of pages) {
@@ -107,6 +112,7 @@ export function ConversationScreen({ route, navigation }: Props) {
   const isSeen = !!(myLastMessage && otherReadAt && new Date(otherReadAt) >= new Date(myLastMessage.createdAt))
 
   const isSystemThread = conversation ? conversation.type === 'SYSTEM' : rows.some((message) => message.systemMessageType != null)
+  const headerFacts = isSystemThread || !otherParticipant ? null : conversationHeaderFacts(otherParticipant)
 
   async function handleSend() {
     const body = draft.trim()
@@ -288,18 +294,24 @@ export function ConversationScreen({ route, navigation }: Props) {
           }
         >
           {isSystemThread ? (
-            <View style={[styles.headerAvatar, { backgroundColor: colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' }]}>
-              <Icon name="Bell" size={16} color={colors.inkMuted} />
+            <View style={[styles.headerAvatar, styles.headerAvatarSystem]}>
+              <Icon name="Bell" size={18} color={colors.inkMuted} />
             </View>
           ) : otherParticipant?.avatarUrl ? (
             <Image source={{ uri: otherParticipant.avatarUrl }} style={styles.headerAvatar} />
           ) : (
-            <View style={[styles.headerAvatar, { backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center' }]}>
-              <Text style={{ color: colors.primary, fontWeight: 'bold' }}>{displayName.charAt(0).toUpperCase()}</Text>
+            <View style={[styles.headerAvatar, styles.headerAvatarFallback]}>
+              <Text style={styles.headerAvatarInitial}>{displayName.charAt(0).toUpperCase()}</Text>
             </View>
           )}
           <View style={styles.headerTextContainer}>
-            <Typography variant="heading">{isSystemThread ? 'Activity' : displayName}</Typography>
+            <Typography variant="heading" numberOfLines={1}>{isSystemThread ? 'Activity' : displayName}</Typography>
+            {headerFacts?.basics ? (
+              <Typography variant="bodyMuted" numberOfLines={1} style={styles.headerMeta}>{headerFacts.basics}</Typography>
+            ) : null}
+            {headerFacts?.factoid ? (
+              <Typography variant="bodyMuted" numberOfLines={1} style={styles.headerMeta}>{headerFacts.factoid}</Typography>
+            ) : null}
           </View>
         </Pressable>
 
@@ -375,8 +387,7 @@ export function ConversationScreen({ route, navigation }: Props) {
                 const prevItem = rows[index - 1] // Newer message (rendered below this one)
 
                 const isLastInGroup = !prevItem || prevItem.senderId !== item.senderId
-
-                const body = item.locked ? 'New message' : item.body
+                if (!item.body && !item.attachments?.length) return null
 
                 return (
                   <View style={[
@@ -388,9 +399,9 @@ export function ConversationScreen({ route, navigation }: Props) {
                       <Pressable
                         testID={`conversation.message.${item.id}`}
                         style={[styles.bubble, isOwn ? styles.bubbleOwn : styles.bubbleOther]}
-                        onLongPress={() => !isOwn && !item.locked && handleReportMessage(item.id)}
+                        onLongPress={() => !isOwn && handleReportMessage(item.id)}
                       >
-                        {item.locked ? null : item.attachments?.map((att: any, i: number) => (
+                        {item.attachments?.map((att: any, i: number) => (
                           <View key={i} style={styles.bubbleAttachmentContainer}>
                             {att.type === 'image' ? (
                               <Image
@@ -402,8 +413,8 @@ export function ConversationScreen({ route, navigation }: Props) {
                           </View>
                         ))}
 
-                        {body ? (
-                          <Text style={item.locked ? styles.bodyLocked : isOwn ? styles.bodyOwn : styles.bodyOther}>{body}</Text>
+                        {item.body ? (
+                          <Text style={isOwn ? styles.bodyOwn : styles.bodyOther}>{item.body}</Text>
                         ) : null}
 
                         {isLastInGroup && (
@@ -487,17 +498,38 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    minWidth: 0,
     gap: spacing.sm,
   },
   headerTextContainer: {
+    flex: 1,
+    minWidth: 0,
+    justifyContent: 'center',
+  },
+  headerMeta: {
+    color: colors.inkMuted,
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  headerAvatar: {
+    width: 52,
+    height: 52,
+    borderRadius: radius.pill,
+  },
+  headerAvatarSystem: {
+    backgroundColor: colors.surfaceMuted,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  headerAvatar: {
-    width: 32,
-    height: 32,
-    borderRadius: radius.pill,
+  headerAvatarFallback: {
+    backgroundColor: colors.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerAvatarInitial: {
+    color: colors.primary,
+    fontWeight: 'bold',
+    fontSize: 20,
   },
   headerDivider: {
     height: 1,
@@ -522,7 +554,6 @@ const styles = StyleSheet.create({
 
   bodyOwn: { color: colors.white, fontSize: 15, lineHeight: 20 },
   bodyOther: { color: colors.ink, fontSize: 15, lineHeight: 20 },
-  bodyLocked: { color: colors.inkMuted, fontSize: 15, lineHeight: 20 },
   timeOwn: { color: 'rgba(255,255,255,0.7)', fontSize: 11, alignSelf: 'flex-end', marginTop: 4 },
   timeOther: { color: colors.inkMuted, fontSize: 11, alignSelf: 'flex-start', marginTop: 4 },
 

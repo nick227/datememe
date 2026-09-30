@@ -84,7 +84,7 @@ describe('user foundation — login to bootstrap to protected operations', () =>
     expect(profile.json().data.avatarUrl).toBeNull()
     const messages = await get(`/conversations/${conversation.id}/messages`)
     expect(messages.statusCode).toBe(200)
-    expect(messages.json().data[0]).toMatchObject({ locked: true, body: null, attachments: null })
+    expect(messages.json().data[0]).toMatchObject({ locked: false, body: 'protected incoming text', attachments: null })
     expect(messages.body).not.toContain('secret.jpg')
     const conversations = await get('/conversations')
     expect(conversations.statusCode).toBe(200)
