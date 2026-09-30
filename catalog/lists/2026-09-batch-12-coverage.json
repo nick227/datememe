@@ -39,12 +39,14 @@
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "go-to-breakfast",
+    "adminEditedAt": null,
     "groupSlug": "food-drink",
     "entityTypeSlug": "food",
     "title": "Go-To Breakfast",
     "prompt": "What's your go-to breakfast?",
     "axes": ["food", "routine", "lifestyle"],
-    "values": ["Eggs and bacon", "Avocado toast", "Cereal", "Smoothie", "Oatmeal", "Bagel and cream cheese", "Pancakes", "Breakfast burrito", "Yogurt and granola", "Just coffee", "Leftover pizza", "Skip breakfast"],
+    "values": ["Eggs and bacon", "Avocado toast", "Cereal", "Smoothie", "Oatmeal", "Bagel and cream cheese", "Pancakes", "Breakfast burrito", "Yogurt and granola", "Just coffee", "Leftover pizza", "Skip breakfast", "Breakfast sandwich", "French toast", "Waffles", "Acai bowl", "Protein shake", "Shakshuka", "Huevos rancheros", "Toast and jam"],
     "isAbstract": true
   },
   {
@@ -61,12 +63,14 @@
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "your-bar-order",
+    "adminEditedAt": null,
     "groupSlug": "food-drink",
     "entityTypeSlug": "beverage",
     "title": "Your Bar Order",
     "prompt": "What's your usual bar order?",
     "axes": ["nightlife", "food", "lifestyle"],
-    "values": ["Cheap beer", "IPA", "Glass of red wine", "Vodka soda", "Tequila soda", "Hard seltzer", "Whiskey neat", "Cider", "Rosé", "Shots for the table", "Mocktail", "Water, I'm driving"],
+    "values": ["Cheap beer", "IPA", "Glass of red wine", "Vodka soda", "Tequila soda", "Hard seltzer", "Whiskey neat", "Cider", "Rosé", "Shots for the table", "Mocktail", "Water, I'm driving", "Margarita on the rocks", "Gin and tonic", "Old fashioned", "Aperol spritz", "Guinness", "Champagne", "Rum and Coke", "Whatever's on special"],
     "isAbstract": true
   },
   {
@@ -83,12 +87,14 @@
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "underrated-cities",
+    "adminEditedAt": null,
     "groupSlug": "travel",
     "entityTypeSlug": "city",
     "title": "Underrated Cities",
     "prompt": "Which underrated city would you tell a friend to visit?",
     "axes": ["travel", "adventure", "taste"],
-    "values": ["Lisbon", "Porto", "Mexico City", "Montreal", "Budapest", "Copenhagen", "Kyoto", "Cape Town", "Edinburgh", "Medellín", "Ljubljana", "Oaxaca"],
+    "values": ["Lisbon", "Porto", "Mexico City", "Montreal", "Budapest", "Copenhagen", "Kyoto", "Cape Town", "Edinburgh", "Medellín", "Ljubljana", "Oaxaca", "Kraków", "Tbilisi", "Valencia", "Bologna", "Hoi An", "Savannah", "Pittsburgh", "Asheville"],
     "isAbstract": false
   }
 ]

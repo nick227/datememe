@@ -1,6 +1,8 @@
 [
   {
     "schemaVersion": 1,
+    "categorySlug": "favorite-indie-bands",
+    "adminEditedAt": null,
     "groupSlug": "music",
     "entityTypeSlug": "band",
     "title": "Favorite Indie Bands",
@@ -20,12 +22,24 @@
       "Florence + The Machine",
       "MGMT",
       "The Black Keys",
-      "Radiohead"
+      "Radiohead",
+      "Bon Iver",
+      "The National",
+      "Phoebe Bridgers",
+      "Beach House",
+      "Fleet Foxes",
+      "Modest Mouse",
+      "The xx",
+      "Cage the Elephant",
+      "Mac DeMarco",
+      "Two Door Cinema Club"
     ],
     "isAbstract": false
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "top-r-b-artists",
+    "adminEditedAt": null,
     "groupSlug": "music",
     "entityTypeSlug": "band",
     "title": "Top R&B Artists",
@@ -45,12 +59,24 @@
       "Chris Brown",
       "Mary J. Blige",
       "Lauryn Hill",
-      "Boyz II Men"
+      "Boyz II Men",
+      "Beyoncé",
+      "Whitney Houston",
+      "Stevie Wonder",
+      "Marvin Gaye",
+      "Aretha Franklin",
+      "Erykah Badu",
+      "D'Angelo",
+      "Brandy",
+      "Daniel Caesar",
+      "H.E.R."
     ],
     "isAbstract": false
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "top-guitarists",
+    "adminEditedAt": null,
     "groupSlug": "music",
     "entityTypeSlug": "musician",
     "title": "Top Guitarists",
@@ -70,12 +96,24 @@
       "Chuck Berry",
       "Keith Richards",
       "Slash",
-      "John Mayer"
+      "John Mayer",
+      "David Gilmour",
+      "Carlos Santana",
+      "Brian May",
+      "Jeff Beck",
+      "Angus Young",
+      "Tom Morello",
+      "Mark Knopfler",
+      "Prince",
+      "Nile Rodgers",
+      "Joni Mitchell"
     ],
     "isAbstract": false
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "favorite-classic-rock-songs",
+    "adminEditedAt": null,
     "groupSlug": "music",
     "entityTypeSlug": "song",
     "title": "Favorite Classic Rock Songs",
@@ -95,7 +133,17 @@
       "Back in Black",
       "Comfortably Numb",
       "Dream On",
-      "Born to Run"
+      "Born to Run",
+      "Layla",
+      "Gimme Shelter",
+      "Baba O'Riley",
+      "Purple Haze",
+      "Paint It Black",
+      "(I Can't Get No) Satisfaction",
+      "More Than a Feeling",
+      "Go Your Own Way",
+      "Don't Stop Believin'",
+      "Imagine"
     ],
     "isAbstract": false
   },

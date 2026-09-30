@@ -67,6 +67,8 @@
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "favorite-candy-bars",
+    "adminEditedAt": null,
     "groupSlug": "food-drink",
     "entityTypeSlug": "candy",
     "title": "Favorite Candy Bars",
@@ -88,12 +90,22 @@
       "PayDay",
       "Almond Joy",
       "100 Grand",
-      "Crunch Bar"
+      "Crunch Bar",
+      "3 Musketeers",
+      "Kinder Bueno",
+      "Toblerone",
+      "Heath",
+      "Baby Ruth",
+      "Mounds",
+      "Take 5",
+      "Mr. Goodbar"
     ],
     "isAbstract": false
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "go-to-cocktails",
+    "adminEditedAt": null,
     "groupSlug": "food-drink",
     "entityTypeSlug": "cocktail",
     "title": "Go-To Cocktails",
@@ -115,7 +127,15 @@
       "Pina Colada",
       "Espresso Martini",
       "Aperol Spritz",
-      "Bloody Mary"
+      "Bloody Mary",
+      "Paloma",
+      "Manhattan",
+      "Gin and Tonic",
+      "Daiquiri",
+      "Mai Tai",
+      "French 75",
+      "Dark 'n' Stormy",
+      "Sazerac"
     ],
     "isAbstract": false
   },

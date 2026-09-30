@@ -123,6 +123,8 @@
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "favorite-desserts",
+    "adminEditedAt": null,
     "groupSlug": "food-drink",
     "entityTypeSlug": "food",
     "title": "Favorite Desserts",
@@ -142,12 +144,24 @@
       "Creme Brulee",
       "Chocolate Cake",
       "Macarons",
-      "Churros"
+      "Churros",
+      "Donuts",
+      "Cinnamon Rolls",
+      "Gelato",
+      "Key Lime Pie",
+      "Banana Pudding",
+      "Red Velvet Cake",
+      "Carrot Cake",
+      "Tres Leches Cake",
+      "Baklava",
+      "Mochi"
     ],
     "isAbstract": false
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "favorite-coffee-drinks",
+    "adminEditedAt": null,
     "groupSlug": "food-drink",
     "entityTypeSlug": "beverage",
     "title": "Favorite Coffee Drinks",
@@ -167,7 +181,17 @@
       "Mocha",
       "Cold Brew",
       "Frappuccino",
-      "Cortado"
+      "Cortado",
+      "Iced Latte",
+      "Chai Latte",
+      "Matcha Latte",
+      "Drip Coffee",
+      "Pumpkin Spice Latte",
+      "Vietnamese Iced Coffee",
+      "Nitro Cold Brew",
+      "Irish Coffee",
+      "Affogato",
+      "Turkish Coffee"
     ],
     "isAbstract": false
   },

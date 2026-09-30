@@ -1220,7 +1220,19 @@
       "Guitar",
       "Piano",
       "Saxophone",
-      "Violin"
+      "Violin",
+      "Ukulele",
+      "Singing",
+      "Trumpet",
+      "Clarinet",
+      "Synthesizer",
+      "Harmonica",
+      "Banjo",
+      "Mandolin",
+      "Trombone",
+      "Harp",
+      "Accordion",
+      "DJ decks"
     ],
     "isAbstract": true
   },
@@ -1431,7 +1443,15 @@
       "Smartphone",
       "Smartwatch",
       "Tablet",
-      "VR Headset"
+      "VR Headset",
+      "Wireless earbuds",
+      "Smart speaker",
+      "Bluetooth speaker",
+      "Game console",
+      "Streaming stick",
+      "Robot vacuum",
+      "Instant camera",
+      "External monitor"
     ],
     "isAbstract": false
   },

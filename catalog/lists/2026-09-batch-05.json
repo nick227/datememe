@@ -26,6 +26,8 @@
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "favorite-pop-artists",
+    "adminEditedAt": null,
     "groupSlug": "music",
     "entityTypeSlug": "band",
     "title": "Favorite Pop Artists",
@@ -45,7 +47,17 @@
       "Ariana Grande",
       "Katy Perry",
       "Bruno Mars",
-      "Ed Sheeran"
+      "Ed Sheeran",
+      "Rihanna",
+      "Dua Lipa",
+      "Billie Eilish",
+      "Harry Styles",
+      "Olivia Rodrigo",
+      "Adele",
+      "Britney Spears",
+      "Whitney Houston",
+      "Sabrina Carpenter",
+      "Chappell Roan"
     ],
     "isAbstract": false
   },
@@ -150,6 +162,8 @@
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "top-music-genres",
+    "adminEditedAt": null,
     "groupSlug": "music",
     "entityTypeSlug": "music-genre",
     "title": "Top Music Genres",
@@ -169,7 +183,17 @@
       "Jazz",
       "Classical",
       "Heavy Metal",
-      "Reggae"
+      "Reggae",
+      "Indie",
+      "Alternative",
+      "Latin",
+      "K-Pop",
+      "Punk",
+      "Blues",
+      "Folk",
+      "Soul",
+      "Funk",
+      "Reggaeton"
     ],
     "isAbstract": true
   },

@@ -200,6 +200,8 @@
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "favorite-beer-styles",
+    "adminEditedAt": null,
     "groupSlug": "food-drink",
     "entityTypeSlug": "beverage",
     "title": "Favorite Beer Styles",
@@ -217,7 +219,15 @@
       "Pale ale",
       "Amber ale",
       "Belgian tripel",
-      "Light beer"
+      "Light beer",
+      "Double IPA",
+      "Mexican lager",
+      "Hefeweizen",
+      "Saison",
+      "Kölsch",
+      "Gose",
+      "Bock",
+      "Barleywine"
     ],
     "isAbstract": false
   },

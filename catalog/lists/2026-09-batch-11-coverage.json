@@ -74,12 +74,14 @@
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "your-karaoke-song",
+    "adminEditedAt": null,
     "groupSlug": "lifestyle-hobbies",
     "entityTypeSlug": "song",
     "title": "Your Karaoke Song",
     "prompt": "What's your go-to karaoke song?",
     "axes": ["nightlife", "music", "personality"],
-    "values": ["Bohemian Rhapsody", "Don't Stop Believin'", "Livin' on a Prayer", "I Will Survive", "Mr. Brightside", "Sweet Caroline", "Dancing Queen", "Wannabe", "Total Eclipse of the Heart", "Before He Cheats", "I Want It That Way", "Rolling in the Deep"],
+    "values": ["Bohemian Rhapsody", "Don't Stop Believin'", "Livin' on a Prayer", "I Will Survive", "Mr. Brightside", "Sweet Caroline", "Dancing Queen", "Wannabe", "Total Eclipse of the Heart", "Before He Cheats", "I Want It That Way", "Rolling in the Deep", "Piano Man", "Shallow", "...Baby One More Time", "Shake It Off", "Friends in Low Places", "Africa", "Hey Ya!", "Wonderwall"],
     "isAbstract": false
   },
   {

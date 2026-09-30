@@ -1,6 +1,8 @@
 [
   {
     "schemaVersion": 1,
+    "categorySlug": "top-athletes-of-all-time",
+    "adminEditedAt": null,
     "groupSlug": "sports",
     "entityTypeSlug": "athlete",
     "title": "Top Athletes of All Time",
@@ -20,12 +22,24 @@
       "Pelé",
       "LeBron James",
       "Tiger Woods",
-      "Wayne Gretzky"
+      "Wayne Gretzky",
+      "Cristiano Ronaldo",
+      "Simone Biles",
+      "Michael Phelps",
+      "Roger Federer",
+      "Babe Ruth",
+      "Kobe Bryant",
+      "Diego Maradona",
+      "Kareem Abdul-Jabbar",
+      "Jackie Robinson",
+      "Steffi Graf"
     ],
     "isAbstract": false
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "favorite-extreme-sports",
+    "adminEditedAt": null,
     "groupSlug": "sports",
     "entityTypeSlug": "extreme-sport",
     "createEntityType": {
@@ -49,7 +63,17 @@
       "Base Jumping",
       "Motocross",
       "White Water Rafting",
-      "Parkour"
+      "Parkour",
+      "Bungee Jumping",
+      "Paragliding",
+      "Kitesurfing",
+      "Cliff Diving",
+      "Downhill Mountain Biking",
+      "Big Wave Surfing",
+      "Wingsuit Flying",
+      "Ice Climbing",
+      "Heli-Skiing",
+      "Free Solo Climbing"
     ],
     "isAbstract": true
   },

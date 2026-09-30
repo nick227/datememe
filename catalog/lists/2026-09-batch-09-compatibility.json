@@ -67,13 +67,15 @@
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "late-night-snack",
+    "adminEditedAt": null,
     "groupSlug": "food-drink",
     "entityTypeSlug": "late-night-snack",
     "createEntityType": { "label": "Late-Night Snack", "pluralLabel": "Late-Night Snacks" },
     "title": "Late-Night Snack",
     "prompt": "What's your go-to late-night snack?",
     "axes": ["food", "routine", "comfort"],
-    "values": ["Pizza", "Cereal", "Ice cream", "Chips", "Instant ramen", "Grilled cheese", "Tacos", "Popcorn", "Cookies", "Leftovers from the fridge", "Fries", "Peanut butter toast"],
+    "values": ["Pizza", "Cereal", "Ice cream", "Chips", "Instant ramen", "Grilled cheese", "Tacos", "Popcorn", "Cookies", "Leftovers from the fridge", "Fries", "Peanut butter toast", "Nachos", "Quesadilla", "Chicken nuggets", "Mac and cheese", "Cheese and crackers", "Gummy candy", "Hot Pockets", "A spoonful of peanut butter"],
     "isAbstract": true
   },
   {
