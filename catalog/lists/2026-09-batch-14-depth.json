@@ -134,6 +134,8 @@
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "home-cooking-style",
+    "adminEditedAt": null,
     "groupSlug": "lifestyle-hobbies",
     "entityTypeSlug": "daily-habit",
     "title": "Home Cooking Style",
@@ -151,7 +153,15 @@
       "Pasta five nights a week",
       "Meal kit deliveries",
       "Cooking is how I unwind",
-      "Cereal counts as dinner"
+      "Cereal counts as dinner",
+      "Grill master",
+      "Slow cooker meals",
+      "Family recipes",
+      "Instant Pot everything",
+      "Cuisines from around the world",
+      "Healthy and simple",
+      "Breakfast for dinner",
+      "Plant-based cooking"
     ],
     "isAbstract": true
   },
@@ -213,6 +223,8 @@
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "pet-dealbreakers",
+    "adminEditedAt": null,
     "groupSlug": "lifestyle-hobbies",
     "entityTypeSlug": "dealbreaker",
     "title": "Pet Dealbreakers",
@@ -230,7 +242,15 @@
       "Dog comes on every date",
       "Pet comes before me",
       "Untrained dog",
-      "Litter box in the kitchen"
+      "Litter box in the kitchen",
+      "Won't pick up after their dog",
+      "Dog that barks all night",
+      "Pet that bites",
+      "Reptiles in the bedroom",
+      "A pet tarantula",
+      "Buys from breeders, not shelters",
+      "Farm animals in the house",
+      "A parrot that talks back"
     ],
     "isAbstract": true
   },

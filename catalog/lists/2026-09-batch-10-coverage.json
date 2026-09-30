@@ -13,12 +13,14 @@
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "ways-to-unwind",
+    "adminEditedAt": null,
     "groupSlug": "lifestyle-hobbies",
     "entityTypeSlug": "hobby",
     "title": "Ways to Unwind",
     "prompt": "How do you unwind after a long day?",
     "axes": ["wellness", "routine", "comfort"],
-    "values": ["Reading", "Yoga", "Cooking", "Gaming", "Gardening", "Hot bath", "Long walk", "Meditation", "Working out", "Calling a friend", "TV and takeout", "Headphones and a playlist", "Nap", "Journaling"],
+    "values": ["Reading", "Yoga", "Cooking", "Gaming", "Gardening", "Hot bath", "Long walk", "Meditation", "Working out", "Calling a friend", "TV and takeout", "Headphones and a playlist", "Nap", "Journaling", "Painting", "Puzzles", "Playing music", "Massage", "Baking", "Knitting"],
     "isAbstract": true
   },
   {
@@ -137,13 +139,15 @@
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "worth-the-splurge",
+    "adminEditedAt": null,
     "groupSlug": "lifestyle-hobbies",
     "entityTypeSlug": "splurge",
     "createEntityType": { "label": "Splurge", "pluralLabel": "Splurges" },
     "title": "Worth the Splurge",
     "prompt": "What's actually worth splurging on?",
     "axes": ["money", "lifestyle", "values"],
-    "values": ["Travel", "Good food", "Concert tickets", "Tech", "Clothes and sneakers", "Home decor", "Skincare", "Fitness", "A nice car", "Experiences with friends", "Hobby gear", "A really good mattress"],
+    "values": ["Travel", "Good food", "Concert tickets", "Tech", "Clothes and sneakers", "Home decor", "Skincare", "Fitness", "A nice car", "Experiences with friends", "Hobby gear", "A really good mattress", "Front-row seats", "First class", "A great haircut", "Therapy", "Jewelry", "Kitchen gear", "My pets", "Good wine"],
     "isAbstract": true
   },
   {

@@ -61,13 +61,15 @@
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "home-must-haves",
+    "adminEditedAt": null,
     "groupSlug": "lifestyle-hobbies",
     "entityTypeSlug": "home-feature",
     "createEntityType": { "label": "Home Feature", "pluralLabel": "Home Features" },
     "title": "Home Must-Haves",
     "prompt": "What does your home absolutely need?",
     "axes": ["home", "lifestyle", "comfort"],
-    "values": ["A big comfy couch", "Lots of houseplants", "A real kitchen", "In-unit laundry", "A home office", "Outdoor space", "Natural light", "Full bookshelves", "A great bed", "A dishwasher", "Room for a pet", "A walkable neighborhood"],
+    "values": ["A big comfy couch", "Lots of houseplants", "A real kitchen", "In-unit laundry", "A home office", "Outdoor space", "Natural light", "Full bookshelves", "A great bed", "A dishwasher", "Room for a pet", "A walkable neighborhood", "A walk-in closet", "A garage", "A big bathtub", "A guest room", "A home gym", "A fireplace", "Central air", "Good water pressure"],
     "isAbstract": true
   },
   {
@@ -82,22 +84,26 @@
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "money-habits",
+    "adminEditedAt": null,
     "groupSlug": "lifestyle-hobbies",
     "entityTypeSlug": "daily-habit",
     "title": "Money Habits",
     "prompt": "How do you handle money?",
     "axes": ["money", "values", "lifestyle"],
-    "values": ["Budget every dollar", "Save first, spend later", "Treat-yourself spender", "Split the bill evenly", "Always grab the check", "Request $3 back on Venmo", "Invest on the side", "Never check the balance", "Hunt for deals", "Buy now, pay later", "Keep an emergency fund", "Save up for trips"],
+    "values": ["Budget every dollar", "Save first, spend later", "Treat-yourself spender", "Split the bill evenly", "Always grab the check", "Request $3 back on Venmo", "Invest on the side", "Never check the balance", "Hunt for deals", "Buy now, pay later", "Keep an emergency fund", "Save up for trips", "Track spending in an app", "Automatic savings", "Pay cards in full every month", "Cash envelopes", "No-spend weeks", "Max out retirement", "Splurge on payday", "Experiences over things"],
     "isAbstract": true
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "wellness-trends",
+    "adminEditedAt": null,
     "groupSlug": "lifestyle-hobbies",
     "entityTypeSlug": "daily-habit",
     "title": "Wellness Trends",
     "prompt": "Which wellness trends are you actually into?",
     "axes": ["wellness", "lifestyle", "routine"],
-    "values": ["Cold plunges", "Pilates", "Sauna", "Hot yoga", "Sound baths", "Matcha", "Walking pad", "Sleep tracking", "Dry January", "Run clubs", "Breathwork", "Gut-health everything"],
+    "values": ["Cold plunges", "Pilates", "Sauna", "Hot yoga", "Sound baths", "Matcha", "Walking pad", "Sleep tracking", "Dry January", "Run clubs", "Breathwork", "Gut-health everything", "Intermittent fasting", "Red light therapy", "Protein everything", "Mouth taping", "Adaptogens", "Creatine", "12-3-30 treadmill", "Zone 2 cardio"],
     "isAbstract": true
   },
   {

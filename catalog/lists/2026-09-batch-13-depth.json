@@ -48,23 +48,27 @@
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "dream-place-to-live",
+    "adminEditedAt": null,
     "groupSlug": "lifestyle-hobbies",
     "entityTypeSlug": "home-feature",
     "title": "Dream Place to Live",
     "prompt": "Where would your dream home be?",
     "axes": ["home", "lifestyle", "future"],
-    "values": ["Big-city apartment", "Suburbs with a yard", "Small town", "Farmhouse", "Beach town", "Mountain cabin", "Van life", "Somewhere abroad", "Close to family", "Downtown loft", "Lake house", "Wherever work takes me"],
+    "values": ["Big-city apartment", "Suburbs with a yard", "Small town", "Farmhouse", "Beach town", "Mountain cabin", "Van life", "Somewhere abroad", "Close to family", "Downtown loft", "Lake house", "Wherever work takes me", "Tiny house", "Houseboat", "College town", "Desert town", "Tropical island", "Historic brownstone", "Off the grid", "Between the mountains and a city"],
     "isAbstract": true
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "house-rules",
+    "adminEditedAt": null,
     "groupSlug": "lifestyle-hobbies",
     "entityTypeSlug": "house-rule",
     "createEntityType": { "label": "House Rule", "pluralLabel": "House Rules" },
     "title": "House Rules",
     "prompt": "What makes a shared home work for you?",
     "axes": ["home", "routine", "values"],
-    "values": ["Shoes off inside", "Dishes done every night", "Separate bathrooms", "A chore chart", "Guests welcome anytime", "Quiet mornings", "Thermostat wars settled", "Split groceries evenly", "My own space to retreat", "Pets welcome", "No TV in the bedroom", "Cook together most nights"],
+    "values": ["Shoes off inside", "Dishes done every night", "Separate bathrooms", "A chore chart", "Guests welcome anytime", "Quiet mornings", "Thermostat wars settled", "Split groceries evenly", "My own space to retreat", "Pets welcome", "No TV in the bedroom", "Cook together most nights", "No phones at dinner", "Text if you'll be late", "Heads-up before overnight guests", "Shared grocery list", "Take turns picking the show", "Make the bed every morning", "Music on in the kitchen", "Lights out by midnight"],
     "isAbstract": true
   },
   {
@@ -104,12 +108,14 @@
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "pet-parenting-style",
+    "adminEditedAt": null,
     "groupSlug": "lifestyle-hobbies",
     "entityTypeSlug": "daily-habit",
     "title": "Pet Parenting Style",
     "prompt": "What kind of pet parent are you, or would you be?",
     "axes": ["pets", "home", "personality"],
-    "values": ["Pets sleep in the bed", "Strictly off the furniture", "Matching outfits", "Birthday parties for the pet", "They have their own Instagram", "Takes them everywhere", "Talks to them in a voice", "Doggy daycare", "Rescue only", "Trains every trick", "Treats on demand", "Allergic, sadly"],
+    "values": ["Pets sleep in the bed", "Strictly off the furniture", "Matching outfits", "Birthday parties for the pet", "They have their own Instagram", "Takes them everywhere", "Talks to them in a voice", "Doggy daycare", "Rescue only", "Trains every trick", "Treats on demand", "Allergic, sadly", "Pet cam while I'm out", "Dog park regulars", "Weekly grooming", "Raw food diet", "Crate trained", "Fosters animals", "Hiking buddy", "Pet insurance, obviously"],
     "isAbstract": true
   }
 ]

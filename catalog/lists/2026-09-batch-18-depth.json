@@ -225,6 +225,8 @@
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "impulse-buys",
+    "adminEditedAt": null,
     "groupSlug": "lifestyle-hobbies",
     "entityTypeSlug": "impulse-buy",
     "createEntityType": {
@@ -251,12 +253,21 @@
       "Stuff for my pet",
       "Flights",
       "Gym gear",
-      "Nothing, I never impulse buy"
+      "Nothing, I never impulse buy",
+      "Candles",
+      "Makeup",
+      "Video games",
+      "Coffee drinks",
+      "Kitchen gadgets",
+      "Lottery tickets",
+      "Shoes"
     ],
     "isAbstract": true
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "tipping-and-generosity",
+    "adminEditedAt": null,
     "groupSlug": "lifestyle-hobbies",
     "entityTypeSlug": "daily-habit",
     "title": "Tipping and Generosity",
@@ -278,12 +289,22 @@
       "Split tabs exactly",
       "Cover a friend who's short",
       "Tip only for great service",
-      "Give gifts instead of cash"
+      "Give gifts instead of cash",
+      "Pay for a stranger's coffee",
+      "Tip in cash",
+      "Big tips over the holidays",
+      "Buy the round",
+      "Volunteer instead of donating",
+      "Give to street performers",
+      "Tip on takeout",
+      "Send money for friends' birthdays"
     ],
     "isAbstract": true
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "sleep-setup",
+    "adminEditedAt": null,
     "groupSlug": "lifestyle-hobbies",
     "entityTypeSlug": "sleep-preference",
     "createEntityType": {
@@ -309,7 +330,15 @@
       "Window open",
       "King bed or nothing",
       "Phone by the bed",
-      "Separate bedrooms someday"
+      "Separate bedrooms someday",
+      "Weighted blanket",
+      "Too many pillows",
+      "Silk pillowcase",
+      "Sleep mask",
+      "Earplugs",
+      "Heated blanket",
+      "Humidifier",
+      "Firm mattress"
     ],
     "isAbstract": true
   },

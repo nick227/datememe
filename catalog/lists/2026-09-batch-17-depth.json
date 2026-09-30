@@ -190,6 +190,8 @@
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "how-you-invest",
+    "adminEditedAt": null,
     "groupSlug": "lifestyle-hobbies",
     "entityTypeSlug": "investment",
     "createEntityType": {
@@ -217,7 +219,13 @@
       "Angel investing",
       "Sports betting",
       "Not investing yet",
-      "None of these"
+      "None of these",
+      "Robo-advisor",
+      "Dividend stocks",
+      "Bonds",
+      "Company stock plan",
+      "Collectibles",
+      "Certificates of deposit"
     ],
     "isAbstract": true
   },
@@ -285,6 +293,8 @@
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "living-together-pet-peeves",
+    "adminEditedAt": null,
     "groupSlug": "lifestyle-hobbies",
     "entityTypeSlug": "pet-peeve",
     "title": "Living-Together Pet Peeves",
@@ -306,7 +316,15 @@
       "Clothes on the floor",
       "Toilet seat up",
       "Never takes out the trash",
-      "Borrowing without asking"
+      "Borrowing without asking",
+      "Leaves cabinets open",
+      "Messes with the thermostat",
+      "Eats my leftovers",
+      "Cap off the toothpaste",
+      "Snoozes the alarm for an hour",
+      "Hogs the bathroom in the morning",
+      "Packages piling up at the door",
+      "Steals the blankets"
     ],
     "isAbstract": true
   },
@@ -353,6 +371,8 @@
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "causes-you-care-about",
+    "adminEditedAt": null,
     "groupSlug": "lifestyle-hobbies",
     "entityTypeSlug": "cause",
     "createEntityType": {
@@ -380,7 +400,13 @@
       "Arts and culture",
       "Global poverty",
       "Voting access",
-      "Ocean conservation"
+      "Ocean conservation",
+      "Reproductive rights",
+      "Disability rights",
+      "Criminal justice reform",
+      "Immigrant rights",
+      "Food insecurity",
+      "Wildlife conservation"
     ],
     "isAbstract": true
   },
