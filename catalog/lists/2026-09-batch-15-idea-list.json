@@ -1,6 +1,8 @@
 [
   {
     "schemaVersion": 1,
+    "categorySlug": "substances-you-ve-tried",
+    "adminEditedAt": null,
     "groupSlug": "substances",
     "createGroup": {
       "label": "Substances & Vices"
@@ -32,12 +34,19 @@
       "Nitrous oxide",
       "Kratom",
       "Adderall without a prescription",
-      "None of these"
+      "None of these",
+      "Poppers",
+      "Salvia",
+      "2C-B",
+      "Xanax without a prescription",
+      "Kava"
     ],
     "isAbstract": false
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "your-stance-on-substances",
+    "adminEditedAt": null,
     "groupSlug": "substances",
     "entityTypeSlug": "substance-stance",
     "createEntityType": {
@@ -64,12 +73,21 @@
       "Microdosing",
       "Dealbreaker if they use",
       "Anything goes",
-      "None of these"
+      "None of these",
+      "Alcohol yes, drugs no",
+      "Only natural stuff",
+      "Used to, not anymore",
+      "Harm reduction first",
+      "Tried it once for the story",
+      "Open-minded but careful",
+      "Not around kids"
     ],
     "isAbstract": true
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "psychedelics-you-d-try",
+    "adminEditedAt": null,
     "groupSlug": "substances",
     "entityTypeSlug": "substance",
     "title": "Psychedelics You'd Try",
@@ -92,12 +110,21 @@
       "Ketamine",
       "MDMA",
       "Truffles",
-      "None of these"
+      "None of these",
+      "2C-B",
+      "Peyote",
+      "Amanita muscaria",
+      "LSA (morning glory seeds)",
+      "4-AcO-DMT",
+      "Changa",
+      "Microdosed mushrooms"
     ],
     "isAbstract": false
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "what-you-smoke",
+    "adminEditedAt": null,
     "groupSlug": "substances",
     "entityTypeSlug": "smokable",
     "createEntityType": {
@@ -124,12 +151,21 @@
       "THC vape pen",
       "Clove cigarettes",
       "Only when I drink",
-      "None of these"
+      "None of these",
+      "Spliffs",
+      "Pre-rolls",
+      "Cigarillos",
+      "Hand-rolled cigarettes",
+      "Disposable vape",
+      "Heated tobacco (IQOS)",
+      "Glass pipe"
     ],
     "isAbstract": false
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "your-drinking-style",
+    "adminEditedAt": null,
     "groupSlug": "substances",
     "entityTypeSlug": "drinking-style",
     "createEntityType": {
@@ -156,12 +192,21 @@
       "Hair of the dog",
       "Dry January every year",
       "Drink to deal with stress",
-      "None of these"
+      "None of these",
+      "Beer and a game",
+      "Mocktails only",
+      "Two drinks max",
+      "Happy hour regular",
+      "Shots at the club",
+      "Whiskey collector",
+      "Only on vacation"
     ],
     "isAbstract": true
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "party-habits",
+    "adminEditedAt": null,
     "groupSlug": "substances",
     "entityTypeSlug": "party-habit",
     "createEntityType": {
@@ -188,7 +233,14 @@
       "Afterparty regular",
       "Three-day comedown",
       "Home by midnight",
-      "None of these"
+      "None of these",
+      "Designated driver",
+      "Pregame at home",
+      "Social smoker",
+      "Water between every drink",
+      "Nitrous balloons",
+      "Shots with strangers",
+      "Buys the round"
     ],
     "isAbstract": true
   },

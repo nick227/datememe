@@ -1,6 +1,8 @@
 [
   {
     "schemaVersion": 1,
+    "categorySlug": "unexplained-mysteries",
+    "adminEditedAt": null,
     "groupSlug": "myths-mysteries",
     "createGroup": {
       "label": "Myths & Mysteries"
@@ -31,12 +33,20 @@
       "Phoenix Lights",
       "Flannan Isles lighthouse",
       "Hessdalen lights",
-      "Kryptos"
+      "Kryptos",
+      "Zodiac Killer",
+      "Jack the Ripper",
+      "Amelia Earhart's disappearance",
+      "Malaysia Airlines Flight 370",
+      "Mothman",
+      "Oumuamua"
     ],
     "isAbstract": false
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "ancient-mysteries",
+    "adminEditedAt": null,
     "groupSlug": "myths-mysteries",
     "entityTypeSlug": "mystery",
     "title": "Ancient Mysteries",
@@ -60,12 +70,20 @@
       "Carnac stones",
       "Derinkuyu underground city",
       "Longyou Caves",
-      "Great Sphinx of Giza"
+      "Great Sphinx of Giza",
+      "Teotihuacan",
+      "Machu Picchu",
+      "Baalbek",
+      "Plain of Jars",
+      "Serpent Mound",
+      "Dendera light"
     ],
     "isAbstract": false
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "lost-civilizations",
+    "adminEditedAt": null,
     "groupSlug": "myths-mysteries",
     "entityTypeSlug": "civilization",
     "createEntityType": {
@@ -92,12 +110,21 @@
       "Hittites",
       "Norte Chico",
       "Ancestral Puebloans",
-      "Atlantis"
+      "Atlantis",
+      "Sumerians",
+      "Mycenaeans",
+      "Aksumite Kingdom",
+      "Moche",
+      "Nok culture",
+      "Tartessos",
+      "Lemuria"
     ],
     "isAbstract": false
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "legendary-lost-treasures",
+    "adminEditedAt": null,
     "groupSlug": "myths-mysteries",
     "entityTypeSlug": "lost-treasure",
     "createEntityType": {
@@ -125,12 +152,20 @@
       "Blackbeard's treasure",
       "Flor de la Mar",
       "Beale ciphers",
-      "Library of Ivan the Terrible"
+      "Library of Ivan the Terrible",
+      "Captain Kidd's treasure",
+      "Montezuma's treasure",
+      "King John's crown jewels",
+      "Nazi gold train",
+      "Confederate gold",
+      "San José galleon"
     ],
     "isAbstract": false
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "secret-societies",
+    "adminEditedAt": null,
     "groupSlug": "myths-mysteries",
     "entityTypeSlug": "secret-society",
     "createEntityType": {
@@ -157,7 +192,14 @@
       "Carbonari",
       "Order of Assassins",
       "Priory of Sion",
-      "Odd Fellows"
+      "Odd Fellows",
+      "Bilderberg Group",
+      "Opus Dei",
+      "Thule Society",
+      "Sons of Liberty",
+      "Trilateral Commission",
+      "Hermetic Brotherhood of Luxor",
+      "Order of the Solar Temple"
     ],
     "isAbstract": false
   },
@@ -196,6 +238,8 @@
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "favorite-mythologies",
+    "adminEditedAt": null,
     "groupSlug": "myths-mysteries",
     "entityTypeSlug": "mythology",
     "createEntityType": {
@@ -223,12 +267,20 @@
       "Yoruba mythology",
       "Polynesian mythology",
       "Arthurian legend",
-      "Maya mythology"
+      "Maya mythology",
+      "Roman mythology",
+      "Inca mythology",
+      "Korean mythology",
+      "Finnish mythology",
+      "Persian mythology",
+      "Australian Aboriginal mythology"
     ],
     "isAbstract": false
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "mythical-creatures",
+    "adminEditedAt": null,
     "groupSlug": "myths-mysteries",
     "entityTypeSlug": "mythical-creature",
     "createEntityType": {
@@ -256,12 +308,20 @@
       "Banshee",
       "Chupacabra",
       "Thunderbird",
-      "Kappa"
+      "Kappa",
+      "Werewolf",
+      "Vampire",
+      "Bigfoot",
+      "Pegasus",
+      "Centaur",
+      "Cerberus"
     ],
     "isAbstract": false
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "esoteric-practices",
+    "adminEditedAt": null,
     "groupSlug": "myths-mysteries",
     "entityTypeSlug": "esoteric-practice",
     "createEntityType": {
@@ -290,12 +350,19 @@
       "Sigil magic",
       "Astral projection",
       "Chaos magic",
-      "None of these"
+      "None of these",
+      "Manifestation",
+      "Reiki",
+      "Feng shui",
+      "Human Design",
+      "Dowsing"
     ],
     "isAbstract": true
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "forbidden-books",
+    "adminEditedAt": null,
     "groupSlug": "myths-mysteries",
     "entityTypeSlug": "mysterious-text",
     "createEntityType": {
@@ -323,7 +390,13 @@
       "Egyptian Book of the Dead",
       "Codex Seraphinianus",
       "Rohonc Codex",
-      "Book of Soyga"
+      "Book of Soyga",
+      "Dead Sea Scrolls",
+      "Gospel of Judas",
+      "The Book of the Law",
+      "Malleus Maleficarum",
+      "Sixth and Seventh Books of Moses",
+      "Grimoire of Pope Honorius"
     ],
     "isAbstract": false
   }
