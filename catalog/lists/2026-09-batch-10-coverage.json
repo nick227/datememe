@@ -108,13 +108,15 @@
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "chores-you-don-t-mind",
+    "adminEditedAt": null,
     "groupSlug": "lifestyle-hobbies",
     "entityTypeSlug": "chore",
     "createEntityType": { "label": "Chore", "pluralLabel": "Chores" },
     "title": "Chores You Don't Mind",
     "prompt": "Which household chores do you actually not mind?",
     "axes": ["home", "routine", "lifestyle"],
-    "values": ["Dishes", "Laundry", "Folding clothes", "Vacuuming", "Cooking dinner", "Grocery shopping", "Taking out the trash", "Cleaning the bathroom", "Yard work", "Organizing closets", "Ironing", "Meal planning"],
+    "values": ["Dishes", "Laundry", "Folding clothes", "Vacuuming", "Cooking dinner", "Grocery shopping", "Taking out the trash", "Cleaning the bathroom", "Yard work", "Organizing closets", "Ironing", "Meal planning", "Dusting", "Mopping", "Making the bed", "Changing the sheets", "Watering plants", "Walking the dog", "Washing the car", "Cleaning the fridge"],
     "isAbstract": true
   },
   {

@@ -84,6 +84,8 @@
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "most-influential-historical-figures",
+    "adminEditedAt": null,
     "groupSlug": "history-politics",
     "entityTypeSlug": "historical-figure",
     "createEntityType": {
@@ -107,7 +109,17 @@
       "Alexander the Great",
       "Leonardo da Vinci",
       "Marie Curie",
-      "Napoleon Bonaparte"
+      "Napoleon Bonaparte",
+      "George Washington",
+      "Abraham Lincoln",
+      "Isaac Newton",
+      "Charles Darwin",
+      "Confucius",
+      "Genghis Khan",
+      "Cleopatra",
+      "Karl Marx",
+      "Galileo Galilei",
+      "Queen Elizabeth I"
     ],
     "isAbstract": false
   },

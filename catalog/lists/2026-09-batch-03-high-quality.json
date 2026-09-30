@@ -30,6 +30,8 @@
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "top-anime-series",
+    "adminEditedAt": null,
     "groupSlug": "film-tv",
     "entityTypeSlug": "anime",
     "title": "Top Anime Series",
@@ -51,7 +53,15 @@
       "Demon Slayer",
       "My Hero Academia",
       "Hunter x Hunter",
-      "Spirited Away"
+      "Spirited Away",
+      "Ninja Scroll",
+      "Jujutsu Kaisen",
+      "Bleach",
+      "Sailor Moon",
+      "Steins;Gate",
+      "Code Geass",
+      "Chainsaw Man",
+      "Frieren: Beyond Journey's End"
     ],
     "isAbstract": false
   },
@@ -193,6 +203,8 @@
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "top-reality-tv-shows",
+    "adminEditedAt": null,
     "groupSlug": "film-tv",
     "entityTypeSlug": "reality-show",
     "title": "Top Reality TV Shows",
@@ -214,7 +226,15 @@
       "The Challenge",
       "Top Chef",
       "90 Day Fiance",
-      "Real Housewives"
+      "Real Housewives",
+      "Love Island",
+      "The Great British Bake Off",
+      "Queer Eye",
+      "Jersey Shore",
+      "American Idol",
+      "Shark Tank",
+      "Selling Sunset",
+      "Below Deck"
     ],
     "isAbstract": false
   },

@@ -1,12 +1,14 @@
 [
   {
     "schemaVersion": 1,
+    "categorySlug": "biggest-workplace-pet-peeves",
+    "adminEditedAt": null,
     "groupSlug": "career",
     "entityTypeSlug": "pet-peeve",
     "title": "Workplace Pet Peeves",
     "prompt": "What are your biggest workplace pet peeves?",
     "axes": ["career", "values"],
-    "values": ["Coworkers chewing loudly", "Last-minute meetings", "Leaving the printer jammed", "Meaningless Meetings", "Micro-management", "Microwaving Fish", "Office politics", "Reply-All Emails", "Slow Wi-Fi", "Taking credit for others' work"],
+    "values": ["Coworkers chewing loudly", "Last-minute meetings", "Leaving the printer jammed", "Meaningless Meetings", "Micro-management", "Microwaving Fish", "Office politics", "Reply-All Emails", "Slow Wi-Fi", "Taking credit for others' work", "Loud phone calls", "Chronic lateness", "Passive-aggressive emails", "Stolen lunches", "Dirty dishes in the sink", "Constant Slack pings", "After-hours messages", "Mandatory fun", "Open-plan offices", "Coworkers who overshare"],
     "isAbstract": true
   },
   {
@@ -21,12 +23,14 @@
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "dream-job",
+    "adminEditedAt": null,
     "groupSlug": "career",
     "entityTypeSlug": "job-title",
     "title": "Dream Job",
     "prompt": "What is your dream job?",
     "axes": ["career", "ambition"],
-    "values": ["Architect", "Data Scientist", "Electrician", "Financial Analyst", "Graphic Designer", "Marine Biologist", "Park Ranger", "Pastry Chef", "Plumber", "Registered Nurse", "Software Engineer", "Teacher"],
+    "values": ["Architect", "Data Scientist", "Electrician", "Financial Analyst", "Graphic Designer", "Marine Biologist", "Park Ranger", "Pastry Chef", "Plumber", "Registered Nurse", "Software Engineer", "Teacher", "Veterinarian", "Pilot", "Photographer", "Entrepreneur", "Film Director", "Physician", "Astronaut", "Travel Writer"],
     "isAbstract": true
   }
 ]

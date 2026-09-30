@@ -200,6 +200,8 @@
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "iconic-music-videos",
+    "adminEditedAt": null,
     "groupSlug": "music",
     "entityTypeSlug": "music-video",
     "title": "Iconic Music Videos",
@@ -219,7 +221,17 @@
       "This Is America",
       "Wrecking Ball",
       "Weapon of Choice",
-      "Sabotage"
+      "Sabotage",
+      "Virtual Insanity",
+      "Billie Jean",
+      "Vogue",
+      "Bad Romance",
+      "Gangnam Style",
+      "Hey Ya!",
+      "Sledgehammer",
+      "November Rain",
+      "Here It Goes Again",
+      "Formation"
     ],
     "isAbstract": false
   }

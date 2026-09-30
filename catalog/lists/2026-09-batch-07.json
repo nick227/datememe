@@ -1,6 +1,8 @@
 [
   {
     "schemaVersion": 1,
+    "categorySlug": "favorite-classic-memes",
+    "adminEditedAt": null,
     "groupSlug": "creators",
     "entityTypeSlug": "meme",
     "createEntityType": {
@@ -24,7 +26,17 @@
       "Trollface",
       "Woman Yelling at a Cat",
       "Success Kid",
-      "Grumpy Cat"
+      "Grumpy Cat",
+      "This Is Fine",
+      "Leeroy Jenkins",
+      "Bad Luck Brian",
+      "Keyboard Cat",
+      "Charlie Bit My Finger",
+      "Philosoraptor",
+      "Salt Bae",
+      "Change My Mind",
+      "Expanding Brain",
+      "Is This a Pigeon?"
     ],
     "isAbstract": true
   },

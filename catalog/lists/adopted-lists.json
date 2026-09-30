@@ -56,7 +56,18 @@
       "Oil Paint",
       "Watercolor",
       "Wood",
-      "Yarn"
+      "Yarn",
+      "Pencil",
+      "Ink",
+      "Pastels",
+      "Gouache",
+      "Spray Paint",
+      "Collage",
+      "Embroidery Thread",
+      "Glass",
+      "Metal",
+      "Leather",
+      "Resin"
     ],
     "isAbstract": true
   },
@@ -116,7 +127,19 @@
       "Tom Scott",
       "Veritasium",
       "Vsauce",
-      "MrBeast"
+      "MrBeast",
+      "Crash Course",
+      "TED-Ed",
+      "CGP Grey",
+      "Khan Academy",
+      "Numberphile",
+      "MinutePhysics",
+      "Hank Green",
+      "Physics Girl",
+      "Wendover Productions",
+      "Real Engineering",
+      "Steve Mould",
+      "Sabine Hossenfelder"
     ],
     "isAbstract": false
   },
@@ -140,7 +163,19 @@
       "Newsletters",
       "Podcasts",
       "Short-form (TikToks/Reels)",
-      "Vlogs"
+      "Vlogs",
+      "Memes",
+      "Tutorials",
+      "Reviews",
+      "Reaction videos",
+      "Interviews",
+      "Comedy sketches",
+      "Let's Plays",
+      "ASMR",
+      "Photo dumps",
+      "Blogs",
+      "Webcomics",
+      "Behind-the-scenes content"
     ],
     "isAbstract": true
   },
@@ -399,7 +434,12 @@
       "Kevin Hart",
       "Robin Williams",
       "Taylor Tomlinson",
-      "Trevor Noah"
+      "Trevor Noah",
+      "George Carlin",
+      "Richard Pryor",
+      "Nate Bargatze",
+      "Tiffany Haddish",
+      "Sarah Silverman"
     ],
     "isAbstract": false
   },
@@ -463,7 +503,15 @@
       "Shake Shack",
       "Subway",
       "Waffle House",
-      "Wendy's"
+      "Wendy's",
+      "Taco Bell",
+      "KFC",
+      "Raising Cane's",
+      "Whataburger",
+      "Panda Express",
+      "Sonic Drive-In",
+      "Arby's",
+      "Jack in the Box"
     ],
     "isAbstract": false
   },
@@ -487,7 +535,19 @@
       "Philz Coffee",
       "Pret A Manger",
       "Starbucks",
-      "Tim Hortons"
+      "Tim Hortons",
+      "Dutch Bros",
+      "Peet's Coffee",
+      "Caribou Coffee",
+      "The Coffee Bean & Tea Leaf",
+      "McCafé",
+      "Scooter's Coffee",
+      "Caffè Nero",
+      "Intelligentsia",
+      "Stumptown Coffee Roasters",
+      "La Colombe",
+      "Biggby Coffee",
+      "Joe & The Juice"
     ],
     "isAbstract": false
   },
@@ -552,7 +612,14 @@
       "Peruvian",
       "Spanish",
       "Thai",
-      "Vietnamese"
+      "Vietnamese",
+      "Greek",
+      "Turkish",
+      "Ethiopian",
+      "Brazilian",
+      "Caribbean",
+      "Filipino",
+      "Cajun"
     ],
     "isAbstract": false
   },
@@ -655,7 +722,19 @@
       "MMORPG",
       "Puzzle",
       "RPGs",
-      "Survival"
+      "Survival",
+      "Open World",
+      "Fighting",
+      "Racing",
+      "Sports",
+      "Horror",
+      "Roguelike",
+      "Simulation",
+      "Sandbox",
+      "Stealth",
+      "Rhythm",
+      "Metroidvania",
+      "Visual Novel"
     ],
     "isAbstract": true
   },

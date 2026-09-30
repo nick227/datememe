@@ -151,6 +151,8 @@
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "favorite-sci-fi-shows",
+    "adminEditedAt": null,
     "groupSlug": "film-tv",
     "entityTypeSlug": "tv-show",
     "title": "Favorite Sci-Fi Shows",
@@ -170,7 +172,17 @@
       "Star Trek: The Next Generation",
       "Westworld",
       "The Expanse",
-      "Severance"
+      "Severance",
+      "Star Trek: The Original Series",
+      "The Twilight Zone",
+      "Battlestar Galactica",
+      "Futurama",
+      "Rick and Morty",
+      "Lost",
+      "Fringe",
+      "Dark",
+      "Andor",
+      "Foundation"
     ],
     "isAbstract": false
   },
