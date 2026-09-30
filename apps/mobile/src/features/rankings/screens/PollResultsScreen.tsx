@@ -25,7 +25,6 @@ export function PollResultsScreen({ route, navigation }: Props) {
   const data = rankings.data
   const title = data?.category.shortLabel ?? shortLabel
   const [selected, setSelected] = useState<RankedOption | null>(null)
-  const orderingMode = data?.category.orderingMode === 'UNRANKED' ? 'UNRANKED' : 'RANKED'
   const takeCount = data?.takeCount ?? 0
   const options: RankedOption[] = (data?.entries ?? []).map((entry) => ({
     id: entry.entity.id,
@@ -47,7 +46,7 @@ export function PollResultsScreen({ route, navigation }: Props) {
     <View style={styles.header}>
       <Typography variant="bodyMuted">{data.category.prompt}</Typography>
       {data.isPublished ? (
-        <RankingHero options={options} takeCount={takeCount} orderingMode={orderingMode} />
+        <RankingHero takeCount={takeCount} faces={data.faces} />
       ) : null}
     </View>
   ) : null
@@ -78,7 +77,6 @@ export function PollResultsScreen({ route, navigation }: Props) {
               option={item}
               leaderScore={options[0]?.score ?? 0}
               takeCount={takeCount}
-              orderingMode={orderingMode}
               onPress={() => setSelected(item)}
             />
           )}
@@ -93,7 +91,7 @@ export function PollResultsScreen({ route, navigation }: Props) {
           contentContainerStyle={{ paddingBottom: spacing.section }}
         />
       )}
-      <RankingOptionSheet option={selected} takeCount={takeCount} orderingMode={orderingMode} onClose={() => setSelected(null)} />
+      <RankingOptionSheet option={selected} takeCount={takeCount} onClose={() => setSelected(null)} />
     </ScreenContainer>
   )
 }

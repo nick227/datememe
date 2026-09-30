@@ -7,13 +7,12 @@ type Props = {
   option: RankedOption
   leaderScore: number
   takeCount: number
-  orderingMode: 'RANKED' | 'UNRANKED'
   onPress: () => void
 }
 
-export function RankingBarRow({ option, leaderScore, takeCount, orderingMode, onPress }: Props) {
+export function RankingBarRow({ option, leaderScore, takeCount, onPress }: Props) {
   const fraction = barFraction(option.score, leaderScore)
-  const caption = barCaption(option, takeCount, orderingMode)
+  const caption = barCaption(option, takeCount)
   return (
     <Pressable testID={`poll-results.row.${option.rank}`} onPress={onPress} style={styles.row} accessibilityRole="button">
       <View style={styles.top}>

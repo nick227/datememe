@@ -1070,7 +1070,7 @@ components:
 
     CategoryRankings:
       type: object
-      required: [category, isPublished, takeCount, updatedAt, viewerHasTaken, viewerTopPickPercent, related, entries]
+      required: [category, isPublished, takeCount, updatedAt, viewerHasTaken, viewerTopPickPercent, related, faces, entries]
       properties:
         category: { $ref: '#/components/schemas/Category' }
         isPublished:
@@ -1101,9 +1101,21 @@ components:
           type: array
           description: Other published rankings in this list's topic group, for the browse footer.
           items: { $ref: '#/components/schemas/RelatedRanking' }
+        faces:
+          type: array
+          description: Up to three people with a public completed list, for the summary avatars.
+          items: { $ref: '#/components/schemas/RankingFace' }
         entries:
           type: array
           items: { $ref: '#/components/schemas/CategoryRankingEntry' }
+
+    RankingFace:
+      type: object
+      required: [profileId, displayName, avatarUrl]
+      properties:
+        profileId: { type: string }
+        displayName: { type: string }
+        avatarUrl: { type: string, nullable: true }
 
     RelatedRanking:
       type: object

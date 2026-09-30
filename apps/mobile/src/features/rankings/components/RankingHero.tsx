@@ -1,26 +1,44 @@
 import { StyleSheet, View } from 'react-native'
 import { Typography } from '../../../ui/Typography'
+import { SmartImage } from '../../../ui/content/SmartImage'
 import { spacing } from '../../../theme'
-import { rankingSummary, type RankedOption } from '../rankingStory'
+import { rankingsLabel } from '../rankingStory'
 
-type Props = {
-  options: RankedOption[]
-  takeCount: number
-  orderingMode: 'RANKED' | 'UNRANKED'
+export type RankingFace = {
+  profileId: string
+  displayName: string
+  avatarUrl?: string | null
 }
 
-export function RankingHero({ options, takeCount, orderingMode }: Props) {
-  const lines = rankingSummary(options, takeCount, orderingMode)
-  if (!lines.length) return null
+type Props = {
+  takeCount: number
+  faces: RankingFace[]
+}
+
+const FACE = 22
+
+export function RankingHero({ takeCount, faces }: Props) {
   return (
     <View testID="poll-results.hero" style={styles.hero}>
-      {lines.map((line) => (
-        <Typography key={line} variant="bodyMuted">{line}</Typography>
-      ))}
+      <Typography variant="bodyMuted">{rankingsLabel(takeCount)}</Typography>
+      <View style={styles.faces}>
+        {faces.slice(0, 3).map((face) => (
+          <SmartImage
+            key={face.profileId}
+            testID={`poll-results.face.${face.profileId}`}
+            uri={face.avatarUrl}
+            fallbackText={face.displayName}
+            width={FACE}
+            height={FACE}
+            round
+          />
+        ))}
+      </View>
     </View>
   )
 }
 
 const styles = StyleSheet.create({
-  hero: { gap: 2, marginBottom: spacing.sm },
+  hero: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.sm },
+  faces: { flexDirection: 'row', gap: 4 },
 })

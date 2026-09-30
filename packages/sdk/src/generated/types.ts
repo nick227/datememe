@@ -2193,7 +2193,14 @@ export interface components {
             viewerTopPickPercent: number | null;
             /** @description Other published rankings in this list's topic group, for the browse footer. */
             related: components["schemas"]["RelatedRanking"][];
+            /** @description Up to three people with a public completed list, for the summary avatars. */
+            faces: components["schemas"]["RankingFace"][];
             entries: components["schemas"]["CategoryRankingEntry"][];
+        };
+        RankingFace: {
+            profileId: string;
+            displayName: string;
+            avatarUrl: string | null;
         };
         RelatedRanking: {
             slug: string;

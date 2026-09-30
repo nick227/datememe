@@ -4,6 +4,7 @@ import { ListService } from './ListService'
 import { metric, toCategoryUnit } from './ContentFeedService'
 import { groupIdsWithResults } from '../lib/resultGroups'
 import { relatedRankings } from '../lib/relatedRankings'
+import { pollFaces } from '../lib/pollFaces'
 
 const listService = new ListService()
 
@@ -199,7 +200,7 @@ export class RankingsService {
     if (!categoryRow) throw { statusCode: 404, message: 'Category not found' }
     const categoryId = categoryRow.id
 
-    const [resultSet, viewerList, related] = await Promise.all([
+    const [resultSet, viewerList, related, faces] = await Promise.all([
       db.resultSet.findUnique({
         where: { idx_result_set_unique: { ...LIST_SCORE_SET, scopeValue: categoryId } },
         include: { entries: { orderBy: { rank: 'asc' }, take: DETAIL_ENTRY_LIMIT } },
@@ -209,6 +210,7 @@ export class RankingsService {
         select: { items: { select: { entityId: true, rank: true } } },
       }),
       relatedRankings(categoryRow.groupId, categoryId),
+      pollFaces(viewerProfileId, categoryId),
     ])
 
     const viewerItems = viewerList?.items ?? []
@@ -219,7 +221,7 @@ export class RankingsService {
     }
 
     if (!resultSet) {
-      return { ...base, isPublished: false, takeCount: null, updatedAt: null, viewerTopPickPercent: null, related, entries: [] }
+      return { ...base, isPublished: false, takeCount: null, updatedAt: null, viewerTopPickPercent: null, related, faces, entries: [] }
     }
 
     const entityRows = await db.entity.findMany({ where: { id: { in: resultSet.entries.map((e) => e.subjectId) } }, select: ENTITY_SELECT })
@@ -244,6 +246,7 @@ export class RankingsService {
       updatedAt: resultSet.updatedAt,
       viewerTopPickPercent,
       related,
+      faces,
       entries: resultSet.entries
         .filter((e) => entityById.has(e.subjectId))
         .map((e) => ({
