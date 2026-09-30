@@ -79,6 +79,8 @@
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "most-impactful-us-presidents",
+    "adminEditedAt": null,
     "groupSlug": "history-politics",
     "entityTypeSlug": "us-president",
     "createEntityType": {
@@ -102,7 +104,17 @@
       "Dwight D. Eisenhower",
       "John F. Kennedy",
       "Ronald Reagan",
-      "Barack Obama"
+      "Barack Obama",
+      "James Madison",
+      "John Adams",
+      "Andrew Jackson",
+      "Ulysses S. Grant",
+      "Woodrow Wilson",
+      "Lyndon B. Johnson",
+      "James K. Polk",
+      "Richard Nixon",
+      "Bill Clinton",
+      "George W. Bush"
     ],
     "isAbstract": false
   },
@@ -149,6 +161,8 @@
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "top-political-commentators",
+    "adminEditedAt": null,
     "groupSlug": "history-politics",
     "entityTypeSlug": "commentator",
     "createEntityType": {
@@ -172,12 +186,24 @@
       "Hasan Piker",
       "Ezra Klein",
       "Megyn Kelly",
-      "Bill Maher"
+      "Bill Maher",
+      "Sean Hannity",
+      "Chris Hayes",
+      "Jake Tapper",
+      "Joe Scarborough",
+      "Candace Owens",
+      "Bill O'Reilly",
+      "Van Jones",
+      "Glenn Greenwald",
+      "Joe Rogan",
+      "Kyle Kulinski"
     ],
     "isAbstract": false
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "favorite-political-podcasts",
+    "adminEditedAt": null,
     "groupSlug": "podcasts",
     "entityTypeSlug": "podcast",
     "title": "Favorite Political Podcasts",
@@ -197,7 +223,17 @@
       "FiveThirtyEight Politics",
       "Stay Tuned with Preet",
       "The Ezra Klein Show",
-      "Chap Trap House"
+      "Chap Trap House",
+      "The NPR Politics Podcast",
+      "Slate Political Gabfest",
+      "The Rest Is Politics",
+      "Lovett or Leave It",
+      "The Weeds",
+      "The Megyn Kelly Show",
+      "The Dan Bongino Show",
+      "Honestly with Bari Weiss",
+      "The Bulwark Podcast",
+      "Left, Right & Center"
     ],
     "isAbstract": true
   }

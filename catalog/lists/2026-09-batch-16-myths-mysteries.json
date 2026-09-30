@@ -205,6 +205,8 @@
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "declassified-secret-operations",
+    "adminEditedAt": null,
     "groupSlug": "history-politics",
     "entityTypeSlug": "secret-operation",
     "createEntityType": {
@@ -232,7 +234,13 @@
       "Operation Fortitude",
       "Stargate Project",
       "COINTELPRO",
-      "Acoustic Kitty"
+      "Acoustic Kitty",
+      "Operation Ajax",
+      "Operation Gladio",
+      "Operation Mockingbird",
+      "Operation Midnight Climax",
+      "Project Sunshine",
+      "Operation Popeye"
     ],
     "isAbstract": false
   },

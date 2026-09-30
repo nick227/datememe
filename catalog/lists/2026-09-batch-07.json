@@ -42,6 +42,8 @@
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "favorite-internet-trends",
+    "adminEditedAt": null,
     "groupSlug": "tech",
     "entityTypeSlug": "internet-trend",
     "createEntityType": {
@@ -65,12 +67,24 @@
       "Wordle",
       "Sea Shanties",
       "Twitch Plays Pokémon",
-      "Brat Summer"
+      "Brat Summer",
+      "Fidget spinners",
+      "Dalgona coffee",
+      "Sourdough baking",
+      "Tiger King",
+      "Among Us",
+      "NFTs",
+      "Barbenheimer",
+      "Girl dinner",
+      "Thinking about the Roman Empire",
+      "Cottagecore"
     ],
     "isAbstract": true
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "favorite-tiktok-audios",
+    "adminEditedAt": null,
     "groupSlug": "creators",
     "entityTypeSlug": "tiktok-audio",
     "createEntityType": {
@@ -94,12 +108,24 @@
       "Spongebob Theme",
       "Gimme More",
       "Say So",
-      "Renegade"
+      "Renegade",
+      "Savage",
+      "Buss It",
+      "Old Town Road",
+      "Running Up That Hill",
+      "Dreams",
+      "Bored in the House",
+      "Goo Goo Muck",
+      "Paint the Town Red",
+      "Espresso",
+      "Apple"
     ],
     "isAbstract": true
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "favorite-twitch-emotes",
+    "adminEditedAt": null,
     "groupSlug": "gaming",
     "entityTypeSlug": "emote",
     "createEntityType": {
@@ -123,12 +149,24 @@
       "TriHard",
       "BibleThump",
       "Sadge",
-      "Kreygasm"
+      "Kreygasm",
+      "OMEGALUL",
+      "Pog",
+      "4Head",
+      "ResidentSleeper",
+      "SeemsGood",
+      "Jebaited",
+      "EZ",
+      "WutFace",
+      "CoolStoryBob",
+      "FeelsBadMan"
     ],
     "isAbstract": true
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "favorite-reaction-gifs",
+    "adminEditedAt": null,
     "groupSlug": "creators",
     "entityTypeSlug": "reaction-gif",
     "createEntityType": {
@@ -152,12 +190,24 @@
       "Disappointed Cricket Fan",
       "Elmo on Fire",
       "Leonardo DiCaprio Toast",
-      "Confused Travolta"
+      "Confused Travolta",
+      "Surprised Pikachu",
+      "Side-Eyeing Chloe",
+      "Awkward Monkey Puppet",
+      "Hide the Pain Harold",
+      "Oprah \"You Get a Car!\"",
+      "Michael Scott \"No, God, Please, No\"",
+      "Mind Blown",
+      "Ryan Reynolds \"But Why?\"",
+      "Mr. Bean Waiting",
+      "Citizen Kane Slow Clap"
     ],
     "isAbstract": true
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "favorite-internet-slang",
+    "adminEditedAt": null,
     "groupSlug": "lifestyle-hobbies",
     "entityTypeSlug": "slang",
     "createEntityType": {
@@ -181,7 +231,17 @@
       "Sus",
       "Yeet",
       "Stan",
-      "Skibidi"
+      "Skibidi",
+      "Rent free",
+      "Touch grass",
+      "Main character",
+      "Delulu",
+      "It's giving",
+      "Mid",
+      "Bussin",
+      "Ate",
+      "Salty",
+      "GOAT"
     ],
     "isAbstract": true
   },

@@ -246,6 +246,8 @@
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "mind-expanding-books",
+    "adminEditedAt": null,
     "groupSlug": "literature",
     "entityTypeSlug": "book",
     "title": "Mind-Expanding Books",
@@ -267,7 +269,15 @@
       "Naked Lunch",
       "DMT: The Spirit Molecule",
       "Confessions of an English Opium-Eater",
-      "The Psychedelic Experience"
+      "The Psychedelic Experience",
+      "Brave New World",
+      "PiHKAL",
+      "TiHKAL",
+      "The Psychedelic Explorer's Guide",
+      "Acid Dreams",
+      "Storming Heaven",
+      "Breaking Open the Head",
+      "The Immortality Key"
     ],
     "isAbstract": false,
     "alsoExpands": [
@@ -353,6 +363,8 @@
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "art-nouveau-artists",
+    "adminEditedAt": null,
     "groupSlug": "craft",
     "entityTypeSlug": "visual-artist",
     "createEntityType": {
@@ -378,12 +390,22 @@
       "Charles Rennie Mackintosh",
       "Émile Gallé",
       "Koloman Moser",
-      "Jan Toorop"
+      "Jan Toorop",
+      "Henri de Toulouse-Lautrec",
+      "Jules Chéret",
+      "Otto Wagner",
+      "Josef Hoffmann",
+      "Eugène Grasset",
+      "Théophile Steinlen",
+      "Carlo Bugatti",
+      "Egon Schiele"
     ],
     "isAbstract": false
   },
   {
     "schemaVersion": 1,
+    "categorySlug": "mind-bending-illusions",
+    "adminEditedAt": null,
     "groupSlug": "lifestyle-hobbies",
     "entityTypeSlug": "optical-illusion",
     "createEntityType": {
@@ -411,7 +433,13 @@
       "Checker shadow illusion",
       "The dress",
       "Impossible trident",
-      "Rotating snakes"
+      "Rotating snakes",
+      "Duck-rabbit",
+      "Ponzo illusion",
+      "Shepard tables",
+      "Lilac chaser",
+      "Troxler's fading",
+      "McGurk effect"
     ],
     "isAbstract": false
   }
