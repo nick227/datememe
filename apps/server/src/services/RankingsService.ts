@@ -3,6 +3,7 @@ import { CATEGORY_SELECT, ENTITY_SELECT, serializeCategory, serializeEntity } fr
 import { ListService } from './ListService'
 import { metric, toCategoryUnit } from './ContentFeedService'
 import { groupIdsWithResults } from '../lib/resultGroups'
+import { relatedRankings } from '../lib/relatedRankings'
 
 const listService = new ListService()
 
@@ -11,7 +12,7 @@ const listService = new ListService()
 // have a set at all, so nothing here needs to know the threshold.
 const LIST_SCORE_SET = { subjectType: 'ENTITY', metric: 'LIST_SCORE', scopeType: 'CATEGORY', window: 'ALL_TIME' } as const
 
-const RIVER_PREVIEW_SIZE = 5
+const RIVER_PREVIEW_SIZE = 3
 const RAIL_SIZE = 10
 const DETAIL_ENTRY_LIMIT = 50
 // "Closest race" = #2 within this fraction of #1's score.
@@ -29,6 +30,27 @@ function trendFor(rank: number, previousRank: number | null) {
 
 function percent(part: number, whole: number) {
   return whole > 0 ? Math.round((part / whole) * 100) : 0
+}
+
+function voteLine(takeCount: number, entries: { rank: number; score: number; previousRank: number | null }[]) {
+  const votes = `${takeCount} ${takeCount === 1 ? 'vote' : 'votes'}`
+  const top = entries[0]
+  const next = entries[1]
+  if (!top || !next || top.score <= 0) return votes
+  const lead = top.score - next.score
+  if (lead <= 1 || lead / top.score <= CLOSE_RACE_GAP) return `${votes} · close race`
+  if (top.previousRank != null && top.previousRank > top.rank) return `${votes} · ↑ ${top.previousRank - top.rank} since yesterday`
+  return votes
+}
+
+async function scoreTotalBySet(resultSetIds: string[]) {
+  if (!resultSetIds.length) return new Map<string, number>()
+  const rows = await db.resultEntry.groupBy({
+    by: ['resultSetId'],
+    where: { resultSetId: { in: resultSetIds } },
+    _sum: { score: true },
+  })
+  return new Map(rows.map((row) => [row.resultSetId, row._sum.score ?? 0]))
 }
 
 /**
@@ -74,6 +96,7 @@ export class RankingsService {
     const sets = selectedGroupIds ? allSets.filter((rs) => selectedGroupIds.has(rs.category.groupId)) : allSets
 
     const takenCategoryIds = new Set(myLists.filter((l: any) => l.items.length).map((l: any) => l.categoryId))
+    const scoreTotals = await scoreTotalBySet(allSets.map((rs) => rs.id))
 
     function categoryUnit(rs: (typeof sets)[number], index: number, subtitle?: string) {
       const top = entityById.get(rs.entries[0]!.subjectId)!
@@ -95,7 +118,7 @@ export class RankingsService {
       title: rs.category.shortLabel,
       imageCardUrl: rs.category.imageCardUrl || null,
       imageUrl: rs.category.imageUrl || null,
-      context: { zone: 'results', viewerHasAnswered: takenCategoryIds.has(rs.category.id) },
+      context: { zone: 'results', reason: voteLine(rs.takeCount, rs.entries) },
       suggestedStructure: 'river',
       items: rs.entries.map((entry, i) => {
         const entity = entityById.get(entry.subjectId)!
@@ -104,12 +127,11 @@ export class RankingsService {
           kind: 'result',
           resultType: 'entity',
           title: entity.canonicalName,
-          subtitle: `${percent(entry.pickCount, rs.takeCount)}% picked it`,
           imageUrl: entity.imageUrl,
           rank: entry.rank,
           trend: trendFor(entry.rank, entry.previousRank),
           position: i,
-          metrics: [],
+          metrics: [metric('percentile', 'of points', percent(entry.score, scoreTotals.get(rs.id) ?? 0), 'primary')],
           entity,
         }
       }),
@@ -177,7 +199,7 @@ export class RankingsService {
     if (!categoryRow) throw { statusCode: 404, message: 'Category not found' }
     const categoryId = categoryRow.id
 
-    const [resultSet, viewerList] = await Promise.all([
+    const [resultSet, viewerList, related] = await Promise.all([
       db.resultSet.findUnique({
         where: { idx_result_set_unique: { ...LIST_SCORE_SET, scopeValue: categoryId } },
         include: { entries: { orderBy: { rank: 'asc' }, take: DETAIL_ENTRY_LIMIT } },
@@ -186,6 +208,7 @@ export class RankingsService {
         where: { profileId_categoryId: { profileId: viewerProfileId, categoryId } },
         select: { items: { select: { entityId: true, rank: true } } },
       }),
+      relatedRankings(categoryRow.groupId, categoryId),
     ])
 
     const viewerItems = viewerList?.items ?? []
@@ -196,7 +219,7 @@ export class RankingsService {
     }
 
     if (!resultSet) {
-      return { ...base, isPublished: false, takeCount: null, updatedAt: null, viewerTopPickPercent: null, entries: [] }
+      return { ...base, isPublished: false, takeCount: null, updatedAt: null, viewerTopPickPercent: null, related, entries: [] }
     }
 
     const entityRows = await db.entity.findMany({ where: { id: { in: resultSet.entries.map((e) => e.subjectId) } }, select: ENTITY_SELECT })
@@ -220,6 +243,7 @@ export class RankingsService {
       takeCount: resultSet.takeCount,
       updatedAt: resultSet.updatedAt,
       viewerTopPickPercent,
+      related,
       entries: resultSet.entries
         .filter((e) => entityById.has(e.subjectId))
         .map((e) => ({

@@ -1,20 +1,19 @@
 import { useEffect, useMemo, useRef } from 'react'
-import { FlatList, Pressable, ScrollView, StyleSheet, View } from 'react-native'
+import { FlatList, ScrollView } from 'react-native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { useRankingsFeed } from '@project/sdk'
 import { ScreenContainer } from '../../../ui/ScreenContainer'
 import { EmptyState } from '../../../ui/EmptyState'
 import { ErrorState } from '../../../ui/ErrorState'
 import { Skeleton } from '../../../ui/Skeleton'
-import { Icon } from '../../../ui/Icon'
-import { Typography } from '../../../ui/Typography'
+import { RankingPreview } from '../components/RankingPreview'
 import { PageHeader } from '../../../ui/content/PageHeader'
 import { FeedModuleRenderer } from '../../../ui/content/FeedModuleRenderer'
 import { Rail } from '../../../ui/content/Rail'
 import { FilterChipsRow } from '../../../ui/content/FilterChipsRow'
 import { TOP_CHIP_ID, useGroupFilterChips } from '../../../ui/content/useGroupFilterChips'
 import type { ContentUnit, FeedModule } from '../../../ui/content/types'
-import { CANVAS_WIDTH, colors, spacing } from '../../../theme'
+import { CANVAS_WIDTH, spacing } from '../../../theme'
 import { openPoll } from '../../../navigation/openPoll'
 import type { RankingsStackParamList } from '../../../navigation/types'
 
@@ -104,37 +103,28 @@ export function RankingsScreen({ navigation }: Props) {
           if (module.id === 'rankings-yours') {
             return <FeedModuleRenderer module={module} state="ready" onPressItem={(unit) => onPressItem(module, unit)} onPressQuickPicks={() => {}} />
           }
-          return (
-          <View>
-            {module.suggestedStructure === 'rail' ? (
-              // The compact poster card (the results-zone category card):
-              // title, "N answered", "#1 X" — not the Lists-tab stat card,
-              // whose "Rank yours" CTA is the wrong action here.
-              <Rail
+          if (module.id.startsWith(CATEGORY_MODULE_PREFIX)) {
+            return (
+              <RankingPreview
                 testID={`feed.module.${module.id}`}
-                title={module.title}
+                title={module.title ?? ''}
+                imageUrl={module.imageCardUrl || module.imageUrl}
+                reason={module.context?.reason}
                 items={module.items ?? []}
-                state="ready"
-                zone="results"
-                cardWidth={180}
-                onPressItem={(unit) => onPressItem(module, unit)}
+                onOpen={() => openCategory(module.id.slice(CATEGORY_MODULE_PREFIX.length), module.title ?? '')}
               />
-            ) : (
-              <FeedModuleRenderer module={module} state="ready" onPressItem={(unit) => onPressItem(module, unit)} onPressQuickPicks={() => {}} />
-            )}
-            {module.id.startsWith(CATEGORY_MODULE_PREFIX) ? (
-              <Pressable
-                testID={`rankings.view-full.${module.id}`}
-                style={styles.viewFull}
-                onPress={() => openCategory(module.id.slice(CATEGORY_MODULE_PREFIX.length), module.title ?? '')}
-              >
-                <Typography variant="label" style={styles.viewFullText}>
-                  {module.context?.viewerHasAnswered ? 'Edit your answers' : 'Take the poll'}
-                </Typography>
-                <Icon name="ChevronRight" size={16} color={colors.ink} />
-              </Pressable>
-            ) : null}
-          </View>
+            )
+          }
+          return (
+            <Rail
+              testID={`feed.module.${module.id}`}
+              title={module.title}
+              items={module.items ?? []}
+              state="ready"
+              zone="results"
+              cardWidth={180}
+              onPressItem={(unit) => onPressItem(module, unit)}
+            />
           )
         }}
         ListHeaderComponent={summary ? <PageHeader title={summary.title} facts={summary.stats?.map((s) => ({ value: s.value, label: s.label }))} /> : null}
@@ -154,15 +144,3 @@ export function RankingsScreen({ navigation }: Props) {
     </ScreenContainer>
   )
 }
-
-const styles = StyleSheet.create({
-  viewFull: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: spacing.lg,
-    marginTop: -spacing.md,
-    marginBottom: spacing.xl,
-  },
-  viewFullText: { color: colors.ink },
-})

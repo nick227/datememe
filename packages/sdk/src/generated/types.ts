@@ -421,7 +421,7 @@ export interface paths {
         };
         /**
          * The Rankings tab — site-wide aggregate answers as a FeedModule stream
-         * @description Read-only over the ResultSets RankingsRebuildJob rebuilds on a timer (only published categories — enough answers — exist there). Mostly `rankings-top-{slug}` river modules (one category's top 5 as rows, rest of the id = the category slug), occasionally interrupted by a rail of category units ("From lists you've taken", "Closest races", "Most answered"). `chips` = "All" + only the groups that have at least one published ranking; `groupSlugs` filters to those groups. Not paginated — `meta.hasMore` is always false.
+         * @description Read-only over the ResultSets RankingsRebuildJob rebuilds on a timer (only published categories — enough answers — exist there). Mostly `rankings-top-{slug}` modules (one category's top 3, rest of the id = the category slug). Each row's `percentile` metric is that option's share of the list's ranking points. `context.reason` is the vote count plus a race note ("142 votes · close race"). Occasionally interrupted by a rail ("Closest races"). `chips` = "All" + only the groups that have at least one published ranking; `groupSlugs` filters to those groups. Not paginated — `meta.hasMore` is always false.
          */
         get: operations["getRankingsFeed"];
         put?: never;
@@ -2191,7 +2191,17 @@ export interface components {
             viewerHasTaken: boolean;
             /** @description Share of everyone counted whose #1 is the viewer's #1 ("31% of people put Target at #1"), from the last rebuild's firstPlaceCount. Null for unranked categories, while unpublished, or if the viewer hasn't taken the list. */
             viewerTopPickPercent: number | null;
+            /** @description Other published rankings in this list's topic group, for the browse footer. */
+            related: components["schemas"]["RelatedRanking"][];
             entries: components["schemas"]["CategoryRankingEntry"][];
+        };
+        RelatedRanking: {
+            slug: string;
+            shortLabel: string;
+            imageUrl: string | null;
+            imageCardUrl: string | null;
+            /** @description The published #1 in that ranking. */
+            topPickName: string;
         };
         ContentFeedPageResponse: {
             filterNotice?: string;

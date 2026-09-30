@@ -1070,7 +1070,7 @@ components:
 
     CategoryRankings:
       type: object
-      required: [category, isPublished, takeCount, updatedAt, viewerHasTaken, viewerTopPickPercent, entries]
+      required: [category, isPublished, takeCount, updatedAt, viewerHasTaken, viewerTopPickPercent, related, entries]
       properties:
         category: { $ref: '#/components/schemas/Category' }
         isPublished:
@@ -1097,9 +1097,23 @@ components:
             people put Target at #1"), from the last rebuild's
             firstPlaceCount. Null for unranked categories, while unpublished,
             or if the viewer hasn't taken the list.
+        related:
+          type: array
+          description: Other published rankings in this list's topic group, for the browse footer.
+          items: { $ref: '#/components/schemas/RelatedRanking' }
         entries:
           type: array
           items: { $ref: '#/components/schemas/CategoryRankingEntry' }
+
+    RelatedRanking:
+      type: object
+      required: [slug, shortLabel, imageUrl, imageCardUrl, topPickName]
+      properties:
+        slug: { type: string }
+        shortLabel: { type: string }
+        imageUrl: { type: string, nullable: true }
+        imageCardUrl: { type: string, nullable: true }
+        topPickName: { type: string, description: 'The published #1 in that ranking.' }
 
     ContentFeedPageResponse:
       type: object
@@ -2845,11 +2859,13 @@ paths:
       description: >
         Read-only over the ResultSets RankingsRebuildJob rebuilds on a timer
         (only published categories — enough answers — exist there). Mostly
-        `rankings-top-{slug}` river modules (one category's top 5 as rows,
-        rest of the id = the category slug), occasionally interrupted by a
-        rail of category units ("From lists you've taken", "Closest races",
-        "Most answered"). `chips` = "All" + only the groups that have at
-        least one published ranking; `groupSlugs` filters to those groups.
+        `rankings-top-{slug}` modules (one category's top 3, rest of the id
+        = the category slug). Each row's `percentile` metric is that option's
+        share of the list's ranking points. `context.reason` is the vote
+        count plus a race note ("142 votes · close race"). Occasionally
+        interrupted by a rail ("Closest races"). `chips` = "All" + only the
+        groups that have at least one published ranking; `groupSlugs` filters
+        to those groups.
         Not paginated — `meta.hasMore` is always false.
       parameters:
         - $ref: '#/components/parameters/GroupSlugs'
