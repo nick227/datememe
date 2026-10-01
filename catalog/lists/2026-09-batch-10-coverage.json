@@ -147,7 +147,7 @@
     "title": "Worth the Splurge",
     "prompt": "What's actually worth splurging on?",
     "axes": ["money", "lifestyle", "values"],
-    "values": ["Travel", "Good food", "Concert tickets", "Tech", "Clothes and sneakers", "Home decor", "Skincare", "Fitness", "A nice car", "Experiences with friends", "Hobby gear", "A really good mattress", "Front-row seats", "First class", "A great haircut", "Therapy", "Jewelry", "Kitchen gear", "My pets", "Good wine"],
+    "values": ["Travel", "Good food", "Concert tickets", "Tech", "Clothes and sneakers", "Home decor", "Skincare", "Fitness", "A nice car", "Experiences with friends", "Hobby gear", "A really good mattress", "Front-row seats", "First class", "A great haircut", "Therapy", "Jewelry", "Kitchen gear", "My pets", "Good wine", "Gifts for people I love", "Classes and courses", "Spa days", "Sports tickets", "Furniture", "Designer bags", "Video games", "Art", "Watches", "Good coffee"],
     "isAbstract": true
   },
   {

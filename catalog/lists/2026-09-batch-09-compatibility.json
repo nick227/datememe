@@ -62,7 +62,7 @@
     "title": "Ideal Sunday Morning",
     "prompt": "What does your ideal Sunday morning look like?",
     "axes": ["routine", "lifestyle", "comfort"],
-    "values": ["Sleeping in", "Brunch with friends", "A long run", "Farmers market", "Coffee and a book", "Pancakes at home", "Church or spiritual practice", "Yoga", "Crossword or puzzles", "Resetting the apartment", "Walking the dog", "Watching sports", "Breakfast in bed", "Bagels and the news", "Bike ride", "Pajamas till noon", "Golf", "Meal prep for the week", "Mimosas", "Laundry and a podcast"],
+    "values": ["Sleeping in", "Brunch with friends", "A long run", "Farmers market", "Coffee and a book", "Pancakes at home", "Church or spiritual practice", "Yoga", "Crossword or puzzles", "Resetting the apartment", "Walking the dog", "Watching sports", "Breakfast in bed", "Bagels and the news", "Bike ride", "Pajamas till noon", "Golf", "Meal prep for the week", "Mimosas", "Laundry and a podcast", "Hosting brunch", "Gardening", "Pickleball", "A hike", "Swimming laps", "Long call with family", "Lazy morning in bed together"],
     "isAbstract": true
   },
   {

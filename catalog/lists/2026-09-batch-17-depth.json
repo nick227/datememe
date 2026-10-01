@@ -263,7 +263,13 @@
       "Bonds",
       "Company stock plan",
       "Collectibles",
-      "Certificates of deposit"
+      "Certificates of deposit",
+      "Options trading",
+      "Day trading",
+      "A financial advisor manages it",
+      "Health savings account",
+      "A 529 for the kids",
+      "Investing in myself"
     ],
     "isAbstract": true
   },
@@ -304,7 +310,17 @@
       "Going back to school",
       "Public service",
       "Creative work full-time",
-      "Impact over job titles"
+      "Impact over job titles",
+      "Known in my industry",
+      "C-suite someday",
+      "Working abroad",
+      "Teaching what I know",
+      "Freelance freedom",
+      "One company for the long haul",
+      "A six-figure salary",
+      "Part-time, more life",
+      "Taking over the family business",
+      "Building generational wealth"
     ],
     "isAbstract": true
   },
@@ -345,7 +361,13 @@
       "Remote across time zones",
       "Self-employed, always on",
       "Part-time",
-      "Rotating schedule"
+      "Rotating schedule",
+      "12-hour hospital shifts",
+      "Summers off",
+      "Gig work whenever I want",
+      "Overtime most weeks",
+      "Retired",
+      "Stay-at-home parent"
     ],
     "isAbstract": true
   },
@@ -382,7 +404,15 @@
       "Snoozes the alarm for an hour",
       "Hogs the bathroom in the morning",
       "Packages piling up at the door",
-      "Steals the blankets"
+      "Steals the blankets",
+      "Loud chewing",
+      "Leaves the door unlocked",
+      "Shoes in the hallway",
+      "Controls the remote",
+      "Too many guests over",
+      "Never refills the water filter",
+      "Stays up loud while I sleep",
+      "Phone at full volume"
     ],
     "isAbstract": true
   },

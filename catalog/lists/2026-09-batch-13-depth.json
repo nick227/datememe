@@ -33,7 +33,7 @@
     "title": "Side Hustles",
     "prompt": "What's your side hustle, or the one you'd start to make extra money?",
     "axes": ["money", "career", "ambition"],
-    "values": ["Freelance designer", "Tutor", "Rideshare driver", "Dog walker", "Etsy seller", "Content creator", "Reseller", "Personal trainer", "Wedding photographer", "Furniture flipper", "Bartender", "No side hustle", "Airbnb host", "Wedding DJ", "Virtual assistant", "Babysitter", "House sitter", "Gigging musician", "Landlord", "Freelance writer"],
+    "values": ["Freelance designer", "Tutor", "Rideshare driver", "Dog walker", "Etsy seller", "Content creator", "Reseller", "Personal trainer", "Wedding photographer", "Furniture flipper", "Bartender", "No side hustle", "Airbnb host", "Wedding DJ", "Virtual assistant", "Babysitter", "House sitter", "Gigging musician", "Landlord", "Freelance writer", "Food delivery driver", "Freelance developer", "Online course creator", "Event planner", "Handyman", "Makeup artist", "Translator", "Home baker", "Hair stylist", "Car detailer"],
     "isAbstract": true
   },
   {
@@ -57,7 +57,7 @@
     "title": "Dream Place to Live",
     "prompt": "Where would your dream home be?",
     "axes": ["home", "lifestyle", "future"],
-    "values": ["Big-city apartment", "Suburbs with a yard", "Small town", "Farmhouse", "Beach town", "Mountain cabin", "Van life", "Somewhere abroad", "Close to family", "Downtown loft", "Lake house", "Wherever work takes me", "Tiny house", "Houseboat", "College town", "Desert town", "Tropical island", "Historic brownstone", "Off the grid", "Between the mountains and a city"],
+    "values": ["Big-city apartment", "Suburbs with a yard", "Small town", "Farmhouse", "Beach town", "Mountain cabin", "Van life", "Somewhere abroad", "Close to family", "Downtown loft", "Lake house", "Wherever work takes me", "Tiny house", "Houseboat", "College town", "Desert town", "Tropical island", "Historic brownstone", "Off the grid", "Between the mountains and a city", "A ranch with land", "A high-rise with a view", "A ski town", "Wine country", "A small European village", "A cul-de-sac near good schools", "A Victorian house", "A modern glass house", "A big house for the whole family", "Back in my hometown"],
     "isAbstract": true
   },
   {
@@ -70,7 +70,7 @@
     "title": "House Rules",
     "prompt": "What makes a shared home work for you?",
     "axes": ["home", "routine", "values"],
-    "values": ["Shoes off inside", "Dishes done every night", "Separate bathrooms", "A chore chart", "Guests welcome anytime", "Quiet mornings", "Thermostat wars settled", "Split groceries evenly", "My own space to retreat", "Pets welcome", "No TV in the bedroom", "Cook together most nights", "No phones at dinner", "Text if you'll be late", "Heads-up before overnight guests", "Shared grocery list", "Take turns picking the show", "Make the bed every morning", "Music on in the kitchen", "Lights out by midnight"],
+    "values": ["Shoes off inside", "Dishes done every night", "Separate bathrooms", "A chore chart", "Guests welcome anytime", "Quiet mornings", "Thermostat wars settled", "Split groceries evenly", "My own space to retreat", "Pets welcome", "No TV in the bedroom", "Cook together most nights", "No phones at dinner", "Text if you'll be late", "Heads-up before overnight guests", "Shared grocery list", "Take turns picking the show", "Make the bed every morning", "Music on in the kitchen", "Lights out by midnight", "No smoking inside", "Toilet seat down", "Replace what you finish", "Pets off the bed", "Recycle properly", "Quiet after 10", "Weekly house meeting", "Laundry folded the same day", "Ask before borrowing"],
     "isAbstract": true
   },
   {
@@ -119,7 +119,7 @@
     "title": "Pet Parenting Style",
     "prompt": "What kind of pet parent are you, or would you be?",
     "axes": ["pets", "home", "personality"],
-    "values": ["Pets sleep in the bed", "Strictly off the furniture", "Matching outfits", "Birthday parties for the pet", "They have their own Instagram", "Takes them everywhere", "Talks to them in a voice", "Doggy daycare", "Rescue only", "Trains every trick", "Treats on demand", "Allergic, sadly", "Pet cam while I'm out", "Dog park regulars", "Weekly grooming", "Raw food diet", "Crate trained", "Fosters animals", "Hiking buddy", "Pet insurance, obviously"],
+    "values": ["Pets sleep in the bed", "Strictly off the furniture", "Matching outfits", "Birthday parties for the pet", "They have their own Instagram", "Takes them everywhere", "Talks to them in a voice", "Doggy daycare", "Rescue only", "Trains every trick", "Treats on demand", "Allergic, sadly", "Pet cam while I'm out", "Dog park regulars", "Weekly grooming", "Raw food diet", "Crate trained", "Fosters animals", "Hiking buddy", "Pet insurance, obviously", "Homemade pet food", "Puppy training classes", "Dog-friendly vacations only", "A multi-pet household", "Holiday stockings for the pets", "Strict feeding schedule", "Pets are my kids", "Cat on a leash"],
     "isAbstract": true
   }
 ]

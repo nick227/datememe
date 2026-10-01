@@ -69,7 +69,7 @@
     "title": "Home Must-Haves",
     "prompt": "What does your home absolutely need?",
     "axes": ["home", "lifestyle", "comfort"],
-    "values": ["A big comfy couch", "Lots of houseplants", "A real kitchen", "In-unit laundry", "A home office", "Outdoor space", "Natural light", "Full bookshelves", "A great bed", "A dishwasher", "Room for a pet", "A walkable neighborhood", "A walk-in closet", "A garage", "A big bathtub", "A guest room", "A home gym", "A fireplace", "Central air", "Good water pressure"],
+    "values": ["A big comfy couch", "Lots of houseplants", "A real kitchen", "In-unit laundry", "A home office", "Outdoor space", "Natural light", "Full bookshelves", "A great bed", "A dishwasher", "Room for a pet", "A walkable neighborhood", "A walk-in closet", "A garage", "A big bathtub", "A guest room", "A home gym", "A fireplace", "Central air", "Good water pressure", "A kitchen island", "Lots of storage", "A quiet street", "Close to transit", "Hardwood floors", "High ceilings", "A view", "A pool", "Smart home everything", "A home theater"],
     "isAbstract": true
   },
   {
@@ -93,7 +93,7 @@
     "title": "Money Habits",
     "prompt": "How do you handle money?",
     "axes": ["money", "values", "lifestyle"],
-    "values": ["Budget every dollar", "Save first, spend later", "Treat-yourself spender", "Split the bill evenly", "Always grab the check", "Request $3 back on Venmo", "Invest on the side", "Never check the balance", "Hunt for deals", "Buy now, pay later", "Keep an emergency fund", "Save up for trips", "Track spending in an app", "Automatic savings", "Pay cards in full every month", "Cash envelopes", "No-spend weeks", "Max out retirement", "Splurge on payday", "Experiences over things"],
+    "values": ["Budget every dollar", "Save first, spend later", "Treat-yourself spender", "Split the bill evenly", "Always grab the check", "Request $3 back on Venmo", "Invest on the side", "Never check the balance", "Hunt for deals", "Buy now, pay later", "Keep an emergency fund", "Save up for trips", "Track spending in an app", "Automatic savings", "Pay cards in full every month", "Cash envelopes", "No-spend weeks", "Max out retirement", "Splurge on payday", "Experiences over things", "Live below my means", "Credit card points hacker", "Check my credit score constantly", "Avoid debt completely", "Buy used whenever possible", "Spend first, panic later", "Splurge on food, save on the rest", "Money podcasts and books", "Pay myself first", "Round-up savings app"],
     "isAbstract": true
   },
   {

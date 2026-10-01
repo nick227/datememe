@@ -194,7 +194,15 @@
       "Cuisines from around the world",
       "Healthy and simple",
       "Breakfast for dinner",
-      "Plant-based cooking"
+      "Plant-based cooking",
+      "Spicy everything",
+      "Sourdough and fermenting",
+      "Recipes from TikTok",
+      "Fancy plating",
+      "Cooking together with my partner",
+      "Can't cook at all",
+      "High-protein meals",
+      "Comfort food classics"
     ],
     "isAbstract": true
   },
@@ -301,7 +309,13 @@
       "A pet tarantula",
       "Buys from breeders, not shelters",
       "Farm animals in the house",
-      "A parrot that talks back"
+      "A parrot that talks back",
+      "Never walks the dog",
+      "Feeds them from the table",
+      "Leaves the pet alone all day",
+      "Doesn't clean the litter box",
+      "Lets the dog lick their face",
+      "A pet that hates me"
     ],
     "isAbstract": true
   },

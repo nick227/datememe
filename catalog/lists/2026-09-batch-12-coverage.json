@@ -58,7 +58,7 @@
     "title": "Cleaning Style",
     "prompt": "What's your cleaning style?",
     "axes": ["home", "routine", "lifestyle"],
-    "values": ["Clean as I go", "Sunday reset", "Only when guests are coming", "The robot vacuum handles it", "Monthly deep clean", "Organized chaos", "Label everything", "Dishes can soak overnight", "Making the bed", "Hire a cleaner", "The clothes chair", "Stress-cleaning", "Daily 10-minute tidy", "Loud cleaning playlist", "Podcast while I clean", "Laundry mountain", "Split chores evenly", "Minimalist, not much to clean", "Clean when I'm procrastinating", "Spotless kitchen, messy closet"],
+    "values": ["Clean as I go", "Sunday reset", "Only when guests are coming", "The robot vacuum handles it", "Monthly deep clean", "Organized chaos", "Label everything", "Dishes can soak overnight", "Making the bed", "Hire a cleaner", "The clothes chair", "Stress-cleaning", "Daily 10-minute tidy", "Loud cleaning playlist", "Podcast while I clean", "Laundry mountain", "Split chores evenly", "Minimalist, not much to clean", "Clean when I'm procrastinating", "Spotless kitchen, messy closet", "Clutter stresses me out", "Messy and proud", "Disinfect everything", "Spring cleaning every year", "Clean before every trip", "Everything has a place", "Cleaning videos inspire me"],
     "isAbstract": true
   },
   {
@@ -82,7 +82,7 @@
     "title": "Money Pet Peeves",
     "prompt": "Which money habits drive you up the wall?",
     "axes": ["money", "values", "dating"],
-    "values": ["Never pays you back", "Splits the bill to the penny", "Brags about what things cost", "Always \"forgot\" their wallet", "Bad tipper", "Crypto talk on a first date", "Designer everything, no savings", "Venmo requests for everything", "Won't chip in for the appetizer they ate", "Asks what you make", "Lends money and never lets you forget", "Cheap gifts, expensive taste", "Orders the priciest thing, then splits evenly", "Late on rent", "Hides purchases", "Won't talk about money", "Always broke, always shopping", "Pitches their side hustle constantly", "Judges how I spend", "Borrows my card"],
+    "values": ["Never pays you back", "Splits the bill to the penny", "Brags about what things cost", "Always \"forgot\" their wallet", "Bad tipper", "Crypto talk on a first date", "Designer everything, no savings", "Venmo requests for everything", "Won't chip in for the appetizer they ate", "Asks what you make", "Lends money and never lets you forget", "Cheap gifts, expensive taste", "Orders the priciest thing, then splits evenly", "Late on rent", "Hides purchases", "Won't talk about money", "Always broke, always shopping", "Pitches their side hustle constantly", "Judges how I spend", "Borrows my card", "Hidden debt", "Gambling", "Makes every purchase a debate", "Talks about money all the time", "Flashy spending to impress", "Asks to borrow money a lot", "Never carries cash", "Puts everything on credit"],
     "isAbstract": true
   },
   {

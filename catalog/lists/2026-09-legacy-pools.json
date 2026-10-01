@@ -8,7 +8,7 @@
     "title": "Workplace Pet Peeves",
     "prompt": "What are your biggest workplace pet peeves?",
     "axes": ["career", "values"],
-    "values": ["Coworkers chewing loudly", "Last-minute meetings", "Leaving the printer jammed", "Meaningless Meetings", "Micro-management", "Microwaving Fish", "Office politics", "Reply-All Emails", "Slow Wi-Fi", "Taking credit for others' work", "Loud phone calls", "Chronic lateness", "Passive-aggressive emails", "Stolen lunches", "Dirty dishes in the sink", "Constant Slack pings", "After-hours messages", "Mandatory fun", "Open-plan offices", "Coworkers who overshare"],
+    "values": ["Coworkers chewing loudly", "Last-minute meetings", "Leaving the printer jammed", "Meaningless Meetings", "Micro-management", "Microwaving Fish", "Office politics", "Reply-All Emails", "Slow Wi-Fi", "Taking credit for others' work", "Loud phone calls", "Chronic lateness", "Passive-aggressive emails", "Stolen lunches", "Dirty dishes in the sink", "Constant Slack pings", "After-hours messages", "Mandatory fun", "Open-plan offices", "Coworkers who overshare", "Cameras-on video calls", "Jargon and buzzwords", "Gossip", "Bosses who never decide", "\"Quick call?\" with no agenda", "Return-to-office mandates", "Coworkers who never mute", "Strong perfume", "Being cc'd on everything", "Bad office coffee"],
     "isAbstract": true
   },
   {
@@ -32,7 +32,7 @@
     "title": "Dream Job",
     "prompt": "What is your dream job?",
     "axes": ["career", "ambition"],
-    "values": ["Architect", "Data Scientist", "Electrician", "Financial Analyst", "Graphic Designer", "Marine Biologist", "Park Ranger", "Pastry Chef", "Plumber", "Registered Nurse", "Software Engineer", "Teacher", "Veterinarian", "Pilot", "Photographer", "Entrepreneur", "Film Director", "Physician", "Astronaut", "Travel Writer"],
+    "values": ["Architect", "Data Scientist", "Electrician", "Financial Analyst", "Graphic Designer", "Marine Biologist", "Park Ranger", "Pastry Chef", "Plumber", "Registered Nurse", "Software Engineer", "Teacher", "Veterinarian", "Pilot", "Photographer", "Entrepreneur", "Film Director", "Physician", "Astronaut", "Travel Writer", "Lawyer", "Psychologist", "Firefighter", "Game Designer", "Fashion Designer", "Interior Designer", "Author", "Actor", "Professional Athlete", "Restaurant Owner"],
     "isAbstract": true
   }
 ]
