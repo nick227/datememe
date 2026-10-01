@@ -28,7 +28,12 @@
       "Card roulette",
       "Cash only",
       "Share apps, pay our own entrées",
-      "Let the parents pay"
+      "Let the parents pay",
+      "I pay, I want the points",
+      "Traditional: the man pays",
+      "Wait to see if they offer",
+      "Pay before the check comes",
+      "I cover the big stuff, they cover the small"
     ],
     "isAbstract": true
   },
@@ -105,7 +110,15 @@
       "Recharge at the gym",
       "Energized by concerts",
       "One night home a week, minimum",
-      "Party once a month, then hibernate"
+      "Party once a month, then hibernate",
+      "Ambivert",
+      "Drained by work, full on weekends",
+      "Texting is easier than talking",
+      "Need a nap after socializing",
+      "Love hosting, hate going out",
+      "Need a drink to warm up",
+      "Social in the morning, done by night",
+      "Sundays are for recharging"
     ],
     "isAbstract": true
   },
@@ -214,7 +227,15 @@
       "Volunteering",
       "Bath and a book",
       "Night run",
-      "Early to bed"
+      "Early to bed",
+      "Laundry and chores",
+      "Errands after work",
+      "Practicing an instrument",
+      "Bible study or church group",
+      "Homework with the kids",
+      "Long phone call with my partner",
+      "Therapy session",
+      "Reading the news"
     ],
     "isAbstract": true
   },

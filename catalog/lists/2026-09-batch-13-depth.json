@@ -45,7 +45,7 @@
     "title": "Gift-Giving Style",
     "prompt": "What's your gift-giving style, and your budget?",
     "axes": ["money", "dating", "affection"],
-    "values": ["Goes all out", "Experiences over things", "Handmade gifts", "Plans months ahead", "Last-minute scramble", "Practical gifts", "Funny gifts", "Gift cards, no shame", "Asks for a wish list", "Big on birthdays", "Wraps it beautifully", "Rather just spend time", "Subscription boxes", "Gives books", "Remembers something you said months ago", "Surprise gifts for no reason", "Splits a big group gift", "Donates in your name", "Regifts, proudly", "Gives plants"],
+    "values": ["Goes all out", "Experiences over things", "Handmade gifts", "Plans months ahead", "Last-minute scramble", "Practical gifts", "Funny gifts", "Gift cards, no shame", "Asks for a wish list", "Big on birthdays", "Wraps it beautifully", "Rather just spend time", "Subscription boxes", "Gives books", "Remembers something you said months ago", "Surprise gifts for no reason", "Splits a big group gift", "Donates in your name", "Regifts, proudly", "Gives plants", "Long heartfelt cards", "Concert tickets", "Jewelry", "Souvenirs from my travels", "Matching sets", "Spends too much", "Sticks to a budget", "Wrapping is not my thing"],
     "isAbstract": true
   },
   {
@@ -82,7 +82,7 @@
     "title": "Friendship Style",
     "prompt": "How do you show up for your friends?",
     "axes": ["social", "personality", "communication"],
-    "values": ["Texts every day", "Months apart, picks right up", "Plans the birthday", "Shows up with soup", "Brutally honest", "Best at advice", "Down for anything", "Remembers every detail", "Knows everyone", "Low-maintenance", "Shares location", "Sends voice memos", "The mom friend", "Keeps every secret", "Loyal to a fault", "Helps you move", "Plans the group trip", "Sends care packages", "Childhood friends for life", "Checks in when you go quiet"],
+    "values": ["Texts every day", "Months apart, picks right up", "Plans the birthday", "Shows up with soup", "Brutally honest", "Best at advice", "Down for anything", "Remembers every detail", "Knows everyone", "Low-maintenance", "Shares location", "Sends voice memos", "The mom friend", "Keeps every secret", "Loyal to a fault", "Helps you move", "Plans the group trip", "Sends care packages", "Childhood friends for life", "Checks in when you go quiet", "The funny one", "The listener", "Shows up, no questions asked", "The hype friend", "Always the driver", "Long-distance best friend", "One best friend over a big group", "A big friend group", "Work friends become real friends", "Friends of every age"],
     "isAbstract": true
   },
   {
@@ -94,7 +94,7 @@
     "title": "Sleep Schedule",
     "prompt": "What's your sleep schedule really like?",
     "axes": ["routine", "lifestyle", "personality"],
-    "values": ["In bed by 10", "Midnight is early", "Up before sunrise", "Sleeps till noon on weekends", "Runs on five hours", "Afternoon naps", "Same time every day", "Falls asleep watching TV", "Needs a fan on", "Light sleeper", "Can sleep anywhere", "Night owl, no apologies", "Two alarms minimum", "Wakes up without an alarm", "Early riser even on weekends", "Different bedtime every night", "One more episode, every night", "Asleep by 9", "Works the night shift", "Sleeps better on vacation"],
+    "values": ["In bed by 10", "Midnight is early", "Up before sunrise", "Sleeps till noon on weekends", "Runs on five hours", "Afternoon naps", "Same time every day", "Falls asleep watching TV", "Needs a fan on", "Light sleeper", "Can sleep anywhere", "Night owl, no apologies", "Two alarms minimum", "Wakes up without an alarm", "Early riser even on weekends", "Different bedtime every night", "One more episode, every night", "Asleep by 9", "Works the night shift", "Sleeps better on vacation", "Insomnia", "Up with the kids", "Weekends are a different time zone", "Needs nine hours", "Wakes up once a night, always"],
     "isAbstract": true
   },
   {

@@ -32,7 +32,7 @@
     "title": "Group Chat Role",
     "prompt": "Who are you in the group chat?",
     "axes": ["social", "communication", "personality"],
-    "values": ["The planner", "The lurker", "The meme supplier", "The hype person", "Mutes it for weeks", "Answers messages from last Tuesday", "Twenty texts in a row", "Only reacts", "\"Wait, what happened?\"", "The fact-checker", "Starts the drama", "Screenshots everything", "Renames the chat", "Sends 40 photos after every trip", "Voice-note sender", "Posts news articles", "Checks everyone got home safe", "Leaves the chat dramatically", "Only shows up for birthdays", "Spoils every show"],
+    "values": ["The planner", "The lurker", "The meme supplier", "The hype person", "Mutes it for weeks", "Answers messages from last Tuesday", "Twenty texts in a row", "Only reacts", "\"Wait, what happened?\"", "The fact-checker", "Starts the drama", "Screenshots everything", "Renames the chat", "Sends 40 photos after every trip", "Voice-note sender", "Posts news articles", "Checks everyone got home safe", "Leaves the chat dramatically", "Only shows up for birthdays", "Spoils every show", "Keeps the chat alive", "The voice of reason", "Late-night sender", "Sends the birthday reminders", "Starts every poll", "Plans it, then goes quiet", "Calls instead of texting", "Muted but somehow always knows"],
     "isAbstract": true
   },
   {
@@ -44,7 +44,7 @@
     "title": "Friend Hangouts",
     "prompt": "How do you like to hang out with friends?",
     "axes": ["social", "lifestyle", "personality"],
-    "values": ["Hosting a dinner party", "Trivia night", "Game night", "Bottomless brunch", "Watching the game", "Coffee catch-up", "Working out together", "Movie night on the couch", "Pickleball", "Group trip", "Cooking together at someone's place", "Long walk and a talk", "Bar crawl", "Beach day", "Camping trip", "Road trip", "Bowling", "Book club", "Wine night in", "Pottery or painting class"],
+    "values": ["Hosting a dinner party", "Trivia night", "Game night", "Bottomless brunch", "Watching the game", "Coffee catch-up", "Working out together", "Movie night on the couch", "Pickleball", "Group trip", "Cooking together at someone's place", "Long walk and a talk", "Bar crawl", "Beach day", "Camping trip", "Road trip", "Bowling", "Book club", "Wine night in", "Pottery or painting class", "Hiking", "Karaoke", "Going to a concert", "Escape room", "Golf", "Running club", "Spa day", "Board game café", "Farmers market", "Volunteering together"],
     "isAbstract": true
   },
   {
@@ -56,7 +56,7 @@
     "title": "Bedtime Routine",
     "prompt": "How do you wind down before bed?",
     "axes": ["routine", "wellness", "comfort"],
-    "values": ["Scrolling in bed", "Reading a few pages", "A show in the background", "Hot shower", "Skincare routine", "Podcast or sleep story", "White noise", "Herbal tea", "Meditation app", "Setting out tomorrow's clothes", "Asleep the second I lie down", "Lying awake overthinking", "Journaling", "Stretching", "Late-night snack", "Talking with my partner", "Sleep mask and earplugs", "Planning tomorrow", "Melatonin or magnesium", "A warm bath"],
+    "values": ["Scrolling in bed", "Reading a few pages", "A show in the background", "Hot shower", "Skincare routine", "Podcast or sleep story", "White noise", "Herbal tea", "Meditation app", "Setting out tomorrow's clothes", "Asleep the second I lie down", "Lying awake overthinking", "Journaling", "Stretching", "Late-night snack", "Talking with my partner", "Sleep mask and earplugs", "Planning tomorrow", "Melatonin or magnesium", "A warm bath", "Prayer", "Cuddling", "A gratitude list", "Gaming until late", "Checking the locks twice", "Evening walk", "Phone in another room"],
     "isAbstract": true
   },
   {

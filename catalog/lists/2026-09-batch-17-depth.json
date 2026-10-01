@@ -423,7 +423,15 @@
       "Pick the first option",
       "Go with the cheaper one",
       "Change my mind three times",
-      "Tarot or astrology"
+      "Tarot or astrology",
+      "Ask ChatGPT",
+      "Which would I regret more?",
+      "Put it off as long as possible",
+      "Pick the safe option",
+      "Pick the adventurous option",
+      "Trust the experts",
+      "Talk it out loud to myself",
+      "Pray on it"
     ],
     "isAbstract": true
   },
@@ -501,7 +509,15 @@
       "Sunday pasta night",
       "Kids and pets welcome",
       "Deep-cleans before anyone comes",
-      "Stressed until guests arrive"
+      "Stressed until guests arrive",
+      "Friendsgiving host",
+      "Karaoke night at home",
+      "Book club host",
+      "Cookie swap",
+      "Wine tasting at home",
+      "Way too much food",
+      "Guests help clean up",
+      "Seating chart and place cards"
     ],
     "isAbstract": true
   }

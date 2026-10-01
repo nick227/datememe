@@ -33,7 +33,7 @@
     "title": "Self-Care Non-Negotiables",
     "prompt": "Which self-care habits do you never skip?",
     "axes": ["wellness", "routine", "lifestyle"],
-    "values": ["Eight hours of sleep", "Daily workout", "Skincare routine", "Therapy", "Drinking enough water", "Time alone", "Phone-free time", "Meal prep", "Getting outside every day", "Stretching", "Weekly call with family", "Saying no to plans", "Journaling", "Meditation", "Regular massages", "A Sunday reset", "Daily vitamins", "Annual checkups", "Reading before bed", "Curating my feed"],
+    "values": ["Eight hours of sleep", "Daily workout", "Skincare routine", "Therapy", "Drinking enough water", "Time alone", "Phone-free time", "Meal prep", "Getting outside every day", "Stretching", "Weekly call with family", "Saying no to plans", "Journaling", "Meditation", "Regular massages", "A Sunday reset", "Daily vitamins", "Annual checkups", "Reading before bed", "Curating my feed", "Prayer", "A warm bath", "Time for hobbies", "Seeing friends every week", "Hair and nail appointments", "Treating myself", "Mental health days"],
     "isAbstract": true
   },
   {
@@ -45,7 +45,7 @@
     "title": "Morning Routine",
     "prompt": "What's non-negotiable in your morning routine?",
     "axes": ["routine", "lifestyle", "personality"],
-    "values": ["Coffee before words", "Hitting snooze", "Morning workout", "Shower first thing", "A real breakfast", "Scrolling in bed", "Making the bed", "Skincare routine", "Walking the dog", "Journaling", "News or a podcast", "Out the door in 10 minutes", "Meditation", "Stretching", "Cold shower", "Email before getting up", "Lemon water", "Reading", "Coffee on the commute", "Quiet time before anyone's up"],
+    "values": ["Coffee before words", "Hitting snooze", "Morning workout", "Shower first thing", "A real breakfast", "Scrolling in bed", "Making the bed", "Skincare routine", "Walking the dog", "Journaling", "News or a podcast", "Out the door in 10 minutes", "Meditation", "Stretching", "Cold shower", "Email before getting up", "Lemon water", "Reading", "Coffee on the commute", "Quiet time before anyone's up", "Prayer", "Sunlight first thing", "Morning walk", "Affirmations", "Protein shake", "Breakfast with the family", "Making lunch for the day", "Up at 5 a.m."],
     "isAbstract": true
   },
   {
@@ -58,7 +58,7 @@
     "title": "Sense of Humor",
     "prompt": "What kind of humor gets you every time?",
     "axes": ["humor", "personality", "communication"],
-    "values": ["Dry and deadpan", "Sarcastic", "Dark humor", "Absurd and surreal", "Puns and dad jokes", "Self-deprecating", "Wholesome", "Physical comedy", "Roasting your friends", "Witty wordplay", "Cringe comedy", "Speaks fluent meme", "Observational", "Satire", "Impressions", "Quotes movies constantly", "Pranks", "Inside jokes forever", "Laughs at my own jokes", "Chaotic energy"],
+    "values": ["Dry and deadpan", "Sarcastic", "Dark humor", "Absurd and surreal", "Puns and dad jokes", "Self-deprecating", "Wholesome", "Physical comedy", "Roasting your friends", "Witty wordplay", "Cringe comedy", "Speaks fluent meme", "Observational", "Satire", "Impressions", "Quotes movies constantly", "Pranks", "Inside jokes forever", "Laughs at my own jokes", "Chaotic energy", "Storytelling", "Silly voices", "Laughs at everything", "Hard to make laugh", "Improv energy", "Political comedy", "Musical comedy", "Gross-out humor", "Anti-humor"],
     "isAbstract": true
   },
   {
@@ -109,7 +109,7 @@
     "title": "Texting Style",
     "prompt": "What's your texting style?",
     "axes": ["social", "communication", "personality"],
-    "values": ["Replies instantly", "Voice notes", "Double-texter", "Sends paragraphs", "One-word replies", "Memes instead of words", "Leaves people on read", "Reacts instead of replying", "Just calls", "Emoji in every text", "Replies three days later", "Perfect punctuation", "All lowercase", "Typos everywhere", "GIF replies", "Sends TikToks all day", "Texts at 2 a.m.", "Read receipts off", "Ends every text with \"lol\"", "\"k.\""],
+    "values": ["Replies instantly", "Voice notes", "Double-texter", "Sends paragraphs", "One-word replies", "Memes instead of words", "Leaves people on read", "Reacts instead of replying", "Just calls", "Emoji in every text", "Replies three days later", "Perfect punctuation", "All lowercase", "Typos everywhere", "GIF replies", "Sends TikToks all day", "Texts at 2 a.m.", "Read receipts off", "Ends every text with \"lol\"", "\"k.\"", "Good-morning texter", "Rapid-fire short texts", "Links with no context", "Voice-to-text, typos and all", "Always on Do Not Disturb", "Replies at 3 a.m.", "\"Haha\" every time"],
     "isAbstract": true
   },
   {
@@ -121,7 +121,7 @@
     "title": "Perfect Night Out",
     "prompt": "What's your perfect night out?",
     "axes": ["nightlife", "social", "lifestyle"],
-    "values": ["Night out at a club", "Going to a concert", "Dive bar", "Cocktail lounge", "Karaoke", "Comedy show", "Trivia night", "Rooftop bar", "Late-night diner", "Wine bar", "Brewery", "House party", "Jazz club", "Sports bar for the big game", "Drag show", "Speakeasy", "Dinner and a movie", "Arcade bar", "Salsa night", "Night market"],
+    "values": ["Night out at a club", "Going to a concert", "Dive bar", "Cocktail lounge", "Karaoke", "Comedy show", "Trivia night", "Rooftop bar", "Late-night diner", "Wine bar", "Brewery", "House party", "Jazz club", "Sports bar for the big game", "Drag show", "Speakeasy", "Dinner and a movie", "Arcade bar", "Salsa night", "Night market", "Fancy dinner", "Theater or a show", "Bowling", "Casino night", "Open mic", "Line dancing", "Pro game in person", "Midnight movie"],
     "isAbstract": true
   },
   {
