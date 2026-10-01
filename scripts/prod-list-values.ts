@@ -130,15 +130,15 @@ const LIST_SQL = `
   LEFT JOIN Entity e ON e.id = ce.entityId
   GROUP BY c.id, c.slug, c.shortLabel, c.isActive, c.maxItems, c.popularityCount, g.slug, g.label, t.slug, c.metadata`
 
-type FloorConfig = { minimum: number; default: number; groups: Record<string, number>; lists: Record<string, number> }
+type FloorConfig = { minimum: number; default: number; groups: Record<string, number>; types: Record<string, number>; lists: Record<string, number> }
 
 function readFloors(): FloorConfig {
   const raw = JSON.parse(readFileSync(FLOOR_FILE, 'utf8'))
-  const cfg: FloorConfig = { minimum: raw.minimum ?? 0, default: raw.default, groups: raw.groups ?? {}, lists: raw.lists ?? {} }
+  const cfg: FloorConfig = { minimum: raw.minimum ?? 0, default: raw.default, groups: raw.groups ?? {}, types: raw.types ?? {}, lists: raw.lists ?? {} }
   const ok = (n: unknown) => Number.isInteger(n) && (n as number) >= 0
   if (!ok(cfg.minimum)) die(`${FLOOR_FILE}: "minimum" must be a whole number`)
   if (!ok(cfg.default)) die(`${FLOOR_FILE}: "default" must be a whole number`)
-  for (const [k, v] of [...Object.entries(cfg.groups), ...Object.entries(cfg.lists)]) if (!ok(v)) die(`${FLOOR_FILE}: "${k}" must be a whole number`)
+  for (const [k, v] of [...Object.entries(cfg.groups), ...Object.entries(cfg.types), ...Object.entries(cfg.lists)]) if (!ok(v)) die(`${FLOOR_FILE}: "${k}" must be a whole number`)
   return cfg
 }
 
@@ -201,14 +201,16 @@ async function main() {
     const [raw] = await conn.query(LIST_SQL) as [any[], unknown]
     rows = raw.map((r) => {
       const values = Number(r.valueCount)
-      const floor = o.floor ?? floors.lists[r.slug] ?? floors.groups[r.groupSlug] ?? floors.default
+      // The list's normal target: its entity type's, else its group's, else the default.
+      const target = floors.types[r.typeSlug] ?? floors.groups[r.groupSlug] ?? floors.default
+      const floor = o.floor ?? floors.lists[r.slug] ?? target
       return {
         id: r.id, slug: r.slug, title: r.title, groupSlug: r.groupSlug, groupLabel: r.groupLabel, typeSlug: r.typeSlug,
         isActive: Boolean(r.isActive), maxItems: Number(r.maxItems), takes: Number(r.takes),
         values, pending: Number(r.pendingCount), excluded: Number(r.excludedCount), inactive: Number(r.inactiveCount),
         adminEditedAt: r.adminEditedAt && r.adminEditedAt !== 'null' ? r.adminEditedAt : null,
         floor, gap: Math.max(0, floor - values), file: null, stale: false,
-        status: statusOf(values, floor, floors.lists[r.slug] !== undefined && floors.lists[r.slug]! < (floors.groups[r.groupSlug] ?? floors.default), floors.minimum),
+        status: statusOf(values, floor, floors.lists[r.slug] !== undefined && floors.lists[r.slug]! < target, floors.minimum),
       }
     })
     const entries = mapEntriesToLists(loadCatalog(), rows)
@@ -225,6 +227,7 @@ async function main() {
     for (const g of o.groups) if (!groupSlugs.has(g)) die(`unknown group slug "${g}"; groups: ${[...groupSlugs].sort().join(', ')}`)
     for (const t of o.types) if (!typeSlugs.has(t)) die(`unknown type slug "${t}"`)
     for (const g of Object.keys(floors.groups)) if (!groupSlugs.has(g)) console.error(`⚠ value-floor.json: unknown group "${g}"`)
+    for (const t of Object.keys(floors.types)) if (!typeSlugs.has(t)) console.error(`⚠ value-floor.json: unknown type "${t}"`)
     for (const l of Object.keys(floors.lists)) if (!listSlugs.has(l)) console.error(`⚠ value-floor.json: unknown list "${l}"`)
 
     active = rows.filter((r) => r.isActive)

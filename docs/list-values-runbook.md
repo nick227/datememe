@@ -12,7 +12,9 @@ How an AI agent inspects how many values each list offers, against a floor. **Ph
 - **`minimum` (20): the presentation floor.** The list builder shows the first 20 values before search, so a list below 20 is **shallow**. Shallow lists come first. Because values are appended, a list's first 20 are its strongest; keep new additions strong enough to deserve their place if they end up in the first 20.
 - **Floors: the catalog depth target** that `gap` measures. `default` 30 covers compatibility, lifestyle, money, home, career and travel. `groups` sets 40 for entertainment and taste domains (film-tv, music, food-drink, literature, gaming, podcasts, tabletop, sports, creators, craft). `lists` sets 50 for broad canonical lists (Top Movies, Top TV Shows, Books, Authors, Artists, Albums, Video Games, Podcasts, Board Games, Sports Teams, YouTubers).
 
-Floor precedence, first match wins: `--floor N`, then `lists[<category slug>]`, then `groups[<group slug>]`, then `default`.
+`types` sets 28 for narrow personality, routine and habit types (social-habit, daily-habit, texting-style, party-role, social-obligation, humor-style, decision-style, planning-style, sleep-preference, sunday-morning). These lists naturally stop around 25–29, so 28 is their real target.
+
+Floor precedence, first match wins: `--floor N`, then `lists[<category slug>]`, then `types[<entity type slug>]`, then `groups[<group slug>]`, then `default`. A list's **normal target** is its type's, else its group's, else the default. A `lists` entry below the normal target makes the list `bounded`. When the same honest stopping point repeats across a coherent set of lists, set it as a `types` or `groups` target rather than adding one override per list.
 
 Every row has a **status**, and the summary line counts each one:
 - `shallow`: below the minimum. This is a product-quality problem, so fix these first.
