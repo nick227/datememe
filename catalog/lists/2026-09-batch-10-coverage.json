@@ -8,7 +8,7 @@
     "title": "Artists",
     "prompt": "Who are your favorite artists of all time?",
     "axes": ["music", "taste"],
-    "values": ["The Beatles", "Michael Jackson", "Queen", "Led Zeppelin", "Madonna", "Beyoncé", "Taylor Swift", "Kanye West", "Nas", "The Weeknd", "Kendrick Lamar", "Drake", "Radiohead", "Nirvana", "Frank Ocean", "Eminem", "Outkast", "Billie Eilish", "Prince", "Rihanna"],
+    "values": ["The Beatles", "Michael Jackson", "Queen", "Led Zeppelin", "Madonna", "Beyoncé", "Taylor Swift", "Kanye West", "Nas", "The Weeknd", "Kendrick Lamar", "Drake", "Radiohead", "Nirvana", "Frank Ocean", "Eminem", "Outkast", "Billie Eilish", "Prince", "Rihanna", "Elvis Presley", "Bob Dylan", "David Bowie", "The Rolling Stones", "Pink Floyd", "Elton John", "Whitney Houston", "Stevie Wonder", "Aretha Franklin", "Bob Marley", "Johnny Cash", "Dolly Parton", "Fleetwood Mac", "Bruce Springsteen", "U2", "Coldplay", "Metallica", "Daft Punk", "Bad Bunny", "BTS", "Lady Gaga", "Adele", "Jay-Z", "Tupac Shakur", "Amy Winehouse", "Lana Del Rey", "SZA", "Harry Styles", "Ed Sheeran", "Arctic Monkeys"],
     "isAbstract": false
   },
   {
