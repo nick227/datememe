@@ -121,6 +121,13 @@ State as of 2026-09-29: 171 active lists (Batches 14–16 added 31, incl. the `s
 - The coverage classifier matches whole words, with per-domain `exclude` phrases.
 - **Publishing while other work is uncommitted:** the preflight refuses a dirty `apps/server`/`packages/*`, so publish from a clean worktree of HEAD (see the runbook).
 
+## List values (2026-09-30 – 10-01)
+
+Read-only inspector `pnpm prod:list-values` and entry sync `pnpm prod:list-stub`; the runbook is `docs/list-values-runbook.md`. Every active list has exactly one pinned catalog entry (`categorySlug` + `adminEditedAt`). Targets live in `catalog/value-floor.json`: a minimum of 20, then depth targets (30 by default, 28 for narrow habit types, 40 for taste groups, 50+ for canonical lists, and per-list `bounded` floors where the honest answers run out).
+- State 2026-10-01: 4,835 values, 0 shallow; all high-signal and canonical lists are at target or bounded. Next: taste lists toward 40, then novelty.
+- One-off fixes are reviewed manifest scripts with a dry run (`scripts/catalog-cleanup-2026-09-30.ts`, `scripts/catalog-reorder-2026-10-01.ts`). Never use ad-hoc SQL.
+- Do fill work in a worktree off `origin/main` and push only that commit. Other sessions push concurrently, so fetch before pushing and cherry-pick when behind.
+
 ## Known Issues (outside Rankings, logged 2026-09-26)
 
 - ~~Production worker stuck on `712d837`; Rankings columns missing in prod~~ — fixed 2026-09-27: worker `tsc` errors resolved (`ResultSet.scopeValue` is non-null since the `_GLOBAL_` sentinel), the 3 columns applied to prod. Prod schema is `db push`-managed: check drift with `prisma migrate diff --from-url <prod> --to-schema-datamodel prisma/schema.prisma --exit-code` before deploying schema changes.

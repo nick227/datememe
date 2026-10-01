@@ -84,6 +84,9 @@ async function main() {
       const fileNames = (ref?.entry.values ?? []).map(nameOf).filter(Boolean)
       // What each file name resolves to, the way the importer resolves it (key, legacy key, exact name, exact alias; following merges).
       const resolvedTo = new Map<string, string[]>()
+      // Names that are the entity's own name or slug (not an alias, not a merged duplicate):
+      // only these keep the file's spelling, so a merge's old name gives way to the kept one.
+      const direct = new Map<string, string>()
       if (fileNames.length) {
         const keys = [...new Set(fileNames.flatMap((n) => [key(n), legacyAsciiKey(n)]).filter(Boolean))]
         const [ents] = await conn.query(`
@@ -94,10 +97,12 @@ async function main() {
           const k = new Set([key(n), legacyAsciiKey(n)])
           const ids = ents.filter((e) => k.has(e.slug) || e.canonicalName === n || e.alias === n).map((e) => (e.mergedIntoId ?? e.id) as string)
           resolvedTo.set(n, [...new Set(ids)])
+          const own = ents.filter((e) => !e.mergedIntoId && (k.has(e.slug) || e.canonicalName === n)).map((e) => e.id as string)
+          if (new Set(own).size === 1) direct.set(n, own[0]!)
         }
       }
       const spelling = new Map<string, string>() // entity id → the file's name for it
-      for (const n of fileNames) { const ids = resolvedTo.get(n)!; if (ids.length === 1 && !spelling.has(ids[0]!)) spelling.set(ids[0]!, n) }
+      for (const n of fileNames) { const id = direct.get(n); if (id && !spelling.has(id)) spelling.set(id, n) }
       // Names on the file that are not on the list at all: unpublished additions, or Admin removals.
       const extras = fileNames.filter((n) => !resolvedTo.get(n)!.some((id) => onList.has(id)))
       const synced = ref ? (ref.entry.categorySlug ? (ref.entry.adminEditedAt ?? null) === adminEditedAt : !adminEditedAt) : true
