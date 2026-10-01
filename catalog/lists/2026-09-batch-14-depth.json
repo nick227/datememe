@@ -382,7 +382,12 @@
       "Won't split costs",
       "Overpacks for a weekend",
       "Visits family every trip",
-      "Loud in quiet places"
+      "Loud in quiet places",
+      "Rude to locals",
+      "Shops the whole trip",
+      "Wants to split up the whole trip",
+      "Won't walk anywhere",
+      "Brings work on vacation"
     ],
     "isAbstract": true
   }

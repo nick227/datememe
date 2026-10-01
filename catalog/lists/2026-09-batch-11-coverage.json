@@ -105,7 +105,7 @@
     "title": "Wellness Trends",
     "prompt": "Which wellness trends are you actually into?",
     "axes": ["wellness", "lifestyle", "routine"],
-    "values": ["Cold plunges", "Pilates", "Sauna", "Hot yoga", "Sound baths", "Matcha", "Walking pad", "Sleep tracking", "Dry January", "Run clubs", "Breathwork", "Gut-health everything", "Intermittent fasting", "Red light therapy", "Protein everything", "Mouth taping", "Adaptogens", "Creatine", "12-3-30 treadmill", "Zone 2 cardio"],
+    "values": ["Cold plunges", "Pilates", "Sauna", "Hot yoga", "Sound baths", "Matcha", "Walking pad", "Sleep tracking", "Dry January", "Run clubs", "Breathwork", "Gut-health everything", "Intermittent fasting", "Red light therapy", "Protein everything", "Mouth taping", "Adaptogens", "Creatine", "12-3-30 treadmill", "Zone 2 cardio", "GLP-1 shots", "Sober curious", "Hot girl walks", "10,000 steps", "Seed oil-free", "Lymphatic drainage", "Grounding", "Raw milk"],
     "isAbstract": true
   },
   {
@@ -117,7 +117,7 @@
     "title": "Travel Personality",
     "prompt": "What kind of travel buddy are you?",
     "axes": ["travel", "personality", "adventure"],
-    "values": ["Itinerary in a spreadsheet", "Go with the flow", "At the airport three hours early", "Packs the night before", "Finds the best food", "Takes all the photos", "Naps on every ride", "Tracks the budget", "Souvenir hunter", "Chats up the locals", "Pool day, every day", "Up for sunrise", "Carry-on only", "Books every restaurant ahead", "Collects passport stamps", "Wanders without a map", "Keeps a travel journal", "Maximizes loyalty points", "Hits the gym even on vacation", "Overpacker"],
+    "values": ["Itinerary in a spreadsheet", "Go with the flow", "At the airport three hours early", "Packs the night before", "Finds the best food", "Takes all the photos", "Naps on every ride", "Tracks the budget", "Souvenir hunter", "Chats up the locals", "Pool day, every day", "Up for sunrise", "Carry-on only", "Books every restaurant ahead", "Collects passport stamps", "Wanders without a map", "Keeps a travel journal", "Maximizes loyalty points", "Hits the gym even on vacation", "Overpacker", "Learns a few phrases first", "Window seat, always", "Aisle seat, always", "Direct flights only", "Hours in every museum", "Needs a rest day", "Sends postcards home", "Travel insurance, always"],
     "isAbstract": true
   },
   {

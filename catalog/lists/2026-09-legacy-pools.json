@@ -20,7 +20,7 @@
     "title": "Weekend Vibe",
     "prompt": "What does your ideal weekend look like?",
     "axes": ["lifestyle", "social"],
-    "values": ["Binge-watching shows", "Camping outdoors", "Exploring the city", "Going to a concert", "Hosting a dinner party", "Night out at a club", "Quiet night in with movies", "Road trip", "Trying a new restaurant", "Working on hobbies", "Hiking", "Beach day", "Brunch and errands", "Day trip to a new town", "Doing absolutely nothing", "Museum hopping", "Sports all weekend", "Family time", "Spa weekend", "Catching up on work"],
+    "values": ["Binge-watching shows", "Camping outdoors", "Exploring the city", "Going to a concert", "Hosting a dinner party", "Night out at a club", "Quiet night in with movies", "Road trip", "Trying a new restaurant", "Working on hobbies", "Hiking", "Beach day", "Brunch and errands", "Day trip to a new town", "Doing absolutely nothing", "Museum hopping", "Sports all weekend", "Family time", "Spa weekend", "Catching up on work", "Farmers market", "Golf", "Karaoke", "Lake day", "Pool party", "House projects", "Shopping", "Church and family lunch", "Music festival", "Theme park"],
     "isAbstract": true
   },
   {

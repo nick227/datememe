@@ -88,7 +88,7 @@
     "title": "Travel Style",
     "prompt": "How do you like to travel?",
     "axes": ["travel", "lifestyle", "adventure"],
-    "values": ["Beach resort", "Backpacking", "City break", "Road trip", "Camping", "Cruise", "Ski trip", "All-inclusive", "Food-focused trip", "Adventure travel", "Museums and history", "Staycation", "Solo travel", "Luxury hotels", "Wine country", "National parks", "Festival trip", "Volunteering abroad", "Glamping", "Weekend getaways"],
+    "values": ["Beach resort", "Backpacking", "City break", "Road trip", "Camping", "Cruise", "Ski trip", "All-inclusive", "Food-focused trip", "Adventure travel", "Museums and history", "Staycation", "Solo travel", "Luxury hotels", "Wine country", "National parks", "Festival trip", "Volunteering abroad", "Glamping", "Weekend getaways", "Safari", "Island hopping", "Train journeys", "Theme parks", "Wellness retreat", "Visiting family", "Group trips with friends", "Digital nomad", "Following my team", "Off the beaten path"],
     "isAbstract": true
   },
   {
