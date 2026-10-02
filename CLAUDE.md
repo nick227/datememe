@@ -121,12 +121,17 @@ State as of 2026-09-29: 171 active lists (Batches 14–16 added 31, incl. the `s
 - The coverage classifier matches whole words, with per-domain `exclude` phrases.
 - **Publishing while other work is uncommitted:** the preflight refuses a dirty `apps/server`/`packages/*`, so publish from a clean worktree of HEAD (see the runbook).
 
-## List values (2026-09-30 – 10-01)
+## List values (2026-09-30 – 10-02)
 
-Read-only inspector `pnpm prod:list-values` and entry sync `pnpm prod:list-stub`; the runbook is `docs/list-values-runbook.md`. Every active list has exactly one pinned catalog entry (`categorySlug` + `adminEditedAt`). Targets live in `catalog/value-floor.json`: a minimum of 20, then depth targets (30 by default, 28 for narrow habit types, 40 for taste groups, 50+ for canonical lists, and per-list `bounded` floors where the honest answers run out).
-- State 2026-10-01: 4,835 values, 0 shallow; all high-signal and canonical lists are at target or bounded. Next: taste lists toward 40, then novelty.
-- One-off fixes are reviewed manifest scripts with a dry run (`scripts/catalog-cleanup-2026-09-30.ts`, `scripts/catalog-reorder-2026-10-01.ts`). Never use ad-hoc SQL.
-- Do fill work in a worktree off `origin/main` and push only that commit. Other sessions push concurrently, so fetch before pushing and cherry-pick when behind.
+**Handoff: start with "Start here" in `docs/list-values-runbook.md`.** It has the state, the next queue, the exact batch procedure, the content rules and the pitfalls. Tools:
+- `pnpm prod:list-values`: a read-only inspector with statuses.
+- `pnpm prod:list-stub`: syncs a list's catalog entry from production.
+- `pnpm prod:list-append additions.json [--bound]`: appends your names to the entries.
+
+Every active list has exactly one pinned catalog entry (`categorySlug` + `adminEditedAt`). Targets live in `catalog/value-floor.json`: a minimum of 20, then depth targets of 30 by default, 28 for narrow habit types, 40 for taste groups, 50+ for canonical lists, and per-list `bounded` floors.
+- State 2026-10-02: 4,832 values, 0 shallow. The high-signal and canonical tiers are at target or bounded. Next: taste lists toward 40, then novelty.
+- Anything beyond appending is a reviewed, dated manifest script with a dry run (`scripts/catalog-cleanup-2026-09-30.ts`, `scripts/catalog-reorder-2026-10-01.ts`). Never use ad-hoc SQL.
+- Do fill work in a worktree off `origin/main` and push only that commit. Other sessions push concurrently.
 
 ## Known Issues (outside Rankings, logged 2026-09-26)
 

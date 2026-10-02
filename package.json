@@ -19,7 +19,8 @@
     "db:migrate:baseline": "pnpm --filter @project/db db:migrate:baseline",
     "prod:publish-catalog": "tsx scripts/prod-publish-catalog.ts",
     "prod:list-values": "tsx scripts/prod-list-values.ts",
-    "prod:list-stub": "tsx scripts/prod-list-stub.ts"
+    "prod:list-stub": "tsx scripts/prod-list-stub.ts",
+    "prod:list-append": "tsx scripts/prod-list-append.ts"
   },
   "devDependencies": {
     "@types/js-yaml": "^4.0.0",
