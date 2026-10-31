@@ -93,5 +93,5 @@ export const webLinking: LinkingOptions<MainStackParamList> = {
         },
       },
     },
-  },
+  } as LinkingOptions<MainStackParamList>['config'] & { screens: any },
 }
