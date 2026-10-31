@@ -37,11 +37,6 @@ export function PollHeader({ testID, takeCount, actionLabel, onBack, onAction }:
       >
         <Typography variant="body" style={styles.results}>{actionLabel}</Typography>
       </Pressable>
-      {takeCount != null ? (
-        <Typography testID={testID ? `${testID}.taken` : undefined} variant="bodyMuted" style={styles.taken} numberOfLines={1}>
-          {timesTakenLabel(takeCount)}
-        </Typography>
-      ) : null}
       </View>
     </View>
   )

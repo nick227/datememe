@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { FlatList, StyleSheet, View } from 'react-native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { useCategoryRankings } from '@project/sdk'
@@ -23,6 +23,12 @@ export function PollResultsScreen({ route, navigation }: Props) {
   const { categorySlug, shortLabel } = route.params
   const rankings = useCategoryRankings(categorySlug)
   const data = rankings.data
+  const [refreshDelayed, setRefreshDelayed] = useState(false)
+  useEffect(() => {
+    if (!rankings.isUpdating) return
+    const timer = setTimeout(() => setRefreshDelayed(true), 10000)
+    return () => { clearTimeout(timer); setRefreshDelayed(false) }
+  }, [rankings.isUpdating])
   const title = data?.category.shortLabel ?? shortLabel
   const [selected, setSelected] = useState<RankedOption | null>(null)
   const takeCount = data?.takeCount ?? 0
@@ -60,6 +66,18 @@ export function PollResultsScreen({ route, navigation }: Props) {
         onAction={openEditor}
       />
       <Typography testID="poll-results.title" variant="title" style={styles.title}>{title}</Typography>
+      {rankings.isUpdating && (
+        <View testID="poll-results.updating" style={{ marginBottom: spacing.md }}>
+          <Typography variant="bodyMuted">
+            {rankings.isError || refreshDelayed
+              ? 'Your answers are saved. Results are taking longer to update; we’ll keep checking.'
+              : 'Answers saved · Updating community results…'}
+          </Typography>
+        </View>
+      )}
+      {rankings.isError && data && (
+        <ErrorState testID="poll-results.refresh-error" subtitle="Couldn’t refresh results. Showing the last published results." onRetry={() => rankings.refetch()} />
+      )}
       {rankings.isLoading ? (
         <View testID="poll-results.loading" style={{ gap: spacing.md }}>
           <Skeleton variant="text" width="70%" />
@@ -87,7 +105,7 @@ export function PollResultsScreen({ route, navigation }: Props) {
               onOpen={(item) => openPoll(navigation, 'results', { categorySlug: item.slug, shortLabel: item.shortLabel })}
             />
           }
-          ListEmptyComponent={data?.isPublished ? null : <EmptyState testID="poll-results.empty" title="Not enough answers yet" subtitle="The site ranking appears once a few more people answer this list." />}
+          ListEmptyComponent={data?.isPublished || rankings.isUpdating ? null : <EmptyState testID="poll-results.empty" title="No eligible answers yet" subtitle="Results appear after the first eligible answer." />}
           contentContainerStyle={{ paddingBottom: spacing.section }}
         />
       )}

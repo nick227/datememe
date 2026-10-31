@@ -8,7 +8,7 @@ import React from 'react'
 // under test imports it via a different relative specifier, but vitest
 // matches by resolved file, not literal specifier text.
 vi.mock('../../client', () => {
-  const ok = async () => ({ data: { data: {} }, error: undefined, response: { status: 200 } })
+  const ok = async () => ({ data: { data: { answerRevision: 1 } }, error: undefined, response: { status: 200 } })
   const post = async () => ({ data: { data: { matched: false } }, error: undefined, response: { status: 200 } })
   return {
     getApiClient: () => ({ GET: ok, PUT: ok, POST: post, PATCH: ok, DELETE: ok }),

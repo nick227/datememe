@@ -1,5 +1,5 @@
 import { pushNotificationJob } from './jobs/PushNotificationJob'
-import { db } from '@project/db'
+import { db, refreshPendingCategoryRankings } from '@project/db'
 import { calculateMatchesJob } from './jobs/CalculateMatchesJob'
 import { updateTaxonomyJob } from './jobs/UpdateTaxonomyJob'
 import { rankingsRebuildJob } from './jobs/RankingsRebuildJob'
@@ -134,7 +134,7 @@ function handleShutdown() {
   isShuttingDown = true
   
   const checkShutdown = setInterval(() => {
-    if (!currentJobRunning) {
+    if (!currentJobRunning && !rankingRefreshRunning) {
       console.log(`Worker ${WORKER_ID} cleanly shut down.`)
       clearInterval(checkShutdown)
       process.exit(0)
@@ -172,3 +172,18 @@ setInterval(scheduleRankingsRebuild, RANKINGS_REFRESH_MS)
 scheduleCatalogAudit()
 setInterval(scheduleCatalogAudit, CATALOG_AUDIT_MS)
 
+
+// A separate short loop keeps vote publication moving even while the general
+// queue is processing expensive matching/audit jobs. DB locks coordinate workers.
+let rankingRefreshRunning = false
+async function pollRankingRefreshes() {
+  if (isShuttingDown) return
+  rankingRefreshRunning = true
+  try { await refreshPendingCategoryRankings() }
+  catch (error) { console.error('Ranking outbox polling failed', error) }
+  finally {
+    rankingRefreshRunning = false
+    if (!isShuttingDown) setTimeout(pollRankingRefreshes, 500)
+  }
+}
+void pollRankingRefreshes()

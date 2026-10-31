@@ -1,5 +1,5 @@
 import { CORE_GROUP_SLUG, coreTitle } from '../lib/coreLists'
-import { db } from '@project/db'
+import { db, Prisma } from '@project/db'
 import { decodeOffsetCursor, encodeOffsetCursor, normalizeLimit } from '../lib/pagination'
 import { ENTITY_SELECT, PROFILE_FULL_SELECT, serializeProfile, serializeEntity } from '../lib/serializers'
 import { resolveEntitlements } from '../lib/entitlements'
@@ -40,6 +40,9 @@ function featuredScore(category: any) {
 
 export function toCategoryUnit(category: any, opts: { completed: boolean; previewEntities?: any[]; hasAnswered?: boolean }) {
   const metrics: Metric[] = []
+  if (category.answerRevision > category.rankingRevision) {
+    metrics.push(metric('results-status', 'Results', 'Updating', 'secondary'))
+  }
   if (opts.hasAnswered) {
     metrics.push(metric('status', 'Status', 'Completed', 'secondary'))
   } else {
@@ -139,26 +142,26 @@ export class ContentFeedService {
     // unfiltered (the "All" chip).
     const selectedGroupSlugs = opts.groupSlugs?.length ? new Set(opts.groupSlugs) : null
 
-    const [categories, myLists, groups, sitePickGroups, categoryResultSets, publishedGroupIds] = await Promise.all([
-      taxonomyService.listCategories(viewerProfileId),
-      listService.getMyLists(viewerProfileId),
-      db.categoryGroup.findMany({ orderBy: { sortOrder: 'asc' } }),
+    const [categories, myLists, groups, sitePickGroups, categoryResultSets, publishedGroupIds] = await db.$transaction(async (tx) => Promise.all([
+      taxonomyService.listCategories(viewerProfileId, undefined, tx),
+      listService.getMyLists(viewerProfileId, tx),
+      tx.categoryGroup.findMany({ orderBy: { sortOrder: 'asc' } }),
       // Always the full unscoped set now — a selected group filter no
       // longer narrows the ambient Explore rhythm (see the Results/Explore
       // split below), so there's no longer a cheaper filtered variant of
       // this query worth doing.
-      db.sitePickGroup.findMany({
+      tx.sitePickGroup.findMany({
         where: { isActive: true },
         include: { items: { orderBy: { sortOrder: 'asc' } } },
         orderBy: { sortOrder: 'asc' },
       }),
-      db.resultSet.findMany({
+      tx.resultSet.findMany({
         where: { subjectType: 'ENTITY', metric: 'LIST_SCORE', scopeType: 'CATEGORY', takeCount: { gt: 0 } },
         include: { entries: { orderBy: { rank: 'asc' }, take: 10 } },
         orderBy: { takeCount: 'desc' },
       }),
-      groupIdsWithResults(),
-    ])
+      groupIdsWithResults(tx),
+    ]), { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead, timeout: 15000 })
 
     const myListByCategoryId = new Map(myLists.map((l: any) => [l.categoryId, l]))
     

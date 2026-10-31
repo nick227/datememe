@@ -1,5 +1,5 @@
 import { curatedPool } from '../lib/categoryPool'
-import { db } from '@project/db'
+import { db, Prisma } from '@project/db'
 import { LIST_PREVIEW_SELECT, serializeListForViewer } from '../lib/serializers'
 import { resolveEntitlements } from '../lib/entitlements'
 import { isBlockedEitherWay } from '../lib/blocks'
@@ -8,8 +8,8 @@ import { MessagingService } from './MessagingService'
 const messagingService = new MessagingService()
 
 export class ListService {
-  async getMyLists(profileId: string) {
-    const lists = await db.list.findMany({ where: { profileId }, select: LIST_PREVIEW_SELECT })
+  async getMyLists(profileId: string, client: Prisma.TransactionClient = db) {
+    const lists = await client.list.findMany({ where: { profileId }, select: LIST_PREVIEW_SELECT })
     return lists.map((list) => serializeListForViewer(list, profileId))
   }
 
@@ -69,9 +69,21 @@ export class ListService {
       }
     }
 
-    const isComplete = input.isComplete ?? input.items.length >= category.minItems
+    const isComplete = input.isComplete !== false && input.items.length >= category.minItems
 
-    const list = await db.$transaction(async (tx) => {
+    const { list, answerRevision } = await db.$transaction(async (tx) => {
+      // Same lock order as snapshot publication: Category, then list/outbox.
+      await tx.$queryRaw`SELECT id FROM Category WHERE id = ${category.id} FOR UPDATE`
+      const updated = await tx.category.update({
+        where: { id: category.id }, data: { answerRevision: { increment: 1 } },
+        select: { answerRevision: true },
+      })
+      const now = new Date()
+      await tx.categoryRankingRefresh.upsert({
+        where: { categoryId: category.id },
+        create: { categoryId: category.id, requestedAt: now, availableAt: now },
+        update: { requestedAt: now, availableAt: now, attempts: 0, lastError: null },
+      })
       const existing = await tx.list.findUnique({
         where: { profileId_categoryId: { profileId, categoryId: category.id } },
       })
@@ -122,14 +134,10 @@ export class ListService {
         },
       ]
 
-      // No rankings job here: site Rankings (and Category.popularityCount /
-      // topPickEntityId) are rebuilt wholesale on the worker's timer —
-      // see apps/worker/src/jobs/RankingsRebuildJob.ts.
-
       await tx.jobQueue.createMany({ data: jobsToCreate })
 
-      return tx.list.findUniqueOrThrow({ where: { id: upserted.id }, select: LIST_PREVIEW_SELECT })
-    })
+      return { list: await tx.list.findUniqueOrThrow({ where: { id: upserted.id }, select: LIST_PREVIEW_SELECT }), answerRevision: updated.answerRevision }
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted })
 
     // Idempotent eventKey means every complete save can safely repair activity
     // history after a partial failure without producing duplicate entries.
@@ -145,6 +153,6 @@ export class ListService {
       })
     }
 
-    return serializeListForViewer(list, profileId)
+    return { ...serializeListForViewer(list, profileId), answerRevision }
   }
 }

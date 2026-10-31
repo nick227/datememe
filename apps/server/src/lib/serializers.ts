@@ -116,6 +116,8 @@ export function serializeCategory(category: any) {
     orderingMode: category.orderingMode,
     isPremiumOnly: category.isPremiumOnly,
     popularityCount: category.popularityCount,
+    answerRevision: category.answerRevision ?? 0,
+    rankingRevision: category.rankingRevision ?? 0,
     topPick: category.topPickEntity ? serializeEntity(category.topPickEntity) : null,
     // Viewer-specific — not a DB column. TaxonomyService attaches this to the row
     // before serializing; defaults to null for any caller that doesn't.
@@ -139,6 +141,8 @@ export const CATEGORY_SELECT = {
   orderingMode: true,
   isPremiumOnly: true,
   popularityCount: true,
+  answerRevision: true,
+  rankingRevision: true,
   topPickEntity: { select: ENTITY_SELECT },
   requiredTags: { select: { tag: true } },
   mediaAssets: { where: { isPrimary: true }, orderBy: { createdAt: 'desc' }, take: 1 },

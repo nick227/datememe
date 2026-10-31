@@ -28,6 +28,7 @@ export function useCategoryGroups() {
 export function useCategories(groupSlug?: string) {
   return useQuery({
     queryKey: ['categories', groupSlug ?? null],
+    refetchInterval: 3000,
     queryFn: async () => {
       const { data, error, response } = await getApiClient().GET('/categories', {
         params: { query: groupSlug ? { groupSlug } : {} },
@@ -42,6 +43,7 @@ export function useCategories(groupSlug?: string) {
 export function useCategory(categorySlug: string | undefined) {
   return useQuery({
     queryKey: ['category', categorySlug],
+    refetchInterval: 3000,
     queryFn: async () => {
       const { data, error, response } = await getApiClient().GET('/categories/{categorySlug}', {
         params: { path: { categorySlug: categorySlug! } },

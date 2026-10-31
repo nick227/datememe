@@ -15,7 +15,7 @@ export function barFraction(score: number, leaderScore: number) {
 }
 
 export function rankingsLabel(takeCount: number) {
-  return takeCount === 1 ? '1 ranking' : `${takeCount} rankings`
+  return takeCount === 1 ? '1 person answered' : `${takeCount} people answered`
 }
 
 export function countOf(count: number, total: number) {

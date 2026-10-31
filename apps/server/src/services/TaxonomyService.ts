@@ -29,8 +29,8 @@ export class TaxonomyService {
     return db.categoryGroup.findMany({ orderBy: { sortOrder: 'asc' } })
   }
 
-  async listCategories(viewerProfileId: string, groupSlug?: string) {
-    const categories = await db.category.findMany({
+  async listCategories(viewerProfileId: string, groupSlug?: string, client: Prisma.TransactionClient = db) {
+    const categories = await client.category.findMany({
       where: { isActive: true, ...(groupSlug ? { group: { slug: groupSlug } } : {}) },
       select: CATEGORY_SELECT,
       orderBy: [{ group: { sortOrder: 'asc' } }, { shortLabel: 'asc' }, { id: 'asc' }],

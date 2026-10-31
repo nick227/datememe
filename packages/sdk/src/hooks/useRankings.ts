@@ -10,6 +10,7 @@ export type RankingsFeedFilters = {
 export function useRankingsFeed(filters: RankingsFeedFilters = {}) {
   return useQuery({
     queryKey: ['rankingsFeed', filters],
+    refetchInterval: 3000,
     queryFn: async () => {
       const { data, error, response } = await getApiClient().GET('/rankings/feed', {
         params: { query: { groupSlugs: filters.groupSlugs?.length ? filters.groupSlugs.join(',') : undefined } },
@@ -24,8 +25,19 @@ export function useRankingsFeed(filters: RankingsFeedFilters = {}) {
 }
 
 export function useCategoryRankings(categorySlug: string | undefined) {
-  return useQuery({
+  // Local acknowledged save revision survives navigation and participates in
+  // query subscriptions, even if an older GET was already in flight at save time.
+  const target = useQuery({
+    queryKey: ['rankingTargetRevision', categorySlug],
+    queryFn: () => 0,
+    initialData: 0,
+    enabled: false,
+    staleTime: Infinity,
+  })
+  const query = useQuery({
     queryKey: ['categoryRankings', categorySlug],
+    refetchInterval: (query) => query.state.data?.isUpdating ||
+      (query.state.data?.resultsRevision ?? 0) < target.data ? 1000 : 3000,
     queryFn: async () => {
       const { data, error, response } = await getApiClient().GET('/categories/{categorySlug}/rankings', {
         params: { path: { categorySlug: categorySlug! } },
@@ -35,4 +47,6 @@ export function useCategoryRankings(categorySlug: string | undefined) {
     },
     enabled: !!categorySlug,
   })
+  const isUpdating = !!query.data?.isUpdating || (query.data?.resultsRevision ?? 0) < target.data
+  return { ...query, isUpdating }
 }

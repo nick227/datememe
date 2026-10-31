@@ -421,7 +421,7 @@ export interface paths {
         };
         /**
          * The Rankings tab — site-wide aggregate answers as a FeedModule stream
-         * @description Read-only over the ResultSets RankingsRebuildJob rebuilds on a timer (only published categories — enough answers — exist there). Mostly `rankings-top-{slug}` modules (one category's results, rest of the id = the category slug). The standard preview lists every stored result. `context.preview=compact` is the close-race special case and lists only the top 3. Each row's subtitle is the pick rate ("60% picked it"). Rails (closest races, biggest leads, moved up, most answered) break up the list. `chips` = "All" + only the groups that have at least one published ranking; `groupSlugs` filters to those groups. Not paginated — `meta.hasMore` is always false.
+         * @description Read-only over the ResultSets RankingsRebuildJob rebuilds on a timer (only published categories — enough answers — exist there). Mostly `rankings-top-{slug}` modules (one category's full result list, rest of the id = the category slug). Each row's subtitle is the pick rate ("60% picked it"). Close races are not repeated as lists: they are one horizontal card rail (`rankings-close-races`) placed after the first list. `chips` = "All" + only the groups that have at least one published ranking; `groupSlugs` filters to those groups. Not paginated — `meta.hasMore` is always false.
          */
         get: operations["getRankingsFeed"];
         put?: never;
@@ -1759,6 +1759,8 @@ export interface components {
             /** @enum {string} */
             orderingMode: "RANKED" | "UNRANKED";
             isPremiumOnly: boolean;
+            answerRevision?: number;
+            rankingRevision?: number;
             popularityCount: number;
             /** @description The entity most often ranked */
             topPick: components["schemas"]["Entity"] | null;
@@ -1816,6 +1818,10 @@ export interface components {
             entityId: string;
             rank: number;
             note?: string | null;
+        };
+        SavedList: components["schemas"]["List"] & {
+            /** @description Category revision committed with this answer; results include it when resultsRevision is at least this value. */
+            answerRevision: number;
         };
         UpsertListInput: {
             items: components["schemas"]["ListItemInput"][];
@@ -2188,9 +2194,16 @@ export interface components {
         };
         CategoryRankings: {
             category: components["schemas"]["Category"];
-            /** @description False until enough people have answered (the worker's RANKINGS_MIN_TAKES) — then takeCount is null and entries is empty ("Not enough answers yet"). */
+            /** @description Latest committed category answer revision. */
+            answerRevision: number;
+            /** @description Answer revision included in this published snapshot. */
+            resultsRevision: number;
+            isUpdating: boolean;
+            /** @description Participation threshold for featuring; does not gate result visibility. */
+            isFeatureEligible: boolean;
+            /** @description True when the snapshot contains at least one eligible vote. */
             isPublished: boolean;
-            /** @description Answers counted at the last rebuild. Null while unpublished. */
+            /** @description Eligible answers in the published snapshot; zero when no eligible answers remain. */
             takeCount: number | null;
             /**
              * Format: date-time
@@ -3778,7 +3791,7 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        data: components["schemas"]["List"];
+                        data: components["schemas"]["SavedList"];
                     };
                 };
             };

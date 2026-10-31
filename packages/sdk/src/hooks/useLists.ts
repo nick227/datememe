@@ -32,6 +32,8 @@ export function useProfileLists(profileId: string | undefined) {
 export function useUpsertList(categorySlug: string) {
   const queryClient = useQueryClient()
   return useMutation({
+    // Whole-list replacements must reach the server in answer order.
+    scope: { id: `list:${categorySlug}` },
     mutationFn: async (body: UpsertListInput) => {
       const { data, error, response } = await getApiClient().PUT('/lists/{categorySlug}', {
         params: { path: { categorySlug } },
@@ -40,7 +42,10 @@ export function useUpsertList(categorySlug: string) {
       if (error) throw new ApiError(response.status, (error as any).error)
       return data!.data
     },
-    onSuccess: () => {
+    onSuccess: (saved) => {
+      queryClient.setQueryData<number>(['rankingTargetRevision', categorySlug], (previous = 0) =>
+        Math.max(previous, saved.answerRevision),
+      )
       queryClient.invalidateQueries({ queryKey: ['myLists'] })
       // The actual Lists tab (CategoriesScreen) reads `listsFeed`, not
       // `myLists` — confirmed live: saving a list updated the DB correctly
@@ -54,10 +59,10 @@ export function useUpsertList(categorySlug: string) {
       // Both Discover query keys — see useMatching.ts's useSwipe for why.
       queryClient.invalidateQueries({ queryKey: ['discovery'] })
       queryClient.invalidateQueries({ queryKey: ['discoverFeed'] })
-      // Only the viewer's own marks (viewerRank) are live — the aggregate
-      // numbers catch up on the worker's next RANKINGS_REBUILD tick.
+      // Saving is complete once committed. Publication is tracked separately
+      // by the results revision; never hold navigation on a background rebuild.
       queryClient.invalidateQueries({ queryKey: ['rankingsFeed'] })
-      queryClient.invalidateQueries({ queryKey: ['categoryRankings', categorySlug] })
+      void queryClient.invalidateQueries({ queryKey: ['categoryRankings', categorySlug] })
     },
   })
 }

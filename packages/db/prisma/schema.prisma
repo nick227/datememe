@@ -512,6 +512,9 @@ model Category {
   isActive        Boolean          @default(true)
   poolMode        String         @default("CURATED")
   authoringDraft  CategoryDraft?
+  answerRevision  Int              @default(0)
+  rankingRevision Int              @default(0)
+  rankingRefresh  CategoryRankingRefresh?
   popularityCount Int              @default(0)
   parentEntityId  String?
   topPickEntityId String?
@@ -607,6 +610,7 @@ model ResultSet {
   scopeType   ResultScopeType
   scopeValue  String
   window      ResultWindow      @default(ALL_TIME)
+  sourceRevision Int            @default(0)
   takeCount   Int               @default(0) // Generalized participant/sample size
   // When entries' previousRank was last rolled forward — trend arrows mean
   // "since this snapshot" (RankingsRebuildJob rolls it every 24h).
@@ -1226,4 +1230,17 @@ model EntityFacet {
   operation             GenerationOperation? @relation(fields: [generationOperationId], references: [id], onDelete: Restrict)
 
   @@unique([entityId, axis, value])
+}
+
+// Transactional outbox: one durable pending refresh per category. The worker
+// locks Category before consuming this row, using the same order as saves.
+model CategoryRankingRefresh {
+  categoryId String @id
+  requestedAt DateTime @default(now())
+  availableAt DateTime @default(now())
+  attempts Int @default(0)
+  lastError String? @db.Text
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@index([availableAt])
 }

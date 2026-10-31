@@ -1,7 +1,7 @@
-import { db } from '@project/db'
+import { db, Prisma } from '@project/db'
 
-// A published site ranking: RankingsRebuildJob only writes a ResultSet once a
-// category clears RANKINGS_MIN_TAKES, so takeCount > 0 is "has results".
+// Results are visible after the first eligible vote; featuring thresholds
+// are separate from result visibility. Empty snapshots retain their revision.
 const PUBLISHED_LIST_SCORE = {
   subjectType: 'ENTITY',
   metric: 'LIST_SCORE',
@@ -10,14 +10,14 @@ const PUBLISHED_LIST_SCORE = {
   takeCount: { gt: 0 },
 } as const
 
-export async function groupIdsWithResults() {
-  const sets = await db.resultSet.findMany({
+export async function groupIdsWithResults(client: Prisma.TransactionClient = db) {
+  const sets = await client.resultSet.findMany({
     where: PUBLISHED_LIST_SCORE,
     select: { scopeValue: true, entries: { select: { id: true }, take: 1 } },
   })
   const categoryIds = sets.filter((set) => set.entries.length > 0).map((set) => set.scopeValue)
   if (!categoryIds.length) return new Set<string>()
-  const categories = await db.category.findMany({
+  const categories = await client.category.findMany({
     where: { id: { in: categoryIds }, isActive: true },
     select: { groupId: true },
   })

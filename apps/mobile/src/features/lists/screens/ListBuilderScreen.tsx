@@ -1,10 +1,10 @@
-import { useEffect, useRef, useState } from 'react'
-import { FlatList, Keyboard, Platform, Pressable, StyleSheet, useWindowDimensions, View, ScrollView } from 'react-native'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { FlatList, Keyboard, Platform, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native'
 import Animated, { LinearTransition } from 'react-native-reanimated'
 import { ChevronUp, ChevronDown } from 'lucide-react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { useCategory, useCategoryEntities, useMyLists, useSubmitEntity, useUpsertList } from '@project/sdk'
+import { useCategory, useCategoryRankings, useCategoryEntities, useMyLists, useSubmitEntity, useUpsertList } from '@project/sdk'
 import { ScreenContainer } from '../../../ui/ScreenContainer'
 import { SearchBar } from '../components/SearchBar'
 import { RankingBoard } from '../components/RankingBoard'
@@ -31,6 +31,8 @@ export function ListBuilderScreen({ route, navigation }: Props) {
   const { categorySlug, shortLabel } = route.params
   const category = useCategory(categorySlug)
   const myLists = useMyLists()
+  // Warm results while the user answers; saves refresh this active query.
+  useCategoryRankings(categorySlug)
   const isDesktop = useIsDesktop()
   const insets = useSafeAreaInsets()
   const { height: windowHeight } = useWindowDimensions()
@@ -45,8 +47,9 @@ export function ListBuilderScreen({ route, navigation }: Props) {
   const [saveError, setSaveError] = useState<string | null>(null)
   const [isListExpanded, setIsListExpanded] = useState(true)
   const hydrated = useRef(false)
-  const isSaving = useRef(false)
-  const saveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const dirty = useRef(false)
+  const latestSave = useRef<{ key: string; promise: Promise<unknown> } | null>(null)
+  const [openingResults, setOpeningResults] = useState(false)
   const sheet = useActionSheet()
 
   useEffect(() => {
@@ -71,6 +74,10 @@ export function ListBuilderScreen({ route, navigation }: Props) {
 
   useEffect(() => {
     if (hydrated.current || !myLists.data) return
+    if (dirty.current) {
+      hydrated.current = true
+      return
+    }
     const existing = myLists.data.find((l) => l.category?.slug === categorySlug)
     if (existing) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -95,51 +102,51 @@ export function ListBuilderScreen({ route, navigation }: Props) {
 
   const { mutateAsync: saveListAsync } = upsertList
   
-  // Background autosave logic
-  useEffect(() => {
-    if (!hydrated.current) return
-    if (saveTimeout.current) clearTimeout(saveTimeout.current)
-
-    saveTimeout.current = setTimeout(() => {
-      isSaving.current = true
-      setSaveError(null)
-      saveListAsync({
-        items: picked.map((p) => ({ entityId: p.entityId, rank: p.rank })),
-        isComplete: picked.length >= minItems,
-      }).catch((err) => {
-        setSaveError(err?.message ?? 'Couldn’t save')
-      }).finally(() => {
-        isSaving.current = false
-      })
-    }, 1000)
-
-    return () => {
-      if (saveTimeout.current) clearTimeout(saveTimeout.current)
+  const saveAnswers = useCallback(() => {
+    const body = {
+      items: picked.map((p) => ({ entityId: p.entityId, rank: p.rank })),
+      isComplete: picked.length >= minItems,
     }
-  }, [picked, minItems, saveListAsync])
+    const key = JSON.stringify({ categorySlug, ...body })
+    if (latestSave.current?.key === key) return latestSave.current.promise
+
+    setSaveError(null)
+    const promise = saveListAsync(body).catch((err) => {
+      // An older request must not replace feedback for a newer answer.
+      if (latestSave.current?.promise === promise) {
+        latestSave.current = null
+        setSaveError(err?.message ?? 'Couldn’t save')
+      }
+      throw err
+    })
+    latestSave.current = { key, promise }
+    return promise
+  }, [categorySlug, picked, minItems, saveListAsync])
+
+  useEffect(() => {
+    // Hydrating an existing list is not an edit. Start real saves immediately,
+    // so leaving the editor cannot cancel a pending debounce.
+    if (!dirty.current || !category.data) return
+    void saveAnswers().catch(() => {})
+  }, [saveAnswers, category.data])
 
   function toggle(entityId: string, name: string, imageUrl?: string | null) {
-    setPicked((prev) => {
-      if (prev.some((p) => p.entityId === entityId)) {
-        // We do not remove on toggle anymore if they select from fast picks, but this toggle handles unpicking if forced
-        // Wait, redesign says fast picks don't unpick on tap? 
-        // Actually it says "require explicit remove/reorder first". 
-        // We will just return prev if they tap an already picked item.
-        return prev
-      }
-      if (prev.length >= maxItems) {
-        sheet.show({ title: 'That’s the max', message: `This category only allows ${maxItems}. Remove one to add another.`, buttons: [{ testID: 'list-builder.dialog.ok', text: 'OK' }] })
-        return prev
-      }
-      // Hide overlay and clear query
-      setQuery('')
-      setIsOverlayVisible(false)
-      Keyboard.dismiss()
-      return [...prev, { entityId, rank: prev.length + 1, name, imageUrl }]
-    })
+    if (openingResults || !hydrated.current || !category.data) return
+    if (picked.some((p) => p.entityId === entityId)) return
+    if (picked.length >= maxItems) {
+      sheet.show({ title: 'That’s the max', message: `This category only allows ${maxItems}. Remove one to add another.`, buttons: [{ testID: 'list-builder.dialog.ok', text: 'OK' }] })
+      return
+    }
+    dirty.current = true
+    setQuery('')
+    setIsOverlayVisible(false)
+    Keyboard.dismiss()
+    setPicked((prev) => [...prev, { entityId, rank: prev.length + 1, name, imageUrl }])
   }
 
   function handleRemove(entityId: string) {
+    if (openingResults) return
+    dirty.current = true
     setPicked((prev) => {
       return prev
         .filter((p) => p.entityId !== entityId)
@@ -148,6 +155,8 @@ export function ListBuilderScreen({ route, navigation }: Props) {
   }
 
   function handleReorder(fromIndex: number, toIndex: number) {
+    if (openingResults) return
+    dirty.current = true
     setPicked((prev) => {
       const arr = [...prev].sort((a, b) => a.rank - b.rank)
       const [moved] = arr.splice(fromIndex, 1)
@@ -157,7 +166,7 @@ export function ListBuilderScreen({ route, navigation }: Props) {
   }
 
   async function handleSuggestNew(newQuery: string) {
-    if (!category.data) return
+    if (openingResults || !hydrated.current || !category.data) return
     try {
       const result = await submitEntity.mutateAsync({ categorySlug, rawText: newQuery })
       toggle(result.submittedEntity.id, result.submittedEntity.canonicalName, result.submittedEntity.imageUrl)
@@ -167,26 +176,22 @@ export function ListBuilderScreen({ route, navigation }: Props) {
   }
 
   async function handleDone() {
+    if (openingResults || !myLists.data || !category.data) return
+    setOpeningResults(true)
     try {
-      if (saveTimeout.current) clearTimeout(saveTimeout.current)
-      
-      setSaveError(null)
-      const isComplete = picked.length >= minItems
-      await upsertList.mutateAsync({
-        items: picked.map((p) => ({ entityId: p.entityId, rank: p.rank })),
-        isComplete,
-      })
-      navigation.goBack()
-    } catch (err: any) {
-      // The inline error banner (rendered below, with its own retry action)
-      // is the real feedback here — it already worked on web; a second,
-      // redundant Alert.alert never did.
-      setSaveError(err?.message ?? 'Couldn’t save')
+      // Wait only for the latest answer to commit. Results independently
+      // track publication and explain any remaining background delay.
+      if (dirty.current) await saveAnswers()
+      openPollResults()
+    } catch {
+      // saveAnswers keeps the edits here and exposes the retry banner.
+    } finally {
+      setOpeningResults(false)
     }
   }
-  
+
   function handleRetrySave() {
-    handleDone()
+    void handleDone()
   }
 
   function openPollResults() {
@@ -224,9 +229,9 @@ export function ListBuilderScreen({ route, navigation }: Props) {
           <PollHeader
             testID="list-builder.header"
             takeCount={category.data?.popularityCount}
-            actionLabel="View results"
+            actionLabel="results"
             onBack={() => navigation.goBack()}
-            onAction={openPollResults}
+            onAction={handleDone}
           />
           <Typography
             testID="list-builder.question"
@@ -292,9 +297,10 @@ export function ListBuilderScreen({ route, navigation }: Props) {
             </View>
           )}
           <Button testID="list-builder.done"
-            label={upsertList.isPending ? 'Saving...' : 'Done'}
+            label={openingResults ? 'Opening results...' : 'Done'}
             onPress={handleDone}
-            loading={upsertList.isPending}
+            loading={openingResults}
+            disabled={!myLists.data || !category.data}
           />
         </View>
       </View>

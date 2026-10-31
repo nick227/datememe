@@ -395,6 +395,8 @@ components:
         maxItems: { type: integer }
         orderingMode: { type: string, enum: [RANKED, UNRANKED] }
         isPremiumOnly: { type: boolean }
+        answerRevision: { type: integer }
+        rankingRevision: { type: integer }
         popularityCount: { type: integer }
         topPick:
           description: The entity most often ranked #1 within this category, or null if nobody has yet.
@@ -483,6 +485,16 @@ components:
         entityId: { type: string }
         rank: { type: integer, minimum: 1 }
         note: { type: string, nullable: true, maxLength: 280 }
+
+    SavedList:
+      allOf:
+        - $ref: '#/components/schemas/List'
+        - type: object
+          required: [answerRevision]
+          properties:
+            answerRevision:
+              type: integer
+              description: Category revision committed with this answer; results include it when resultsRevision is at least this value.
 
     UpsertListInput:
       type: object
@@ -1082,19 +1094,20 @@ components:
 
     CategoryRankings:
       type: object
-      required: [category, isPublished, takeCount, updatedAt, viewerHasTaken, viewerTopPickPercent, related, faces, entries]
+      required: [category, isPublished, takeCount, updatedAt, viewerHasTaken, viewerTopPickPercent, related, faces, entries, answerRevision, resultsRevision, isUpdating, isFeatureEligible]
       properties:
         category: { $ref: '#/components/schemas/Category' }
+        answerRevision: { type: integer, description: Latest committed category answer revision. }
+        resultsRevision: { type: integer, description: Answer revision included in this published snapshot. }
+        isUpdating: { type: boolean }
+        isFeatureEligible: { type: boolean, description: Participation threshold for featuring; does not gate result visibility. }
         isPublished:
           type: boolean
-          description: >
-            False until enough people have answered (the worker's
-            RANKINGS_MIN_TAKES) — then takeCount is null and entries is empty
-            ("Not enough answers yet").
+          description: True when the snapshot contains at least one eligible vote.
         takeCount:
           type: integer
           nullable: true
-          description: Answers counted at the last rebuild. Null while unpublished.
+          description: Eligible answers in the published snapshot; zero when no eligible answers remain.
         updatedAt:
           type: string
           format: date-time
@@ -2811,7 +2824,7 @@ paths:
               schema:
                 type: object
                 required: [data]
-                properties: { data: { $ref: '#/components/schemas/List' } }
+                properties: { data: { $ref: '#/components/schemas/SavedList' } }
         '400':
           description: Invalid items (too many, duplicate ranks, or not eligible for this category)
           content:

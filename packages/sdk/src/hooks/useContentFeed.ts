@@ -12,6 +12,7 @@ export type ListsFeedFilters = {
 export function useListsFeed(filters: ListsFeedFilters = {}) {
   return useInfiniteQuery({
     queryKey: ['listsFeed', filters],
+    refetchInterval: 3000,
     initialPageParam: undefined as string | undefined,
     queryFn: async ({ pageParam }) => {
       // A small page of "beats" (Rail/Spotlight/Grid/River), not a big batch —
@@ -34,6 +35,7 @@ export function useListsFeed(filters: ListsFeedFilters = {}) {
 export function useListsFeedCollection(collectionId: string | undefined) {
   return useInfiniteQuery({
     queryKey: ['listsFeedCollection', collectionId],
+    refetchInterval: 3000,
     initialPageParam: undefined as string | undefined,
     queryFn: async ({ pageParam }) => {
       const { data, error, response } = await getApiClient().GET('/lists/feed/collections/{collectionId}', {
@@ -60,6 +62,7 @@ export type DiscoverFeedFilters = {
 export function useDiscoverFeed(filters: DiscoverFeedFilters = {}) {
   return useInfiniteQuery({
     queryKey: ['discoverFeed', filters],
+    refetchInterval: 3000,
     initialPageParam: undefined as string | undefined,
     queryFn: async ({ pageParam }) => {
       // Smaller pages so a Rail/River gets a fresh reason to appear on every
@@ -87,6 +90,7 @@ export function useDiscoverFeed(filters: DiscoverFeedFilters = {}) {
 export function useDiscoverFeedCollection(collectionId: string | undefined) {
   return useInfiniteQuery({
     queryKey: ['discoverFeedCollection', collectionId],
+    refetchInterval: 3000,
     initialPageParam: undefined as string | undefined,
     queryFn: async ({ pageParam }) => {
       const { data, error, response } = await getApiClient().GET('/discover/feed/collections/{collectionId}', {
