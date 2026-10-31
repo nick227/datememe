@@ -1,9 +1,10 @@
-import { ActivityIndicator, View } from 'react-native'
+import { ActivityIndicator, Platform, View } from 'react-native'
 import { DefaultTheme, NavigationContainer, type Theme } from '@react-navigation/native'
 import { useCurrentUser } from '@project/sdk'
 import { AuthStack } from './AuthStack'
 import { MainStack } from './MainStack'
 import { navigationRef } from './navigationRef'
+import { webLinking } from './webLinking'
 import { colors } from '../theme'
 
 // Keeps stack-transition backgrounds on-brand instead of React Navigation's
@@ -26,7 +27,8 @@ export function RootNavigator() {
 
   return (
     <NavigationContainer 
-      ref={navigationRef} 
+      ref={navigationRef}
+      linking={Platform.OS === 'web' ? webLinking : undefined} 
       theme={navigationTheme}
       documentTitle={{
         formatter: (options, route) => {
