@@ -5,6 +5,7 @@ import { AuthStack } from './AuthStack'
 import { MainStack } from './MainStack'
 import { navigationRef } from './navigationRef'
 import { webLinking } from './webLinking'
+import { documentTitle } from './pageTitles'
 import { colors } from '../theme'
 
 // Keeps stack-transition backgrounds on-brand instead of React Navigation's
@@ -30,13 +31,7 @@ export function RootNavigator() {
       ref={navigationRef}
       linking={Platform.OS === 'web' ? webLinking : undefined} 
       theme={navigationTheme}
-      documentTitle={{
-        formatter: (options, route) => {
-          const baseTitle = 'datememe'
-          const screenTitle = options?.title ?? route?.name
-          return screenTitle ? `${screenTitle} | ${baseTitle}` : baseTitle
-        }
-      }}
+      documentTitle={documentTitle}
     >
       {me.data ? <MainStack /> : <AuthStack />}
     </NavigationContainer>

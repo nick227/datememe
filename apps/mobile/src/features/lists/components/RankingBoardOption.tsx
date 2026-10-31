@@ -1,14 +1,15 @@
-import { Image, Pressable, StyleSheet, View } from 'react-native'
-import { GripVertical, X, ImageIcon } from 'lucide-react-native'
+import { Pressable, StyleSheet, View } from 'react-native'
+import { GripVertical, X, ChevronUp, ChevronDown } from 'lucide-react-native'
 import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated'
 import { Typography } from '../../../ui/Typography'
 import { colors, radius, spacing } from '../../../theme'
 
-const ITEM_HEIGHT = 56
+const ITEM_HEIGHT = 64
 
 type Props = {
   testID?: string
+  totalItems: number
   rank: number
   name: string
   imageUrl?: string | null
@@ -16,7 +17,7 @@ type Props = {
   onReorder?: (newRank: number) => void
 }
 
-export function RankingBoardOption({ testID, rank, name, imageUrl, onRemove, onReorder }: Props) {
+export function RankingBoardOption({ testID, rank, totalItems, name, onRemove, onReorder }: Props) {
   const isDragging = useSharedValue(false)
   const translationY = useSharedValue(0)
   const startRank = useSharedValue(rank)
@@ -28,19 +29,15 @@ export function RankingBoardOption({ testID, rank, name, imageUrl, onRemove, onR
     })
     .onUpdate((e) => {
       translationY.value = e.translationY
-      
+    })
+    .onEnd((e) => {
       const rankDelta = Math.round(e.translationY / ITEM_HEIGHT)
-      const newRank = Math.max(1, startRank.value + rankDelta)
-      
+      const newRank = Math.min(totalItems, Math.max(1, startRank.value + rankDelta))
       if (newRank !== rank && onReorder) {
-        // Optimistically update the parent array which will trigger Reanimated layout transitions for siblings
         runOnJS(onReorder)(newRank)
-        // Reset translation and start rank to absorb the layout shift smoothly
-        startRank.value = newRank
-        translationY.value = e.translationY - (rankDelta * ITEM_HEIGHT)
       }
     })
-    .onEnd(() => {
+    .onFinalize(() => {
       isDragging.value = false
       translationY.value = withSpring(0)
     })
@@ -51,40 +48,38 @@ export function RankingBoardOption({ testID, rank, name, imageUrl, onRemove, onR
       zIndex: isDragging.value ? 100 : 1,
       elevation: isDragging.value ? 5 : 0,
       shadowOpacity: isDragging.value ? 0.2 : 0,
-      backgroundColor: colors.surface,
+      backgroundColor: '#F5F6F8',
     }
   })
 
   return (
     <Animated.View testID={testID} style={[styles.container, animatedStyle]}>
-      {/* Drag handle */}
-      <GestureDetector gesture={panGesture}>
-        <View testID={testID ? `${testID}.drag` : undefined} style={styles.dragHandle}>
-          <GripVertical size={20} color={colors.inkMuted} />
-        </View>
-      </GestureDetector>
-
-      {/* Numeric Rank */}
       <Typography variant="heading" style={styles.rankText}>
-        {rank}
+        {String(rank).padStart(2, '0')}
       </Typography>
-
-      {/* Thumbnail */}
-      {imageUrl ? (
-        <Image source={{ uri: imageUrl }} style={styles.thumbnail} />
-      ) : (
-        <View style={styles.thumbnailPlaceholder}>
-          <ImageIcon size={20} color={colors.inkMuted} opacity={0.3} />
-        </View>
-      )}
 
       {/* Title */}
       <Typography variant="body" style={styles.name} numberOfLines={1}>
         {name}
       </Typography>
 
+      <View>
+        <Pressable accessibilityRole="button" accessibilityLabel={`Move ${name} up`}
+          disabled={rank === 1} onPress={() => onReorder?.(rank - 1)} style={styles.arrow}>
+          <ChevronUp size={16} color={rank === 1 ? colors.border : colors.inkMuted} />
+        </Pressable>
+        <Pressable accessibilityRole="button" accessibilityLabel={`Move ${name} down`}
+          disabled={rank === totalItems} onPress={() => onReorder?.(rank + 1)} style={styles.arrow}>
+          <ChevronDown size={16} color={rank === totalItems ? colors.border : colors.inkMuted} />
+        </Pressable>
+      </View>
+      <GestureDetector gesture={panGesture}>
+        <View testID={testID ? `${testID}.drag` : undefined} style={styles.dragHandle}>
+          <GripVertical size={18} color={colors.inkMuted} />
+        </View>
+      </GestureDetector>
       {/* Remove Control */}
-      <Pressable testID={testID ? `${testID}.remove` : undefined} onPress={onRemove} style={styles.removeButton}>
+      <Pressable testID={testID ? `${testID}.remove` : undefined} accessibilityRole="button" accessibilityLabel={`Remove ${name}`} onPress={onRemove} style={styles.removeButton}>
         <X size={20} color={colors.inkMuted} />
       </Pressable>
     </Animated.View>
@@ -92,50 +87,10 @@ export function RankingBoardOption({ testID, rank, name, imageUrl, onRemove, onR
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    height: ITEM_HEIGHT,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    paddingVertical: spacing.xs,
-    shadowColor: colors.ink,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 4,
-  },
-  dragHandle: {
-    paddingHorizontal: spacing.xs,
-    justifyContent: 'center',
-    alignItems: 'center',
-    height: '100%',
-  },
-  rankText: {
-    width: 32,
-    textAlign: 'center',
-    color: colors.primary,
-  },
-  thumbnail: {
-    width: 40,
-    height: 40,
-    borderRadius: radius.sm,
-    marginHorizontal: spacing.sm,
-  },
-  thumbnailPlaceholder: {
-    width: 40,
-    height: 40,
-    borderRadius: radius.sm,
-    backgroundColor: colors.surfaceMuted,
-    marginHorizontal: spacing.sm,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  name: {
-    flex: 1,
-    color: colors.ink,
-  },
-  removeButton: {
-    padding: spacing.sm,
-  },
+  container: { flexDirection: 'row', alignItems: 'center', minHeight: 56, borderRadius: radius.sm, paddingHorizontal: spacing.xs, gap: spacing.xs },
+  rankText: { width: 40, textAlign: 'center', color: colors.accent, fontSize: 16 },
+  name: { flex: 1, color: colors.ink, fontFamily: 'PlusJakartaSans_600SemiBold', fontSize: 14 },
+  arrow: { width: 28, height: 28, alignItems: 'center', justifyContent: 'center' },
+  dragHandle: { width: 24, height: 48, alignItems: 'center', justifyContent: 'center' },
+  removeButton: { width: 40, height: 44, alignItems: 'center', justifyContent: 'center' },
 })

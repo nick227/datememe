@@ -1,3 +1,4 @@
+import { usePageTitle } from '../../../navigation/usePageTitle'
 import { useEffect, useState } from 'react'
 import { FlatList, StyleSheet, View } from 'react-native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
@@ -23,6 +24,7 @@ export function PollResultsScreen({ route, navigation }: Props) {
   const { categorySlug, shortLabel } = route.params
   const rankings = useCategoryRankings(categorySlug)
   const data = rankings.data
+  usePageTitle(data?.category.shortLabel ? `${data.category.shortLabel} — Results` : undefined)
   const [refreshDelayed, setRefreshDelayed] = useState(false)
   useEffect(() => {
     if (!rankings.isUpdating) return

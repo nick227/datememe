@@ -1,12 +1,16 @@
+import type { Ref } from 'react'
+import { Search } from 'lucide-react-native'
 import { StyleSheet, TextInput, View } from 'react-native'
 import { colors, radius, spacing } from '../../../theme'
 
 export function SearchBar({
+  inputRef,
   testID,
   value,
   onChangeText,
   placeholder,
 }: {
+  inputRef?: Ref<TextInput>
   testID?: string
   value: string
   onChangeText: (text: string) => void
@@ -22,7 +26,10 @@ export function SearchBar({
 
   return (
     <View style={styles.container}>
+      <Search size={20} color={colors.inkMuted} />
       <TextInput
+        ref={inputRef}
+        accessibilityLabel="Search answers or add your own"
         testID={testID}
         value={value}
         onChangeText={handleChangeText}
@@ -38,12 +45,18 @@ export function SearchBar({
 
 const styles = StyleSheet.create({
   container: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
     backgroundColor: colors.surfaceMuted,
     borderRadius: radius.pill,
     paddingHorizontal: spacing.lg,
     marginBottom: spacing.md,
   },
   input: {
+    flex: 1,
+    minWidth: 0,
+    fontFamily: 'PlusJakartaSans_400Regular',
     paddingVertical: spacing.md,
     fontSize: 16,
     color: colors.ink,

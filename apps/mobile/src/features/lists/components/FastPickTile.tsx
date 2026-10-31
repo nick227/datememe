@@ -1,8 +1,7 @@
-import { Image, Pressable, StyleSheet, View } from 'react-native'
-import { Plus, ImageIcon } from 'lucide-react-native'
-import { colors, radius, spacing, type } from '../../../theme'
+import { Pressable, StyleSheet, View } from 'react-native'
+import { Plus } from 'lucide-react-native'
+import { colors, spacing } from '../../../theme'
 import { Typography } from '../../../ui/Typography'
-import { SHOW_VALUE_IMAGES } from '../../../ui/mediaPolicy'
 
 type Props = {
   testID?: string
@@ -14,38 +13,33 @@ type Props = {
   disabled?: boolean
 }
 
-export function FastPickTile({ testID, name, imageUrl, isPending, pickedRank, onToggle, disabled }: Props) {
+export function FastPickTile({ testID, name, isPending, pickedRank, onToggle, disabled }: Props) {
   const isPicked = pickedRank != null
-  
+
   return (
     <Pressable
       testID={testID}
       onPress={onToggle}
-      disabled={disabled && !isPicked}
+      accessibilityRole="button"
+      accessibilityLabel={isPicked ? `${name}, selected at number ${pickedRank}` : `Add ${name}`}
+      accessibilityState={{ selected: isPicked, disabled: !!disabled || isPicked }}
+      disabled={disabled || isPicked}
       style={[styles.tile, isPicked && styles.tilePicked, disabled && !isPicked && styles.tileDisabled]}
     >
-      {!SHOW_VALUE_IMAGES ? null : imageUrl ? (
-        <Image source={{ uri: imageUrl }} style={styles.thumb} />
-      ) : (
-        <View style={[styles.thumb, styles.thumbFallback]}>
-          <ImageIcon size={20} color={colors.inkMuted} opacity={0.3} />
-        </View>
-      )}
-      
       <View style={styles.textCol}>
-        <Typography variant="body" numberOfLines={1} style={isPicked ? styles.textPicked : styles.textDefault}>
+        <Typography variant="body" numberOfLines={2} style={isPicked ? styles.textPicked : styles.textDefault}>
           {name}
         </Typography>
         {isPending ? <Typography variant="bodyMuted" style={styles.pendingLabel}>Pending review</Typography> : null}
       </View>
-      
+
       <View style={[styles.action, isPicked && styles.actionPicked]}>
         {isPicked ? (
           <Typography variant="label" style={styles.actionPickedText}>
             #{pickedRank}
           </Typography>
         ) : (
-          <Plus size={16} color={colors.primary} />
+          <Plus size={16} color={colors.inkMuted} />
         )}
       </View>
     </Pressable>
@@ -56,38 +50,23 @@ const styles = StyleSheet.create({
   tile: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: 56, // Fixed geometry
+    minHeight: 52,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
     backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: 'transparent',
-    borderRadius: radius.md,
-    marginBottom: spacing.xs,
+    borderBottomWidth: 1,
+    borderColor: colors.border,
+
   },
   tilePicked: {
-    borderColor: colors.primarySoft,
-    backgroundColor: colors.primarySoft,
+    borderColor: colors.border,
+    backgroundColor: '#F2F5FA',
   },
   tileDisabled: {
     opacity: 0.5,
   },
-  thumb: {
-    width: 40,
-    height: 40,
-    borderRadius: radius.sm,
-    marginRight: spacing.md,
-  },
-  thumbFallback: {
-    backgroundColor: colors.surfaceMuted,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  thumbInitial: { ...type.heading, color: colors.inkMuted },
-  textCol: { 
-    flex: 1, 
+  textCol: {
+    flex: 1,
     marginRight: spacing.sm,
     justifyContent: 'center',
   },
@@ -95,8 +74,8 @@ const styles = StyleSheet.create({
     color: colors.ink,
   },
   textPicked: {
-    color: colors.primary,
-    fontFamily: 'PlusJakartaSans_600SemiBold',
+    color: colors.inkMuted,
+    fontFamily: 'PlusJakartaSans_400Regular',
   },
   pendingLabel: { fontSize: 11, marginTop: 2 },
   action: {
@@ -106,10 +85,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   actionPicked: {
-    // any specific style for the #N container if needed
+    backgroundColor: 'transparent',
   },
-  actionPickedText: { 
-    color: colors.primary, 
+  actionPickedText: {
+    color: colors.inkMuted,
     fontFamily: 'PlusJakartaSans_600SemiBold',
   },
 })

@@ -25,7 +25,7 @@ export function GlobalHeader({ showAvatar = false }: { showAvatar?: boolean }) {
         alignItems="center"
         justifyContent="space-between"
         paddingVertical="sm"
-        paddingLeft="lg"
+        paddingHorizontal="lg"
         maxWidth={1200}
         width="100%"
         style={{
@@ -44,4 +44,4 @@ export function GlobalHeader({ showAvatar = false }: { showAvatar?: boolean }) {
 
 const webStickyStyle = Platform.OS === 'web' ? ({ position: 'sticky', top: 0, zIndex: 10 } as any) : null
 
-const safeStyle = { backgroundColor: colors.surface }
+const safeStyle = { backgroundColor: colors.surface, borderBottomWidth: 1, borderBottomColor: colors.border }

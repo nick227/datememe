@@ -1,3 +1,4 @@
+import { usePageTitle } from '../../../navigation/usePageTitle'
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Text, FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet, View, Image } from 'react-native'
 import { useIsFocused } from '@react-navigation/native'
@@ -193,6 +194,7 @@ export function ConversationScreen({ route, navigation }: Props) {
   }, [thread.myLastAt, otherReadAt])
 
   const isSystemThread = thread.system
+  usePageTitle(isSystemThread ? 'Activity' : otherParticipant?.displayName ? `Chat with ${otherParticipant.displayName}` : undefined)
   const headerFacts = isSystemThread || !otherParticipant ? null : conversationHeaderFacts(otherParticipant)
 
   async function handleSend() {

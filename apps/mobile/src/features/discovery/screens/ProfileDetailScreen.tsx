@@ -1,3 +1,4 @@
+import { usePageTitle } from '../../../navigation/usePageTitle'
 import { useMemo, useState } from 'react'
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
@@ -34,6 +35,7 @@ export function ProfileDetailScreen({ route, navigation }: Props) {
   const { profileId, age, matchPercentage, insights } = route.params
   const routeDisplayName = route.params.displayName
   const profile = useProfile(profileId)
+  usePageTitle(profile.data?.displayName ? `${profile.data.displayName} — Profile` : undefined)
   // Resolve the current public name from the profile, not the URL slug.
   const displayName = profile.data?.displayName ?? routeDisplayName ?? 'Member'
   const lists = useProfileLists(profileId)
