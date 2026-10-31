@@ -42,11 +42,17 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile
 
-      - name: Typecheck
-        run: pnpm typecheck
+      - name: Generate Prisma client
+        run: pnpm --filter @project/db exec prisma generate
+
+      - name: Build database package
+        run: pnpm --filter @project/db build
 
       - name: Generate SDK
         run: pnpm sdk:generate
+
+      - name: Typecheck
+        run: pnpm typecheck
 
       - name: Check SDK drift
         run: pnpm sdk:check
