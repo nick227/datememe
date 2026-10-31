@@ -31,8 +31,11 @@ type Props = NativeStackScreenProps<DiscoveryStackParamList, 'ProfileDetail'>
 const CONTENT_WIDTH = 640
 
 export function ProfileDetailScreen({ route, navigation }: Props) {
-  const { profileId, displayName, age, matchPercentage, insights } = route.params
+  const { profileId, age, matchPercentage, insights } = route.params
+  const routeDisplayName = route.params.displayName
   const profile = useProfile(profileId)
+  // Resolve the current public name from the profile, not the URL slug.
+  const displayName = profile.data?.displayName ?? routeDisplayName ?? 'Member'
   const lists = useProfileLists(profileId)
   const myLists = useMyLists()
   const relatedFeed = useDiscoverFeed()
