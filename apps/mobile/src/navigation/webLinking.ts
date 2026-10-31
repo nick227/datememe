@@ -1,4 +1,4 @@
-import type { LinkingOptions } from '@react-navigation/native'
+import { getPathFromState, type LinkingOptions } from '@react-navigation/native'
 import type { MainStackParamList } from './types'
 
 // Stable, shareable browser paths. Category slugs are already stored by the API;
@@ -11,11 +11,27 @@ const pollRoutes = {
 
 export const webLinking: LinkingOptions<MainStackParamList> = {
   prefixes: [],
+  // Discovery cards carry transient ranking insights and match metadata in params.
+  // Keep them in navigation state, but never serialize them into shareable URLs.
+  getPathFromState(state, options) {
+    const stripTransientProfileParams = (value: any): any => ({
+      ...value,
+      routes: value.routes.map((route: any) => ({
+        ...route,
+        params: route.name === 'ProfileDetail' && route.params
+          ? { profileId: route.params.profileId, displayName: route.params.displayName }
+          : route.params,
+        state: route.state ? stripTransientProfileParams(route.state) : undefined,
+      })),
+    })
+    return getPathFromState(stripTransientProfileParams(state), options)
+  },
   config: {
     screens: {
       Tabs: {
         screens: {
           Lists: {
+            initialRouteName: 'Categories',
             screens: {
               Categories: '',
               ...pollRoutes,
@@ -23,6 +39,7 @@ export const webLinking: LinkingOptions<MainStackParamList> = {
           },
           Rankings: {
             path: 'rankings',
+            initialRouteName: 'Rankings',
             screens: {
               Rankings: '',
               ListBuilder: 'polls/:categorySlug',
@@ -31,6 +48,7 @@ export const webLinking: LinkingOptions<MainStackParamList> = {
           },
           Discover: {
             path: 'discover',
+            initialRouteName: 'Discover',
             screens: {
               Discover: '',
               QuickPicks: 'quick-picks',
@@ -49,6 +67,7 @@ export const webLinking: LinkingOptions<MainStackParamList> = {
           },
           Messages: {
             path: 'messages',
+            initialRouteName: 'Conversations',
             screens: {
               Conversations: '',
               Conversation: ':conversationId',
@@ -59,6 +78,7 @@ export const webLinking: LinkingOptions<MainStackParamList> = {
           },
           ProfileTab: {
             path: 'me',
+            initialRouteName: 'Profile',
             screens: {
               Profile: '',
               EditProfile: 'edit',
